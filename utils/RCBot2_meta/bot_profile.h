@@ -47,6 +47,8 @@ public:
 	// find profiles and setup list
 	static void setupProfiles ();
 
+	static void createNewDefaultProfile ();
+
 	// return a profile unused by a bot
 	static CBotProfile *getRandomFreeProfile ();
 

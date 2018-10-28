@@ -108,20 +108,6 @@ void CBotProfiles :: setupProfiles ()
 
 	extern ConVar bot_anglespeed;
 
-	// Setup Default profile
-	m_pDefaultProfile = new CBotProfile(
-		DEFAULT_BOT_NAME, // name
-		"default", // model (team in HL2DM)
-		-1, // iTeam
-		CBotVisibles::DEFAULT_MAX_TICKS, // vis ticks
-		IBotNavigator::MAX_PATH_TICKS, // path ticks
-		2, // visrevs clients
-		8.0f, // sensitivity
-		0.5f, // braveness
-		0.5f, // aim skill
-		-1 // class
-		);	
-
 	// read profiles
 	iId = 1;
 	bDone = false;
@@ -135,6 +121,9 @@ void CBotProfiles :: setupProfiles ()
 
 		if ( fp )
 		{
+			// Create new random default profile for random attributes
+			createNewDefaultProfile();
+
 			CBotProfile read;
 			CRCBotKeyValueList *pKVL = new CRCBotKeyValueList();
 
@@ -168,6 +157,22 @@ void CBotProfiles :: setupProfiles ()
 		iId ++;
 	}
 
+}
+
+void CBotProfiles :: createNewDefaultProfile() {
+	delete m_pDefaultProfile;
+	m_pDefaultProfile = new CBotProfile(
+		DEFAULT_BOT_NAME, // name
+		"default", // model (team in HL2DM)
+		-1, // iTeam
+		CBotVisibles::DEFAULT_MAX_TICKS, // vis ticks
+		IBotNavigator::MAX_PATH_TICKS, // path ticks
+		2, // visrevs clients
+		randomFloat(2.0f, 10.0f), // sensitivity
+		randomFloat(0.0f, 1.0f), // braveness
+		randomFloat(0.0f, 1.0f), // aim skill
+		-1 // class
+	);
 }
 
 CBotProfile *CBotProfiles :: getDefaultProfile ()
