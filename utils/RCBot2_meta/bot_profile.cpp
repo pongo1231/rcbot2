@@ -168,7 +168,7 @@ void CBotProfiles :: createNewDefaultProfile() {
 		CBotVisibles::DEFAULT_MAX_TICKS, // vis ticks
 		IBotNavigator::MAX_PATH_TICKS, // path ticks
 		2, // visrevs clients
-		randomFloat(6.0f, 10.0f), // sensitivity
+		randomFloat(5.0f, 10.0f), // sensitivity
 		randomFloat(0.0f, 1.0f), // braveness
 		randomFloat(0.0f, 1.0f), // aim skill
 		-1 // class
