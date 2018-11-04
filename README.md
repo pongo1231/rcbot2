@@ -12,6 +12,9 @@ Make sure you have Visual Studio 2013 installed.
 Other than that it should compile fine, even with the latest Visual Studio 2017.
 
 ### Linux
+
+**Note: You need gcc-4.8 and g++-4.8!**
+
 * Go to `linux_sdk`
 * `make -f Makefile.rcbot2 vcpm`
 * `make -f Makefile.rcbot2 genmf` (this will generate the Makefiles)
