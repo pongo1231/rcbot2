@@ -2889,14 +2889,14 @@ void CBotTF2::modThink()
 				extern ConVar rcbot_melee_only;
 				bool bAdded = false;
 
-				if ((m_iClass == TF_CLASS_ENGINEER) && !CTeamFortress2Mod::isMedievalMode())
+				if (m_iClass == TF_CLASS_ENGINEER && !CTeamFortress2Mod::isMedievalMode())
 					m_pMelee = NULL;
 				else if (m_pMelee == NULL)
 					m_pMelee = CTeamFortress2Mod::findRandomWeaponLoadOutInSlot(m_iClass, TF2_SLOT_MELEE);
 
 				extern ConVar *mp_stalemate_meleeonly;
 
-				if ((!mp_stalemate_meleeonly || !mp_stalemate_meleeonly->GetBool()) && !CTeamFortress2Mod::isSuddenDeath() && !CTeamFortress2Mod::isMedievalMode())
+				if ((!mp_stalemate_meleeonly || !mp_stalemate_meleeonly->GetBool()) && !CTeamFortress2Mod::isSuddenDeath())
 				{
 					// only add primary / secondary weapons if they are given them by the map
 					/*if (RCBotPluginMeta::TF2_getPlayerWeaponSlot(m_pEdict, TF2_SLOT_PRMRY) &&
@@ -2918,10 +2918,11 @@ void CBotTF2::modThink()
 				}
 
 				// adding this will remove the builder -- don't do it!!!
-				if ((m_iClass == TF_CLASS_ENGINEER) && !CTeamFortress2Mod::isMedievalMode())
+				// Too late! :(
+				/*if ((m_iClass == TF_CLASS_ENGINEER) && !CTeamFortress2Mod::isMedievalMode())
 					m_pHat = NULL;
-				else if (m_pHat == NULL)
-					m_pHat = CTeamFortress2Mod::findRandomWeaponLoadOutInSlot(m_iClass, TF2_SLOT_HAT);
+				else if (m_pHat == NULL)*/
+				m_pHat = CTeamFortress2Mod::findRandomWeaponLoadOutInSlot(m_iClass, TF2_SLOT_HAT);
 
 				if (m_pMisc == NULL)
 					m_pMisc = CTeamFortress2Mod::findRandomWeaponLoadOutInSlot(m_iClass, TF2_SLOT_MISC);
@@ -3455,7 +3456,7 @@ void CBotTF2::handleWeapons()
 	{
 		CBotWeapon *pWeapon;
 
-		pWeapon = m_pWeapons->getBestWeapon(m_pEnemy,!hasFlag(),!hasFlag(),rcbot_melee_only.GetBool(),false,CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict));
+		pWeapon = m_pWeapons->getBestWeapon(m_pEnemy,true,true,rcbot_melee_only.GetBool() || CTeamFortress2Mod::isMedievalMode(),false,CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict));
 
 		setLookAtTask(LOOK_ENEMY);
 
@@ -3559,7 +3560,7 @@ bool CBotTF2::canAvoid(edict_t *pEntity)
 
 	if ((distance > 1) && (distance < bot_avoid_radius.GetFloat()) && (vAvoidOrigin.z >= getOrigin().z) && (fabs(getOrigin().z - vAvoidOrigin.z) < 64))
 	{
-		if ((m_pAttackingEnemy.get() != NULL) && (m_pAttackingEnemy.get() == pEntity))
+		if (m_pAttackingEnemy.get() != NULL && m_pAttackingEnemy.get() == pEntity)
 			return false; // I need to melee this guy probably
 		else if (isEnemy(pEntity, false))
 			return true;
@@ -3804,12 +3805,12 @@ bool CBotFortress :: wantToFollowEnemy ()
         return false;
     if ( hasFlag() )
         return false;
-    if ( m_iClass == TF_CLASS_SCOUT )
-        return false;
-	else if ( (m_iClass == TF_CLASS_MEDIC) && m_pHeal )
+	if (m_iClass == TF_CLASS_SCOUT)
 		return false;
-    else if ( (m_iClass == TF_CLASS_SPY) && isDisguised() ) // sneak around the enemy
-        return true;
+	else if ((m_iClass == TF_CLASS_MEDIC) && m_pHeal)
+		return false;
+	else if ((m_iClass == TF_CLASS_SPY) && isDisguised()) // sneak around the enemy
+		return true;
 	else if ( (m_iClass == TF_CLASS_SNIPER) && (distanceFrom(m_pLastEnemy)>CWaypointLocations::REACHABLE_RANGE) )
 		return false; // don't bother!
 	else if ( CBotGlobals::isPlayer(m_pLastEnemy) && (CClassInterface::getTF2Class(m_pLastEnemy) == TF_CLASS_SPY) && (thinkSpyIsEnemy(m_pLastEnemy,CTeamFortress2Mod::getSpyDisguise(m_pLastEnemy))) )
