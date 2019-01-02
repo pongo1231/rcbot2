@@ -169,7 +169,7 @@ public:
 	////////
 	static inline Vector entityOrigin ( edict_t *pEntity ) 
 	{ 
-		return pEntity->GetIServerEntity()->GetCollideable()->GetCollisionOrigin(); 
+		return pEntity ? pEntity->GetIServerEntity()->GetCollideable()->GetCollisionOrigin() : nullptr; 
 	}
 	static int getTeam ( edict_t *pEntity );
 	static bool entityIsAlive ( edict_t *pEntity );
