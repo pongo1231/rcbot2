@@ -2500,9 +2500,8 @@ CWaypoint *CWaypoints :: randomRouteWaypoint ( CBot *pBot, Vector vOrigin, Vecto
 {
 	register short int i;
 	static short int size;
-	static CWaypointNavigator *pNav;
 	
-	pNav = (CWaypointNavigator*)pBot->getNavigator();
+	auto pNav = static_cast<CWaypointNavigator*>(pBot->getNavigator().get());
 
 	size = numWaypoints();
 
@@ -2774,7 +2773,7 @@ CWaypoint *CWaypoints :: randomWaypointGoalNearestArea ( int iFlags, int iTeam, 
 		{
 			CWaypointNavigator *pNav;
 		
-			pNav = (CWaypointNavigator*)pBot->getNavigator();
+			pNav = static_cast<CWaypointNavigator*>(pBot->getNavigator().get());
 
 			pWpt = pNav->chooseBestFromBeliefBetweenAreas(goals,bHighDanger,bIgnoreBelief);
 		}
@@ -2856,7 +2855,7 @@ CWaypoint *CWaypoints :: randomWaypointGoalBetweenArea ( int iFlags, int iTeam, 
 		{
 			CWaypointNavigator *pNav;
 		
-			pNav = (CWaypointNavigator*)pBot->getNavigator();
+			pNav = static_cast<CWaypointNavigator*>(pBot->getNavigator().get());
 
 			pWpt = pNav->chooseBestFromBeliefBetweenAreas(goals, bHighDanger, bIgnoreBelief);
 		}
@@ -2916,7 +2915,7 @@ CWaypoint *CWaypoints :: randomWaypointGoal ( int iFlags, int iTeam, int iArea, 
 		{
 			CWaypointNavigator *pNav;
 
-			pNav = (CWaypointNavigator*)pBot->getNavigator();
+			pNav = static_cast<CWaypointNavigator*>(pBot->getNavigator().get());
 
 			pWpt = pNav->chooseBestFromBelief(goals, bHighDanger, iSearchFlags);
 		}
@@ -3324,7 +3323,7 @@ public:
 	CTestBot(edict_t *pEdict, int iTeam, int iClass)
 	{
 		init();
-		strcpy(m_szBotName,"Test Bot");
+		m_szBotName = "Test Bot";
 		m_iClass = (TF_Class)iClass; 
 		m_iTeam = iTeam; 
 		m_pEdict = pEdict;
@@ -3340,7 +3339,6 @@ void CWaypointTest :: go ( edict_t *pPlayer )
 	CWaypoint *pWpt1;
 	CWaypoint *pWpt2;
 
-	IBotNavigator *pNav;
 	CBot *pBots[2];
 	CBot *pBot;
 
@@ -3353,7 +3351,7 @@ void CWaypointTest :: go ( edict_t *pPlayer )
 	{
 		pBot = pBots[iBot];
 
-		pNav = pBot->getNavigator();
+		auto& pNav = pBot->getNavigator();
 
 		for ( i = 0; i < CWaypoints::MAX_WAYPOINTS; i ++ )
 		{

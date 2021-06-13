@@ -321,14 +321,13 @@ int CDODFlags::findNearestObjective ( Vector vOrigin )
 // return the flag with the least danger (randomly)
 bool CDODFlags::getRandomEnemyControlledFlag ( CBot *pBot, Vector *position, int iTeam, int *id )
 {
-	IBotNavigator *pNav;
 	float fTotal;
 	float fRand;
 
 	if ( id )
 		*id = -1;
 
-	pNav = pBot->getNavigator();
+	auto& pNav = pBot->getNavigator();
 
 	fTotal = 0.0f;
 
@@ -474,8 +473,6 @@ bool CDODFlags:: getRandomBombToPlant ( CBot *pBot, Vector *position, int iTeam,
 	float fTotal;
 	float fRand;
 
-	IBotNavigator *pNav;
-
 //	short int j;
 	int selection;
 
@@ -484,7 +481,7 @@ bool CDODFlags:: getRandomBombToPlant ( CBot *pBot, Vector *position, int iTeam,
 
 	selection = -1;
 
-	pNav = pBot->getNavigator();
+	auto& pNav = pBot->getNavigator();
 
 	fTotal = 0.0f;
 
@@ -548,14 +545,13 @@ bool CDODFlags:: getRandomBombToPlant ( CBot *pBot, Vector *position, int iTeam,
 
 bool CDODFlags::getRandomTeamControlledFlag ( CBot *pBot, Vector *position, int iTeam, int *id )
 {
-	IBotNavigator *pNav;
 	float fTotal;
 	float fRand;
 
 	if ( id )
 		*id = -1;
 
-	pNav = pBot->getNavigator();
+	auto& pNav = pBot->getNavigator();
 
 	fTotal = 0.0f;
 

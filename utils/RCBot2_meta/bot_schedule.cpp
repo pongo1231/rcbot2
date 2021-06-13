@@ -755,8 +755,6 @@ void CBotDefendPointSched ::init ()
 /////////////////////////////////////////////
 void CBotSchedule :: execute ( CBot *pBot )
 {
-	// current task
-	static CBotTask *pTask;
 	static eTaskState iState;
 
 	if ( m_Tasks.empty() )
@@ -766,9 +764,9 @@ void CBotSchedule :: execute ( CBot *pBot )
 	}
 
 	// why would task ever be null??
-	pTask = m_Tasks.front();
+	auto& pTask = m_Tasks.front();
 
-	if ( pTask == NULL )
+	if ( !pTask )
 	{
 		m_bFailed = true;
 		return;
@@ -815,14 +813,12 @@ void CBotSchedule :: addTask ( CBotTask *pTask )
 	// initialize
 	pTask->init();
 	// add
-	m_Tasks.push_back(pTask);
+	m_Tasks.emplace_back(pTask);
 }
 
 void CBotSchedule :: removeTop ()
 {
-	CBotTask *pTask = m_Tasks.front();
 	m_Tasks.pop_front();
-	delete pTask;
 }
 
 const char *CBotSchedule :: getIDString ()

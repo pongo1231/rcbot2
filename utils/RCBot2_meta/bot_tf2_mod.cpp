@@ -952,7 +952,7 @@ edict_t *CTeamFortress2Mod::getBuilding (eEngiBuild object, edict_t *pOwner)
 	case ENGI_SENTRY:
 		return m_SentryGuns[i].sentry.get();
 	case ENGI_TELE:
-		if ( m_Teleporters[i].entrance.get() != NULL )
+		if ( m_Teleporters[i].entrance.get() )
 			return m_Teleporters[i].entrance.get();
 		return m_Teleporters[i].exit.get();
 	}

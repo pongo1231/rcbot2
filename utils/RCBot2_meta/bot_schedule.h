@@ -36,6 +36,8 @@
 //#include "bot_fortress.h"
 
 #include <deque>
+#include <memory>
+#include <type_traits>
 
 class CBotTask;
 class CAttackEntityTask;
@@ -121,7 +123,7 @@ public:
 
 	CBotTask *currentTask ()
 	{
-		return m_Tasks.empty() ? NULL : m_Tasks.front();
+		return m_Tasks.empty() ? nullptr : m_Tasks.front().get();
 	}
 
 	bool hasFailed ()
@@ -132,14 +134,6 @@ public:
 	bool isComplete ()
 	{
 		return m_Tasks.empty();
-	}
-
-	void freeMemory ()
-	{
-		for (CBotTask* task : m_Tasks) {
-			delete task;
-		}
-		m_Tasks.clear();
 	}
 
 	void removeTop ();
@@ -171,26 +165,28 @@ public:
 
 
 private:
-	std::deque<CBotTask*> m_Tasks;
-	bool m_bFailed;
-	eBotSchedule m_iSchedId;
+	std::deque<std::unique_ptr<CBotTask>> m_Tasks;
+	bool m_bFailed = false;
+	eBotSchedule m_iSchedId = SCHED_NONE;
 	
 	// passed information to next task(s)
-	int iPass;
-	float fPass;
+	int iPass = 0;
+	float fPass = 0.0f;
 	Vector vPass;
-	edict_t *pPass;
+	edict_t *pPass = nullptr;
 
-	int m_bitsPass;
+	int m_bitsPass = 0;
 };
 
 class CBotSchedules
 {
 public:
+	~CBotSchedules() = default;
+
 	bool hasSchedule ( eBotSchedule iSchedule )
 	{
-		for (CBotSchedule *sched : m_Schedules) {
-			if (sched->isID(iSchedule)) {
+		for (auto& pSched : m_Schedules) {
+			if (pSched->isID(iSchedule)) {
 				return true;
 			}
 		}
@@ -222,7 +218,7 @@ public:
 		if ( isEmpty() )
 			return;
 
-		CBotSchedule *pSched = m_Schedules.front();
+		auto& pSched = m_Schedules.front();
 		pSched->execute(pBot);
 
 		if ( pSched->isComplete() || pSched->hasFailed() )
@@ -231,35 +227,41 @@ public:
 
 	void removeTop ()
 	{
-		CBotSchedule *pSched = m_Schedules.front();
 		m_Schedules.pop_front();
-
-		// TODO: eradicate freeMemory from the codebase
-		pSched->freeMemory();
-
-		delete pSched;
 	}
 
-	void freeMemory ()
+	void clear ()
 	{
-		for (CBotSchedule *sched : m_Schedules) {
-			delete sched;
-		}
 		m_Schedules.clear();
 	}
 
-	void add ( CBotSchedule *pSchedule )
+	template <class T>
+	void add ( T *pT )
 	{
+		std::unique_ptr<CBotSchedule> pSchedule;
+
+		if constexpr (std::is_base_of<CBotTask, T>())
+		{
+			pSchedule = std::unique_ptr<CBotSchedule>(new CBotSchedule(pT));
+		}
+		else
+		{
+			pSchedule = std::unique_ptr<CBotSchedule>(pT);
+		}
+
 		// initialize
 		pSchedule->init();
 		// add
-		m_Schedules.push_back(pSchedule);
+		m_Schedules.push_back(std::move(pSchedule));
 	}
 
-	void addFront ( CBotSchedule *pSchedule )
+	template<class T>
+	void addFront ( T *pT )
 	{
+		auto pSchedule = std::unique_ptr<CBotSchedule>(pT);
+
 		pSchedule->init();
-		m_Schedules.push_front(pSchedule);
+		m_Schedules.push_front(std::move(pSchedule));
 	}
 
 	inline bool isEmpty ()
@@ -271,27 +273,27 @@ public:
 	{
 		if ( !m_Schedules.empty() )
 		{
-			CBotSchedule *sched = m_Schedules.front();
+			auto& pSched = m_Schedules.front();
 
-			if ( sched != NULL )
+			if ( pSched )
 			{
-				return sched->currentTask();
+				return pSched->currentTask();
 			}
 		}
 
 		return NULL;
 	}
 
-	CBotSchedule *getCurrentSchedule ()
+	CBotSchedule* getCurrentSchedule ()
 	{
 		if ( isEmpty() )
-			return NULL;
+			return nullptr;
 
-		return m_Schedules.front();
+		return m_Schedules.front().get();
 	}
 
 private:
-	std::deque<CBotSchedule*> m_Schedules;
+	std::deque<std::unique_ptr<CBotSchedule>> m_Schedules;
 };
 ///////////////////////////////////////////
 class CBotTF2DemoPipeTrapSched : public CBotSchedule

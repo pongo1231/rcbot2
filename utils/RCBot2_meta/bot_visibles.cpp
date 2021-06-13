@@ -97,15 +97,13 @@ CBotVisibles :: CBotVisibles ( CBot *pBot )
 	m_pBot = pBot;
 	m_iMaxIndex = m_pBot->maxEntityIndex();
 	m_iMaxSize = (m_iMaxIndex/8)+1;
-	m_iIndicesVisible = new unsigned char [m_iMaxSize];
+	m_iIndicesVisible.reserve(m_iMaxSize);
 	reset();
 }
 
 CBotVisibles :: ~CBotVisibles () 
 {
-	m_pBot = NULL;
-	delete[] m_iIndicesVisible;
-	m_iIndicesVisible = NULL;
+	m_pBot = nullptr;
 }
 
 void CBotVisibles :: eachVisible ( CVisibleFunc *pFunc )
@@ -117,7 +115,7 @@ void CBotVisibles :: eachVisible ( CVisibleFunc *pFunc )
 
 void CBotVisibles :: reset ()
 {
-	memset(m_iIndicesVisible,0,sizeof(unsigned char)*m_iMaxSize);
+	std::fill(m_iIndicesVisible.begin(), m_iIndicesVisible.end(), 0);
 	m_VisibleSet.clear();
 	m_iCurrentIndex = CBotGlobals::maxClients()+1;
 	m_iCurPlayer = 1;
@@ -376,7 +374,7 @@ bool CBotVisibles :: isVisible ( edict_t *pEdict )
 	if ( iByte > m_iMaxSize )
 		return false;
 
-	return ( (*(m_iIndicesVisible+iByte))&(1<<iBit))==(1<<iBit);
+	return ( (m_iIndicesVisible[iByte])&(1<<iBit))==(1<<iBit);
 }
 
 void CBotVisibles :: setVisible ( edict_t *pEdict, bool bVisible ) 
@@ -394,17 +392,17 @@ void CBotVisibles :: setVisible ( edict_t *pEdict, bool bVisible )
 	if ( bVisible )
 	{
 		// visible now
-		if ( ((*(m_iIndicesVisible+iByte) & iFlag)!=iFlag) )
+		if ( ((m_iIndicesVisible[iByte] & iFlag)!=iFlag) )
 			m_VisibleSet.insert(pEdict);
 
-		*(m_iIndicesVisible+iByte) |= iFlag;		
+		m_iIndicesVisible[iByte] |= iFlag;		
 	}
 	else
 	{
 		// not visible anymore
-		if ( pEdict && ((*(m_iIndicesVisible+iByte) & iFlag)==iFlag) )
+		if ( pEdict && ((m_iIndicesVisible[iByte] & iFlag)==iFlag) )
 			m_VisibleSet.erase(pEdict);
 
-		*(m_iIndicesVisible+iByte) &= ~iFlag;		
+		m_iIndicesVisible[iByte] &= ~iFlag;		
 	}
 }

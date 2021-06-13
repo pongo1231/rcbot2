@@ -39,12 +39,13 @@
 #include "bot_getprop.h"
 
 #include <algorithm>
+#include <memory>
 
 class CRemoveBotFromSquad : public IBotFunction
 {
 public:
 
-	CRemoveBotFromSquad ( CBotSquad *pSquad )
+	CRemoveBotFromSquad ( std::shared_ptr<CBotSquad> pSquad )
 	{
 		m_pSquad = pSquad;
 	}
@@ -56,21 +57,17 @@ public:
 	}
 
 private:
-	CBotSquad *m_pSquad;
+	std::shared_ptr<CBotSquad> m_pSquad;
 };
 
 //-------------
 
-void CBotSquads::FreeMemory ( void )
+void CBotSquads::Clear ( )
 {
-	// TODO inline squad or use unique pointers or something so they're freed automatically
-	for (CBotSquad *squad : m_theSquads) {
-		delete squad;
-	}
 	m_theSquads.clear();
 }
 
-void CBotSquads::removeSquadMember ( CBotSquad *pSquad, edict_t *pMember )
+void CBotSquads::removeSquadMember ( std::shared_ptr<CBotSquad> pSquad, edict_t *pMember )
 {
 	pSquad->removeMember(pMember);
 
@@ -97,10 +94,8 @@ edict_t *CBotSquad::getMember ( size_t iMember )
 //              assign bot to 'squad leaders' squad
 // 3. scenario: no squad has 'squad leader' 
 //              make a new squad
-CBotSquad *CBotSquads::AddSquadMember ( edict_t *pLeader, edict_t *pMember )
+std::shared_ptr<CBotSquad> CBotSquads::AddSquadMember ( edict_t *pLeader, edict_t *pMember )
 {
-	CBot *pBot;
-
 	//char msg[120];
 
 	if ( !pLeader )
@@ -120,21 +115,22 @@ CBotSquad *CBotSquads::AddSquadMember ( edict_t *pLeader, edict_t *pMember )
 	//ClientPrint(pLeader,HUD_PRINTTALK,msg);
 	
 	// member joins whatever squad the leader is in
-	for (CBotSquad *squad : m_theSquads) {
-		if (squad->IsLeader(pLeader) || squad->IsMember(pLeader)) {
-			squad->AddMember(pMember);
-			return squad;
+	for (auto pSquad : m_theSquads) {
+		if (pSquad->IsLeader(pLeader) || pSquad->IsMember(pLeader)) {
+			pSquad->AddMember(pMember);
+			return pSquad;
 		}
 	}
 	
 	// no squad with leader, make one
-	CBotSquad *theSquad = new CBotSquad(pLeader, pMember);
+	auto theSquad = std::shared_ptr<CBotSquad>(new CBotSquad(pLeader, pMember));
 	
-	if ( theSquad != NULL )
+	if ( theSquad )
 	{
 		m_theSquads.push_back(theSquad);
 		
-		if ( (pBot = CBots::getBotPointer(pLeader)) != NULL )
+		CBot *pBot = CBots::getBotPointer(pLeader);
+		if ( pBot )
 			pBot->setSquad(theSquad);
 	}
 	
@@ -143,11 +139,8 @@ CBotSquad *CBotSquads::AddSquadMember ( edict_t *pLeader, edict_t *pMember )
 // SquadJoin 
 // join two possile squads together if pMember is a leader of another squad
 //
-CBotSquad *CBotSquads::SquadJoin ( edict_t *pLeader, edict_t *pMember )
+std::shared_ptr<CBotSquad> CBotSquads::SquadJoin ( edict_t *pLeader, edict_t *pMember )
 {
-	CBotSquad *theSquad;
-	CBotSquad *joinSquad;
-
 	//char msg[120];
 
 	if ( !pLeader )
@@ -157,13 +150,13 @@ CBotSquad *CBotSquads::SquadJoin ( edict_t *pLeader, edict_t *pMember )
 		return NULL;
 
 	// no squad with leader, make pMember join SquadLeader
-	theSquad = FindSquadByLeader(pMember);
+	auto theSquad = FindSquadByLeader(pMember);
 
-	if ( theSquad != NULL )
+	if ( theSquad )
 	{
 		theSquad->AddMember(pMember);
 
-		joinSquad = FindSquadByLeader(pLeader);
+		auto joinSquad = FindSquadByLeader(pLeader);
 
 		if ( joinSquad )
 		{
@@ -188,17 +181,18 @@ CBotSquad *CBotSquads::SquadJoin ( edict_t *pLeader, edict_t *pMember )
 	return theSquad;
 }
 
-CBotSquad *CBotSquads::FindSquadByLeader ( edict_t *pLeader )
+std::shared_ptr<CBotSquad> CBotSquads::FindSquadByLeader ( edict_t *pLeader )
 {
-	for (CBotSquad *squad : m_theSquads) {
-		if (squad->IsLeader(pLeader)) {
-			return squad;
+	for (auto pSquad : m_theSquads) {
+		if (pSquad->IsLeader(pLeader)) {
+			return pSquad;
 		}
 	}
+
 	return nullptr;
 }
 
-void CBotSquads::RemoveSquad ( CBotSquad *pSquad )
+void CBotSquads::RemoveSquad ( std::shared_ptr<CBotSquad> pSquad )
 {
 	// TODO see if we can modify this so the squad unregisters itself
 	// TODO call this logic in CBotSquad::~CBotSquad() instead
@@ -206,15 +200,12 @@ void CBotSquads::RemoveSquad ( CBotSquad *pSquad )
 	CBots::botFunction(&func);
 	
 	m_theSquads.erase(std::remove(m_theSquads.begin(), m_theSquads.end(), pSquad), m_theSquads.end());
-	
-	if (pSquad)
-		delete pSquad;
 }
 
 void CBotSquads::UpdateAngles ( void )
 {
-	for (CBotSquad *squad : m_theSquads) {
-		squad->UpdateAngles();
+	for (auto pSquad : m_theSquads) {
+		pSquad->UpdateAngles();
 	}
 }
 
@@ -253,13 +244,13 @@ void CBotSquad::Init ()
 }
 
 // Change a leader of a squad, this can cause lots of effects
-void CBotSquads :: ChangeLeader ( CBotSquad *pSquad )
+void CBotSquads :: ChangeLeader ( std::shared_ptr<CBotSquad> pSquad )
 {
 	// first change leader to next squad member
 	pSquad->ChangeLeader();
 
 	// if no leader anymore/no members in group
-	if ( pSquad->IsLeader(NULL) )
+	if ( pSquad->IsLeader(nullptr) )
 	{
 		CRemoveBotFromSquad func(pSquad);
 		CBots::botFunction(&func);

@@ -33,6 +33,7 @@
 
 #include "vector.h"
 #include "bot_ehandle.h"
+#include <memory>
 
 #define SQUAD_DEFAULT_SPREAD 80.0// say 50 units between each member...?
 
@@ -223,14 +224,14 @@ private:
 	std::deque<MyEHandle> m_SquadMembers; // followers?
 
 	eSquadForm m_theDesiredFormation;
-	float m_fDesiredSpread;
-	bool bCanFire;
+	float m_fDesiredSpread = 0.0f;
+	bool bCanFire = false;
 
 	eCombatType m_CombatType;
 
 	QAngle m_vLeaderAngle;
 	eTacticType m_Tactics;
-	bool m_bIsWaitingForOther;
+	bool m_bIsWaitingForOther = false;
 };
 
 //-------------------
@@ -239,9 +240,9 @@ class CBotSquads
 {
 public:
 
-	static void FreeMemory ( void );
+	static void Clear ( );
 
-	static void removeSquadMember ( CBotSquad *pSquad, edict_t *pMember );
+	static void removeSquadMember ( std::shared_ptr<CBotSquad> pSquad, edict_t *pMember );
 
 	// AddSquadMember can have many effects
 	// 1. scenario: squad leader exists as squad leader
@@ -250,20 +251,20 @@ public:
 	//              assign bot to 'squad leaders' squad
 	// 3. scenario: no squad has 'squad leader' 
 	//              make a new squad
-	static CBotSquad *AddSquadMember ( edict_t *pLeader, edict_t *pMember );
+	static std::shared_ptr<CBotSquad> AddSquadMember ( edict_t *pLeader, edict_t *pMember );
 
-	static CBotSquad *SquadJoin ( edict_t *pLeader, edict_t *pMember );
+	static std::shared_ptr<CBotSquad> SquadJoin ( edict_t *pLeader, edict_t *pMember );
 
-	static CBotSquad *FindSquadByLeader ( edict_t *pLeader );
+	static std::shared_ptr<CBotSquad> FindSquadByLeader ( edict_t *pLeader );
 
-	static void RemoveSquad ( CBotSquad *pSquad );
+	static void RemoveSquad ( std::shared_ptr<CBotSquad> pSquad );
 
 	static void UpdateAngles ( void );
 
-	static void ChangeLeader ( CBotSquad *theSquad );
+	static void ChangeLeader ( std::shared_ptr<CBotSquad> theSquad );
 
 private:
-	static inline std::deque<CBotSquad*> m_theSquads;
+	static inline std::deque<std::shared_ptr<CBotSquad>> m_theSquads;
 };
 /*
 class CBotSquadE

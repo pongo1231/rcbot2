@@ -75,6 +75,8 @@ public:
 		m_pBest = NULL;
 	}
 
+	~CFindEnemyFunc() = default;
+
 	edict_t *getBestEnemy ()
 	{
 		return m_pBest;
@@ -122,7 +124,7 @@ private:
 	int m_iCurrentIndex;
 	// current player index we are checking -- updated more often
 	int m_iCurPlayer;
-	unsigned char *m_iIndicesVisible;//[NUM_BYTES];
+	std::vector<unsigned char> m_iIndicesVisible;//[NUM_BYTES];
 	int m_iMaxSize;
 	int m_iMaxIndex;
 

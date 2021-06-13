@@ -33,6 +33,7 @@
 #define __BOT_ACCESS_CLIENT_H__
 
 #include <vector>
+#include <memory>
 
 #include "bot_client.h"
 
@@ -53,15 +54,13 @@ public:
 
 	inline int getAccessLevel () { return m_iAccessLevel; }
 private:
-	char *m_szSteamId;
-	int m_iAccessLevel;
+	char *m_szSteamId = nullptr;
+	int m_iAccessLevel = 0;
 };
 
 class CAccessClients
 {
 public:
-	static void freeMemory ();
-
 	static void showUsers ( edict_t *pEntity );
 
 	static void load ();
@@ -72,7 +71,7 @@ public:
 
 	static void createFile (); // create file if it doesn't exist (and mention of creation etc)
 private:
-	static inline std::vector<CAccessClient*> m_Clients;
+	static inline std::vector<std::unique_ptr<CAccessClient>> m_Clients;
 };
 
 #endif

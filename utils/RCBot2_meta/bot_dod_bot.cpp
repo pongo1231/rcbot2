@@ -47,6 +47,7 @@
 #include "bot_navigator.h"
 #include "bot_perceptron.h"
 #include "bot_waypoint_visibility.h"
+#include <algorithm>
 
 const char *g_DODClassCmd[2][6] = 
 { {"cls_garand","cls_tommy","cls_bar","cls_spring","cls_30cal","cls_bazooka"},
@@ -113,17 +114,7 @@ void CDODBot :: setup ()
 	CBot::setup();
 
 	if ( m_pWantToProne == NULL )
-		m_pWantToProne = new CPerceptron(3); // health , distance from enemy, danger out of 255
-}
-
-void CDODBot :: freeMapMemory ()
-{
-	if ( m_pWantToProne )
-		delete m_pWantToProne;
-
-	m_pWantToProne = NULL;
-
-	CBot::freeMapMemory();
+		m_pWantToProne = std::unique_ptr<CPerceptron>(new CPerceptron(3)); // health , distance from enemy, danger out of 255
 }
 
 bool CDODBot::canGotoWaypoint(Vector vPrevWaypoint, CWaypoint *pWaypoint, CWaypoint *pPrev )
@@ -745,7 +736,7 @@ void CDODBot :: spawnInit ()
 
 	m_pNearestBomb = NULL;
 
-	memset(m_CheckSmoke,0,sizeof(smoke_t)*MAX_PLAYERS);
+	m_CheckSmoke = std::array<smoke_t, MAX_PLAYERS> {};
 
 	while ( !m_nextVoicecmd.empty() )
 		m_nextVoicecmd.pop();
@@ -918,7 +909,7 @@ void CDODBot :: touchedWpt ( CWaypoint *pWaypoint, int iNextWaypoint, int iPrevW
 					{
 						CBotSchedule *bombsched = new CBotSchedule();
 						//todob
-						m_pSchedules->freeMemory();
+						m_pSchedules->clear();
 
 						bombsched->setID(SCHED_GOOD_HIDE_SPOT);
 
@@ -931,7 +922,7 @@ void CDODBot :: touchedWpt ( CWaypoint *pWaypoint, int iNextWaypoint, int iPrevW
 					{
 						CBotSchedule *bombsched = new CBotSchedule();
 						//todob
-						m_pSchedules->freeMemory();
+						m_pSchedules->clear();
 
 						bombsched->setID(SCHED_BOMB);
 
@@ -1359,7 +1350,7 @@ void CDODBot :: modThink ()
 
 						updateCondition(CONDITION_RUN);
 
-						m_pSchedules->freeMemory();
+						m_pSchedules->clear();
 						m_pSchedules->add(runsched);
 					}
 				}
@@ -1381,7 +1372,7 @@ void CDODBot :: modThink ()
 				attack->addTask(new CFindPathTask(m_pNearestBomb));
 				attack->addTask(new CBotDODBomb(DOD_BOMB_DEFUSE,iBombID,m_pNearestBomb,CBotGlobals::entityOrigin(m_pNearestBomb),-1));
 				// add defend task
-				m_pSchedules->freeMemory();
+				m_pSchedules->clear();
 				m_pSchedules->add(attack);
 
 				removeCondition(CONDITION_PUSH);
@@ -1409,7 +1400,7 @@ void CDODBot :: modThink ()
 
 						updateCondition(CONDITION_RUN);
 
-						m_pSchedules->freeMemory();
+						m_pSchedules->clear();
 						m_pSchedules->add(runsched);
 					}
 				}
@@ -1513,7 +1504,7 @@ void CDODBot :: hearVoiceCommand ( edict_t *pPlayer, byte cmd )
 						snipe->addTask(findpath);
 						snipe->addTask(snipetask);
 				
-						m_pSchedules->freeMemory();
+						m_pSchedules->clear();
 						m_pSchedules->add(snipe);
 
 						addVoiceCommand(DOD_VC_YES);
@@ -1872,7 +1863,7 @@ void CDODBot :: hearVoiceCommand ( edict_t *pPlayer, byte cmd )
 						attack->addTask(new CBotJoinSquad(pPlayer));
 
 					// add defend task
-					m_pSchedules->freeMemory();
+					m_pSchedules->clear();
 					m_pSchedules->add(attack);
 				}
 				else
@@ -1885,7 +1876,7 @@ void CDODBot :: hearVoiceCommand ( edict_t *pPlayer, byte cmd )
 						attack->addTask(new CBotJoinSquad(pPlayer));
 
 					// add defend task
-					m_pSchedules->freeMemory();
+					m_pSchedules->clear();
 					m_pSchedules->add(attack);
 
 				}
@@ -2129,9 +2120,9 @@ bool CDODBot :: executeAction ( CBotUtility *util )
 				}
 			}
 
-			if ( pNearest != NULL )
+			if ( pNearest )
 			{
-				m_pSchedules->freeMemory();
+				m_pSchedules->clear();
 
 				CBotSchedule *snipesched = new CBotSchedule();
 
@@ -2878,7 +2869,7 @@ bool CDODBot :: handleAttack ( CBotWeapon *pWeapon, edict_t *pEnemy )
 					if ( pWeapon->isZoomable() && !CClassInterface::isSniperWeaponZoomed(pWeaponEdict) )
 						secondaryAttack();
 
-					m_pSchedules->freeMemory();
+					m_pSchedules->clear();
 					m_pSchedules->add(new CGotoHideSpotSched(this,pEnemy));
 				}
 
@@ -3299,7 +3290,7 @@ void CDODBot :: getTasks (unsigned int iIgnore)
 		if ( !m_pSchedules->isEmpty() && bCheckCurrent )
 		{
 			if ( m_CurrentUtil != next->getId() )
-				m_pSchedules->freeMemory();
+				m_pSchedules->clear();
 			else
 			{
 				removeCondition(CONDITION_DEFENSIVE);

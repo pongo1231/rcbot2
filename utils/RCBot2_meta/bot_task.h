@@ -31,6 +31,7 @@
 #ifndef __RCBOT_TASK_H__
 #define __RCBOT_TASK_H__
 
+#include <memory>
 class CBot;
 class CBotSquad;
 class CBotSchedule;
@@ -569,7 +570,7 @@ class CBotFollowSquadLeader : public CBotTask
 {
 public:
 
-	CBotFollowSquadLeader ( CBotSquad *pSquad )
+	CBotFollowSquadLeader ( std::shared_ptr<CBotSquad> pSquad )
 	{
 		m_fLeaderSpeed = 0.0f;
 		m_pSquad = pSquad;
@@ -586,10 +587,10 @@ public:
 		sprintf(string,"CBotFollowSquadLeader");
 	}
 private:
-	CBotSquad *m_pSquad;
-	float m_fVisibleTime;
-	float m_fUpdateMovePosTime;
-	float m_fLeaderSpeed;
+	std::shared_ptr<CBotSquad> m_pSquad;
+	float m_fVisibleTime = 0.0f;
+	float m_fUpdateMovePosTime = 0.0f;
+	float m_fLeaderSpeed = 0.0f;
 	Vector m_vPos;
 	Vector m_vForward;
 };

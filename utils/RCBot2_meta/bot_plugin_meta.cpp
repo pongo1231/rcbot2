@@ -282,13 +282,11 @@ void RCBotPluginMeta::BroadcastTextMessage(const char *szMessage)
 
 void RCBotPluginMeta::Hook_PlayerRunCmd(CUserCmd *ucmd, IMoveHelper *moveHelper)
 {
-	static CBot *pBot;
-
 	CBaseEntity *pPlayer = META_IFACEPTR(CBaseEntity);
 
 	edict_t *pEdict = servergameents->BaseEntityToEdict(pPlayer);
 
-	pBot = CBots::getBotPointer(pEdict);
+	CBot *pBot = CBots::getBotPointer(pEdict);
 	
 	if ( pBot )
 	{
@@ -559,10 +557,8 @@ bool RCBotPluginMeta::Unload(char *error, size_t maxlen)
 	//if ( !bInitialised )
 	//	return;
 	
-	CBots::freeAllMemory();
 	CStrings::freeAllMemory();
 	CBotMods::freeMemory();
-	CAccessClients::freeMemory();
 	CBotEvents::freeMemory();
 	CWaypoints::freeMemory();
 	CWaypointTypes::freeMemory();
@@ -833,11 +829,11 @@ void RCBotPluginMeta::BotQuotaCheck() {
 
 		// Count Players
 		for (int i = 0; i < MAX_PLAYERS; ++i) {
-			CClient* client = CClients::get(i);
-			CBot* bot = CBots::get(i);
+			CClient *client = CClients::get(i);
+			CBot *pBot = CBots::get(i);
 
-			if (bot != NULL && bot->getEdict() != NULL && bot->inUse()) {
-				IPlayerInfo *p = playerinfomanager->GetPlayerInfo(bot->getEdict());
+			if (pBot != NULL && pBot->getEdict() != NULL && pBot->inUse()) {
+				IPlayerInfo *p = playerinfomanager->GetPlayerInfo(pBot->getEdict());
 
 				if (p->IsConnected() && p->IsFakeClient() && !p->IsHLTV()) {
 					bot_count++;
@@ -929,7 +925,7 @@ bool RCBotPluginMeta::Hook_LevelInit(const char *pMapName,
 	if ( pMod )
 		pMod->mapInit();
 
-	CBotSquads::FreeMemory();
+	CBotSquads::Clear();
 
 	CClients::setListenServerClient(NULL);
 
@@ -955,7 +951,7 @@ void RCBotPluginMeta::Hook_LevelShutdown()
 	CClients::initall();
 	CWaypointDistances::save();
 
-	CBots::freeMapMemory();	
+	CBots::freeMapMemory();
 	CWaypoints::init();
 
 	CBotGlobals::setMapRunning(false);

@@ -504,7 +504,7 @@ void CHLDMBot :: getTasks (unsigned int iIgnore)
 		if ( !m_pSchedules->isEmpty() && bCheckCurrent )
 		{
 			if ( m_CurrentUtil != next->getId() )
-				m_pSchedules->freeMemory();
+				m_pSchedules->clear();
 			else
 				break;
 		} 
@@ -623,7 +623,7 @@ bool CHLDMBot::checkStuck()
 			{
 				if ( !m_pSchedules->hasSchedule(SCHED_GRAVGUN_PICKUP) )
 				{
-					m_pSchedules->freeMemory();
+					m_pSchedules->clear();
 					CBotSchedule *pSched = new CBotSchedule(new CBotGravGunPickup(m_pCurrentWeapon,m_NearestPhysObj));
 					pSched->setID(SCHED_GRAVGUN_PICKUP);
 					m_pSchedules->add(pSched);

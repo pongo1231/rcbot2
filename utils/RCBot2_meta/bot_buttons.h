@@ -32,13 +32,13 @@
 #define __BOT_BUTTONS_H__
 
 #include <vector>
+#include <memory>
 
 class CBotButton
 {
 public:
 	CBotButton ( int iId )
 	{
-		memset(this,0,sizeof(CBotButton));
 		m_iButtonId = iId;
 		m_bTapped = false;		
 	}
@@ -72,33 +72,24 @@ public:
 
 	void hold ( float fFrom = 0.0, float fFor = 1.0f, float m_fLetGoTime = 0.0f );
 private:
-	int m_iButtonId;
-	float m_fTimeStart;
-	float m_fTimeEnd;
-	float m_fLetGoTime;
+	int m_iButtonId = 0;
+	float m_fTimeStart = 0.0f;
+	float m_fTimeEnd = 0.0f;
+	float m_fLetGoTime = 0.0f;
 
-	bool m_bTapped;
+	bool m_bTapped = false;
 };
 
 class CBotButtons
 {
 public:
 	CBotButtons();
-
-	void freeMemory ()
-	{
-		for (unsigned int i = 0; i < m_theButtons.size(); i ++ )
-		{			
-			delete m_theButtons[i];
-		}
-		
-		m_theButtons.clear();
-	}
+	~CBotButtons() = default;
 
 	void letGo (int iButtonId);
 	void holdButton ( int iButtonId, float fFrom = 0.0, float fFor = 1.0f, float m_fLetGoTime = 0.0f );
 
-	inline void add ( CBotButton *theButton );
+	inline void add ( int iInputType );
 
 	bool holdingButton ( int iButtonId );
 	bool canPressButton ( int iButtonId );
@@ -116,7 +107,7 @@ public:
 	void duck (float fFor = 1.0, float fFrom = 0);
 
 private:
-	std::vector<CBotButton*> m_theButtons;
-	bool m_bLetGoAll;
+	std::vector<std::unique_ptr<CBotButton>> m_theButtons;
+	bool m_bLetGoAll = false;
 };
 #endif

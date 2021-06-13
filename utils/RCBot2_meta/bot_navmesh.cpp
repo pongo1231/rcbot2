@@ -48,14 +48,6 @@ void CNavMeshNavigator :: updatePosition ()
 {
 }
 
-void CNavMeshNavigator :: freeMapMemory ()
-{
-}
-
-void CNavMeshNavigator :: freeAllMemory ()
-{
-}
-
 bool CNavMeshNavigator :: routeFound ()
 {
 	return false;

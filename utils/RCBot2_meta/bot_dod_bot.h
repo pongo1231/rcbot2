@@ -31,6 +31,9 @@
 #ifndef __DOD_RCBOT_H__
 #define __DOD_RCBOT_H__
 
+#include <array>
+#include <memory>
+
 #define TEAM_ALLIES 2
 #define TEAM_AXIS 3
 
@@ -146,8 +149,6 @@ public:
 	virtual void init (bool bVarInit=false);
 	void setup ();
 
-	virtual void freeMapMemory ();
-
 	//Vector getAimVector ( edict_t *pEntity );
 	virtual void modAim ( edict_t *pEntity, Vector &v_origin, 
 		Vector *v_desired_offset, Vector &v_size,
@@ -237,64 +238,64 @@ public:
 
 private:
 
-	int m_iSelectedClass;
+	int m_iSelectedClass = 0;
 
 	MyEHandle m_pCurrentWeapon;
 
-	CBaseHandle *m_Weapons;
+	CBaseHandle *m_Weapons = nullptr;
 
-	float m_fFixWeaponTime;
-	float m_flSprintTime;
+	float m_fFixWeaponTime = 0.0f;
+	float m_flSprintTime = 0.0f;
 
-	float m_flStamina;
-	bool m_bProne;
+	float m_flStamina = 0.0f;
+	bool m_bProne = false;
 
-	int m_iClip1;
-	int m_iClip2;
+	int m_iClip1 = 0;
+	int m_iClip2 = 0;
 
-	int m_iTeam; // either 2 / 3 TEAM_ALLIES/TEAM_AXIS
-	int m_iEnemyTeam; // is the opposite of m_iTeam to check for enemy things
+	int m_iTeam = 0; // either 2 / 3 TEAM_ALLIES/TEAM_AXIS
+	int m_iEnemyTeam = 0; // is the opposite of m_iTeam to check for enemy things
 
 	MyEHandle m_pNearestFlag;
 	MyEHandle m_pGoalFlag;
 
 	DOD_Class m_iClass;
-	float m_fShootTime;
-	float m_fZoomOrDeployTime;
+	float m_fShootTime = 0.0f;
+	float m_fZoomOrDeployTime = 0.0f;
 
-	float m_fProneTime;
+	float m_fProneTime = 0.0f;
 
 	// EHandles cos they will be destroyed soon
 	MyEHandle m_pEnemyRocket;
-	float m_fShoutRocket;
+	float m_fShoutRocket = 0.0f;
 	MyEHandle m_pEnemyGrenade;
-	float m_fShoutGrenade;
+	float m_fShoutGrenade = 0.0f;
 	MyEHandle m_pOwnGrenade;
 	MyEHandle m_pNearestSmokeToEnemy;
 
-	float m_fChangeClassTime;
-	bool m_bCheckClass;
-	bool m_bHasBomb;
+	float m_fChangeClassTime = 0.0f;
+	bool m_bCheckClass = false;
+	bool m_bHasBomb = false;
 
-	smoke_t m_CheckSmoke[MAX_PLAYERS];
+	std::array<smoke_t, MAX_PLAYERS> m_CheckSmoke {};
 
-	float m_fDeployMachineGunTime;
+	float m_fDeployMachineGunTime = 0.0f;
 	MyEHandle m_pNearestBomb; // "capture" bomb
 	MyEHandle m_pNearestPathBomb; // blocking path bomb
 	MyEHandle m_pNearestBreakable;
 	MyEHandle m_pNearestWeapon;
 
-	CPerceptron *m_pWantToProne;
+	std::unique_ptr<CPerceptron> m_pWantToProne;
 
-	float m_fLastRunForCover;
+	float m_fLastRunForCover = 0.0f;
 
 	eDODVoiceCMD m_LastHearVoiceCommand;
 
-	float m_fLastCaptureEvent;
-	float m_fNextCheckNeedAmmo;
-	float m_fNextCheckAlone; // to see if bot should tell others to stick together
+	float m_fLastCaptureEvent = 0.0f;
+	float m_fNextCheckNeedAmmo = 0.0f;
+	float m_fNextCheckAlone = 0.0f; // to see if bot should tell others to stick together
 
-	bool m_bDroppedAmmoThisRound;
+	bool m_bDroppedAmmoThisRound = false;
 
 	MyEHandle m_pNearestDeadTeamMate;
 };

@@ -1012,12 +1012,12 @@ void CClient :: clientDisconnected ()
 	// is bot?
 	CBot *pBot = CBots::getBotPointer(m_pPlayer);
 
-	if ( pBot != NULL )
+	if ( pBot )
 	{
 		if ( pBot->inUse() )
 		{
 			// free bots memory and other stuff
-			pBot->freeAllMemory();
+			pBot->reset();
 		}
 	}
 

@@ -638,7 +638,7 @@ void CBotDODAttackPoint :: execute (CBot *pBot,CBotSchedule *pSchedule)
 		if ( pBot->inSquad() && pBot->isSquadLeader() )
 		{
 			float fDanger = MAX_BELIEF;
-			IBotNavigator *pNav = pBot->getNavigator();
+			auto& pNav = pBot->getNavigator();
 
 			fDanger = pNav->getBelief(CDODMod::m_Flags.getWaypointAtFlag(m_iFlagID));
 
@@ -2076,7 +2076,7 @@ void CFindPathTask :: execute ( CBot *pBot, CBotSchedule *pSchedule )
 
 	if ( (m_iInt == 0) || (m_iInt == 1) )
 	{
-		IBotNavigator *pNav = pBot->getNavigator();
+		auto& pNav = pBot->getNavigator();
 
 		pBot->m_fWaypointStuckTime = 0;
 
@@ -2515,7 +2515,6 @@ void CSpyCheckAir :: execute ( CBot *pBot, CBotSchedule *pSchedule )
 	CBotTF2 *pBotTF2 = (CBotTF2*)pBot;
 	CBotWeapon *pWeapon;
 	CBotWeapon *pChooseWeapon;
-	CBotWeapons *pWeaponList;
 	static int iAttackProb;
 
 	if ( CTeamFortress2Mod::TF2_IsPlayerInvuln(pBot->getEdict()) )
@@ -2667,8 +2666,8 @@ void CSpyCheckAir :: execute ( CBot *pBot, CBotSchedule *pSchedule )
 	switch ( pBotTF2->getClass() )
 	{
 	case TF_CLASS_PYRO:
-
-		pWeaponList = pBot->getWeapons();
+	{
+		CBotWeapons *pWeaponList = pBot->getWeapons();
 
 		pChooseWeapon = pWeaponList->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
 		
@@ -2680,6 +2679,7 @@ void CSpyCheckAir :: execute ( CBot *pBot, CBotSchedule *pSchedule )
 			break;
 		}
 		// move down to melee if out of ammo
+	}
 	default:
 		iAttackProb = 75;
 		pChooseWeapon = pBot->getBestWeapon(NULL,true,true,true);
@@ -3582,7 +3582,7 @@ void CBotTFUseTeleporter :: execute (CBot *pBot,CBotSchedule *pSchedule)
 				
 				if ( (m_vLastOrigin - pBot->getOrigin()).Length() > 50 )
 				{
-					pBot->getNavigator()->freeMapMemory(); // restart navigator
+					pBot->getNavigator()->clear(); // restart navigator
 				
 					complete(); // finished
 				}

@@ -46,6 +46,7 @@
 #include "bot_squads.h"
 #include "bot_schedule.h"
 #include "bot_waypoint_locations.h"
+#include <memory>
 
 std::vector<CBotEvent*> CBotEvents :: m_theEvents;
 ///////////////////////////////////////////////////////
@@ -298,7 +299,6 @@ void CPlayerDeathEvent :: execute ( IBotEventInterface *pEvent )
 {
 	CBot *pBot = CBots::getBotPointer(m_pActivator);
 	const char *weapon = pEvent->getString("weapon",NULL);
-	CBotSquad *pPrevSquadLeadersSquad = NULL;
 	int iAttacker = pEvent->getInt("attacker",0);
 
 		edict_t *pAttacker = (iAttacker>0)?CBotGlobals::playerByUserId(iAttacker):NULL;
@@ -382,7 +382,8 @@ void CPlayerDeathEvent :: execute ( IBotEventInterface *pEvent )
 		CBots::botFunction(&func2);
 	}
 
-	if ( (pPrevSquadLeadersSquad = CBotSquads::FindSquadByLeader (m_pActivator)) != NULL )
+	auto pPrevSquadLeadersSquad = CBotSquads::FindSquadByLeader (m_pActivator);
+	if ( pPrevSquadLeadersSquad )
 	{
 		CBotSquads::ChangeLeader(pPrevSquadLeadersSquad);
 	}
@@ -449,7 +450,7 @@ void CTF2ObjectSapped :: execute ( IBotEventInterface *pEvent )
 		edict_t *pSpy = m_pActivator;
 		edict_t *pOwner = CBotGlobals::playerByUserId(owner);
 		edict_t *pSapper = INDEXENT(sapperid);
-		CBotTF2 *pBot = (CBotTF2*)CBots::getBotPointer(pOwner);
+		CBotTF2 *pBot = static_cast<CBotTF2*>(CBots::getBotPointer(pOwner));
 		
 		if ( pBot )
 		{
@@ -502,7 +503,7 @@ void CPlayerTeleported ::execute(IBotEventInterface *pEvent)
 
 		if ( pBot )
 		{
-			((CBotTF2*)pBot)->teleportedPlayer();
+			static_cast<CBotTF2*>(pBot)->teleportedPlayer();
 		}
 
 		CTeamFortress2Mod::updateTeleportTime(pPlayer);
@@ -526,7 +527,7 @@ void CPlayerHealed ::execute(IBotEventInterface *pEvent)
 
 			if ( pBot )
 			{
-				CBotTF2 *pBotTF2 = (CBotTF2*)pBot;
+				CBotTF2 *pBotTF2 = static_cast<CBotTF2*>(pBot);
 
 				if ( pBotTF2 && randomInt(0,1) )
 					pBotTF2->addVoiceCommand(TF_VC_THANKS);
@@ -537,7 +538,7 @@ void CPlayerHealed ::execute(IBotEventInterface *pEvent)
 
 		if ( pBot && pBot->isTF2() )
 		{
-			((CBotTF2*)pBot)->healedPlayer(m_pActivator,amount);
+			static_cast<CBotTF2*>(pBot)->healedPlayer(m_pActivator,amount);
 		}
 	}
 }
@@ -573,7 +574,7 @@ void CTF2ObjectDestroyed :: execute ( IBotEventInterface *pEvent )
 			{
 				edict_t *pOwner = pAttacker;
 				edict_t *pSapper = INDEXENT(index);
-				CBotTF2 *pBot = (CBotTF2*)CBots::getBotPointer(pOwner);
+				CBotTF2 *pBot = static_cast<CBotTF2*>(CBots::getBotPointer(pOwner));
 
 				if ( pBot )
 					pBot->sapperDestroyed(pSapper);
@@ -582,7 +583,7 @@ void CTF2ObjectDestroyed :: execute ( IBotEventInterface *pEvent )
 			}
 			else
 			{
-				CBotTF2 *pBot = (CBotTF2*)CBots::getBotPointer(m_pActivator);
+				CBotTF2 *pBot = static_cast<CBotTF2*>(CBots::getBotPointer(m_pActivator));
 
 				if ( pBot )
 				{
@@ -636,7 +637,7 @@ void CTF2UpgradeObjectEvent :: execute ( IBotEventInterface *pEvent )
 			edict_t *pOwner = CTeamFortress2Mod::getBuildingOwner (object, index);
 			CBotTF2 *pBot;
 
-			if ( (pBot = (CBotTF2*)CBots::getBotPointer(pOwner)) != NULL )
+			if ( (pBot = static_cast<CBotTF2*>(CBots::getBotPointer(pOwner))) )
 			{
 				pBot->addVoiceCommand(TF_VC_THANKS);
 			}
@@ -1133,7 +1134,7 @@ void CDODChangeClass :: execute ( IBotEventInterface *pEvent )
 
 		if ( pBot )
 		{
-			CDODBot *pDODBot = (CDODBot*)pBot;
+			CDODBot *pDODBot = static_cast<CDODBot*>(pBot);
 
 			pDODBot->selectedClass(pEvent->getInt("class"));
 		}

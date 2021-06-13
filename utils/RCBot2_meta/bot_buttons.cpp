@@ -57,16 +57,16 @@ void CBotButton :: hold ( float fFrom, float fFor, float fLetGoTime )
 
 CBotButtons :: CBotButtons()
 {
-	add(new CBotButton(IN_ATTACK));
-	add(new CBotButton(IN_ATTACK2));
-	add(new CBotButton(IN_DUCK));
-	add(new CBotButton(IN_JUMP));
-	add(new CBotButton(IN_RELOAD));
-	add(new CBotButton(IN_SPEED)); // for sprint
-	add(new CBotButton(IN_FORWARD)); // for ladders
-	add(new CBotButton(IN_USE)); // for chargers
-	add(new CBotButton(IN_ALT1)); // for proning
-	add(new CBotButton(IN_RUN)); // ????
+	add(IN_ATTACK);
+	add(IN_ATTACK2);
+	add(IN_DUCK);
+	add(IN_JUMP);
+	add(IN_RELOAD);
+	add(IN_SPEED); // for sprint
+	add(IN_FORWARD); // for ladders
+	add(IN_USE); // for chargers
+	add(IN_ALT1); // for proning
+	add(IN_RUN); // ????
 
 	m_bLetGoAll = false;
 }
@@ -130,9 +130,9 @@ bool CBotButtons :: canPressButton ( int iButtonId )
 	return false;		
 }
 
-void CBotButtons :: add ( CBotButton *theButton )
+void CBotButtons :: add ( int iInputType )
 {
-	m_theButtons.push_back(theButton);
+	m_theButtons.emplace_back(new CBotButton(iInputType));
 }
 
 bool CBotButtons :: holdingButton ( int iButtonId )

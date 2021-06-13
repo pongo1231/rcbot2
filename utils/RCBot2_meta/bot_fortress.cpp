@@ -333,7 +333,7 @@ void CBotFortress ::pickedUpFlag()
 { 
 	m_bHasFlag = true; 
 	// clear tasks
-	m_pSchedules->freeMemory();
+	m_pSchedules->clear();
 }
 
 void CBotFortress :: checkHealingValid ()
@@ -560,7 +560,7 @@ bool CBotFortress :: setVisible ( edict_t *pEntity, bool bVisible )
 									if ( !m_pSchedules->hasSchedule(SCHED_HEAL) )
 									{
 										// not healing -- what am I doing?
-										m_pSchedules->freeMemory();
+										m_pSchedules->clear();
 										m_pSchedules->addFront(new CBotTF2HealSched(m_pHeal));
 									}
 								}
@@ -574,7 +574,7 @@ bool CBotFortress :: setVisible ( edict_t *pEntity, bool bVisible )
 								if ( !m_pSchedules->hasSchedule(SCHED_HEAL) )
 								{
 									// not healing -- what am I doing?
-									m_pSchedules->freeMemory();
+									m_pSchedules->clear();
 									m_pSchedules->addFront(new CBotTF2HealSched(m_pHeal));
 								}
 							}
@@ -598,7 +598,7 @@ bool CBotFortress :: setVisible ( edict_t *pEntity, bool bVisible )
 						if (!m_pSchedules->hasSchedule(SCHED_HEAL))
 						{
 							// not healing -- what am I doing?
-							m_pSchedules->freeMemory();
+							m_pSchedules->clear();
 							m_pSchedules->addFront(new CBotTF2HealSched(m_pHeal));
 						}
 					}
@@ -849,7 +849,7 @@ void CBotTF2 :: buildingDestroyed ( int iType, edict_t *pAttacker, edict_t *pEdi
 			break;
 	}
 
-	m_pSchedules->freeMemory();
+	m_pSchedules->clear();
 
 	if ( pEdict && CBotGlobals::entityIsValid(pEdict) && pAttacker && CBotGlobals::entityIsValid(pAttacker) )
 	{
@@ -908,7 +908,7 @@ void CBotFortress :: detectedAsSpy( edict_t *pDetector, bool bDisguiseComprimise
 
 		if ( !m_pSchedules->hasSchedule(SCHED_GOOD_HIDE_SPOT) )
 		{
-			m_pSchedules->freeMemory();
+			m_pSchedules->clear();
 			m_pSchedules->addFront(new CGotoHideSpotSched(this,m_pAvoidEntity)); 
 		}
 	}
@@ -1384,7 +1384,7 @@ void CBotFortress :: modThink ()
 		{
 			if ( !m_pSchedules->isCurrentSchedule(SCHED_USE_TELE) )
 			{
-				m_pSchedules->freeMemory();
+				m_pSchedules->clear();
 				//m_pSchedules->removeSchedule(SCHED_USE_TELE);
 				m_pSchedules->addFront(new CBotUseTeleSched(m_pNearestTeleEntrance));
 
@@ -2425,7 +2425,7 @@ bool CBotTF2 :: canGotoWaypoint (Vector vPrevWaypoint, CWaypoint *pWaypoint, CWa
 			return hasFlag();
 		}
 
-		pSentry = NULL;
+		pSentry = nullptr;
 
 		if ( m_iClass == TF_CLASS_ENGINEER )
 			pSentry = m_pSentryGun.get();
@@ -2989,7 +2989,7 @@ void CBotTF2::modThink()
 		{
 			if (!m_pSchedules->hasSchedule(SCHED_HEAL))
 			{
-				m_pSchedules->freeMemory();
+				m_pSchedules->clear();
 				m_pSchedules->add(new CBotTF2HealSched(m_pHeal));
 			}
 
@@ -3069,7 +3069,7 @@ void CBotTF2::modThink()
 		{
 			if ((m_fRemoveSapTime < engine->Time()) && m_pNearestAllySentry && CBotGlobals::entityIsValid(m_pNearestAllySentry) && CTeamFortress2Mod::isSentrySapped(m_pNearestAllySentry))
 			{
-				m_pSchedules->freeMemory();
+				m_pSchedules->clear();
 				m_pSchedules->add(new CBotRemoveSapperSched(m_pNearestAllySentry, ENGI_SENTRY));
 				updateCondition(CONDITION_PARANOID);
 			}
@@ -3077,7 +3077,7 @@ void CBotTF2::modThink()
 			{
 				if (distanceFrom(m_pSentryGun) < 1024.0f) // only go back if I can remove the sapper
 				{
-					m_pSchedules->freeMemory();
+					m_pSchedules->clear();
 					m_pSchedules->add(new CBotRemoveSapperSched(m_pSentryGun, ENGI_SENTRY));
 					updateCondition(CONDITION_PARANOID);
 				}
@@ -3123,13 +3123,13 @@ void CBotTF2::modThink()
 			if (m_pNearestEnemySentry && (m_fSpySapTime < engine->Time()) && !CTeamFortress2Mod::isSentrySapped(m_pNearestEnemySentry) && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
 			{
 				m_fSpySapTime = engine->Time() + randomFloat(1.0f, 4.0f);
-				m_pSchedules->freeMemory();
+				m_pSchedules->clear();
 				m_pSchedules->add(new CBotSpySapBuildingSched(m_pNearestEnemySentry, ENGI_SENTRY));
 			}
 			else if (m_pNearestEnemyTeleporter && (m_fSpySapTime < engine->Time()) && !CTeamFortress2Mod::isTeleporterSapped(m_pNearestEnemyTeleporter) && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
 			{
 				m_fSpySapTime = engine->Time() + randomFloat(1.0f, 4.0f);
-				m_pSchedules->freeMemory();
+				m_pSchedules->clear();
 				m_pSchedules->add(new CBotSpySapBuildingSched(m_pNearestEnemyTeleporter, ENGI_TELE));
 			}
 		}
@@ -3144,7 +3144,7 @@ void CBotTF2::modThink()
 	{
 		if ( wantToFollowEnemy() )
 		{
-			m_pSchedules->freeMemory();
+			m_pSchedules->clear();
 			m_pSchedules->addFront(new CBotFollowLastEnemy(this, m_pLastEnemy,m_vLastSeeEnemy));
 			m_bLookedForEnemyLast = true;
 		}
@@ -4887,7 +4887,7 @@ void CBotTF2 :: getTasks ( unsigned int iIgnore )
 		if ( !m_pSchedules->isEmpty() && bCheckCurrent )
 		{
 			if ( m_CurrentUtil != next->getId() )
-				m_pSchedules->freeMemory();
+				m_pSchedules->clear();
 			else
 				break;
 		} 
@@ -4904,14 +4904,14 @@ void CBotTF2 :: getTasks ( unsigned int iIgnore )
 			{
 				int i = 0;
 
-				CClients::clientDebugMsg(this,BOT_DEBUG_UTIL,"-------- getTasks(%s) --------",m_szBotName);
+				CClients::clientDebugMsg(this,BOT_DEBUG_UTIL,"-------- getTasks(%s) --------",m_szBotName.c_str());
 
 				do
 				{
 					CClients::clientDebugMsg(this,BOT_DEBUG_UTIL,"%s = %0.3f",g_szUtils[next->getId()],next->getUtility(),this);
 				}while ( (++i<10) && ((next = utils.nextBest()) != NULL) );
 
-				CClients::clientDebugMsg(this,BOT_DEBUG_UTIL,"----END---- getTasks(%s) ----END----",m_szBotName);
+				CClients::clientDebugMsg(this,BOT_DEBUG_UTIL,"----END---- getTasks(%s) ----END----",m_szBotName.c_str());
 			}
 
 			utils.freeMemory();
@@ -7014,7 +7014,7 @@ void CBotFortress::teamFlagPickup ()
 
 void CBotTF2::roundWon(int iTeam, bool bFullRound )
 {
-	m_pSchedules->freeMemory();
+	m_pSchedules->clear();
 
 	if ( bFullRound )
 	{
@@ -7412,7 +7412,7 @@ bool CBotFF :: isEnemy ( edict_t *pEdict,bool bCheckWeapons )
 void CBotTF2::MannVsMachineWaveComplete()
 {
 	if ((m_iClass != TF_CLASS_ENGINEER) || !isCarrying())
-		m_pSchedules->freeMemory();
+		m_pSchedules->clear();
 
 	m_fLastKnownTeamFlagTime = 0.0f;
 	m_pPrevSpy = NULL;
@@ -7486,7 +7486,7 @@ void CBotTF2::MannVsMachineAlarmTriggered(Vector vLoc)
 
 	CBotSchedule *newSched = new CBotDefendSched(vLoc, m_fDefendTime / 2);
 
-	m_pSchedules->freeMemory();
+	m_pSchedules->clear();
 	m_pSchedules->add(newSched);
 	newSched->setID(SCHED_RETURN_TO_INTEL);
 }
@@ -7618,7 +7618,7 @@ void CBotTF2 :: enemyAtIntel ( Vector vPos, int type, int iArea )
 		if ( pWpt )
 		{
 			CBotSchedule *newSched = new CBotDefendSched(CWaypoints::getWaypointIndex(pWpt),randomFloat(1.0f,6.0f));
-			m_pSchedules->freeMemory();
+			m_pSchedules->clear();
 			m_pSchedules->add(newSched);
 			newSched->setID(SCHED_RETURN_TO_INTEL);
 			m_fDefendTime = engine->Time() + randomFloat(10.0f,20.0f);
@@ -7631,7 +7631,7 @@ void CBotTF2 :: buildingSapped ( eEngiBuild building, edict_t *pSapper, edict_t 
 {
 	static edict_t *pBuilding;
 
-	m_pSchedules->freeMemory();
+	m_pSchedules->clear();
 
 	if ( isVisible(pSpy) )
 	{
@@ -7656,7 +7656,7 @@ void CBotTF2 :: buildingSapped ( eEngiBuild building, edict_t *pSapper, edict_t 
 
 void CBotTF2 :: sapperDestroyed ( edict_t *pSapper )
 {
-	m_pSchedules->freeMemory();
+	m_pSchedules->clear();
 }
 
 CBotTF2::CBotTF2() 

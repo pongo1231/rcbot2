@@ -92,10 +92,6 @@ public:
 
 	//virtual void goBack () = 0;
 
-	virtual void freeMapMemory () = 0;		
-
-	virtual void freeAllMemory () = 0;
-
 	virtual bool routeFound () = 0;
 
 	virtual void clear () = 0;
@@ -139,13 +135,13 @@ public:
 
 protected:
 	Vector m_vGoal;
-	float m_fGoalDistance;
+	float m_fGoalDistance = 0.0f;
 	Vector m_vPreviousPoint;
 	Vector m_vDangerPoint;
-	bool m_bDangerPoint;
-	short int m_iBeliefTeam;
-	bool m_bBeliefChanged;
-	bool m_bLoadBelief;
+	bool m_bDangerPoint = false;
+	short int m_iBeliefTeam = 0;
+	bool m_bBeliefChanged = false;
+	bool m_bLoadBelief = false;
 };
 
 #define FL_ASTAR_CLOSED		1
@@ -505,10 +501,6 @@ public:
 
 	virtual void updatePosition ();
 
-	void freeMapMemory ();
-
-	void freeAllMemory ();
-
 	bool routeFound ();
 
 	bool hasNextPoint ();
@@ -523,7 +515,7 @@ public:
 
 	//Vector getEnemyPositionPinchPoint ( Vector vOrigin );
 private:
-	CNavMesh *m_pNavMesh;
+	std::unique_ptr<CNavMesh> m_pNavMesh;
 };
 
 #endif

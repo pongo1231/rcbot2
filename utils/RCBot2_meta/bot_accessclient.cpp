@@ -72,7 +72,6 @@ void CAccessClient :: giveAccessToClient ( CClient *pClient )
 
 void CAccessClients :: showUsers ( edict_t *pEntity )
 {
-	CAccessClient *pPlayer;
 	CClient *pClient;
 
 	CBotGlobals::botMessage(pEntity,0,"showing users...");
@@ -82,7 +81,7 @@ void CAccessClients :: showUsers ( edict_t *pEntity )
 
 	for ( unsigned int i = 0; i < m_Clients.size(); i ++ )
 	{
-		pPlayer = m_Clients[i];
+		auto& pPlayer = m_Clients[i];
 		
 		pClient = CClients::findClientBySteamID(pPlayer->getSteamID());
 		
@@ -121,17 +120,6 @@ void CAccessClients :: createFile ()
 	}
 	else
 		CBotGlobals::botMessage(NULL,0,"Error! Couldn't create config file %s",filename);
-}
-
-void CAccessClients :: freeMemory ()
-{
-	for ( unsigned int i = 0; i < m_Clients.size(); i ++ )
-	{
-		delete m_Clients[i];
-		m_Clients[i] = NULL;
-	}
-
-	m_Clients.clear();
 }
 
 void CAccessClients :: load ()
@@ -210,7 +198,7 @@ void CAccessClients :: load ()
 				continue;
 			}
 
-			m_Clients.push_back(new CAccessClient(szSteamId,iAccess));
+			m_Clients.emplace_back(new CAccessClient(szSteamId,iAccess));
 		}
 
 		fclose(fp);
@@ -242,7 +230,7 @@ void CAccessClients :: checkClientAccess ( CClient *pClient )
 {
 	for ( unsigned int i = 0; i < m_Clients.size(); i ++ )
 	{
-		CAccessClient *pAC = m_Clients[i];
+		auto& pAC = m_Clients[i];
 
 		if ( pAC->isForSteamId(pClient->getSteamID()) )
 			pAC->giveAccessToClient(pClient);
