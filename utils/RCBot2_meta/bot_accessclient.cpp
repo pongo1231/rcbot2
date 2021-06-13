@@ -34,11 +34,6 @@
 #include "bot_globals.h"
 
 #include <vector>
-///////////
-
-std::vector<CAccessClient*> CAccessClients :: m_Clients;
-
-///////////
 
 CAccessClient :: CAccessClient( char *szSteamId, int iAccessLevel )
 {

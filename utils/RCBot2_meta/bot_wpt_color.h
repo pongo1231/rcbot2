@@ -60,4 +60,6 @@ public:
 	static const WptColor white;
 };
 
+inline const WptColor WptColor::white = WptColor(255,255,255,255);
+
 #endif

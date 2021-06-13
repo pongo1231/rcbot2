@@ -32,10 +32,12 @@
 #define __RCBOT_CLIENT_H__
 
 #include <vector>
+#include <array>
 
 #include "bot_const.h"
 //#include "bot_ehandle.h"
 #include "bot_waypoint.h"
+#include "shareddefs.h"
 
 #define MAX_STORED_AUTOWAYPOINT 5
 
@@ -402,8 +404,8 @@ public:
 	static void initall () { for ( int i = 0; i < MAX_PLAYERS; i ++ ) { m_Clients[i].init(); } }
 	static void giveMessage (char *msg, float fTime = 0.1, edict_t *pPlayer = NULL );// NULL to everyone
 private:
-	static CClient m_Clients[MAX_PLAYERS];
-	static CClient *m_pListenServerClient;
-	static bool m_bClientsDebugging;
+	static inline std::array<CClient, MAX_PLAYERS> m_Clients {};
+	static inline CClient *m_pListenServerClient = nullptr;
+	static inline bool m_bClientsDebugging = false;
 };
 #endif

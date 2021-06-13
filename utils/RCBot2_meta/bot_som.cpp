@@ -36,8 +36,6 @@
 #include "bot_som.h"
 #include "bot_mtrand.h"
 
-float CSom :: m_fLearnRate = 1.0;
-
 CSom :: CSom ( int iW, int iH, int iIn )
 {       
 	unsigned short id = 0;

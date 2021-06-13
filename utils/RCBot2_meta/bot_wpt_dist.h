@@ -3,6 +3,8 @@
 
 #include "bot_waypoint.h"
 
+#include <array>
+
 #define WPT_DIST_VER 0x03
 
 #define BOT_WAYPOINT_DST_EXTENSION "rcd"
@@ -33,11 +35,11 @@ public:
 
 	static void reset ()
 	{
-		memset(m_Distances,0xFF,sizeof(int)*CWaypoints::MAX_WAYPOINTS*CWaypoints::MAX_WAYPOINTS);
+		m_Distances.fill({0xFF});
 	}
 private:
-	static int m_Distances [CWaypoints::MAX_WAYPOINTS][CWaypoints::MAX_WAYPOINTS];
-	static float m_fSaveTime;
+	static inline std::array<std::array<int, CWaypoints::MAX_WAYPOINTS>, CWaypoints::MAX_WAYPOINTS> m_Distances {};
+	static inline float m_fSaveTime = 0.0f;
 
 };
 

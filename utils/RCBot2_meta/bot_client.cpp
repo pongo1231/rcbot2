@@ -46,13 +46,7 @@
 #include "in_buttons.h"
 #include "bot_plugin_meta.h"
 
-// setup static client array
-CClient CClients::m_Clients[MAX_PLAYERS];
-CClient *CClients::m_pListenServerClient = NULL;
-bool CClients::m_bClientsDebugging = false;
-
 extern IVDebugOverlay *debugoverlay;
-
 
 void CToolTip::send(edict_t *pPlayer)
 {

@@ -58,17 +58,7 @@
 
 #include <vector>    //bir3yk
 #include <algorithm>
-
-int CWaypoints::m_iNumWaypoints = 0;
-CWaypoint CWaypoints::m_theWaypoints[CWaypoints::MAX_WAYPOINTS];
-float CWaypoints::m_fNextDrawWaypoints = 0;
-int CWaypoints::m_iWaypointTexture = 0;
-CWaypointVisibilityTable * CWaypoints::m_pVisibilityTable = NULL;
-std::vector<CWaypointType*> CWaypointTypes::m_Types;
-char CWaypoints::m_szAuthor[32];
-char CWaypoints::m_szModifiedBy[32];
-char CWaypoints::m_szWelcomeMessage[128];
-const WptColor WptColor::white = WptColor(255,255,255,255) ;
+#include <sstream>
 
 extern IVDebugOverlay *debugoverlay;
 
@@ -1726,22 +1716,20 @@ float CWaypoint :: distanceFrom ( Vector vOrigin )
 void CWaypoints :: updateWaypointPairs ( std::vector<edict_wpt_pair_t> *pPairs, int iWptFlag, const char *szClassname )
 {
 	register short int iSize = numWaypoints();
-	CWaypoint *pWpt;
 	edict_wpt_pair_t pair;
 	CTraceFilterWorldAndPropsOnly filter;
 	trace_t *trace_result;
 
-	pWpt = m_theWaypoints;
 	trace_result = CBotGlobals::getTraceResult();
 
 	Vector vOrigin;
 
-	for ( register short int i = 0; i < iSize; i ++ )
+	std::for_each(m_theWaypoints.begin(), std::min(m_theWaypoints.begin() + iSize, m_theWaypoints.end()), [&](CWaypoint& wpt)
 	{
-		if ( pWpt->isUsed() && pWpt->hasFlag(iWptFlag) )
+		if ( wpt.isUsed() && wpt.hasFlag(iWptFlag) )
 		{
-			pair.pWaypoint = pWpt;
-			pair.pEdict = CClassInterface::FindEntityByClassnameNearest(pWpt->getOrigin(),szClassname,300.0f);
+			pair.pWaypoint = &wpt;
+			pair.pEdict = CClassInterface::FindEntityByClassnameNearest(wpt.getOrigin(),szClassname,300.0f);
 
 			if ( pair.pEdict != NULL )
 			{
@@ -1755,9 +1743,7 @@ void CWaypoints :: updateWaypointPairs ( std::vector<edict_wpt_pair_t> *pPairs, 
 				pPairs->push_back(pair);
 			}
 		}
-
-		pWpt++;
-	}
+	});
 }
 /////////////////////////////////////////////////////////////////////////////////////
 // save waypoints (visibilitymade saves having to work out visibility again)
@@ -1863,7 +1849,9 @@ bool CWaypoints :: load (const char *szMapName)
 {
 	char filename[1024];	
 
-	strcpy(m_szWelcomeMessage,"No waypoints for this map");
+	std::ostringstream oss;
+
+	oss << "No waypoints for this map";
 
 	// open explicit map name waypoints
 	if ( szMapName == NULL )
@@ -1923,16 +1911,21 @@ bool CWaypoints :: load (const char *szMapName)
 		// load author information
 		fread(&authorinfo,sizeof(CWaypointAuthorInfo),1,bfp);
 
-		sprintf(m_szWelcomeMessage,"Waypoints by %s",authorinfo.szAuthor);
+		oss.clear();
+		oss << "Waypoints by " << authorinfo.szAuthor;
 
 		if ( authorinfo.szModifiedBy[0] != 0 )
 		{
-			strcat(m_szWelcomeMessage," modified by ");
-			strcat(m_szWelcomeMessage,authorinfo.szModifiedBy);
+			oss << " modified by " << authorinfo.szModifiedBy;
 		}
 	}
 	else
-		sprintf(m_szWelcomeMessage,"Waypoints Loaded");
+	{
+		oss.clear();
+		oss << "Waypoints Loaded";
+	}
+
+	m_szWelcomeMessage = oss.str();
 
 	int iSize = header.iNumWaypoints;
 
@@ -2099,21 +2092,8 @@ void CWaypoints :: drawWaypoints( CClient *pClient )
 
 void CWaypoints :: init (const char *pszAuthor, const char *pszModifiedBy)
 {
-	if ( pszAuthor != NULL )
-	{
-		strncpy(m_szAuthor,pszAuthor,31);
-		m_szAuthor[31] = 0;
-	}
-	else
-		m_szAuthor[0] = 0;
-
-	if ( pszModifiedBy != NULL )
-	{
-		strncpy(m_szModifiedBy,pszModifiedBy,31);
-		m_szModifiedBy[31] = 0;
-	}
-	else
-		m_szModifiedBy[0] = 0;
+	m_szAuthor = pszAuthor ? pszAuthor : "";
+	m_szModifiedBy = pszModifiedBy ? pszModifiedBy : "";
 
 	m_iNumWaypoints = 0;
 	m_fNextDrawWaypoints = 0;
@@ -2121,7 +2101,7 @@ void CWaypoints :: init (const char *pszAuthor, const char *pszModifiedBy)
 	for ( int i = 0; i < MAX_WAYPOINTS; i ++ )
 		m_theWaypoints[i].init();
 
-	Q_memset(m_theWaypoints,0,sizeof(CWaypoint)*MAX_WAYPOINTS);	
+	std::generate(m_theWaypoints.begin(), m_theWaypoints.end(), []() { return CWaypoint(); });
 
 	CWaypointLocations::Init();
 	CWaypointDistances::reset();

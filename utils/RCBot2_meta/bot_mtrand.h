@@ -74,6 +74,8 @@
 #ifndef MTRAND_H
 #define MTRAND_H
 
+#include <array>
+
 int randomInt ( int imin, int imax );
 float randomFloat ( float fmin, float fmax );
 
@@ -97,9 +99,9 @@ protected: // used by derived classes, otherwise not accessible; use the ()-oper
 private:
   static const int n = 624, m = 397; // compile time constants
 // the variables below are static (no duplicates can exist)
-  static unsigned long state[n]; // state vector array
-  static int p; // position in state array
-  static bool init; // true if init function is called
+  static inline std::array<unsigned long, n> state {}; // state vector array
+  static inline int p = 0; // position in state array
+  static inline bool init = false; // true if init function is called
 // private functions used to generate the pseudo random numbers
   unsigned long twiddle(unsigned long, unsigned long); // used by gen_state()
   void gen_state(); // generate new state

@@ -45,21 +45,6 @@
 #include "bot_waypoint_locations.h"
 #include "bot_perceptron.h"
 
-edict_t *CDODMod::m_pResourceEntity = NULL;
-CDODFlags CDODMod::m_Flags;
-edict_t * CDODMod::m_pPlayerResourceEntity = NULL;
-float CDODMod::m_fMapStartTime = 0.0f;
-edict_t * CDODMod::m_pGameRules = NULL;
-int CDODMod::m_iMapType = 0;
-bool CDODMod::m_bCommunalBombPoint = false;
-int CDODMod::m_iBombAreaAllies = 0;
-int CDODMod::m_iBombAreaAxis = 0;
-//CPerceptron *CDODMod::gNetAttackOrDefend = NULL;
-float CDODMod::fAttackProbLookUp[MAX_DOD_FLAGS+1][MAX_DOD_FLAGS+1];
-std::vector<edict_wpt_pair_t> CDODMod::m_BombWaypoints;
-std::vector<edict_wpt_pair_t> CDODMod::m_BreakableWaypoints;
-
-
 eDODVoiceCommand_t g_DODVoiceCommands[DOD_VC_INVALID] = 
 {
 	{DOD_VC_GOGOGO,"attack"},

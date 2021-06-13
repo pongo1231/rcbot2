@@ -36,6 +36,7 @@
 #include "bot_utility.h"
 
 #include <vector>
+#include <array>
 
 typedef enum
 {
@@ -59,7 +60,7 @@ public:
 
 	static void loadConfig ();
 	// 2 Teams / 2 Types Attack/Defend / 
-	static bot_util_t m_fUtils[UTIL_TYPE_MAX][BOT_UTIL_MAX][9];
+	static inline std::array<std::array<std::array<bot_util_t, 9>, BOT_UTIL_MAX>, UTIL_TYPE_MAX> m_fUtils {};
 };
 
 

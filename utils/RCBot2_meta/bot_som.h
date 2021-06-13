@@ -78,7 +78,7 @@ private:
 class CSom
 {
 public:
-	static float m_fLearnRate;
+	static inline float m_fLearnRate = 1.0f;
 
 	CSom ( int iW, int iH, int iIn );
 

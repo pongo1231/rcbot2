@@ -11,9 +11,6 @@ typedef struct
 	int maxwaypoints;
 }wpt_dist_hdr_t;
 
-int CWaypointDistances::m_Distances [CWaypoints::MAX_WAYPOINTS][CWaypoints::MAX_WAYPOINTS];
-float CWaypointDistances::m_fSaveTime = 0;
-
 void CWaypointDistances :: load ()
 {
 	char filename[1024];	
@@ -35,7 +32,7 @@ void CWaypointDistances :: load ()
 
 		if ( (hdr.maxwaypoints == CWaypoints::MAX_WAYPOINTS) && (hdr.numwaypoints == CWaypoints::numWaypoints()) && (hdr.version == WPT_DIST_VER) )
 		{
-			fread(m_Distances,sizeof(int),CWaypoints::MAX_WAYPOINTS * CWaypoints::MAX_WAYPOINTS,bfp);
+			fread(m_Distances.data(),sizeof(int),CWaypoints::MAX_WAYPOINTS * CWaypoints::MAX_WAYPOINTS,bfp);
 		}
 
 		m_fSaveTime = engine->Time() + 100.0f;
@@ -71,7 +68,7 @@ void CWaypointDistances :: save ()
 
 			fwrite(&hdr,sizeof(wpt_dist_hdr_t),1,bfp);
 
-			fwrite(m_Distances,sizeof(int),CWaypoints::MAX_WAYPOINTS * CWaypoints::MAX_WAYPOINTS,bfp);
+			fwrite(m_Distances.data(),sizeof(int),CWaypoints::MAX_WAYPOINTS * CWaypoints::MAX_WAYPOINTS,bfp);
 
 			m_fSaveTime = engine->Time() + 100.0f;
 

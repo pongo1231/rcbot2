@@ -50,55 +50,6 @@
 #include "bot_tf2_points.h"
 #include "bot_sigscan.h"
 
-eTFMapType CTeamFortress2Mod :: m_MapType = TF_MAP_CTF;
-tf_tele_t CTeamFortress2Mod :: m_Teleporters[MAX_PLAYERS];
-int CTeamFortress2Mod :: m_iArea = 0;
-float CTeamFortress2Mod::m_fSetupTime = 0.0f;
-float CTeamFortress2Mod::m_fRoundTime = 0.0f;
-MyEHandle CTeamFortress2Mod::m_pFlagCarrierRed = MyEHandle(NULL);
-MyEHandle CTeamFortress2Mod::m_pFlagCarrierBlue = MyEHandle(NULL);
-float CTeamFortress2Mod::m_fArenaPointOpenTime = 0.0f;
-float CTeamFortress2Mod::m_fPointTime = 0.0f;
-tf_sentry_t CTeamFortress2Mod::m_SentryGuns[MAX_PLAYERS];	// used to let bots know if sentries have been sapped or not
-tf_disp_t  CTeamFortress2Mod::m_Dispensers[MAX_PLAYERS];	// used to let bots know where friendly/enemy dispensers are
-MyEHandle CTeamFortress2Mod::m_pResourceEntity = MyEHandle(NULL);
-MyEHandle CTeamFortress2Mod::m_pGameRules = MyEHandle(NULL);
-bool CTeamFortress2Mod::m_bAttackDefendMap = false;
-int CTeamFortress2Mod::m_Cappers[MAX_CONTROL_POINTS];
-int CTeamFortress2Mod::m_iCapDefenders[MAX_CONTROL_POINTS];
-bool CTeamFortress2Mod::m_bHasRoundStarted = true;
-bool CTeamFortress2Mod::m_bDontClearPoints = false;
-int CTeamFortress2Mod::m_iFlagCarrierTeam = 0;
-MyEHandle CTeamFortress2Mod::m_pBoss = MyEHandle(NULL);
-bool CTeamFortress2Mod::m_bBossSummoned = false;
-MyEHandle CTeamFortress2Mod::pMediGuns[MAX_PLAYERS];
-CTFObjectiveResource CTeamFortress2Mod::m_ObjectiveResource = CTFObjectiveResource();
-CTeamControlPointMaster *CTeamFortress2Mod::m_PointMaster = NULL;
-CTeamRoundTimer CTeamFortress2Mod::m_Timer;
-MyEHandle CTeamFortress2Mod::m_PointMasterResource = MyEHandle(NULL);
-CTeamControlPointRound *CTeamFortress2Mod::m_pCurrentRound = NULL;
-bool CTeamFortress2Mod::bFlagStateDefault = true;
-MyEHandle CTeamFortress2Mod::m_pPayLoadBombBlue = MyEHandle(NULL);
-MyEHandle CTeamFortress2Mod::m_pPayLoadBombRed = MyEHandle(NULL);
-bool CTeamFortress2Mod::m_bRoundOver = false;
-int CTeamFortress2Mod::m_iWinningTeam = 0;
-int CTeamFortress2Mod::m_iLastWinningTeam = 0;
-Vector CTeamFortress2Mod::m_vFlagLocationBlue = Vector(0,0,0);
-Vector CTeamFortress2Mod::m_vFlagLocationRed = Vector(0,0,0);
-bool CTeamFortress2Mod::m_bFlagLocationValidBlue = false;
-bool CTeamFortress2Mod::m_bFlagLocationValidRed = false;
-bool CTeamFortress2Mod::m_bMVMFlagStartValid = false;
-Vector CTeamFortress2Mod::m_vMVMFlagStart = Vector(0,0,0);
-bool CTeamFortress2Mod::m_bMVMCapturePointValid = false;
-Vector CTeamFortress2Mod::m_vMVMCapturePoint = Vector(0,0,0);
-bool CTeamFortress2Mod::m_bMVMAlarmSounded = false;
-float CTeamFortress2Mod::m_fMVMCapturePointRadius = 0.0f;
-int CTeamFortress2Mod::m_iCapturePointWptID = -1;
-int CTeamFortress2Mod::m_iFlagPointWptID = -1;
-MyEHandle CTeamFortress2Mod::m_pNearestTankBoss = NULL;
-float CTeamFortress2Mod::m_fNearestTankDistance = 0.0f;
-Vector CTeamFortress2Mod::m_vNearestTankLocation = Vector(0, 0, 0);
-
 bool CTeamFortress2Mod::isSuddenDeath()
 {
 	// Bot weapon Randomizer -- leonardo
@@ -1013,7 +964,6 @@ edict_t *CTeamFortress2Mod::getBuilding (eEngiBuild object, edict_t *pOwner)
 edict_t *CTeamFortress2Mod ::getBuildingOwner (eEngiBuild object, short index)
 {
 	static short int i;
-	static tf_tele_t *tele;
 
 	switch ( object )
 	{
@@ -1033,16 +983,12 @@ edict_t *CTeamFortress2Mod ::getBuildingOwner (eEngiBuild object, short index)
 		}
 		break;
 	case ENGI_TELE:
-		tele = m_Teleporters;
-
-		for ( i = 0; i < MAX_PLAYERS; i ++ )
+		for ( tf_tele_t& tele : m_Teleporters )
 		{
-			if ( tele->entrance.get() && (ENTINDEX(tele->entrance.get())==index) )
+			if ( tele.entrance.get() && (ENTINDEX(tele.entrance.get())==index) )
 				return INDEXENT(i+1);
-			if ( tele->exit.get() && (ENTINDEX(tele->exit.get())==index) )
+			if ( tele.exit.get() && (ENTINDEX(tele.exit.get())==index) )
 				return INDEXENT(i+1);
-
-			tele++;
 		}
 		break;
 	}
@@ -1351,16 +1297,11 @@ void CTeamFortress2Mod::sentryBuilt(edict_t *pOwner, eEngiBuild type, edict_t *p
 bool CTeamFortress2Mod::isSentryGun (edict_t *pEdict )
 {
 	static short int i;
-	static tf_sentry_t *temp;
 
-	temp = m_SentryGuns;
-
-	for ( i = 0; i < MAX_PLAYERS; i ++ )
+	for ( tf_sentry_t& sentry : m_SentryGuns )
 	{
-		if ( temp->sentry == pEdict )
+		if ( sentry.sentry == pEdict )
 			return true;
-
-		temp++;
 	}
 
 	return false;

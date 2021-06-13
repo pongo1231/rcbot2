@@ -40,8 +40,6 @@
 
 #include <algorithm>
 
-std::deque<CBotSquad*> CBotSquads::m_theSquads;
-
 class CRemoveBotFromSquad : public IBotFunction
 {
 public:

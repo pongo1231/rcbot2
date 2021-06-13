@@ -34,9 +34,6 @@
 #include "bot_mtrand.h"
 #include "bot_perceptron.h"
 
-ga_nn_value CPerceptron::m_fDefaultLearnRate = 0.5f;
-ga_nn_value CPerceptron::m_fDefaultBias = 1.0f;
-
 CNeuron :: CNeuron ()
 {
 	m_weights = NULL;

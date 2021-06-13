@@ -46,8 +46,6 @@
 #include "bot_waypoint_locations.h"
 #include "bot_perceptron.h"
 
-std::vector<edict_wpt_pair_t> CHalfLifeDeathmatchMod::m_LiftWaypoints;
-
 void CBotMods :: parseFile ()
 {
 	char buffer[1024];

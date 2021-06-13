@@ -40,17 +40,11 @@
 #include <vector>    //bir3yk
 #include <algorithm>
 
-unsigned char CWaypointLocations :: g_iFailedWaypoints[CWaypoints::MAX_WAYPOINTS];
-WaypointList CWaypointLocations :: m_iLocations[MAX_WPT_BUCKETS][MAX_WPT_BUCKETS][MAX_WPT_BUCKETS];
-float CWaypointLocations :: m_fIgnoreSize = 0;
-Vector CWaypointLocations :: m_vIgnoreLoc = Vector(0,0,0);
-bool CWaypointLocations :: m_bIgnoreBox = false;
-
 #define READ_LOC(loc) abs((int)((int)(loc + HALF_MAX_MAP_SIZE) / BUCKET_SPACING));
 
-unsigned char *CWaypointLocations :: resetFailedWaypoints (WaypointList *iIgnoreWpts)
+std::array<unsigned char, CWaypoints::MAX_WAYPOINTS>& CWaypointLocations :: resetFailedWaypoints (WaypointList *iIgnoreWpts)
 {
-	Q_memset(g_iFailedWaypoints,0,sizeof(unsigned char)*CWaypoints::MAX_WAYPOINTS);
+	g_iFailedWaypoints.fill(0);
 	
 	if ( iIgnoreWpts )
 	{   
@@ -323,7 +317,7 @@ int CWaypointLocations :: GetCoverWaypoint ( Vector vPlayerOrigin, Vector vCover
 
 	getMinMaxs(iLoc,jLoc,kLoc,&iMinLoci,&iMinLocj,&iMinLock,&iMaxLoci,&iMaxLocj,&iMaxLock);
 
-	Q_memset(g_iFailedWaypoints,0,sizeof(unsigned char)*CWaypoints::MAX_WAYPOINTS);
+	g_iFailedWaypoints.fill(0);
 	
 	if ( iIgnoreWpts )
 	{   
@@ -682,7 +676,7 @@ int CWaypointLocations :: NearestWaypoint ( const Vector &vOrigin, float fNeares
 
 	if ( !bNearestAimingOnly )
 	{
-		Q_memset(g_iFailedWaypoints,0,sizeof(unsigned char)*CWaypoints::MAX_WAYPOINTS);
+		g_iFailedWaypoints.fill(0);
 		
 		if ( iFailedWpts )
 		{   

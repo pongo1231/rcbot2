@@ -36,9 +36,6 @@
 #include "bot_navigator.h"
 #include "bot_kv.h"
 
-std::vector <CBotProfile*> CBotProfiles :: m_Profiles;
-CBotProfile *CBotProfiles :: m_pDefaultProfile = NULL;
-
 CBotProfile :: CBotProfile ( CBotProfile &other )
 {
 	*this = other;

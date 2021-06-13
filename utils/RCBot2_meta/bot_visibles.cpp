@@ -42,11 +42,6 @@
 #include "ndebugoverlay.h"
 
 extern IVDebugOverlay *debugoverlay;
-////////////////////////////////////////////
-
-byte CBotVisibles :: m_bPvs[MAX_MAP_CLUSTERS/8];
-
-////////////////////////////////////////
 
 /*
 void CTF2FindFlagFunc :: execute ( edict_t *pEntity )
@@ -186,7 +181,7 @@ void CBotVisibles :: checkVisible ( edict_t *pEntity, int *iTicks, bool *bVisibl
 			*iTicks = *iTicks + 1;
 
 			clusterIndex = engine->GetClusterForOrigin( m_pBot->getOrigin() );
-			engine->GetPVSForCluster( clusterIndex, sizeof(m_bPvs), m_bPvs );
+			engine->GetPVSForCluster( clusterIndex, sizeof(m_bPvs), m_bPvs.data() );
 			
 			vEntityOrigin = CBotGlobals::entityOrigin(pEntity);
 
@@ -194,7 +189,7 @@ void CBotVisibles :: checkVisible ( edict_t *pEntity, int *iTicks, bool *bVisibl
 			if ( iIndex <= gpGlobals->maxClients )
 				vEntityOrigin + Vector(0,0,32);
 
-			playerInPVS = engine->CheckOriginInPVS(vEntityOrigin,m_bPvs,sizeof(m_bPvs));//engine->CheckBoxInPVS( vectorSurroundMins, vectorSurroundMaxs, m_bPvs, sizeof( m_bPvs ) );
+			playerInPVS = engine->CheckOriginInPVS(vEntityOrigin,m_bPvs.data(),sizeof(m_bPvs));//engine->CheckBoxInPVS( vectorSurroundMins, vectorSurroundMaxs, m_bPvs, sizeof( m_bPvs ) );
 
 			if ( playerInPVS )
 			{

@@ -97,9 +97,8 @@ protected:
 class CPerceptron : public CNeuron
 {
 public:
-
-	static ga_nn_value m_fDefaultLearnRate;// = 0.5f;
-	static ga_nn_value m_fDefaultBias;// = 1.0f;
+	static inline ga_nn_value m_fDefaultLearnRate = 0.5f;
+	static inline ga_nn_value m_fDefaultBias = 1.0f;
 
 	CPerceptron (unsigned short int iInputs);
 

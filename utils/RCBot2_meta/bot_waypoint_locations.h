@@ -33,6 +33,8 @@
 
 #include "bot_waypoint.h"
 
+#include <array>
+
 /*#define WAYPOINT_LOC(x)\
 	{\
 	m_iLocations[i][j][k].x;\
@@ -76,7 +78,7 @@ public:
 
 	static const int BUCKET_SPACING = (HALF_MAX_MAP_SIZE*2)/MAX_WPT_BUCKETS;
 
-	static unsigned char g_iFailedWaypoints [ CWaypoints::MAX_WAYPOINTS ];
+	static inline std::array<unsigned char, CWaypoints::MAX_WAYPOINTS> g_iFailedWaypoints {};
 	
 	static void AddWptLocation ( CWaypoint *pWaypoint, int iIndex );
 
@@ -85,7 +87,7 @@ public:
 		Init();
 	}
 
-	static unsigned char *resetFailedWaypoints (WaypointList *iIgnoreWpts);
+	static std::array<unsigned char, CWaypoints::MAX_WAYPOINTS>& resetFailedWaypoints (WaypointList *iIgnoreWpts);
 
 	static void Init()
 	{
@@ -150,9 +152,9 @@ public:
 private:
 	
 	//static dataStack<int> m_iLocations[MAX_WPT_BUCKETS][MAX_WPT_BUCKETS][MAX_WPT_BUCKETS];
-	static WaypointList m_iLocations[MAX_WPT_BUCKETS][MAX_WPT_BUCKETS][MAX_WPT_BUCKETS];
-	static float m_fIgnoreSize;
-	static Vector m_vIgnoreLoc;
-	static bool m_bIgnoreBox;
+	static inline std::array<std::array<std::array<WaypointList, MAX_WPT_BUCKETS>, MAX_WPT_BUCKETS>, MAX_WPT_BUCKETS> m_iLocations {};
+	static inline float m_fIgnoreSize = 0.0f;
+	static inline Vector m_vIgnoreLoc;
+	static inline bool m_bIgnoreBox = false;
 };
 #endif

@@ -39,6 +39,7 @@
 #include "bot_dod_bot.h"
 #include "bot_waypoint.h"
 #include "bot_tf2_points.h"
+#include "shareddefs.h"
 
 #define MAX_CAP_POINTS 32
 
@@ -53,6 +54,7 @@
 class CBotNeuralNet;
 
 #include <vector>
+#include <array>
 
 
 /*
@@ -548,7 +550,7 @@ public:
 
 	void addWaypointFlags (edict_t *pPlayer, edict_t *pEdict, int *iFlags, int *iArea, float *fMaxDistance );
 
-	static CDODFlags m_Flags;
+	static inline CDODFlags m_Flags;
 
 	static bool shouldAttack ( int iTeam ); // uses the neural net to return probability of attack
 
@@ -599,20 +601,20 @@ protected:
 
 	void freeMemory ();
 
-	static edict_t *m_pResourceEntity;
-	static edict_t *m_pPlayerResourceEntity;
-	static edict_t *m_pGameRules;
-	static float m_fMapStartTime;
-	static int m_iMapType;
-	static bool m_bCommunalBombPoint; // only one bomb suuply point for both teams
-	static int m_iBombAreaAllies;
-	static int m_iBombAreaAxis;
+	static inline edict_t *m_pResourceEntity = nullptr;
+	static inline edict_t *m_pPlayerResourceEntity = nullptr;
+	static inline edict_t *m_pGameRules = nullptr;
+	static inline float m_fMapStartTime = 0.0f;
+	static inline int m_iMapType = 0;
+	static inline bool m_bCommunalBombPoint = false; // only one bomb suuply point for both teams
+	static inline int m_iBombAreaAllies = 0;
+	static inline int m_iBombAreaAxis = 0;
 
-	static std::vector<edict_wpt_pair_t> m_BombWaypoints;
-	static std::vector<edict_wpt_pair_t> m_BreakableWaypoints;
+	static inline std::vector<edict_wpt_pair_t> m_BombWaypoints;
+	static inline std::vector<edict_wpt_pair_t> m_BreakableWaypoints;
 
 									// enemy			// team
-	static float fAttackProbLookUp[MAX_DOD_FLAGS+1][MAX_DOD_FLAGS+1];
+	static inline std::array<std::array<float, MAX_DOD_FLAGS+1>, MAX_DOD_FLAGS+1> fAttackProbLookUp {};
 };
 
 class CCounterStrikeSourceMod : public CBotMod
@@ -1099,7 +1101,7 @@ public:
 
 	static void resetDefenders ()
 	{
-		memset(m_iCapDefenders,0,sizeof(int)*MAX_CONTROL_POINTS);
+		m_iCapDefenders.fill(0);
 	}
 
 	static bool isDefending ( edict_t *pPlayer );//, int iCapIndex = -1 );
@@ -1119,7 +1121,7 @@ public:
 
 	static void resetCappers ()
 	{
-		memset(m_Cappers,0,sizeof(int)*MAX_CONTROL_POINTS);
+		m_Cappers.fill(0);
 	}
 
 	static int numPlayersOnTeam ( int iTeam, bool bAliveOnly = false );
@@ -1151,7 +1153,7 @@ public:
 	static void resetFlagStateToDefault() { bFlagStateDefault = true; }
 	static void setDontClearPoints ( bool bClear ) { m_bDontClearPoints = bClear; }
 	static bool dontClearPoints () { return m_bDontClearPoints; }
-	static CTFObjectiveResource m_ObjectiveResource;
+	static inline CTFObjectiveResource m_ObjectiveResource = CTFObjectiveResource();
 
 	static CTeamControlPointRound *getCurrentRound() { return m_pCurrentRound; }
 
@@ -1186,70 +1188,69 @@ private:
 
 	static float TF2_GetClassSpeed(int iClass);
 
-	static CTeamControlPointMaster *m_PointMaster;
-	static CTeamControlPointRound *m_pCurrentRound;
-	static MyEHandle m_PointMasterResource;
-	static CTeamRoundTimer m_Timer;
+	static inline CTeamControlPointMaster *m_PointMaster = nullptr;
+	static inline CTeamControlPointRound *m_pCurrentRound = nullptr;
+	static inline MyEHandle m_PointMasterResource;
+	static inline CTeamRoundTimer m_Timer;
 
-	static eTFMapType m_MapType;	
+	static inline eTFMapType m_MapType = TF_MAP_CTF;	
 
-	static MyEHandle m_pPayLoadBombRed;
-	static MyEHandle m_pPayLoadBombBlue;
+	static inline MyEHandle m_pPayLoadBombRed;
+	static inline MyEHandle m_pPayLoadBombBlue;
 
-	static tf_tele_t m_Teleporters[MAX_PLAYERS];	// used to let bots know who made a teleport ans where it goes
-	static tf_sentry_t m_SentryGuns[MAX_PLAYERS];	// used to let bots know if sentries have been sapped or not
-	static tf_disp_t  m_Dispensers[MAX_PLAYERS];	// used to let bots know where friendly/enemy dispensers are
+	static inline std::array<tf_tele_t, MAX_PLAYERS> m_Teleporters {};	// used to let bots know who made a teleport ans where it goes
+	static inline std::array<tf_sentry_t, MAX_PLAYERS> m_SentryGuns {};	// used to let bots know if sentries have been sapped or not
+	static inline std::array<tf_disp_t, MAX_PLAYERS> m_Dispensers {};	// used to let bots know where friendly/enemy dispensers are
 
-	static int m_iArea;
+	static inline int m_iArea = 0;
 
-	static float m_fSetupTime;
+	static inline float m_fSetupTime = 0.0f;
 
-	static float m_fRoundTime;
+	static inline float m_fRoundTime = 0.0f;
 
-	static MyEHandle m_pFlagCarrierRed;
-	static MyEHandle m_pFlagCarrierBlue;
+	static inline MyEHandle m_pFlagCarrierRed;
+	static inline MyEHandle m_pFlagCarrierBlue;
 
-	static float m_fPointTime;
-	static float m_fArenaPointOpenTime;
+	static inline float m_fPointTime = 0.0f;
+	static inline float m_fArenaPointOpenTime = 0.0f;
 
-	static MyEHandle m_pResourceEntity;
-	static MyEHandle m_pGameRules;
-	static bool m_bAttackDefendMap;
+	static inline MyEHandle m_pResourceEntity;
+	static inline MyEHandle m_pGameRules;
+	static inline bool m_bAttackDefendMap = false;
 
-	static int m_Cappers[MAX_CONTROL_POINTS];
-	static int m_iCapDefenders[MAX_CONTROL_POINTS];
+	static inline std::array<int, MAX_CONTROL_POINTS> m_Cappers {};
+	static inline std::array<int, MAX_CONTROL_POINTS> m_iCapDefenders {};
 
-	static bool m_bHasRoundStarted;
+	static inline bool m_bHasRoundStarted = true;
 
-	static int m_iFlagCarrierTeam;
-	static MyEHandle m_pBoss;
-	static bool m_bBossSummoned;
-	static bool bFlagStateDefault;
+	static inline int m_iFlagCarrierTeam = 0;
+	static inline MyEHandle m_pBoss;
+	static inline bool m_bBossSummoned = false;
+	static inline bool bFlagStateDefault = true;
 
-	static MyEHandle pMediGuns[MAX_PLAYERS];
-	static bool m_bDontClearPoints;
+	static inline std::array<MyEHandle, MAX_PLAYERS> pMediGuns {};
+	static inline bool m_bDontClearPoints = false;
 
-	static bool m_bRoundOver;
-	static int m_iWinningTeam;
-	static int m_iLastWinningTeam;
-	static Vector m_vFlagLocationBlue;
-	static bool m_bFlagLocationValidBlue;
-	static Vector m_vFlagLocationRed;
-	static bool m_bFlagLocationValidRed;
+	static inline bool m_bRoundOver = false;
+	static inline int m_iWinningTeam = 0;
+	static inline int m_iLastWinningTeam = 0;
+	static inline Vector m_vFlagLocationBlue;
+	static inline bool m_bFlagLocationValidBlue = false;
+	static inline Vector m_vFlagLocationRed;
+	static inline bool m_bFlagLocationValidRed = false;
 
+	static inline bool m_bMVMFlagStartValid = false;
+	static inline Vector m_vMVMFlagStart;
+	static inline bool m_bMVMCapturePointValid = false;
+	static inline Vector m_vMVMCapturePoint;
+	static inline bool m_bMVMAlarmSounded = false;
+	static inline float m_fMVMCapturePointRadius = 0.0f;
+	static inline int m_iCapturePointWptID = -1;
+	static inline int m_iFlagPointWptID = -1;
 
-	static bool m_bMVMFlagStartValid;
-	static Vector m_vMVMFlagStart;
-	static bool m_bMVMCapturePointValid;
-	static Vector m_vMVMCapturePoint;
-	static bool m_bMVMAlarmSounded;
-	static float m_fMVMCapturePointRadius;
-	static int m_iCapturePointWptID;
-	static int m_iFlagPointWptID;
-
-	static MyEHandle m_pNearestTankBoss;
-	static float m_fNearestTankDistance;
-	static Vector m_vNearestTankLocation;
+	static inline MyEHandle m_pNearestTankBoss;
+	static inline float m_fNearestTankDistance = 0.0f;
+	static inline Vector m_vNearestTankLocation;
 
 };
 
@@ -1280,7 +1281,7 @@ public:
 
 	//void entitySpawn ( edict_t *pEntity );
 private:
-	static std::vector<edict_wpt_pair_t> m_LiftWaypoints;
+	static inline std::vector<edict_wpt_pair_t> m_LiftWaypoints;
 };
 
 /*

@@ -4265,7 +4265,7 @@ void CBotTF2 :: getTasks ( unsigned int iIgnore )
 	static int iTeam;
 	static float fMetalPercent;
 	static Vector vOrigin;
-	static unsigned char *failedlist;
+	static std::array<unsigned char, CWaypoints::MAX_WAYPOINTS> failedlist {};
 
 	static bool bMoveObjs;
 
@@ -4339,7 +4339,7 @@ void CBotTF2 :: getTasks ( unsigned int iIgnore )
 	fDefendFlagUtility = 0.5;
 	iTeam = m_iTeam;
 	bHasFlag = hasFlag();
-	failedlist = NULL;
+	failedlist.fill(0);
 
 	numplayersonteam = CBotGlobals::numPlayersOnTeam(iTeam,false);
 	numplayersonteam_alive = CBotGlobals::numPlayersOnTeam(iTeam,true);
@@ -4405,12 +4405,12 @@ void CBotTF2 :: getTasks ( unsigned int iIgnore )
 
 		// don't go back to resupply if ubered
 		if (!bIsUbered)
-			pWaypointResupply = CWaypoints::getWaypoint(CWaypoints::getClosestFlagged(CWaypointTypes::W_FL_RESUPPLY, vOrigin, iTeam, &fResupplyDist, failedlist));
+			pWaypointResupply = CWaypoints::getWaypoint(CWaypoints::getClosestFlagged(CWaypointTypes::W_FL_RESUPPLY, vOrigin, iTeam, &fResupplyDist, failedlist.data()));
 
 		if ( bNeedAmmo )
-			pWaypointAmmo = CWaypoints::getWaypoint(CWaypoints::getClosestFlagged(CWaypointTypes::W_FL_AMMO,vOrigin,iTeam,&fAmmoDist,failedlist));
+			pWaypointAmmo = CWaypoints::getWaypoint(CWaypoints::getClosestFlagged(CWaypointTypes::W_FL_AMMO,vOrigin,iTeam,&fAmmoDist,failedlist.data()));
 		if ( bNeedHealth )
-			pWaypointHealth = CWaypoints::getWaypoint(CWaypoints::getClosestFlagged(CWaypointTypes::W_FL_HEALTH,vOrigin,iTeam,&fHealthDist,failedlist));
+			pWaypointHealth = CWaypoints::getWaypoint(CWaypoints::getClosestFlagged(CWaypointTypes::W_FL_HEALTH,vOrigin,iTeam,&fHealthDist,failedlist.data()));
 	}
 
 	if ( iClass == TF_CLASS_ENGINEER )

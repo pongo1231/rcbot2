@@ -38,6 +38,8 @@
 #ifndef __BOT_PROFILING_H__
 #define __BOT_PROFILING_H__
 
+#include <array>
+
 class CBot;
 
 class CProfileTimer
@@ -113,9 +115,15 @@ public:
 
 	static CProfileTimer *getTimer (int id);
 private:
-	static CProfileTimer m_Timers[PROFILING_TIMERS];
+	static inline std::array<CProfileTimer, PROFILING_TIMERS> m_Timers
+    {
+        CProfileTimer("CBots::botThink()"), // BOTS_THINK_TIMER
+        CProfileTimer("CBot::think()"), // BOT_THINK_TIMER
+        CProfileTimer("Nav::findRoute()"), // BOT_ROUTE_TIMER
+        CProfileTimer("updateVisibles()") // BOT_VISION_TIMER
+    };
 
-	static float m_fNextUpdate;
+	static inline float m_fNextUpdate = 0.0f;
 };
 
 #endif

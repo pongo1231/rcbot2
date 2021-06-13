@@ -34,18 +34,6 @@
 #include "bot_strings.h"
 #include "bot_client.h"
 
-// List of all timers
-CProfileTimer CProfileTimers :: m_Timers[PROFILING_TIMERS] = 
-{
-CProfileTimer("CBots::botThink()"), // BOTS_THINK_TIMER
-CProfileTimer("CBot::think()"), // BOT_THINK_TIMER
-CProfileTimer("Nav::findRoute()"), // BOT_ROUTE_TIMER
-CProfileTimer("updateVisibles()") // BOT_VISION_TIMER
-};
-
-// initialise update time
-float CProfileTimers::m_fNextUpdate = 0;
-
 // if windows USE THE QUERYPERFORMANCECOUNTER
 #ifdef _WIN32
 inline unsigned __int64 RDTSC(void)

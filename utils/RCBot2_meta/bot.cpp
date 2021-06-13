@@ -103,19 +103,6 @@
 
 //extern void HookPlayerRunCommand ( edict_t *edict );
 
-// instantiate bots -- make different for different mods
-CBot **CBots::m_Bots = NULL;
-
-const float CBot :: m_fAttackLowestHoldTime = 0.1f;
-const float CBot :: m_fAttackHighestHoldTime = 0.6f;
-const float CBot :: m_fAttackLowestLetGoTime = 0.1f;
-const float CBot :: m_fAttackHighestLetGoTime = 0.5f;
-
-int CBots :: m_iMaxBots = -1;
-int CBots :: m_iMinBots = -1;
-// add or kick bot time
-float  CBots :: m_flAddKickBotTime = 0;
-
 #define TICK_INTERVAL			(gpGlobals->interval_per_tick)
 #define TIME_TO_TICKS( dt )		( (int)( 0.5f + (float)(dt) / TICK_INTERVAL ) )
 

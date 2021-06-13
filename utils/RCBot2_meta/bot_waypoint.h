@@ -37,6 +37,9 @@
 #include <vector>
 using WaypointList = std::vector<int>;
 
+#include <array>
+#include <string>
+
 #include "bot.h"
 #include "bot_client.h"
 #include "bot_wpt_color.h"
@@ -199,7 +202,7 @@ public:
 	static CWaypointType *getTypeByFlags ( int iFlags );
 
 private:
-	static std::vector<CWaypointType*> m_Types;
+	static inline std::vector<CWaypointType*> m_Types;
 };
 
 class CWaypointTest
@@ -380,20 +383,20 @@ public:
 private:
 	Vector m_vOrigin;
 	// aim of vector (used with certain waypoint types)
-	int m_iAimYaw;
-	int m_iFlags;
-	int m_iArea;
-	float m_fRadius;
+	int m_iAimYaw = 0;
+	int m_iFlags = 0;
+	int m_iArea = 0;
+	float m_fRadius = 0.0f;
 	// not deleted
-	bool m_bUsed;
+	bool m_bUsed = false;
 	// paths to other waypoints
 	WaypointList m_thePaths;
 	// for W_FL_WAIT_GROUND waypoints
-	float m_fNextCheckGroundTime;
-	bool m_bHasGround;
+	float m_fNextCheckGroundTime = 0.0f;
+	bool m_bHasGround = false;
 	// Update m_iNumPathsTo (For display)
-	bool m_bIsReachable; 
-	float m_fCheckReachableTime;
+	bool m_bIsReachable = false; 
+	float m_fCheckReachableTime = 0.0f;
 	WaypointList m_PathsTo; // paths to this waypoint from other waypoints
 
 	std::vector<wpt_opens_later_t> m_OpensLaterInfo;
@@ -414,7 +417,7 @@ public:
 		if ( pWpt == NULL )
 			return -1;
 
-		return ((int)pWpt - (int)m_theWaypoints)/sizeof(CWaypoint);
+		return ((int)pWpt - (int)m_theWaypoints.data())/sizeof(CWaypoint);
 	}
 
 	static void autoFix ( bool bAutoFixNonArea );
@@ -488,19 +491,19 @@ public:
 
 	static void updateWaypointPairs ( std::vector<edict_wpt_pair_t> *pPairs, int iWptFlag, const char *szClassname );
 	static bool hasAuthor () { return (m_szAuthor[0]!=0); }
-	static const char *getAuthor() { return m_szAuthor; }
+	static const char *getAuthor() { return m_szAuthor.c_str(); }
 	static bool isModified () { return (m_szModifiedBy[0]!=0); }
-	static const char *getModifier() { return m_szModifiedBy; }
-	static const char *getWelcomeMessage () { return m_szWelcomeMessage; }
+	static const char *getModifier() { return m_szModifiedBy.c_str(); }
+	static const char *getWelcomeMessage () { return m_szWelcomeMessage.c_str(); }
 private:
-	static CWaypoint m_theWaypoints[MAX_WAYPOINTS];	
-	static int m_iNumWaypoints;
-	static float m_fNextDrawWaypoints;
-	static int m_iWaypointTexture;
-	static CWaypointVisibilityTable *m_pVisibilityTable;
-	static char m_szAuthor[32];
-	static char m_szModifiedBy[32];
-	static char m_szWelcomeMessage[128];
+	static inline std::array<CWaypoint, MAX_WAYPOINTS> m_theWaypoints {};	
+	static inline int m_iNumWaypoints = 0;
+	static inline float m_fNextDrawWaypoints = 0.0f;
+	static inline int m_iWaypointTexture = 0;
+	static inline CWaypointVisibilityTable *m_pVisibilityTable = nullptr;
+	static inline std::string m_szAuthor;
+	static inline std::string m_szModifiedBy;
+	static inline std::string m_szWelcomeMessage;
 };
 
 

@@ -305,10 +305,10 @@ class CBot
 {
 public:
 
-    static const float m_fAttackLowestHoldTime;
-	static const float m_fAttackHighestHoldTime;
-    static const float m_fAttackLowestLetGoTime;
-	static const float m_fAttackHighestLetGoTime;
+    static inline const float m_fAttackLowestHoldTime = 0.1f;
+	static inline const float m_fAttackHighestHoldTime = 0.6f;
+    static inline const float m_fAttackLowestLetGoTime = 0.1f;
+	static inline const float m_fAttackHighestLetGoTime = 0.5f;
 
 	CBot();
 
@@ -1092,14 +1092,14 @@ public:
 	static CBot *get ( edict_t *pPlayer ) { return m_Bots[slotOfEdict(pPlayer)]; }
 
 private:
-	static CBot **m_Bots;
+	static inline CBot **m_Bots = nullptr;
 
 	//config
-	static int m_iMaxBots;
-	static int m_iMinBots;
+	static inline int m_iMaxBots = -1;
+	static inline int m_iMinBots = -1;
 
 	// add or kick bot time
-	static float m_flAddKickBotTime;
+	static inline float m_flAddKickBotTime = 0.0f;
 
 };
 

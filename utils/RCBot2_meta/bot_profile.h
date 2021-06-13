@@ -52,8 +52,8 @@ public:
 	static CBotProfile *getDefaultProfile ();
 
 private:
-	static std::vector<CBotProfile*> m_Profiles;
-	static CBotProfile *m_pDefaultProfile;
+	static inline std::vector<CBotProfile*> m_Profiles;
+	static inline CBotProfile *m_pDefaultProfile = nullptr;
 };
 
 #endif

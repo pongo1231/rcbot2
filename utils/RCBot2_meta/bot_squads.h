@@ -263,7 +263,7 @@ public:
 	static void ChangeLeader ( CBotSquad *theSquad );
 
 private:
-	static std::deque<CBotSquad*> m_theSquads;
+	static inline std::deque<CBotSquad*> m_theSquads;
 };
 /*
 class CBotSquadE

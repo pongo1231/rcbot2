@@ -35,6 +35,7 @@
 #include "bot_globals.h"
 
 #include <set>
+#include <array>
 
 class CVisibleFunc
 {
@@ -114,7 +115,7 @@ private:
 	//static const int NUM_BYTES = 4; // 32 entities
 	//static const int MAX_INDEX = NUM_BYTES*8;
 	
-	static byte m_bPvs[MAX_MAP_CLUSTERS/8];
+	static inline std::array<byte, MAX_MAP_CLUSTERS/8> m_bPvs {};
 
 	CBot *m_pBot;
 	// current entity index we are checking
