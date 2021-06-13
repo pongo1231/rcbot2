@@ -198,7 +198,7 @@ CBotCommandInline BotGoto("bot_goto", CMD_ACCESS_DEBUG, [](CClient *pClient, Bot
 
 CBotCommandInline BotFlush("bot_flush", CMD_ACCESS_DEBUG, [](CClient *pClient, BotCommandArgs args)
 {
-	if ( pClient && pClient->getDebugBot()!=NULL )
+	if ( pClient && pClient->getDebugBot() )
 	{
 		edict_t *pEdict = pClient->getDebugBot();
 		CBot *pBot = CBots::getBotPointer(pEdict);
@@ -206,7 +206,7 @@ CBotCommandInline BotFlush("bot_flush", CMD_ACCESS_DEBUG, [](CClient *pClient, B
 		if ( pBot->inUse() )
 		{
 			CBotSchedules *pSched = pBot->getSchedule();
-			pSched->freeMemory();
+			pSched->clear();
 		}
 	}
 
@@ -240,7 +240,7 @@ CBotCommandInline BotTaskCommand("givetask", CMD_ACCESS_DEBUG, [](CClient *pClie
 			{
 				//int task = atoi(args[0]);
 
-				pSched->freeMemory();
+				pSched->clear();
 
 				// 83
 				if ( !strcmp(args[0],"pipe") )
