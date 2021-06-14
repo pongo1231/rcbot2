@@ -70,6 +70,7 @@
 #include <limits>
 #include <memory>
 #include <vector>
+#include <array>
 
 #if defined WIN32 && !defined snprintf
 #define snprintf _snprintf
