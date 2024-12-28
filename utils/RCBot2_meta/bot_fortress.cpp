@@ -1504,13 +1504,7 @@ bool CBotFortress :: isTeleporterUseful ( edict_t *pTele )
 
 void CBotFortress :: selectTeam ()
 {
-	char buffer[32];
-
-	int team = randomInt(1,2);
-
-	sprintf(buffer,"jointeam %d",team);
-
-	helpers->ClientCommand(m_pEdict,buffer);
+	helpers->ClientCommand(m_pEdict,"jointeam auto");
 }
 
 void CBotFortress :: selectClass ()
