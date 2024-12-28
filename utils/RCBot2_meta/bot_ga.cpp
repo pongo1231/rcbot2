@@ -83,7 +83,7 @@ ga_nn_value CPopulation :: totalFitness ()
 ga_nn_value CPopulation :: bestFitness ()
 {
 	float fFitness = 0.0f;
-	BOOL gotBestFitness = FALSE;
+	bool gotBestFitness = FALSE;
 	float fBestFitness = 0.0f;
 
 	for ( unsigned int i = 0; i < size(); i ++ )

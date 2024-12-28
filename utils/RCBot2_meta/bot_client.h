@@ -79,7 +79,7 @@ public:
 		return Vector((float)m_x,(float)m_y,(float)m_z);
 	}
 
-	inline BOOL IsVectorSet ()
+	inline bool IsVectorSet ()
 	{
 		return m_bVectorSet;
 	}
@@ -91,7 +91,7 @@ public:
 protected:
 	T m_x,m_y,m_z;
 
-	BOOL m_bVectorSet;
+	bool m_bVectorSet;
 };
 
 class CAutoWaypointCheck : public CTypeVector<vec_t>
