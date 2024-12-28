@@ -1247,6 +1247,9 @@ edict_t *CTeamFortress2Mod :: getPayloadBomb ( int team )
 
 void CTeamFortress2Mod :: roundReset ()
 {
+	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && g_pCVar->FindVar("tf_mvm_endless_force_on")->GetBool())
+		return;
+
 	if ( m_ObjectiveResource.m_ObjectiveResource.get() == NULL )
 	{
 		m_ObjectiveResource.m_ObjectiveResource = CClassInterface::FindEntityByNetClass(gpGlobals->maxClients+1, "CTFObjectiveResource");
