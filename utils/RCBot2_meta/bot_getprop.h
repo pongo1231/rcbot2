@@ -3,6 +3,8 @@
 
 #include <engine_wrappers.h>
 
+#include "bot_const.h"
+
 typedef enum
 {
 	TELE_ENTRANCE = 0,
