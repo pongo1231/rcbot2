@@ -322,10 +322,6 @@ bool CBotFortress :: startGame()
 	}
 	else if ( (m_iDesiredClass>0 && (m_iClass != m_iDesiredClass)) || (m_iClass == TF_CLASS_MAX) )
 	{
-		// can't change class in MVM during round!
-		if ( CTeamFortress2Mod::isMapType(TF_MAP_MVM) && CTeamFortress2Mod::hasRoundStarted() )
-			return true;
-
 		selectClass();
 	}
 	else
