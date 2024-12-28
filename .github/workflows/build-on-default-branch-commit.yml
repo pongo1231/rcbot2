@@ -2,7 +2,7 @@ name: Build Workflow
 
 on:
   push:
-    branches: [ master ]
+    branches: [ test ]
 
 jobs:
   create_release:
