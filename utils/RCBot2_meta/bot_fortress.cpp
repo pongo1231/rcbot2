@@ -7572,11 +7572,7 @@ void CBotTF2 :: enemyAtIntel ( Vector vPos, int type, int iArea )
 		{
 			//caxanga334: SDK 2013 doesn't like to create a Vector from an int
 			//TODO: Proper fix
-			#if SOURCE_ENGINE == SE_SDK2013 || SOURCE_ENGINE == SE_BMS
 			const Vector vCapAttacking = Vector(CTeamFortress2Mod::m_ObjectiveResource.getControlPointWaypoint(capindex));
-			#else
-			const Vector vCapAttacking = CTeamFortress2Mod::m_ObjectiveResource.getControlPointWaypoint(capindex);
-			#endif
 
 			if ( distanceFrom(vPos) > distanceFrom(vCapAttacking) )
 				return;
