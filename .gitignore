@@ -3,3 +3,7 @@ build/
 
 # SourceMod compiled plugins
 *.smx
+
+# VS & VS Code
+.vs/
+.vscode/
