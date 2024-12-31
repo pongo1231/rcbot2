@@ -6882,7 +6882,7 @@ bool CBotTF2 :: handleAttack ( CBotWeapon *pWeapon, edict_t *pEnemy )
 
 		if ((m_iClass == TF_CLASS_SNIPER) && (pWeapon->getID() == TF2_WEAPON_BOW))
 		{
-			stopMoving();
+			//stopMoving();
 
 			if (m_fSnipeAttackTime > engine->Time())
 			{
@@ -6900,7 +6900,7 @@ bool CBotTF2 :: handleAttack ( CBotWeapon *pWeapon, edict_t *pEnemy )
 		}
 		else if ( (m_iClass == TF_CLASS_SNIPER) && (pWeapon->getID() == TF2_WEAPON_SNIPERRIFLE) ) 
 		{
-			stopMoving();
+			//stopMoving();
 
 			if ( m_fSnipeAttackTime < engine->Time() )
 			{
