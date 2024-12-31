@@ -6894,7 +6894,7 @@ bool CBotTF2 :: handleAttack ( CBotWeapon *pWeapon, edict_t *pEnemy )
 				float fRandom = randomFloat(m_pProfile->m_fAimSkill, 1.0f);
 				float fSkill = 1.0f - fRandom;
 				
-				m_fSnipeAttackTime = engine->Time() + (fSkill*1.0f) + ((4.0f*fDistFactor)*fSkill);
+				m_fSnipeAttackTime = engine->Time() + ((4.0f*fDistFactor));
 				m_pButtons->letGo(IN_ATTACK);
 			}
 		}
@@ -6909,7 +6909,7 @@ bool CBotTF2 :: handleAttack ( CBotWeapon *pWeapon, edict_t *pEnemy )
 				else
 					secondaryAttack(); // zoom
 
-				m_fSnipeAttackTime = engine->Time() + randomFloat(0.5f,3.0f);
+				m_fSnipeAttackTime = engine->Time() + randomFloat(0.1f,0.8f);
 			}
 		}
 		else if ( !bSecAttack )
