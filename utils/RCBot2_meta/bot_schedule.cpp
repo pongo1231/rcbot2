@@ -430,16 +430,16 @@ CBotTauntSchedule :: CBotTauntSchedule ( edict_t *pPlayer, float fYaw )
 
 	AngleVectors(angles,&forward);
 
-	forward = forward/forward.Length();
+	//forward = forward/forward.Length();
 	vOrigin = CBotGlobals::entityOrigin(pPlayer);
 
 	vGoto = vOrigin + (forward*fTauntDist);
 
 	CBotGlobals::fixFloatAngle(&m_fYaw);
 
-	addTask(new CFindPathTask(vOrigin));
-	addTask(new CMoveToTask(vOrigin));
-	addTask(new CTF2_TauntTask(vOrigin,vGoto,fTauntDist));
+	addTask(new CFindPathTask(vGoto));
+	addTask(new CMoveToTask(vGoto));
+	addTask(new CTF2_TauntTask(pPlayer,vGoto,5.f));
 }
 
 void CBotTauntSchedule :: init ()

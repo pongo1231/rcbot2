@@ -1187,9 +1187,9 @@ private:
 class CTF2_TauntTask : public CBotTask
 {
 public:
-	CTF2_TauntTask ( Vector vPlayer, Vector vOrigin, float fDist )
+	CTF2_TauntTask ( edict_t* pPlayer, Vector vOrigin, float fDist )
 	{
-		m_vPlayer = vPlayer;
+		m_pPlayer = pPlayer;
 		m_vOrigin = vOrigin;
 		m_fDist = fDist;
 	}
@@ -1200,7 +1200,7 @@ public:
 
 	virtual void debugString ( char *string );
 private:
-	Vector m_vPlayer;
+	edict_t* m_pPlayer;
 	Vector m_vOrigin;
 	float m_fDist;
 	float m_fTime;

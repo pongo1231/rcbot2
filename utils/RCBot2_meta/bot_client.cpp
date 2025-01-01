@@ -265,8 +265,7 @@ void CClient :: think ()
 
 	#if SOURCE_ENGINE == SE_TF2
 		if ( (m_fMonitorHighFiveTime < engine->Time()) && (m_pPlayer != NULL) && (m_pPlayerInfo != NULL) && m_pPlayerInfo->IsConnected() && 
-			!m_pPlayerInfo->IsDead() && m_pPlayerInfo->IsPlayer() && !m_pPlayerInfo->IsObserver() && 
-			CClassInterface::getTF2HighFiveReady(m_pPlayer) )
+			CClassInterface::getTF2HighFiveReady(m_pPlayer) && !m_pPlayerInfo->IsFakeClient() && !m_pPlayerInfo->IsDead() && !m_pPlayerInfo->IsObserver() )
 		{
 			m_fMonitorHighFiveTime = engine->Time() + 0.25f;
 

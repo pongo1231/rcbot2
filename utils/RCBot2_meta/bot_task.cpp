@@ -2346,18 +2346,31 @@ void CTF2_TauntTask :: execute ( CBot *pBot, CBotSchedule *pSchedule )
 		return;
 	}
 
-	pBot->setLookVector(m_vPlayer);
-	pBot->setLookAtTask(LOOK_VECTOR);
+	pBot->lookAtEdict(m_pPlayer);
+	pBot->setLookAtTask(LOOK_EDICT, 10.f);
 
 	if ( pBot->distanceFrom(m_vOrigin) > m_fDist )
 		pBot->setMoveTo(m_vOrigin);
 	else
 	{
-		if ( pBot->DotProductFromOrigin(m_vPlayer) > 0.95 )
+		CBotTF2* pTF2Bot = static_cast<CBotTF2*>(pBot);
+		
+		if (pTF2Bot->getClass() == TF_CLASS_SPY)
 		{
-			((CBotTF2*)pBot)->taunt(true);
-			complete();
+			if (pTF2Bot->isCloaked()) {
+				pTF2Bot->spyUnCloak();
+				return;
+			}
+
+			if (pTF2Bot->isDisguised()) {
+				pTF2Bot->spyDisguise(pTF2Bot->getTeam(), 8);
+				return;
+			}
 		}
+
+		pTF2Bot->taunt(true);
+
+		complete();
 	}
 }
 
