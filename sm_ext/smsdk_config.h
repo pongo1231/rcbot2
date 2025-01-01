@@ -8,7 +8,7 @@
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License, version 3.0, as published by the
  * Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
@@ -40,8 +40,8 @@
  * @param error			Buffer to store error message.
  * @param maxlength		Maximum size of the error buffer.
  * @return				True on success, false on failure.
- * 						On failure, a null-terminated string will be stored 
- * 						in the error buffer, if the buffer is non-NULL and 
+ * 						On failure, a null-terminated string will be stored
+ * 						in the error buffer, if the buffer is non-NULL and
  * 						greater than 0 bytes in size.
  */
 bool SM_AcquireInterfaces(char *error, size_t maxlength);
@@ -51,34 +51,33 @@ bool SM_AcquireInterfaces(char *error, size_t maxlength);
  */
 void SM_UnsetInterfaces();
 
-/** 
+/**
  * Enable interfaces you want to use here by uncommenting lines.
  * These interfaces are all part of SourceMod's core.
  */
-//#define SMEXT_ENABLE_FORWARDSYS
-//#define SMEXT_ENABLE_HANDLESYS
-//#define SMEXT_ENABLE_PLAYERHELPERS
-//#define SMEXT_ENABLE_DBMANAGER
-//#define SMEXT_ENABLE_GAMECONF
-//#define SMEXT_ENABLE_MEMUTILS
-//#define SMEXT_ENABLE_GAMEHELPERS
-//#define SMEXT_ENABLE_TIMERSYS
-//#define SMEXT_ENABLE_THREADER
-//#define SMEXT_ENABLE_LIBSYS
-//#define SMEXT_ENABLE_MENUS
-//#define SMEXT_ENABLE_ADTFACTORY
-//#define SMEXT_ENABLE_PLUGINSYS
-//#define SMEXT_ENABLE_ADMINSYS
-//#define SMEXT_ENABLE_TEXTPARSERS
-//#define SMEXT_ENABLE_TRANSLATOR
-
+// #define SMEXT_ENABLE_FORWARDSYS
+// #define SMEXT_ENABLE_HANDLESYS
+// #define SMEXT_ENABLE_PLAYERHELPERS
+// #define SMEXT_ENABLE_DBMANAGER
+// #define SMEXT_ENABLE_GAMECONF
+// #define SMEXT_ENABLE_MEMUTILS
+// #define SMEXT_ENABLE_GAMEHELPERS
+// #define SMEXT_ENABLE_TIMERSYS
+// #define SMEXT_ENABLE_THREADER
+// #define SMEXT_ENABLE_LIBSYS
+// #define SMEXT_ENABLE_MENUS
+// #define SMEXT_ENABLE_ADTFACTORY
+// #define SMEXT_ENABLE_PLUGINSYS
+// #define SMEXT_ENABLE_ADMINSYS
+// #define SMEXT_ENABLE_TEXTPARSERS
+// #define SMEXT_ENABLE_TRANSLATOR
 
 /**
  * There is no need to edit below.
  */
 
-#include <IShareSys.h>
 #include <IExtensionSys.h>
+#include <IShareSys.h>
 extern SourceMod::IExtension *myself;
 extern SourceMod::IExtensionManager *smexts;
 extern SourceMod::IShareSys *sharesys;
@@ -104,7 +103,7 @@ extern SourceMod::IPlayerManager *sm_players;
 #if defined SMEXT_ENABLE_DBMANAGER
 #include <IDBDriver.h>
 extern SourceMod::IDBManager *sm_dbi;
-#endif 
+#endif
 
 #if defined SMEXT_ENABLE_GAMECONF
 #include <IGameConfigs.h>
@@ -139,7 +138,7 @@ extern SourceMod::ILibrarySys *sm_libsys;
 #if defined SMEXT_ENABLE_PLUGINSYS
 #include <IPluginSys.h>
 extern SourceMod::IPluginManager *sm_plsys;
-#endif 
+#endif
 
 #if defined SMEXT_ENABLE_MENUS
 #include <IMenuManager.h>
@@ -162,4 +161,3 @@ extern SourceMod::ITranslator *sm_translator;
 #endif
 
 #endif //_INCLUDE_SOURCEMOD_CONFIG_H_
-

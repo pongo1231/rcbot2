@@ -37,38 +37,44 @@
 
 class CSomNeuron
 {
-public:
-	~CSomNeuron ();
+  public:
+	~CSomNeuron();
 
-	CSomNeuron ();
+	CSomNeuron();
 
-	CSomNeuron ( unsigned short id, int iInp, int iX, int iY );
+	CSomNeuron(unsigned short id, int iInp, int iX, int iY);
 
 	inline float getX()
 	{
 		return m_iX;
 	}
 
-	inline float getY()	
+	inline float getY()
 	{
 		return m_iY;
 	}
 
-	void update ( std::vector<float> *inputs, float inf );
+	void update(std::vector<float> *inputs, float inf);
 
-	float distance ( std::vector <float> *inputs );
-	
-	std::vector <float> *weights ();
+	float distance(std::vector<float> *inputs);
 
-	void displayWeights ();
-	
-	float neighbourDistance ( CSomNeuron *other );
+	std::vector<float> *weights();
 
-	inline void setClassID ( unsigned short iId ) { m_iId = iId; }
+	void displayWeights();
 
-	inline unsigned short getClassID () { return m_iId; }
+	float neighbourDistance(CSomNeuron *other);
 
-private:
+	inline void setClassID(unsigned short iId)
+	{
+		m_iId = iId;
+	}
+
+	inline unsigned short getClassID()
+	{
+		return m_iId;
+	}
+
+  private:
 	std::vector<float> fWeights;
 	float m_iX;
 	float m_iY;
@@ -77,32 +83,32 @@ private:
 
 class CSom
 {
-public:
+  public:
 	static float m_fLearnRate;
 
-	CSom ( int iW, int iH, int iIn );
+	CSom(int iW, int iH, int iIn);
 
-	~CSom ();
+	~CSom();
 
-	CSomNeuron *getBMU ( std::vector <float> *inputs );
+	CSomNeuron *getBMU(std::vector<float> *inputs);
 
-	void updateAround ( std::vector<float> *inputs, CSomNeuron *bmu );
+	void updateAround(std::vector<float> *inputs, CSomNeuron *bmu);
 
-	CSomNeuron *input ( std::vector < std::vector <float> > *inputs );
+	CSomNeuron *input(std::vector<std::vector<float>> *inputs);
 
-	CSomNeuron *inputOne ( std::vector < float > *inputs );
+	CSomNeuron *inputOne(std::vector<float> *inputs);
 
-	void input ( std::vector < std::vector <float> > *inputs, int epochs );
+	void input(std::vector<std::vector<float>> *inputs, int epochs);
 
-	void display ();
+	void display();
 
-	inline unsigned int epochs ()
+	inline unsigned int epochs()
 	{
 		return m_iEpochs;
 	}
 
-private:
-	std::vector<CSomNeuron*> m_Neurons;
+  private:
+	std::vector<CSomNeuron *> m_Neurons;
 	int m_iH;
 	int m_iW;
 	float m_fNSize;

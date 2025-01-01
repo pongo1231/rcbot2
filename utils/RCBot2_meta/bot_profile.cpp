@@ -28,54 +28,45 @@
  *    version.
  *
  */
-#include "bot.h"
-#include "bot_strings.h"
-#include "bot_globals.h"
 #include "bot_profile.h"
-#include "bot_visibles.h"
-#include "bot_navigator.h"
+#include "bot.h"
+#include "bot_globals.h"
 #include "bot_kv.h"
+#include "bot_navigator.h"
+#include "bot_strings.h"
+#include "bot_visibles.h"
 
 #include "rcbot/logging.h"
 
-std::vector <CBotProfile*> CBotProfiles :: m_Profiles;
-CBotProfile *CBotProfiles :: m_pDefaultProfile = NULL;
+std::vector<CBotProfile *> CBotProfiles ::m_Profiles;
+CBotProfile *CBotProfiles ::m_pDefaultProfile = NULL;
 
-CBotProfile :: CBotProfile ( CBotProfile &other )
+CBotProfile ::CBotProfile(CBotProfile &other)
 {
-	*this = other;
+	*this     = other;
 
-	m_szName = CStrings::getString(other.m_szName);
+	m_szName  = CStrings::getString(other.m_szName);
 	m_szModel = CStrings::getString(other.m_szModel);
 }
 
-CBotProfile :: CBotProfile (
-		const char *szName, 
-		const char *szModel, 
-		int iTeam, 
-		int iVisionTicks, 
-		int iPathTicks, 
-		int iVisionTicksClients,
-		int iSensitivity,
-		float fBraveness,
-		float fAimSkill,
-		int iClass )
-{ 
+CBotProfile ::CBotProfile(const char *szName, const char *szModel, int iTeam, int iVisionTicks, int iPathTicks,
+                          int iVisionTicksClients, int iSensitivity, float fBraveness, float fAimSkill, int iClass)
+{
 	m_iVisionTicksClients = iVisionTicksClients;
-	m_iSensitivity = iSensitivity;
-	m_fBraveness = fBraveness;
-	m_fAimSkill = fAimSkill;
-	m_szName = CStrings::getString(szName);
-	m_szModel = CStrings::getString(szModel);
-	m_iPathTicks = iPathTicks;
-	m_iVisionTicks = iVisionTicks;
-	m_iTeam = iTeam;
-	m_iClass = iClass;
+	m_iSensitivity        = iSensitivity;
+	m_fBraveness          = fBraveness;
+	m_fAimSkill           = fAimSkill;
+	m_szName              = CStrings::getString(szName);
+	m_szModel             = CStrings::getString(szModel);
+	m_iPathTicks          = iPathTicks;
+	m_iVisionTicks        = iVisionTicks;
+	m_iTeam               = iTeam;
+	m_iClass              = iClass;
 }
 
-void CBotProfiles :: deleteProfiles ()
+void CBotProfiles ::deleteProfiles()
 {
-	for ( unsigned int i = 0; i < m_Profiles.size(); i ++ )
+	for (unsigned int i = 0; i < m_Profiles.size(); i++)
 	{
 		delete m_Profiles[i];
 		m_Profiles[i] = NULL;
@@ -88,7 +79,7 @@ void CBotProfiles :: deleteProfiles ()
 }
 
 // find profiles and setup list
-void CBotProfiles :: setupProfiles ()
+void CBotProfiles ::setupProfiles()
 {
 	unsigned int iId;
 	bool bDone;
@@ -96,31 +87,30 @@ void CBotProfiles :: setupProfiles ()
 	char filename[512];
 
 	// Setup Default profile
-	m_pDefaultProfile = new CBotProfile(
-		DEFAULT_BOT_NAME, // name
-		"default", // model (team in HL2DM)
-		-1, // iTeam
-		CBotVisibles::DEFAULT_MAX_TICKS, // vis ticks
-		IBotNavigator::MAX_PATH_TICKS, // path ticks
-		2, // visrevs clients
-		8.0f, // sensitivity
-		0.5f, // braveness
-		0.5f, // aim skill
-		-1 // class
-		);	
+	m_pDefaultProfile = new CBotProfile(DEFAULT_BOT_NAME,                // name
+	                                    "default",                       // model (team in HL2DM)
+	                                    -1,                              // iTeam
+	                                    CBotVisibles::DEFAULT_MAX_TICKS, // vis ticks
+	                                    IBotNavigator::MAX_PATH_TICKS,   // path ticks
+	                                    2,                               // visrevs clients
+	                                    8.0f,                            // sensitivity
+	                                    0.5f,                            // braveness
+	                                    0.5f,                            // aim skill
+	                                    -1                               // class
+	);
 
 	// read profiles
-	iId = 1;
-	bDone = false;
+	iId               = 1;
+	bDone             = false;
 
-	while ( (iId < 999) && (!bDone) )
+	while ((iId < 999) && (!bDone))
 	{
-		sprintf(szId,"%d",iId);
-		CBotGlobals::buildFileName(filename,szId,BOT_PROFILE_FOLDER,BOT_CONFIG_EXTENSION);
+		sprintf(szId, "%d", iId);
+		CBotGlobals::buildFileName(filename, szId, BOT_PROFILE_FOLDER, BOT_CONFIG_EXTENSION);
 
 		std::fstream fp = CBotGlobals::openFile(filename, std::fstream::in);
 
-		if ( fp )
+		if (fp)
 		{
 			// copy defaults
 			CBotProfile read = *m_pDefaultProfile;
@@ -140,19 +130,24 @@ void CBotProfiles :: setupProfiles ()
 
 			// config maps [ 0.0, 100.0 ] to [ 0.0, 1.0 ]
 			float flWholeValuePercent;
-			if (kvl.getFloat("aim_skill", &flWholeValuePercent)) {
+			if (kvl.getFloat("aim_skill", &flWholeValuePercent))
+			{
 				read.m_fAimSkill = flWholeValuePercent / 100.0f;
-			} else if (kvl.getFloat("aimskill", &flWholeValuePercent)) {
+			}
+			else if (kvl.getFloat("aimskill", &flWholeValuePercent))
+			{
 				// *someone* wrote a broken bot profile generator.
 				// most of the profiles did not actually have working aim skill values
 				// we'll go ahead and allow it, but I have to express my displeasure about the matter in some way
 				logger->Log(LogLevel::WARN,
-						"Incorrect option 'aimskill' on bot profile \"%s\". "
-						"Did you mean 'aim_skill'?", filename);
+				            "Incorrect option 'aimskill' on bot profile \"%s\". "
+				            "Did you mean 'aim_skill'?",
+				            filename);
 				read.m_fAimSkill = flWholeValuePercent / 100.0f;
 			}
-			
-			if (kvl.getFloat("braveness", &flWholeValuePercent)) {
+
+			if (kvl.getFloat("braveness", &flWholeValuePercent))
+			{
 				read.m_fBraveness = flWholeValuePercent / 100.0f;
 			}
 
@@ -166,32 +161,32 @@ void CBotProfiles :: setupProfiles ()
 			logger->Log(LogLevel::DEBUG, "Bot profile \"%s\" not found", filename);
 		}
 
-		iId ++;
+		iId++;
 	}
-
 }
 
-CBotProfile *CBotProfiles :: getDefaultProfile ()
+CBotProfile *CBotProfiles ::getDefaultProfile()
 {
-	if ( m_pDefaultProfile == NULL )
-		logger->Log(LogLevel::FATAL, "Default profile is NULL (Caused by memory problem, bad initialisation or overwrite) Exiting..");
+	if (m_pDefaultProfile == NULL)
+		logger->Log(LogLevel::FATAL,
+		            "Default profile is NULL (Caused by memory problem, bad initialisation or overwrite) Exiting..");
 
 	return m_pDefaultProfile;
 }
 
 // return a profile unused by a bot
-CBotProfile *CBotProfiles :: getRandomFreeProfile ()
+CBotProfile *CBotProfiles ::getRandomFreeProfile()
 {
 	unsigned int i;
-	std::vector<CBotProfile*> freeProfiles;
-	
-	for ( i = 0; i < m_Profiles.size(); i ++ )
+	std::vector<CBotProfile *> freeProfiles;
+
+	for (i = 0; i < m_Profiles.size(); i++)
 	{
-		if ( !CBots::findBotByProfile(m_Profiles[i]) )
+		if (!CBots::findBotByProfile(m_Profiles[i]))
 			freeProfiles.push_back(m_Profiles[i]);
 	}
 
-	if ( freeProfiles.empty() )
+	if (freeProfiles.empty())
 		return nullptr;
-	return freeProfiles[ randomInt(0, freeProfiles.size() - 1) ];
+	return freeProfiles[randomInt(0, freeProfiles.size() - 1)];
 }

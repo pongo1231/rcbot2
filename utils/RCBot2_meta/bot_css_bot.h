@@ -34,23 +34,26 @@
 // bot for CS Source
 class CCSSBot : public CBot
 {
-public:
+  public:
+	bool isCSS()
+	{
+		return true;
+	}
 
-	bool isCSS () { return true; }
-
-	void init ();
+	void init();
 	void setup();
 
-	bool startGame ();
+	bool startGame();
 
-	void died ();
+	void died();
 
-	void spawnInit ();
+	void spawnInit();
 
-	bool isAlive ();
+	bool isAlive();
 
-	bool isEnemy ( edict_t *pEdict,bool bCheckWeapons = true );
-private:
+	bool isEnemy(edict_t *pEdict, bool bCheckWeapons = true);
+
+  private:
 	// blah blah
 };
 

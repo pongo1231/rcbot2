@@ -28,18 +28,17 @@
  *    version.
  */
 
-CBotCommandInline ShowUsersCommand("show", CMD_ACCESS_USERS | CMD_ACCESS_DEDICATED, [](CClient *pClient, BotCommandArgs args)
-{
-	edict_t *pEntity = NULL;
+CBotCommandInline ShowUsersCommand("show", CMD_ACCESS_USERS | CMD_ACCESS_DEDICATED,
+                                   [](CClient *pClient, BotCommandArgs args)
+                                   {
+	                                   edict_t *pEntity = NULL;
 
-	if ( pClient )
-		pEntity = pClient->getPlayer();
+	                                   if (pClient)
+		                                   pEntity = pClient->getPlayer();
 
-	CAccessClients::showUsers(pEntity);
+	                                   CAccessClients::showUsers(pEntity);
 
-	return COMMAND_ACCESSED;
-});
+	                                   return COMMAND_ACCESSED;
+                                   });
 
-CBotSubcommands UserSubcommands("users", CMD_ACCESS_DEDICATED, {
-	&ShowUsersCommand
-});
+CBotSubcommands UserSubcommands("users", CMD_ACCESS_DEDICATED, { &ShowUsersCommand });

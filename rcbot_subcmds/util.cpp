@@ -28,187 +28,199 @@
  *    version.
  */
 
-CBotCommandInline SearchCommand("search", CMD_ACCESS_UTIL, [](CClient *pClient, BotCommandArgs args)
-{
-	int i = 0;
-
-	edict_t *pPlayer = pClient->getPlayer();
-	edict_t *pEdict;
-	float fDistance;
-	string_t model;
-
-	for ( i = 0; i < gpGlobals->maxEntities; i ++ )
-	{
-		pEdict = INDEXENT(i);
-
-		if ( pEdict )
-		{
-			if ( !pEdict->IsFree() )
-			{
-				if ( pEdict->m_pNetworkable && pEdict->GetIServerEntity() )
-				{				
-					if ( (fDistance=(CBotGlobals::entityOrigin(pEdict) - CBotGlobals::entityOrigin(pPlayer)).Length()) < 128 )
-					{
-						float fVelocity;
-						Vector v;
-
-						if ( CClassInterface::getVelocity(pEdict,&v) )
-							fVelocity = v.Length();
-						else
-							fVelocity = 0;
-
-						model = pEdict->GetIServerEntity()->GetModelName();
-				
-						CBotGlobals::botMessage(pPlayer,0,"(%d) D:%0.2f C:'%s', Mid:%d, Mn:'%s' Health=%d, Tm:%d, Fl:%d, Spd=%0.2f",i,fDistance,pEdict->GetClassName(),pEdict->GetIServerEntity()->GetModelIndex(),model.ToCStr(),(int)CClassInterface::getPlayerHealth(pEdict),(int)CClassInterface::getTeam(pEdict),pEdict->m_fStateFlags,fVelocity );
-					}
-				}
-			}
-		}
-	}
-
-	return COMMAND_ACCESSED;
-
-});
-
-CBotCommandInline SetTeleportUtilCommand("set_teleport", CMD_ACCESS_UTIL, [](CClient *pClient, BotCommandArgs args)
-{
-	if ( pClient )
-	{
-		pClient->setTeleportVector();
-		engine->ClientPrintf(pClient->getPlayer(),"Teleport Position Remembered!");
-		return COMMAND_ACCESSED;
-	}
-
-	return COMMAND_ERROR;
-}, "usage: remembers where you want to teleport");
-
-CBotCommandInline TeleportUtilCommand("teleport", CMD_ACCESS_UTIL, [](CClient *pClient, BotCommandArgs args)
-{
-	if ( pClient )
-	{
-		Vector *vTeleport;
-
-		vTeleport = pClient->getTeleportVector();
-
-		if ( vTeleport != NULL )
-		{
-			CBotGlobals::teleportPlayer(pClient->getPlayer(),*vTeleport);
-			//CRCBotPlugin::HudTextMessage(pClient->getPlayer(),"teleported to your remembered location");
-			CBotGlobals::botMessage(pClient->getPlayer(),0,"teleported to your remembered location");
-
-			return COMMAND_ACCESSED;
-		}
-	}
-
-	return COMMAND_ERROR;
-}, "usage: first use set_teleport, then this command to go there");
-
-CBotCommandInline NoClipCommand("noclip", CMD_ACCESS_UTIL, [](CClient *pClient, BotCommandArgs args)
-{
-
-	edict_t *pEntity = NULL;
-
-	if ( pClient )
-		pEntity = pClient->getPlayer();
-
-	if ( pEntity )
+CBotCommandInline SearchCommand(
+    "search", CMD_ACCESS_UTIL,
+    [](CClient *pClient, BotCommandArgs args)
     {
-		char msg[256];
-		byte *movetype = CClassInterface::getMoveTypePointer(pEntity);
+	    int i            = 0;
 
-		
-       if ( (*movetype & 15) != MOVETYPE_NOCLIP )
-	   {
-           *movetype &= ~15;
-		   *movetype |= MOVETYPE_NOCLIP;
-	   }
-       else
-	   {
-		   *movetype &= ~15;
-		   *movetype |= MOVETYPE_WALK;
-	   }
+	    edict_t *pPlayer = pClient->getPlayer();
+	    edict_t *pEdict;
+	    float fDistance;
+	    string_t model;
 
-	   sprintf(msg,"%s used no_clip %d on self\n",pClient->getName(),((*movetype & 15) == MOVETYPE_NOCLIP));
-           
-	  // CRCBotPlugin::HudTextMessage(pEntity,msg);
-	   CBotGlobals::botMessage(pEntity,0,msg);
-	   return COMMAND_ACCESSED;
-    }
+	    for (i = 0; i < gpGlobals->maxEntities; i++)
+	    {
+		    pEdict = INDEXENT(i);
 
-	return COMMAND_ERROR;
-}, "fly through walls , yeah!");
+		    if (pEdict)
+		    {
+			    if (!pEdict->IsFree())
+			    {
+				    if (pEdict->m_pNetworkable && pEdict->GetIServerEntity())
+				    {
+					    if ((fDistance =
+					             (CBotGlobals::entityOrigin(pEdict) - CBotGlobals::entityOrigin(pPlayer)).Length())
+					        < 128)
+					    {
+						    float fVelocity;
+						    Vector v;
 
-CBotCommandInline GodModeUtilCommand("god", CMD_ACCESS_UTIL, [](CClient *pClient, BotCommandArgs args)
-{
-	if ( pClient )
-	{
-		edict_t *pEntity = pClient->getPlayer();
+						    if (CClassInterface::getVelocity(pEdict, &v))
+							    fVelocity = v.Length();
+						    else
+							    fVelocity = 0;
 
-		if ( pEntity )
-		{
-			int *playerflags = CClassInterface::getPlayerFlagsPointer(pEntity);
+						    model = pEdict->GetIServerEntity()->GetModelName();
 
-			if ( playerflags )
-			{
-				char msg[256];
+						    CBotGlobals::botMessage(
+						        pPlayer, 0, "(%d) D:%0.2f C:'%s', Mid:%d, Mn:'%s' Health=%d, Tm:%d, Fl:%d, Spd=%0.2f",
+						        i, fDistance, pEdict->GetClassName(), pEdict->GetIServerEntity()->GetModelIndex(),
+						        model.ToCStr(), (int)CClassInterface::getPlayerHealth(pEdict),
+						        (int)CClassInterface::getTeam(pEdict), pEdict->m_fStateFlags, fVelocity);
+					    }
+				    }
+			    }
+		    }
+	    }
 
-				if ( *playerflags & FL_GODMODE )
-					*playerflags &= ~FL_GODMODE;
-				else
-					*playerflags |= FL_GODMODE;
+	    return COMMAND_ACCESSED;
+    });
 
-				sprintf(msg,"god mode %s",(*playerflags & FL_GODMODE)?"enabled":"disabled");
-				
-				//CRCBotPlugin::HudTextMessage(pEntity,msg);
-				CBotGlobals::botMessage(pEntity,0,msg);
+CBotCommandInline SetTeleportUtilCommand(
+    "set_teleport", CMD_ACCESS_UTIL,
+    [](CClient *pClient, BotCommandArgs args)
+    {
+	    if (pClient)
+	    {
+		    pClient->setTeleportVector();
+		    engine->ClientPrintf(pClient->getPlayer(), "Teleport Position Remembered!");
+		    return COMMAND_ACCESSED;
+	    }
 
-				return COMMAND_ACCESSED;
+	    return COMMAND_ERROR;
+    },
+    "usage: remembers where you want to teleport");
 
-			}
-		}
-	}
+CBotCommandInline TeleportUtilCommand(
+    "teleport", CMD_ACCESS_UTIL,
+    [](CClient *pClient, BotCommandArgs args)
+    {
+	    if (pClient)
+	    {
+		    Vector *vTeleport;
 
-	return COMMAND_ERROR;
-}, "usage: toggle for invulnerability!");
+		    vTeleport = pClient->getTeleportVector();
 
-CBotCommandInline NoTouchCommand("notouch", CMD_ACCESS_UTIL, [](CClient *pClient, BotCommandArgs args)
-{
+		    if (vTeleport != NULL)
+		    {
+			    CBotGlobals::teleportPlayer(pClient->getPlayer(), *vTeleport);
+			    // CRCBotPlugin::HudTextMessage(pClient->getPlayer(),"teleported to your remembered location");
+			    CBotGlobals::botMessage(pClient->getPlayer(), 0, "teleported to your remembered location");
 
-	if ( pClient )
-	{
-		edict_t *pEntity = pClient->getPlayer();
+			    return COMMAND_ACCESSED;
+		    }
+	    }
 
-		if ( pEntity )
-		{
-			int *playerflags = CClassInterface::getPlayerFlagsPointer(pEntity);
+	    return COMMAND_ERROR;
+    },
+    "usage: first use set_teleport, then this command to go there");
 
-			if ( playerflags )
-			{
-				char msg[256];
+CBotCommandInline NoClipCommand(
+    "noclip", CMD_ACCESS_UTIL,
+    [](CClient *pClient, BotCommandArgs args)
+    {
+	    edict_t *pEntity = NULL;
 
-				if ( *playerflags & FL_DONTTOUCH )
-					*playerflags &= ~FL_DONTTOUCH;
-				else
-					*playerflags |= FL_DONTTOUCH;
+	    if (pClient)
+		    pEntity = pClient->getPlayer();
 
-				sprintf(msg,"notouch mode %s",(*playerflags & FL_DONTTOUCH)?"enabled":"disabled");
-				CBotGlobals::botMessage(NULL,0,msg);
-				//CRCBotPlugin::HudTextMessage(pEntity,msg);
+	    if (pEntity)
+	    {
+		    char msg[256];
+		    byte *movetype = CClassInterface::getMoveTypePointer(pEntity);
 
-				return COMMAND_ACCESSED;
+		    if ((*movetype & 15) != MOVETYPE_NOCLIP)
+		    {
+			    *movetype &= ~15;
+			    *movetype |= MOVETYPE_NOCLIP;
+		    }
+		    else
+		    {
+			    *movetype &= ~15;
+			    *movetype |= MOVETYPE_WALK;
+		    }
 
-			}
-		}
-	}
+		    sprintf(msg, "%s used no_clip %d on self\n", pClient->getName(), ((*movetype & 15) == MOVETYPE_NOCLIP));
 
-	return COMMAND_ERROR;
-}, "don't set off capture points etc");
+		    // CRCBotPlugin::HudTextMessage(pEntity,msg);
+		    CBotGlobals::botMessage(pEntity, 0, msg);
+		    return COMMAND_ACCESSED;
+	    }
 
-CBotSubcommands UtilSubcommands("util", CMD_ACCESS_DEDICATED, {
-	&SearchCommand,
-	&SetTeleportUtilCommand,
-	&TeleportUtilCommand,
-	&NoClipCommand,
-	&GodModeUtilCommand,
-	&NoTouchCommand
-});
+	    return COMMAND_ERROR;
+    },
+    "fly through walls , yeah!");
+
+CBotCommandInline GodModeUtilCommand(
+    "god", CMD_ACCESS_UTIL,
+    [](CClient *pClient, BotCommandArgs args)
+    {
+	    if (pClient)
+	    {
+		    edict_t *pEntity = pClient->getPlayer();
+
+		    if (pEntity)
+		    {
+			    int *playerflags = CClassInterface::getPlayerFlagsPointer(pEntity);
+
+			    if (playerflags)
+			    {
+				    char msg[256];
+
+				    if (*playerflags & FL_GODMODE)
+					    *playerflags &= ~FL_GODMODE;
+				    else
+					    *playerflags |= FL_GODMODE;
+
+				    sprintf(msg, "god mode %s", (*playerflags & FL_GODMODE) ? "enabled" : "disabled");
+
+				    // CRCBotPlugin::HudTextMessage(pEntity,msg);
+				    CBotGlobals::botMessage(pEntity, 0, msg);
+
+				    return COMMAND_ACCESSED;
+			    }
+		    }
+	    }
+
+	    return COMMAND_ERROR;
+    },
+    "usage: toggle for invulnerability!");
+
+CBotCommandInline NoTouchCommand(
+    "notouch", CMD_ACCESS_UTIL,
+    [](CClient *pClient, BotCommandArgs args)
+    {
+	    if (pClient)
+	    {
+		    edict_t *pEntity = pClient->getPlayer();
+
+		    if (pEntity)
+		    {
+			    int *playerflags = CClassInterface::getPlayerFlagsPointer(pEntity);
+
+			    if (playerflags)
+			    {
+				    char msg[256];
+
+				    if (*playerflags & FL_DONTTOUCH)
+					    *playerflags &= ~FL_DONTTOUCH;
+				    else
+					    *playerflags |= FL_DONTTOUCH;
+
+				    sprintf(msg, "notouch mode %s", (*playerflags & FL_DONTTOUCH) ? "enabled" : "disabled");
+				    CBotGlobals::botMessage(NULL, 0, msg);
+				    // CRCBotPlugin::HudTextMessage(pEntity,msg);
+
+				    return COMMAND_ACCESSED;
+			    }
+		    }
+	    }
+
+	    return COMMAND_ERROR;
+    },
+    "don't set off capture points etc");
+
+CBotSubcommands UtilSubcommands("util", CMD_ACCESS_DEDICATED,
+                                { &SearchCommand, &SetTeleportUtilCommand, &TeleportUtilCommand, &NoClipCommand,
+                                  &GodModeUtilCommand, &NoTouchCommand });

@@ -6,7 +6,7 @@
  * ======================================================
  *
  * This software is provided 'as-is', without any express or implied warranty.
- * In no event will the authors be held liable for any damages arising from 
+ * In no event will the authors be held liable for any damages arising from
  * the use of this software.
  *
  * This sample plugin is public domain.
@@ -44,11 +44,11 @@
 #ifndef __BOT_PLUGIN_META_H__
 #define __BOT_PLUGIN_META_H__
 
+#include "engine_wrappers.h"
 #include <ISmmPlugin.h>
 #include <igameevents.h>
 #include <iplayerinfo.h>
 #include <sh_vector.h>
-#include "engine_wrappers.h"
 #include <shareddefs.h>
 
 #if defined SM_EXT
@@ -64,38 +64,32 @@ class IMoveHelper;
 
 class RCBotPluginMeta : public ISmmPlugin, public IMetamodListener
 {
-public:
+  public:
 	bool Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late);
 	bool Unload(char *error, size_t maxlen);
 	bool Pause(char *error, size_t maxlen);
 	bool Unpause(char *error, size_t maxlen);
 	void AllPluginsLoaded();
-public: //IMetamodListener stuff
-	void OnVSPListening(IServerPluginCallbacks *iface);
-public: //hooks
 
+  public: // IMetamodListener stuff
+	void OnVSPListening(IServerPluginCallbacks *iface);
+
+  public: // hooks
 	void Hook_ServerActivate(edict_t *pEdictList, int edictCount, int clientMax);
-	bool Hook_LevelInit(const char *pMapName,
-		char const *pMapEntities,
-		char const *pOldLevel,
-		char const *pLandmarkName,
-		bool loadGame,
-		bool background);
+	bool Hook_LevelInit(const char *pMapName, char const *pMapEntities, char const *pOldLevel,
+	                    char const *pLandmarkName, bool loadGame, bool background);
 	void Hook_GameFrame(bool simulating);
 	void Hook_LevelShutdown(void);
 	void Hook_ClientActive(edict_t *pEntity, bool bLoadGame);
 	void Hook_ClientDisconnect(edict_t *pEntity);
 	void Hook_ClientPutInServer(edict_t *pEntity, char const *playername);
-	
-	//Called for a game event.  Same definition as server plugins???
-	bool FireGameEvent( IGameEvent *pevent, bool bDontBroadcast );
+
+	// Called for a game event.  Same definition as server plugins???
+	bool FireGameEvent(IGameEvent *pevent, bool bDontBroadcast);
 	void Hook_PlayerRunCmd(CUserCmd *ucmd, IMoveHelper *moveHelper);
-	
-	bool Hook_ClientConnect(edict_t *pEntity, 
-		const char *pszName,
-		const char *pszAddress,
-		char *reject,
-		int maxrejectlen);
+
+	bool Hook_ClientConnect(edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject,
+	                        int maxrejectlen);
 
 	static void HudTextMessage(edict_t *pEntity, const char *szMessage);
 	static void BroadcastTextMessage(const char *szMessage);
@@ -106,13 +100,12 @@ public: //hooks
 	void Hook_ClientCommand(edict_t *pEntity);
 #endif
 
-public: // SourceMod
+  public: // SourceMod
 #if defined SM_EXT
-	void *OnMetamodQuery(const char* iface, int *ret);
+	void *OnMetamodQuery(const char *iface, int *ret);
 #endif
 
-public:
-
+  public:
 	const char *GetAuthor();
 	const char *GetName();
 	const char *GetDescription();
@@ -122,7 +115,7 @@ public:
 	const char *GetDate();
 	const char *GetLogTag();
 
-private:
+  private:
 #if defined SM_EXT
 	void BindToSourcemod();
 #endif
@@ -133,7 +126,7 @@ private:
 	float m_fBotQuotaTimer;
 	int m_iTargetBots[MAX_PLAYERS];
 
-	void BotQuotaCheck( void );
+	void BotQuotaCheck(void);
 };
 
 extern RCBotPluginMeta g_RCBotPluginMeta;

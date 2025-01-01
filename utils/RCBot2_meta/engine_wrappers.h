@@ -6,7 +6,7 @@
  * ======================================================
  *
  * This software is provided 'as-is', without any express or implied warranty.
- * In no event will the authors be held liable for any damages arising from 
+ * In no event will the authors be held liable for any damages arising from
  * the use of this software.
  *
  * This sample plugin is public domain.
@@ -33,7 +33,7 @@ extern CGlobalVars *gpGlobals;
 #define GetEngineFactory engineFactory
 #define GetServerFactory serverFactory
 #define MM_Format snprintf
-#define	GetCGlobals	pGlobals
+#define GetCGlobals pGlobals
 #else
 #define MM_Format g_SMAPI->Format
 #endif
@@ -44,7 +44,7 @@ extern CGlobalVars *gpGlobals;
  */
 class CCommand
 {
-public:
+  public:
 	const char *ArgS()
 	{
 		return engine->Cmd_Args();
@@ -95,4 +95,3 @@ inline edict_t *PEntityOfEntIndex(int iEntIndex)
 #endif
 
 #endif //_INCLUDE_SOURCE_ENGINE_WRAPPERS_
-

@@ -8,7 +8,7 @@
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License, version 3.0, as published by the
  * Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
@@ -29,71 +29,71 @@
 
 #include <ISmmPluginExt.h>
 #include <stdarg.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #if defined _MSC_VER
-	#define DLL_EXPORT				extern "C" __declspec(dllexport)
-	#define openlib(lib)			LoadLibrary(lib)
-	#define closelib(lib)			FreeLibrary(lib)
-	#define findsym(lib, sym)		GetProcAddress(lib, sym)
-	#define PLATFORM_EXT			".dll"
-	#define vsnprintf				_vsnprintf
-	#define PATH_SEP_CHAR			"\\"
-	#include <Windows.h>
+#define DLL_EXPORT extern "C" __declspec(dllexport)
+#define openlib(lib) LoadLibrary(lib)
+#define closelib(lib) FreeLibrary(lib)
+#define findsym(lib, sym) GetProcAddress(lib, sym)
+#define PLATFORM_EXT ".dll"
+#define vsnprintf _vsnprintf
+#define PATH_SEP_CHAR "\\"
+#include <Windows.h>
 #else
-	#define DLL_EXPORT				extern "C" __attribute__((visibility("default")))
-	#define openlib(lib)			dlopen(lib, RTLD_NOW)
-	#define closelib(lib)			dlclose(lib)
-	#define findsym(lib, sym)		dlsym(lib, sym)
-	#if defined __linux__
-	#define PLATFORM_EXT			".so"
-	#elif defined __APPLE__
-	#define PLATFORM_EXT			".dylib"
-	#endif
-	typedef void *					HINSTANCE;
-	#define PATH_SEP_CHAR			"/"
-	#include <dlfcn.h>
+#define DLL_EXPORT extern "C" __attribute__((visibility("default")))
+#define openlib(lib) dlopen(lib, RTLD_NOW)
+#define closelib(lib) dlclose(lib)
+#define findsym(lib, sym) dlsym(lib, sym)
+#if defined __linux__
+#define PLATFORM_EXT ".so"
+#elif defined __APPLE__
+#define PLATFORM_EXT ".dylib"
+#endif
+typedef void *HINSTANCE;
+#define PATH_SEP_CHAR "/"
+#include <dlfcn.h>
 #endif
 
 #if defined(_WIN64) || defined(__x86_64__)
-#define PLATFORM_ARCH_FOLDER 	"x64" PATH_SEP_CHAR
+#define PLATFORM_ARCH_FOLDER "x64" PATH_SEP_CHAR
 #else
-#define PLATFORM_ARCH_FOLDER	""
+#define PLATFORM_ARCH_FOLDER ""
 #endif
 
-#define METAMOD_API_MAJOR			2
-#define FILENAME_1_6_EP2			PLATFORM_ARCH_FOLDER "rcbot.2.ep2" PLATFORM_EXT
-#define FILENAME_1_6_EP1			PLATFORM_ARCH_FOLDER "rcbot.2.ep1" PLATFORM_EXT
-#define FILENAME_1_6_L4D			PLATFORM_ARCH_FOLDER "rcbot.2.l4d" PLATFORM_EXT
-#define FILENAME_1_6_DARKM			PLATFORM_ARCH_FOLDER "rcbot.2.darkm" PLATFORM_EXT
-#define FILENAME_1_6_L4D2			PLATFORM_ARCH_FOLDER "rcbot.2.l4d2" PLATFORM_EXT
-#define FILENAME_1_6_SWARM			PLATFORM_ARCH_FOLDER "rcbot.2.swarm" PLATFORM_EXT
-#define FILENAME_1_6_BGT			PLATFORM_ARCH_FOLDER "rcbot.2.bgt" PLATFORM_EXT
-#define FILENAME_1_6_EYE			PLATFORM_ARCH_FOLDER "rcbot.2.eye" PLATFORM_EXT
-#define FILENAME_1_6_PORTAL2		PLATFORM_ARCH_FOLDER "rcbot.2.portal2" PLATFORM_EXT
-#define FILENAME_1_6_CSGO			PLATFORM_ARCH_FOLDER "rcbot.2.csgo" PLATFORM_EXT
-#define FILENAME_1_6_CSS			PLATFORM_ARCH_FOLDER "rcbot.2.css" PLATFORM_EXT
-#define FILENAME_1_6_HL2DM			PLATFORM_ARCH_FOLDER "rcbot.2.hl2dm" PLATFORM_EXT
-#define FILENAME_1_6_DODS			PLATFORM_ARCH_FOLDER "rcbot.2.dods" PLATFORM_EXT
-#define FILENAME_1_6_SDK2013		PLATFORM_ARCH_FOLDER "rcbot.2.sdk2013" PLATFORM_EXT
-#define FILENAME_1_6_TF2			PLATFORM_ARCH_FOLDER "rcbot.2.tf2" PLATFORM_EXT
-#define FILENAME_1_6_ND				PLATFORM_ARCH_FOLDER "rcbot.2.nd" PLATFORM_EXT
-#define FILENAME_1_6_BLADE			PLATFORM_ARCH_FOLDER "rcbot.2.blade" PLATFORM_EXT
-#define FILENAME_1_6_INSURGENCY		PLATFORM_ARCH_FOLDER "rcbot.2.insurgency" PLATFORM_EXT
-#define FILENAME_1_6_DOI			PLATFORM_ARCH_FOLDER "rcbot.2.doi" PLATFORM_EXT
-#define FILENAME_1_6_CONTAGION		PLATFORM_ARCH_FOLDER "rcbot.2.contagion" PLATFORM_EXT
-#define FILENAME_1_6_BMS			PLATFORM_ARCH_FOLDER "rcbot.2.bms" PLATFORM_EXT
+#define METAMOD_API_MAJOR 2
+#define FILENAME_1_6_EP2 PLATFORM_ARCH_FOLDER "rcbot.2.ep2" PLATFORM_EXT
+#define FILENAME_1_6_EP1 PLATFORM_ARCH_FOLDER "rcbot.2.ep1" PLATFORM_EXT
+#define FILENAME_1_6_L4D PLATFORM_ARCH_FOLDER "rcbot.2.l4d" PLATFORM_EXT
+#define FILENAME_1_6_DARKM PLATFORM_ARCH_FOLDER "rcbot.2.darkm" PLATFORM_EXT
+#define FILENAME_1_6_L4D2 PLATFORM_ARCH_FOLDER "rcbot.2.l4d2" PLATFORM_EXT
+#define FILENAME_1_6_SWARM PLATFORM_ARCH_FOLDER "rcbot.2.swarm" PLATFORM_EXT
+#define FILENAME_1_6_BGT PLATFORM_ARCH_FOLDER "rcbot.2.bgt" PLATFORM_EXT
+#define FILENAME_1_6_EYE PLATFORM_ARCH_FOLDER "rcbot.2.eye" PLATFORM_EXT
+#define FILENAME_1_6_PORTAL2 PLATFORM_ARCH_FOLDER "rcbot.2.portal2" PLATFORM_EXT
+#define FILENAME_1_6_CSGO PLATFORM_ARCH_FOLDER "rcbot.2.csgo" PLATFORM_EXT
+#define FILENAME_1_6_CSS PLATFORM_ARCH_FOLDER "rcbot.2.css" PLATFORM_EXT
+#define FILENAME_1_6_HL2DM PLATFORM_ARCH_FOLDER "rcbot.2.hl2dm" PLATFORM_EXT
+#define FILENAME_1_6_DODS PLATFORM_ARCH_FOLDER "rcbot.2.dods" PLATFORM_EXT
+#define FILENAME_1_6_SDK2013 PLATFORM_ARCH_FOLDER "rcbot.2.sdk2013" PLATFORM_EXT
+#define FILENAME_1_6_TF2 PLATFORM_ARCH_FOLDER "rcbot.2.tf2" PLATFORM_EXT
+#define FILENAME_1_6_ND PLATFORM_ARCH_FOLDER "rcbot.2.nd" PLATFORM_EXT
+#define FILENAME_1_6_BLADE PLATFORM_ARCH_FOLDER "rcbot.2.blade" PLATFORM_EXT
+#define FILENAME_1_6_INSURGENCY PLATFORM_ARCH_FOLDER "rcbot.2.insurgency" PLATFORM_EXT
+#define FILENAME_1_6_DOI PLATFORM_ARCH_FOLDER "rcbot.2.doi" PLATFORM_EXT
+#define FILENAME_1_6_CONTAGION PLATFORM_ARCH_FOLDER "rcbot.2.contagion" PLATFORM_EXT
+#define FILENAME_1_6_BMS PLATFORM_ARCH_FOLDER "rcbot.2.bms" PLATFORM_EXT
 
-HINSTANCE g_hCore = NULL;
+HINSTANCE g_hCore   = NULL;
 bool load_attempted = false;
 
 size_t UTIL_Format(char *buffer, size_t maxlength, const char *fmt, ...);
 
 class FailPlugin : public SourceMM::ISmmFailPlugin
 {
-public:
+  public:
 	int GetApiVersion()
 	{
 		return fail_version;
@@ -122,7 +122,7 @@ size_t UTIL_Format(char *buffer, size_t maxlength, const char *fmt, ...)
 
 	if (len >= maxlength)
 	{
-		len = maxlength - 1;
+		len         = maxlength - 1;
 		buffer[len] = '\0';
 	}
 
@@ -135,30 +135,19 @@ METAMOD_PLUGIN *_GetPluginPtr(const char *path, int fail_api)
 	METAMOD_PLUGIN *pl;
 	int ret;
 
-	if (!(g_hCore=openlib(path)))
+	if (!(g_hCore = openlib(path)))
 	{
 #if defined __linux__ || defined __APPLE__
-		UTIL_Format(s_FailPlugin.error_buffer, 
-			sizeof(s_FailPlugin.error_buffer),
-			"%s",
-			dlerror());
+		UTIL_Format(s_FailPlugin.error_buffer, sizeof(s_FailPlugin.error_buffer), "%s", dlerror());
 #else
 		DWORD err = GetLastError();
 
-		if (FormatMessageA(
-				FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
-				NULL,
-				err,
-				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-				s_FailPlugin.error_buffer,
-				sizeof(s_FailPlugin.error_buffer),
-				NULL)
-			== 0)
+		if (FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err,
+		                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), s_FailPlugin.error_buffer,
+		                   sizeof(s_FailPlugin.error_buffer), NULL)
+		    == 0)
 		{
-			UTIL_Format(s_FailPlugin.error_buffer, 
-				sizeof(s_FailPlugin.error_buffer),
-				"unknown error %x",
-				err);
+			UTIL_Format(s_FailPlugin.error_buffer, sizeof(s_FailPlugin.error_buffer), "unknown error %x", err);
 		}
 #endif
 
@@ -167,7 +156,7 @@ METAMOD_PLUGIN *_GetPluginPtr(const char *path, int fail_api)
 		return (METAMOD_PLUGIN *)&s_FailPlugin;
 	}
 
-	if (!(fn=(METAMOD_FN_ORIG_LOAD)findsym(g_hCore, "CreateInterface")))
+	if (!(fn = (METAMOD_FN_ORIG_LOAD)findsym(g_hCore, "CreateInterface")))
 	{
 		goto error;
 	}
@@ -190,7 +179,7 @@ DLL_EXPORT METAMOD_PLUGIN *CreateInterface_MMS(const MetamodVersionInfo *mvi, co
 	const char *filename;
 
 	load_attempted = true;
-	
+
 	if (mvi->api_major > METAMOD_API_MAJOR)
 	{
 		return NULL;
@@ -200,143 +189,143 @@ DLL_EXPORT METAMOD_PLUGIN *CreateInterface_MMS(const MetamodVersionInfo *mvi, co
 	{
 	case SOURCE_ENGINE_ORIGINAL:
 	case SOURCE_ENGINE_EPISODEONE:
-		{
-			filename = FILENAME_1_6_EP1;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_EP1;
+		break;
+	}
 	case SOURCE_ENGINE_ORANGEBOX:
-		{
-			filename = FILENAME_1_6_EP2;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_EP2;
+		break;
+	}
 	case SOURCE_ENGINE_LEFT4DEAD:
-		{
-			filename = FILENAME_1_6_L4D;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_L4D;
+		break;
+	}
 	case SOURCE_ENGINE_DARKMESSIAH:
-		{
-			filename = FILENAME_1_6_DARKM;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_DARKM;
+		break;
+	}
 	case SOURCE_ENGINE_LEFT4DEAD2:
-		{
-			const char *gamedir = mvi->GetGameDir();
-			if (strcmp(gamedir, "nucleardawn") == 0)
-			{
-				filename = FILENAME_1_6_ND;
-			}
-			else
-			{
-				filename = FILENAME_1_6_L4D2;
-			}
-			break;
-		}
-	case SOURCE_ENGINE_NUCLEARDAWN:
+	{
+		const char *gamedir = mvi->GetGameDir();
+		if (strcmp(gamedir, "nucleardawn") == 0)
 		{
 			filename = FILENAME_1_6_ND;
-			break;
 		}
+		else
+		{
+			filename = FILENAME_1_6_L4D2;
+		}
+		break;
+	}
+	case SOURCE_ENGINE_NUCLEARDAWN:
+	{
+		filename = FILENAME_1_6_ND;
+		break;
+	}
 	case SOURCE_ENGINE_CONTAGION:
-		{
-			filename = FILENAME_1_6_CONTAGION;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_CONTAGION;
+		break;
+	}
 	case SOURCE_ENGINE_ALIENSWARM:
-		{
-			filename = FILENAME_1_6_SWARM;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_SWARM;
+		break;
+	}
 	case SOURCE_ENGINE_BLOODYGOODTIME:
-		{
-			filename = FILENAME_1_6_BGT;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_BGT;
+		break;
+	}
 	case SOURCE_ENGINE_EYE:
-		{
-			filename = FILENAME_1_6_EYE;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_EYE;
+		break;
+	}
 	case SOURCE_ENGINE_PORTAL2:
-		{
-			filename = FILENAME_1_6_PORTAL2;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_PORTAL2;
+		break;
+	}
 	case SOURCE_ENGINE_CSGO:
-		{
-			filename = FILENAME_1_6_CSGO;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_CSGO;
+		break;
+	}
 	case SOURCE_ENGINE_CSS:
-		{
-			filename = FILENAME_1_6_CSS;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_CSS;
+		break;
+	}
 	case SOURCE_ENGINE_HL2DM:
-		{
-			filename = FILENAME_1_6_HL2DM;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_HL2DM;
+		break;
+	}
 	case SOURCE_ENGINE_DODS:
-		{
-			filename = FILENAME_1_6_DODS;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_DODS;
+		break;
+	}
 	case SOURCE_ENGINE_SDK2013:
-		{
-			filename = FILENAME_1_6_SDK2013;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_SDK2013;
+		break;
+	}
 	case SOURCE_ENGINE_BMS:
-		{
-			filename = FILENAME_1_6_BMS;
-			break;
-		}
+	{
+		filename = FILENAME_1_6_BMS;
+		break;
+	}
 	case SOURCE_ENGINE_TF2:
+	{
+		filename = FILENAME_1_6_TF2;
+		break;
+	}
+	case SOURCE_ENGINE_ORANGEBOXVALVE_DEPRECATED:
+	{
+		const char *gamedir = mvi->GetGameDir();
+		if (strcmp(gamedir, "tf") == 0)
 		{
 			filename = FILENAME_1_6_TF2;
-			break;
 		}
-	case SOURCE_ENGINE_ORANGEBOXVALVE_DEPRECATED:
+		else if (strcmp(gamedir, "dod") == 0)
 		{
-			const char *gamedir = mvi->GetGameDir();
-			if (strcmp(gamedir, "tf") == 0)
-			{
-				filename = FILENAME_1_6_TF2;
-			}
-			else if (strcmp(gamedir, "dod") == 0)
-			{
-				filename = FILENAME_1_6_DODS;
-			}
-			else if (strcmp(gamedir, "hl2mp") == 0)
-			{
-				filename = FILENAME_1_6_HL2DM;
-			}
-			else
-			{
-				return NULL;
-			}
-			break;
+			filename = FILENAME_1_6_DODS;
 		}
-	case SOURCE_ENGINE_BLADE:
+		else if (strcmp(gamedir, "hl2mp") == 0)
 		{
-			filename = FILENAME_1_6_BLADE;
-			break;
+			filename = FILENAME_1_6_HL2DM;
 		}
-	case SOURCE_ENGINE_INSURGENCY:
-		{
-			filename = FILENAME_1_6_INSURGENCY;
-			break;
-		}
-	case SOURCE_ENGINE_DOI:
-		{
-			filename = FILENAME_1_6_DOI;
-			break;
-		}
-	default:
+		else
 		{
 			return NULL;
 		}
+		break;
+	}
+	case SOURCE_ENGINE_BLADE:
+	{
+		filename = FILENAME_1_6_BLADE;
+		break;
+	}
+	case SOURCE_ENGINE_INSURGENCY:
+	{
+		filename = FILENAME_1_6_INSURGENCY;
+		break;
+	}
+	case SOURCE_ENGINE_DOI:
+	{
+		filename = FILENAME_1_6_DOI;
+		break;
+	}
+	default:
+	{
+		return NULL;
+	}
 	}
 
 	char abspath[256];
@@ -391,10 +380,8 @@ void operator delete(void *ptr)
 	free(ptr);
 }
 
-void operator delete[](void * ptr)
+void operator delete[](void *ptr)
 {
 	free(ptr);
 }
 #endif
-
-

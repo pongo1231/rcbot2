@@ -38,39 +38,47 @@
 
 class CAccessClient
 {
-public:
-	CAccessClient( char *szSteamId, int iAccessLevel );
+  public:
+	CAccessClient(char *szSteamId, int iAccessLevel);
 
-	bool isForSteamId ( const char *szSteamId );
+	bool isForSteamId(const char *szSteamId);
 
-	void giveAccessToClient ( CClient *pClient );
+	void giveAccessToClient(CClient *pClient);
 
-	void save (std::fstream &fp);
+	void save(std::fstream &fp);
 
-	bool forBot ();
+	bool forBot();
 
-	inline char *getSteamID () { return m_szSteamId; }
+	inline char *getSteamID()
+	{
+		return m_szSteamId;
+	}
 
-	inline int getAccessLevel () { return m_iAccessLevel; }
-private:
+	inline int getAccessLevel()
+	{
+		return m_iAccessLevel;
+	}
+
+  private:
 	char *m_szSteamId;
 	int m_iAccessLevel;
 };
 
 class CAccessClients
 {
-public:
-	static void freeMemory ();
+  public:
+	static void freeMemory();
 
-	static void showUsers ( edict_t *pEntity );
+	static void showUsers(edict_t *pEntity);
 
-	static void load ();
+	static void load();
 
-	static void save ();
+	static void save();
 
-	static void checkClientAccess ( CClient *pClient );
-private:
-	static std::vector<CAccessClient*> m_Clients;
+	static void checkClientAccess(CClient *pClient);
+
+  private:
+	static std::vector<CAccessClient *> m_Clients;
 };
 
 #endif

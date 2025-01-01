@@ -28,66 +28,66 @@
  *    version.
  *
  */
-#include "bot.h"
 #include "bot_buttons.h"
+#include "bot.h"
 #include "in_buttons.h"
 
-void CBotButtons :: attack (float fFor, float fFrom)
-{	
-	holdButton(IN_ATTACK,fFrom,fFor,0.1);
-}
-
-void CBotButtons :: jump (float fFor, float fFrom)
+void CBotButtons ::attack(float fFor, float fFrom)
 {
-	holdButton(IN_JUMP,fFrom,fFor,0.25);
+	holdButton(IN_ATTACK, fFrom, fFor, 0.1);
 }
 
-void CBotButtons :: duck (float fFor, float fFrom)
+void CBotButtons ::jump(float fFor, float fFrom)
 {
-	holdButton(IN_DUCK,fFrom,fFor);
+	holdButton(IN_JUMP, fFrom, fFor, 0.25);
 }
 
-void CBotButton :: hold ( float fFrom, float fFor, float fLetGoTime )
+void CBotButtons ::duck(float fFor, float fFrom)
+{
+	holdButton(IN_DUCK, fFrom, fFor);
+}
+
+void CBotButton ::hold(float fFrom, float fFor, float fLetGoTime)
 {
 	fFrom += engine->Time();
 	m_fTimeStart = fFrom;
-	m_fTimeEnd = fFrom + fFor;
-	m_fLetGoTime = m_fTimeEnd+fLetGoTime;
+	m_fTimeEnd   = fFrom + fFor;
+	m_fLetGoTime = m_fTimeEnd + fLetGoTime;
 }
 
-CBotButtons :: CBotButtons()
+CBotButtons ::CBotButtons()
 {
 	add(new CBotButton(IN_ATTACK));
 	add(new CBotButton(IN_ATTACK2));
 	add(new CBotButton(IN_DUCK));
 	add(new CBotButton(IN_JUMP));
 	add(new CBotButton(IN_RELOAD));
-	add(new CBotButton(IN_SPEED)); // for sprint
+	add(new CBotButton(IN_SPEED));   // for sprint
 	add(new CBotButton(IN_FORWARD)); // for ladders
-	add(new CBotButton(IN_USE)); // for chargers
-	add(new CBotButton(IN_ALT1)); // for proning
-	add(new CBotButton(IN_RUN)); // ????
+	add(new CBotButton(IN_USE));     // for chargers
+	add(new CBotButton(IN_ALT1));    // for proning
+	add(new CBotButton(IN_RUN));     // ????
 
 	m_bLetGoAll = false;
 }
 
-void CBotButtons :: holdButton ( int iButtonId, float fFrom, float fFor, float fLetGoTime )
+void CBotButtons ::holdButton(int iButtonId, float fFrom, float fFor, float fLetGoTime)
 {
-	for (unsigned int i = 0; i < m_theButtons.size(); i ++ )
-	{			
-		if ( m_theButtons[i]->getID() == iButtonId )
+	for (unsigned int i = 0; i < m_theButtons.size(); i++)
+	{
+		if (m_theButtons[i]->getID() == iButtonId)
 		{
-			m_theButtons[i]->hold(fFrom,fFor,fLetGoTime);
+			m_theButtons[i]->hold(fFrom, fFor, fLetGoTime);
 			return;
 		}
 	}
 }
 
-void CBotButtons :: letGo (int iButtonId)
+void CBotButtons ::letGo(int iButtonId)
 {
-	for (unsigned int i = 0; i < m_theButtons.size(); i ++ )
-	{			
-		if ( m_theButtons[i]->getID() == iButtonId )
+	for (unsigned int i = 0; i < m_theButtons.size(); i++)
+	{
+		if (m_theButtons[i]->getID() == iButtonId)
 		{
 			m_theButtons[i]->letGo();
 			return;
@@ -95,64 +95,63 @@ void CBotButtons :: letGo (int iButtonId)
 	}
 }
 
-int CBotButtons :: getBitMask ()
+int CBotButtons ::getBitMask()
 {
-	if ( m_bLetGoAll )
+	if (m_bLetGoAll)
 		return 0;
 	else
 	{
 
-        int iBitMask = 0;
+		int iBitMask = 0;
 
-        float fTime = engine->Time();
+		float fTime  = engine->Time();
 
-        for (unsigned int i = 0; i < m_theButtons.size(); i ++ )
-        {
-            if ( m_theButtons[i]->held(fTime) )
-            {
-                m_theButtons[i]->unTap();
-                iBitMask |= m_theButtons[i]->getID();
-            }
-        }
+		for (unsigned int i = 0; i < m_theButtons.size(); i++)
+		{
+			if (m_theButtons[i]->held(fTime))
+			{
+				m_theButtons[i]->unTap();
+				iBitMask |= m_theButtons[i]->getID();
+			}
+		}
 
-        return iBitMask;
-
-    }
+		return iBitMask;
+	}
 }
 
-bool CBotButtons :: canPressButton ( int iButtonId )
+bool CBotButtons ::canPressButton(int iButtonId)
 {
-	for (unsigned int i = 0; i < m_theButtons.size(); i ++ )
-	{			
-		if ( m_theButtons[i]->getID() == iButtonId )
+	for (unsigned int i = 0; i < m_theButtons.size(); i++)
+	{
+		if (m_theButtons[i]->getID() == iButtonId)
 			return m_theButtons[i]->canPress(engine->Time());
 	}
-	return false;		
+	return false;
 }
 
-void CBotButtons :: add ( CBotButton *theButton )
+void CBotButtons ::add(CBotButton *theButton)
 {
 	m_theButtons.push_back(theButton);
 }
 
-bool CBotButtons :: holdingButton ( int iButtonId )
+bool CBotButtons ::holdingButton(int iButtonId)
 {
-	for ( unsigned int i = 0; i < m_theButtons.size(); i ++ )
+	for (unsigned int i = 0; i < m_theButtons.size(); i++)
 	{
-		if ( m_theButtons[i]->getID() == iButtonId )
+		if (m_theButtons[i]->getID() == iButtonId)
 			return m_theButtons[i]->held(engine->Time());
 	}
 
 	return false;
 }
 
-void CBotButtons :: tap ( int iButtonId )
+void CBotButtons ::tap(int iButtonId)
 {
-	for ( unsigned int i = 0; i < m_theButtons.size(); i ++ )
+	for (unsigned int i = 0; i < m_theButtons.size(); i++)
 	{
-		if ( m_theButtons[i]->getID() == iButtonId )
+		if (m_theButtons[i]->getID() == iButtonId)
 		{
-			 m_theButtons[i]->tap();
+			m_theButtons[i]->tap();
 
 			return;
 		}

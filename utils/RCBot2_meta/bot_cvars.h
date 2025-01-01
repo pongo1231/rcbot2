@@ -89,7 +89,7 @@ extern ConVar rcbot_addbottime;
 extern ConVar rcbot_gamerules_offset;
 extern ConVar rcbot_bot_quota_interval;
 extern ConVar rcbot_const_point_master_offset;
-//extern ConVar rcbot_util_learning;
+// extern ConVar rcbot_util_learning;
 
 /** Additional convars by pongo1231 **/
 extern ConVar rcbot_show_welcome_msg;
@@ -101,6 +101,6 @@ extern ConVarRef sv_tags;
 extern ConVarRef mp_friendlyfire;
 extern ConVarRef mp_stalemate_enable;
 
-void RCBOT2_Cvar_setup (ICvar *cvar);
+void RCBOT2_Cvar_setup(ICvar *cvar);
 
 #endif

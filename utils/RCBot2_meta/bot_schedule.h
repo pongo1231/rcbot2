@@ -33,7 +33,7 @@
 
 #include "bot.h"
 #include "bot_task.h"
-//#include "bot_fortress.h"
+// #include "bot_fortress.h"
 
 #include <deque>
 
@@ -41,10 +41,10 @@ class CBotTask;
 class CAttackEntityTask;
 class IBotTaskInterrupt;
 
-#define BITS_SCHED_PASS_INT		(1<<0)
-#define BITS_SCHED_PASS_FLOAT	(1<<1)
-#define BITS_SCHED_PASS_VECTOR	(1<<2)
-#define BITS_SCHED_PASS_EDICT	(1<<3)
+#define BITS_SCHED_PASS_INT (1 << 0)
+#define BITS_SCHED_PASS_FLOAT (1 << 1)
+#define BITS_SCHED_PASS_VECTOR (1 << 2)
+#define BITS_SCHED_PASS_EDICT (1 << 3)
 
 typedef enum
 {
@@ -95,12 +95,12 @@ typedef enum
 	SCHED_INVESTIGATE_HIDE,
 	SCHED_TAUNT,
 	SCHED_MAX
-	//SCHED_HIDE_FROM_ENEMY
-}eBotSchedule;
+	// SCHED_HIDE_FROM_ENEMY
+} eBotSchedule;
 
 class CBotSchedule
 {
-public:
+  public:
 	CBotSchedule(CBotTask *pTask)
 	{
 		_init();
@@ -110,43 +110,50 @@ public:
 
 	CBotSchedule();
 
-	void _init ();
-	virtual void init () { return; } // nothing, used by sub classes
+	void _init();
+	virtual void init()
+	{
+		return;
+	} // nothing, used by sub classes
 
-	void addTask( CBotTask *pTask );
+	void addTask(CBotTask *pTask);
 
-	void execute ( CBot *pBot );
+	void execute(CBot *pBot);
 
-	const char *getIDString ();
+	const char *getIDString();
 
-	CBotTask *currentTask ()
+	CBotTask *currentTask()
 	{
 		return m_Tasks.empty() ? NULL : m_Tasks.front();
 	}
 
-	bool hasFailed ()
+	bool hasFailed()
 	{
 		return m_bFailed;
 	}
 
-	bool isComplete ()
+	bool isComplete()
 	{
 		return m_Tasks.empty();
 	}
 
-	void freeMemory ()
+	void freeMemory()
 	{
-		for (CBotTask* task : m_Tasks) {
+		for (CBotTask *task : m_Tasks)
+		{
 			delete task;
 		}
 		m_Tasks.clear();
 	}
 
-	void removeTop ();
+	void removeTop();
 
 	//////////////////////////
 
-	void clearPass () { m_bitsPass = 0; }
+	void clearPass()
+	{
+		m_bitsPass = 0;
+	}
 
 	void passInt(int i);
 	void passFloat(float f);
@@ -154,27 +161,59 @@ public:
 	void passEdict(edict_t *p);
 	//////////////////////////
 
-	bool hasPassInfo () { return (m_bitsPass!=0); }
+	bool hasPassInfo()
+	{
+		return (m_bitsPass != 0);
+	}
 
-	inline int passedInt () { return iPass; }
-	inline float passedFloat() { return fPass; }
-	inline Vector passedVector() { return vPass; }
-	inline edict_t *passedEdict() { return pPass; }
-	inline bool isID ( eBotSchedule iId ) { return m_iSchedId == iId; }
+	inline int passedInt()
+	{
+		return iPass;
+	}
+	inline float passedFloat()
+	{
+		return fPass;
+	}
+	inline Vector passedVector()
+	{
+		return vPass;
+	}
+	inline edict_t *passedEdict()
+	{
+		return pPass;
+	}
+	inline bool isID(eBotSchedule iId)
+	{
+		return m_iSchedId == iId;
+	}
 
-	inline bool hasPassInt () { return ((m_bitsPass&BITS_SCHED_PASS_INT)>0); }
-	inline bool hasPassFloat () { return ((m_bitsPass&BITS_SCHED_PASS_FLOAT)>0); }
-	inline bool hasPassVector () { return ((m_bitsPass&BITS_SCHED_PASS_VECTOR)>0); }
-	inline bool hasPassEdict () { return ((m_bitsPass&BITS_SCHED_PASS_EDICT)>0); }
+	inline bool hasPassInt()
+	{
+		return ((m_bitsPass & BITS_SCHED_PASS_INT) > 0);
+	}
+	inline bool hasPassFloat()
+	{
+		return ((m_bitsPass & BITS_SCHED_PASS_FLOAT) > 0);
+	}
+	inline bool hasPassVector()
+	{
+		return ((m_bitsPass & BITS_SCHED_PASS_VECTOR) > 0);
+	}
+	inline bool hasPassEdict()
+	{
+		return ((m_bitsPass & BITS_SCHED_PASS_EDICT) > 0);
+	}
 
-	inline void setID ( eBotSchedule iId ) { m_iSchedId = iId; }
+	inline void setID(eBotSchedule iId)
+	{
+		m_iSchedId = iId;
+	}
 
-
-private:
-	std::deque<CBotTask*> m_Tasks;
+  private:
+	std::deque<CBotTask *> m_Tasks;
 	bool m_bFailed;
 	eBotSchedule m_iSchedId;
-	
+
 	// passed information to next task(s)
 	int iPass;
 	float fPass;
@@ -186,50 +225,56 @@ private:
 
 class CBotSchedules
 {
-public:
-	bool hasSchedule ( eBotSchedule iSchedule )
+  public:
+	bool hasSchedule(eBotSchedule iSchedule)
 	{
-		for (CBotSchedule *sched : m_Schedules) {
-			if (sched->isID(iSchedule)) {
+		for (CBotSchedule *sched : m_Schedules)
+		{
+			if (sched->isID(iSchedule))
+			{
 				return true;
 			}
 		}
 		return false;
 	}
 
-	bool isCurrentSchedule ( eBotSchedule iSchedule )
+	bool isCurrentSchedule(eBotSchedule iSchedule)
 	{
-		if ( m_Schedules.empty() )
+		if (m_Schedules.empty())
 			return false;
 		return m_Schedules.front()->isID(iSchedule);
 	}
 
 	// remove the first schedule in the queue matching this schedule identifier
-	void removeSchedule ( eBotSchedule iSchedule )
+	void removeSchedule(eBotSchedule iSchedule)
 	{
-		for (auto it = m_Schedules.begin(); it != m_Schedules.end(); ) {
-			if ((*it)->isID(iSchedule)) {
+		for (auto it = m_Schedules.begin(); it != m_Schedules.end();)
+		{
+			if ((*it)->isID(iSchedule))
+			{
 				m_Schedules.erase(it);
 				return;
-			} else {
+			}
+			else
+			{
 				++it;
 			}
 		}
 	}
 
-	void execute ( CBot *pBot )
+	void execute(CBot *pBot)
 	{
-		if ( isEmpty() )
+		if (isEmpty())
 			return;
 
 		CBotSchedule *pSched = m_Schedules.front();
 		pSched->execute(pBot);
 
-		if ( pSched->isComplete() || pSched->hasFailed() )
+		if (pSched->isComplete() || pSched->hasFailed())
 			removeTop();
 	}
 
-	void removeTop ()
+	void removeTop()
 	{
 		CBotSchedule *pSched = m_Schedules.front();
 		m_Schedules.pop_front();
@@ -240,15 +285,16 @@ public:
 		delete pSched;
 	}
 
-	void freeMemory ()
+	void freeMemory()
 	{
-		for (CBotSchedule *sched : m_Schedules) {
+		for (CBotSchedule *sched : m_Schedules)
+		{
 			delete sched;
 		}
 		m_Schedules.clear();
 	}
 
-	void add ( CBotSchedule *pSchedule )
+	void add(CBotSchedule *pSchedule)
 	{
 		// initialize
 		pSchedule->init();
@@ -256,24 +302,24 @@ public:
 		m_Schedules.push_back(pSchedule);
 	}
 
-	void addFront ( CBotSchedule *pSchedule )
+	void addFront(CBotSchedule *pSchedule)
 	{
 		pSchedule->init();
 		m_Schedules.push_front(pSchedule);
 	}
 
-	inline bool isEmpty ()
+	inline bool isEmpty()
 	{
 		return m_Schedules.empty();
 	}
 
-	CBotTask *getCurrentTask ()
+	CBotTask *getCurrentTask()
 	{
-		if ( !m_Schedules.empty() )
+		if (!m_Schedules.empty())
 		{
 			CBotSchedule *sched = m_Schedules.front();
 
-			if ( sched != NULL )
+			if (sched != NULL)
 			{
 				return sched->currentTask();
 			}
@@ -282,33 +328,31 @@ public:
 		return NULL;
 	}
 
-	CBotSchedule *getCurrentSchedule ()
+	CBotSchedule *getCurrentSchedule()
 	{
-		if ( isEmpty() )
+		if (isEmpty())
 			return NULL;
 
 		return m_Schedules.front();
 	}
 
-private:
-	std::deque<CBotSchedule*> m_Schedules;
+  private:
+	std::deque<CBotSchedule *> m_Schedules;
 };
 ///////////////////////////////////////////
 class CBotTF2DemoPipeTrapSched : public CBotSchedule
 {
-public:
-	CBotTF2DemoPipeTrapSched ( eDemoTrapType type, Vector vStand, Vector vLoc, Vector vSpread, bool bAutoDetonate = false, int wptarea = -1 );
+  public:
+	CBotTF2DemoPipeTrapSched(eDemoTrapType type, Vector vStand, Vector vLoc, Vector vSpread, bool bAutoDetonate = false,
+	                         int wptarea = -1);
 
 	void init();
 };
 
 class CBotTF2DemoPipeEnemySched : public CBotSchedule
 {
-public:
-	CBotTF2DemoPipeEnemySched ( 
-		CBotWeapon *pLauncher,
-		Vector vStand, 
-		edict_t *pEnemy );
+  public:
+	CBotTF2DemoPipeEnemySched(CBotWeapon *pLauncher, Vector vStand, edict_t *pEnemy);
 
 	void init();
 };
@@ -316,8 +360,8 @@ public:
 ///////////////////////////////////////////////
 class CBotTF2ShootLastEnemyPos : public CBotSchedule
 {
-public:
-	CBotTF2ShootLastEnemyPos ( Vector vLastSeeEnemyPos, Vector vVelocity, edict_t *pLastEnemy );
+  public:
+	CBotTF2ShootLastEnemyPos(Vector vLastSeeEnemyPos, Vector vVelocity, edict_t *pLastEnemy);
 
 	void init();
 };
@@ -325,8 +369,8 @@ public:
 ///////////////////////////////////////////////
 class CBotTF2MessAroundSched : public CBotSchedule
 {
-public:
-	CBotTF2MessAroundSched ( edict_t *pFriendly, int iMaxVoiceCmd );
+  public:
+	CBotTF2MessAroundSched(edict_t *pFriendly, int iMaxVoiceCmd);
 
 	void init();
 };
@@ -334,184 +378,187 @@ public:
 ///////////////////////////////////////////////////
 class CBotTauntSchedule : public CBotSchedule
 {
-public:
-	CBotTauntSchedule ( edict_t *pPlayer, float fYaw );
+  public:
+	CBotTauntSchedule(edict_t *pPlayer, float fYaw);
 
-	void init ();
-private:
+	void init();
+
+  private:
 	MyEHandle m_pPlayer;
 	float m_fYaw;
 };
 ////////////////////////////////////////////
 class CBotUseTeleSched : public CBotSchedule
 {
-public:
-	CBotUseTeleSched ( edict_t *pTele );
+  public:
+	CBotUseTeleSched(edict_t *pTele);
 
-	void init ();
+	void init();
 };
 ///////////////////////////////////////////////////
 class CBotEngiMoveBuilding : public CBotSchedule
 {
-public:
-	CBotEngiMoveBuilding ( edict_t *pBotEdict, edict_t *pBuilding, eEngiBuild iObject, Vector vNewLocation, bool bCarrying );
+  public:
+	CBotEngiMoveBuilding(edict_t *pBotEdict, edict_t *pBuilding, eEngiBuild iObject, Vector vNewLocation,
+	                     bool bCarrying);
 
-	void init ();
+	void init();
 };
 
 /////////////////////////////////////////////////
 class CBotAttackPointSched : public CBotSchedule
 {
-public:
-	CBotAttackPointSched ( Vector vPoint, int iRadius, int iArea, bool bHasRoute = false, Vector vRoute = Vector(0,0,0), bool bNest = false, edict_t *pLastEnemySentry = NULL );
+  public:
+	CBotAttackPointSched(Vector vPoint, int iRadius, int iArea, bool bHasRoute = false, Vector vRoute = Vector(0, 0, 0),
+	                     bool bNest = false, edict_t *pLastEnemySentry = NULL);
 
-	void init ();
-}; 
+	void init();
+};
 //////////////////////////////////////////////////
 class CBotDefendPointSched : public CBotSchedule
 {
-public:
-	CBotDefendPointSched ( Vector vPoint, int iRadius, int iArea );
+  public:
+	CBotDefendPointSched(Vector vPoint, int iRadius, int iArea);
 
-	void init ();
-}; 
+	void init();
+};
 ///////////////////////////////////////////////
 class CBotTF2PushPayloadBombSched : public CBotSchedule
 {
-public:
-	CBotTF2PushPayloadBombSched (edict_t * ePayloadBomb);
+  public:
+	CBotTF2PushPayloadBombSched(edict_t *ePayloadBomb);
 
-	void init ();
-}; 
+	void init();
+};
 ///////////////////////////////////////////////
 class CBotTF2DefendPayloadBombSched : public CBotSchedule
 {
-public:
-	CBotTF2DefendPayloadBombSched (edict_t * ePayloadBomb);
+  public:
+	CBotTF2DefendPayloadBombSched(edict_t *ePayloadBomb);
 
-	void init ();
-}; 
+	void init();
+};
 ///////////////////////////////////////////////////
 class CBotSpySapBuildingSched : public CBotSchedule
 {
-public:
-	CBotSpySapBuildingSched ( edict_t *pBuilding, eEngiBuild id );
+  public:
+	CBotSpySapBuildingSched(edict_t *pBuilding, eEngiBuild id);
 
-	void init ();
+	void init();
 };
 ////////////////////////////////////////////////
 class CBotUseDispSched : public CBotSchedule
 {
-public:
-	CBotUseDispSched ( CBot *pBot, edict_t *pDisp );
+  public:
+	CBotUseDispSched(CBot *pBot, edict_t *pDisp);
 
-	void init ();
-}; 
+	void init();
+};
 ///////////////////////////////////////////////////
 
 class CBotTFEngiUpgrade : public CBotSchedule
 {
-public:
-	CBotTFEngiUpgrade ( CBot *pBot, edict_t *pBuilding );
+  public:
+	CBotTFEngiUpgrade(CBot *pBot, edict_t *pBuilding);
 
-	void init ();
+	void init();
 };
 //////////////////////////////////////////////////////
 class CBotTFEngiMoveBuilding : public CBotSchedule
 {
-public:
-	CBotTFEngiMoveBuilding ( edict_t *pBuilding, Vector vNewOrigin );
+  public:
+	CBotTFEngiMoveBuilding(edict_t *pBuilding, Vector vNewOrigin);
 
-	void init ();
+	void init();
 };
 ///////////////////////////////////////////////////
 class CBotTFEngiBuild : public CBotSchedule
 {
-public:
-	CBotTFEngiBuild ( CBot *pBot, eEngiBuild iObject, CWaypoint *pWaypoint );
+  public:
+	CBotTFEngiBuild(CBot *pBot, eEngiBuild iObject, CWaypoint *pWaypoint);
 
-	void init ();
+	void init();
 };
 
 class CBotRemoveSapperSched : public CBotSchedule
 {
-public:
-	CBotRemoveSapperSched ( edict_t *pBuilding, eEngiBuild id );
+  public:
+	CBotRemoveSapperSched(edict_t *pBuilding, eEngiBuild id);
 
 	void init();
 };
 
 class CBotTF2HealSched : public CBotSchedule
 {
-public:
+  public:
 	CBotTF2HealSched(edict_t *pHeal);
-	void init ();
+	void init();
 };
 
 class CBotDefendSched : public CBotSchedule
 {
-public:
-	CBotDefendSched ( Vector vOrigin, float fMaxTime = 0 );
+  public:
+	CBotDefendSched(Vector vOrigin, float fMaxTime = 0);
 
-	CBotDefendSched ( int iWaypointID, float fMaxTime = 0 );
+	CBotDefendSched(int iWaypointID, float fMaxTime = 0);
 
-	void init ();
+	void init();
 };
 
 class CBotGetMetalSched : public CBotSchedule
 {
-public:
-	CBotGetMetalSched ( Vector vOrigin );
+  public:
+	CBotGetMetalSched(Vector vOrigin);
 
-	void init ();
+	void init();
 };
 
 class CBotBackstabSched : public CBotSchedule
 {
-public:
-	CBotBackstabSched ( edict_t *pEnemy );
+  public:
+	CBotBackstabSched(edict_t *pEnemy);
 
 	void init();
 };
 
 class CBotTFEngiLookAfterSentry : public CBotSchedule
 {
-public:
-	CBotTFEngiLookAfterSentry ( edict_t *pSentry );
+  public:
+	CBotTFEngiLookAfterSentry(edict_t *pSentry);
 
-	void init ();
+	void init();
 };
 
 class CBotFollowLastEnemy : public CBotSchedule
 {
-public:
-	CBotFollowLastEnemy ( CBot *pBot, edict_t *pEnemy, Vector vLastSee );
+  public:
+	CBotFollowLastEnemy(CBot *pBot, edict_t *pEnemy, Vector vLastSee);
 
-	void init ();
+	void init();
 };
 
 class CBotTF2SnipeSched : public CBotSchedule
 {
-public:
-	CBotTF2SnipeSched ( Vector vOrigin, int iWpt );
+  public:
+	CBotTF2SnipeSched(Vector vOrigin, int iWpt);
 
-	void init ();
+	void init();
 };
 
 class CBotTF2SnipeCrossBowSched : public CBotSchedule
 {
-public:
+  public:
 	CBotTF2SnipeCrossBowSched(Vector vOrigin, int iWpt);
 
 	void init();
 };
 
-class CBotTF2AttackSentryGun : public CBotSchedule 
+class CBotTF2AttackSentryGun : public CBotSchedule
 {
-public:
-	CBotTF2AttackSentryGun( edict_t *pSentry, CBotWeapon *pWeapon );
+  public:
+	CBotTF2AttackSentryGun(edict_t *pSentry, CBotWeapon *pWeapon);
 
-	void init ()
+	void init()
 	{
 		setID(SCHED_ATTACK_SENTRY_GUN);
 	}
@@ -519,77 +566,77 @@ public:
 
 class CBotTF2GetAmmoSched : public CBotSchedule
 {
-public:
-	CBotTF2GetAmmoSched ( Vector vOrigin );
+  public:
+	CBotTF2GetAmmoSched(Vector vOrigin);
 
-	void init ();
+	void init();
 };
 
 class CBotTF2GetHealthSched : public CBotSchedule
 {
-public:
-	CBotTF2GetHealthSched ( Vector vOrigin );
+  public:
+	CBotTF2GetHealthSched(Vector vOrigin);
 
-	void init ();
+	void init();
 };
 
 class CBotTF2GetFlagSched : public CBotSchedule
 {
-public:
-	CBotTF2GetFlagSched ( Vector vOrigin, bool bUseRoute = false, Vector vRoute = Vector(0,0,0) );
+  public:
+	CBotTF2GetFlagSched(Vector vOrigin, bool bUseRoute = false, Vector vRoute = Vector(0, 0, 0));
 
-	void init ();
+	void init();
 };
 
 class CBotTF2FindFlagSched : public CBotSchedule
 {
-public:
-	CBotTF2FindFlagSched ( Vector vOrigin );
+  public:
+	CBotTF2FindFlagSched(Vector vOrigin);
 
-	void init ();
+	void init();
 };
 
 class CBotPickupSched : public CBotSchedule
 {
-public:
-	CBotPickupSched ( edict_t *pEdict );
+  public:
+	CBotPickupSched(edict_t *pEdict);
 
-	void init ();
+	void init();
 };
 
 class CBotPickupSchedUse : public CBotSchedule
 {
-public:
-	CBotPickupSchedUse ( edict_t *pEdict );
+  public:
+	CBotPickupSchedUse(edict_t *pEdict);
 
-	void init ();
+	void init();
 };
 
 class CBotGotoOriginSched : public CBotSchedule
 {
-public:
-	CBotGotoOriginSched ( Vector vOrigin );
+  public:
+	CBotGotoOriginSched(Vector vOrigin);
 
-	CBotGotoOriginSched ( edict_t *pEdict );
+	CBotGotoOriginSched(edict_t *pEdict);
 
-	void init ();
+	void init();
 };
 
 class CBotAttackSched : public CBotSchedule
 {
-public:
-	CBotAttackSched ( edict_t *pEdict );
+  public:
+	CBotAttackSched(edict_t *pEdict);
 
-	void init ();
+	void init();
 };
 
 class CRunForCover : public CBotSchedule
 {
-public:
+  public:
 	// run for cover to this spot
-	CRunForCover ( Vector vOrigin );
+	CRunForCover(Vector vOrigin);
 
-	void init ()
+	void init()
 	{
 		setID(SCHED_RUN_FOR_COVER);
 	}
@@ -597,56 +644,55 @@ public:
 
 class CBotInvestigateNoiseSched : public CBotSchedule
 {
-public:
-	CBotInvestigateNoiseSched ( Vector vSource, Vector vAttackPoint );
+  public:
+	CBotInvestigateNoiseSched(Vector vSource, Vector vAttackPoint);
 
-	void init ();
+	void init();
 };
 
 class CGotoHideSpotSched : public CBotSchedule
 {
-public:
+  public:
 	// find a hide spot
 	// hide from an enemy (pEdict)
-	CGotoHideSpotSched ( CBot *pBot, edict_t *pEdict, bool bIsGrenade = false );
+	CGotoHideSpotSched(CBot *pBot, edict_t *pEdict, bool bIsGrenade = false);
 	// hide from a Vector
-	CGotoHideSpotSched ( CBot *pBot, Vector vOrigin, IBotTaskInterrupt *interrupt = NULL );
+	CGotoHideSpotSched(CBot *pBot, Vector vOrigin, IBotTaskInterrupt *interrupt = NULL);
 
-	void init ();
+	void init();
 };
 
 class CGotoNestSched : public CBotSchedule
 {
-public:
+  public:
 	// iWaypoint = the waypoint number the bot will go to (to nest)
 	// if iWaypoint is -1 it will find a random, suitable nest
-	CGotoNestSched ( int iWaypoint );
+	CGotoNestSched(int iWaypoint);
 
-	void init ();
+	void init();
 };
 
 class CCrouchHideSched : public CBotSchedule
 {
-public:
+  public:
 	// iWaypoint = the waypoint number the bot will go to (to nest)
 	// if iWaypoint is -1 it will find a random, suitable nest
-	CCrouchHideSched ( edict_t *pCoverFrom );
+	CCrouchHideSched(edict_t *pCoverFrom);
 
-	void init ();
+	void init();
 };
 
 class CDeployMachineGunSched : public CBotSchedule
 {
-public:
+  public:
 	// iWaypoint = the waypoint number the bot will go to (to nest)
 	// if iWaypoint is -1 it will find a random, suitable nest
-	CDeployMachineGunSched ( CBotWeapon *pWeapon, CWaypoint *pWaypoint, Vector vEnemy );
+	CDeployMachineGunSched(CBotWeapon *pWeapon, CWaypoint *pWaypoint, Vector vEnemy);
 
-	void init ()
+	void init()
 	{
 		setID(SCHED_DEPLOY_MACHINE_GUN);
 	}
 };
-
 
 #endif

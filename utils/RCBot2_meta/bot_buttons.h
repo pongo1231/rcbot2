@@ -31,47 +31,56 @@
 #ifndef __BOT_BUTTONS_H__
 #define __BOT_BUTTONS_H__
 
+#include <mem.h>
 #include <vector>
 
 class CBotButton
 {
-public:
-	CBotButton ( int iId )
+  public:
+	CBotButton(int iId)
 	{
-		memset(this,0,sizeof(CBotButton));
+		memset(this, 0, sizeof(CBotButton));
 		m_iButtonId = iId;
-		m_bTapped = false;		
+		m_bTapped   = false;
 	}
 
-	inline void tap () { m_bTapped = true; }
-
-	inline bool held ( float fTime )
+	inline void tap()
 	{
-		return m_bTapped || ((fTime >= m_fTimeStart) && (fTime <= m_fTimeEnd));// && (!m_fLetGoTime||(fTime > m_fLetGoTime));
+		m_bTapped = true;
 	}
 
-	inline bool canPress (float fTime)
+	inline bool held(float fTime)
+	{
+		return m_bTapped
+		    || ((fTime >= m_fTimeStart) && (fTime <= m_fTimeEnd)); // && (!m_fLetGoTime||(fTime > m_fLetGoTime));
+	}
+
+	inline bool canPress(float fTime)
 	{
 		return !m_bTapped || (m_fLetGoTime < fTime);
 	}
 
-	inline int getID ()
+	inline int getID()
 	{
 		return m_iButtonId;
 	}
 
-	void letGo ()
+	void letGo()
 	{
 		m_fTimeStart = 0.0f;
-		m_fTimeEnd = 0.0f;
+		m_fTimeEnd   = 0.0f;
 		m_fLetGoTime = 0.04f; // bit of latency
+		m_bTapped    = false;
+	}
+
+	inline void unTap()
+	{
 		m_bTapped = false;
 	}
 
-	inline void unTap () { m_bTapped = false; }
+	void hold(float fFrom = 0.0, float fFor = 1.0f, float m_fLetGoTime = 0.0f);
 
-	void hold ( float fFrom = 0.0, float fFor = 1.0f, float m_fLetGoTime = 0.0f );
-private:
+  private:
 	int m_iButtonId;
 	float m_fTimeStart;
 	float m_fTimeEnd;
@@ -82,41 +91,44 @@ private:
 
 class CBotButtons
 {
-public:
+  public:
 	CBotButtons();
 
-	void freeMemory ()
+	void freeMemory()
 	{
-		for (unsigned int i = 0; i < m_theButtons.size(); i ++ )
-		{			
+		for (unsigned int i = 0; i < m_theButtons.size(); i++)
+		{
 			delete m_theButtons[i];
 		}
-		
+
 		m_theButtons.clear();
 	}
 
-	void letGo (int iButtonId);
-	void holdButton ( int iButtonId, float fFrom = 0.0, float fFor = 1.0f, float m_fLetGoTime = 0.0f );
+	void letGo(int iButtonId);
+	void holdButton(int iButtonId, float fFrom = 0.0, float fFor = 1.0f, float m_fLetGoTime = 0.0f);
 
-	inline void add ( CBotButton *theButton );
+	inline void add(CBotButton *theButton);
 
-	bool holdingButton ( int iButtonId );
-	bool canPressButton ( int iButtonId );
+	bool holdingButton(int iButtonId);
+	bool canPressButton(int iButtonId);
 
-	void tap ( int iButtonId );
+	void tap(int iButtonId);
 
-	void letGoAllButtons ( bool bVal ) { m_bLetGoAll = bVal; }
+	void letGoAllButtons(bool bVal)
+	{
+		m_bLetGoAll = bVal;
+	}
 
-	int getBitMask ();
+	int getBitMask();
 
 	////////////////////////////
 
-	void attack (float fFor = 1.0, float fFrom = 0);
-	void jump (float fFor = 1.0, float fFrom = 0);
-	void duck (float fFor = 1.0, float fFrom = 0);
+	void attack(float fFor = 1.0, float fFrom = 0);
+	void jump(float fFor = 1.0, float fFrom = 0);
+	void duck(float fFor = 1.0, float fFrom = 0);
 
-private:
-	std::vector<CBotButton*> m_theButtons;
+  private:
+	std::vector<CBotButton *> m_theButtons;
 	bool m_bLetGoAll;
 };
 #endif

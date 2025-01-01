@@ -43,728 +43,732 @@ class IGameEvent;
 
 class CBotEvent
 {
-public:
+  public:
 	CBotEvent()
 	{
 		m_iEventId = -1;
-		m_szType = NULL;
-		m_iModId = MOD_ANY;
+		m_szType   = NULL;
+		m_iModId   = MOD_ANY;
 	}
 
-	void setMod ( eModId iModId )
+	void setMod(eModId iModId)
 	{
 		m_iModId = iModId;
 	}
 
-	bool forCurrentMod ();
+	bool forCurrentMod();
 
-	void setType ( char *szType );
+	void setType(char *szType);
 
-	inline bool isType ( const char *szType );
+	inline bool isType(const char *szType);
 
-	inline void setActivator ( edict_t *pEdict ) { m_pActivator = pEdict;}
+	inline void setActivator(edict_t *pEdict)
+	{
+		m_pActivator = pEdict;
+	}
 
-	virtual void execute ( IBotEventInterface *pEvent ) { return; }
+	virtual void execute(IBotEventInterface *pEvent)
+	{
+		return;
+	}
 
-	inline void setEventId ( int iEventId )
+	inline void setEventId(int iEventId)
 	{
 		m_iEventId = iEventId;
 	}
 
-	inline bool isEventId ( int iEventId )
+	inline bool isEventId(int iEventId)
 	{
 		return forCurrentMod() && (m_iEventId == iEventId);
 	}
 
-	inline bool hasEventId ()
+	inline bool hasEventId()
 	{
 		return (m_iEventId != -1);
 	}
 
-	const char *getName ()
+	const char *getName()
 	{
 		return m_szType;
 	}
-protected:
+
+  protected:
 	edict_t *m_pActivator;
-private:
+
+  private:
 	char *m_szType;
-	int m_iEventId;	
+	int m_iEventId;
 	eModId m_iModId;
 };
 
 class CRoundStartEvent : public CBotEvent
 {
-public:
+  public:
 	CRoundStartEvent()
 	{
 		setType("round_start");
 		setMod(MOD_CSS);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 class CPostInventoryApplicationTF2 : public CBotEvent
 {
-public:
+  public:
 	CPostInventoryApplicationTF2()
 	{
 		setType("post_inventory_application");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2RoundWinEvent : public CBotEvent
 {
-public:
+  public:
 	CTF2RoundWinEvent()
 	{
 		setType("teamplay_round_win");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CPlayerHurtEvent : public CBotEvent
 {
-public:
+  public:
 	CPlayerHurtEvent()
 	{
 		setType("player_hurt");
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CPlayerDeathEvent : public CBotEvent
 {
-public:
+  public:
 	CPlayerDeathEvent()
 	{
 		setType("player_death");
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CBombPickupEvent : public CBotEvent
 {
-public:
+  public:
 	CBombPickupEvent()
 	{
 		setType("bomb_pickup");
 		setMod(MOD_CSS);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CPlayerFootstepEvent : public CBotEvent
 {
-public:
+  public:
 	CPlayerFootstepEvent()
 	{
 		setType("player_footstep");
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CPlayerSpawnEvent : public CBotEvent
 {
-public:
+  public:
 	CPlayerSpawnEvent()
 	{
 		setType("player_spawn");
 		setMod(MOD_ANY);
 	}
-	
-	void execute ( IBotEventInterface *pEvent );
+
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CBombDroppedEvent : public CBotEvent
 {
-public:
+  public:
 	CBombDroppedEvent()
 	{
 		setType("bomb_dropped");
 		setMod(MOD_CSS);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class COverTimeBegin : public CBotEvent
 {
-public:
+  public:
 	COverTimeBegin()
 	{
 		setType("teamplay_overtime_begin");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CPlayerHealed : public CBotEvent
 {
-public:
+  public:
 	CPlayerHealed()
 	{
 		setType("player_healed");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CPlayerTeleported : public CBotEvent
 {
-public:
+  public:
 	CPlayerTeleported()
 	{
 		setType("player_teleported");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CWeaponFireEvent : public CBotEvent
 {
-public:
+  public:
 	CWeaponFireEvent()
 	{
 		setType("weapon_fire");
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2ObjectSapped : public CBotEvent
 {
-public:
+  public:
 	CTF2ObjectSapped()
 	{
 		setType("player_sapped_object");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2ObjectDestroyed : public CBotEvent
 {
-public:
+  public:
 	CTF2ObjectDestroyed()
 	{
 		setType("object_destroyed");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2PointCaptured : public CBotEvent
 {
-public:
+  public:
 	CTF2PointCaptured()
 	{
 		setType("teamplay_point_captured");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2RoundActive : public CBotEvent
 {
-public:
+  public:
 	CTF2RoundActive()
 	{
 		setType("teamplay_round_active");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
-
-	
 
 class CTF2PointStopCapture : public CBotEvent
 {
-public:
+  public:
 	CTF2PointStopCapture()
 	{
 		setType("teamplay_capture_broken");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2PointBlockedCapture : public CBotEvent
 {
-public:
+  public:
 	CTF2PointBlockedCapture()
 	{
 		setType("teamplay_capture_blocked");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2PointStartCapture : public CBotEvent
 {
-public:
+  public:
 	CTF2PointStartCapture()
 	{
 		setType("teamplay_point_startcapture");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
-
 
 class CTF2MVMWaveFailedEvent : public CBotEvent
 {
-public:
+  public:
 	CTF2MVMWaveFailedEvent()
 	{
 		setType("mvm_wave_failed");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2MVMWaveCompleteEvent : public CBotEvent
 {
-public:
+  public:
 	CTF2MVMWaveCompleteEvent()
 	{
 		setType("mvm_wave_complete");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2PointStartTouch : public CBotEvent
 {
-public:
+  public:
 	CTF2PointStartTouch()
 	{
 		setType("controlpoint_starttouch");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2PointEndTouch : public CBotEvent
 {
-public:
+  public:
 	CTF2PointEndTouch()
 	{
 		setType("controlpoint_endtouch");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2RoundStart : public CBotEvent
 {
-public:
+  public:
 	CTF2RoundStart()
 	{
 		setType("teamplay_round_start");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2SetupFinished : public CBotEvent
 {
-public:
+  public:
 	CTF2SetupFinished()
 	{
 		setType("teamplay_setup_finished");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CBulletImpactEvent : public CBotEvent
 {
-public:
+  public:
 	CBulletImpactEvent()
 	{
 		setType("bullet_impact");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2ObjectDestroyedEvent : public CBotEvent
 {
-public:
+  public:
 	CTF2ObjectDestroyedEvent()
 	{
 		setType("object_destroyed");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2BuiltObjectEvent : public CBotEvent
 {
-public:
+  public:
 	CTF2BuiltObjectEvent()
 	{
 		setType("player_builtobject");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2UpgradeObjectEvent : public CBotEvent
 {
-public:
+  public:
 	CTF2UpgradeObjectEvent()
 	{
 		setType("player_upgradedobject");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2ChangeClass : public CBotEvent
 {
-public:
+  public:
 	CTF2ChangeClass()
 	{
 		setType("player_changeclass");
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CBossSummonedEvent : public CBotEvent
 {
-public:
+  public:
 	CBossSummonedEvent(char *psztype)
 	{
 		setType(psztype);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CBossKilledEvent : public CBotEvent
 {
-public:
+  public:
 	CBossKilledEvent(char *psztype)
 	{
 		setType(psztype);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
-
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2PointLocked : public CBotEvent
 {
-public:
+  public:
 	CTF2PointLocked()
 	{
 		setType("teamplay_point_locked");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2PointUnlocked : public CBotEvent
 {
-public:
+  public:
 	CTF2PointUnlocked()
 	{
 		setType("teamplay_point_unlocked");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CTF2MannVsMachineAlarm : public CBotEvent
 {
-public:
+  public:
 	CTF2MannVsMachineAlarm()
 	{
 		setType("mvm_bomb_alarm_triggered");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
-
 
 class CFlagEvent : public CBotEvent
 {
-public:
+  public:
 	CFlagEvent()
 	{
 		setType("teamplay_flag_event");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CFlagCaptured : public CBotEvent
 {
-public:
+  public:
 	CFlagCaptured()
 	{
 		setType("ctf_flag_captured");
 		setMod(MOD_TF2);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
-	/*
-	[RCBot] [DEBUG GAME_EVENT] [BEGIN "dod_stats_weapon_attack"]
-	[RCBot] [DEBUG GAME_EVENT] 	attacker = 5
-	[RCBot] [DEBUG GAME_EVENT] 	weapon = 14
-	[RCBot] [DEBUG GAME_EVENT] [END "dod_stats_weapon_attack"]*/
+/*
+[RCBot] [DEBUG GAME_EVENT] [BEGIN "dod_stats_weapon_attack"]
+[RCBot] [DEBUG GAME_EVENT] 	attacker = 5
+[RCBot] [DEBUG GAME_EVENT] 	weapon = 14
+[RCBot] [DEBUG GAME_EVENT] [END "dod_stats_weapon_attack"]*/
 class CDODFireWeaponEvent : public CBotEvent
 {
-public:
+  public:
 	CDODFireWeaponEvent()
 	{
 		setType("dod_stats_weapon_attack");
 		setMod(MOD_DOD);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CDODBombExploded : public CBotEvent
 {
-public:
+  public:
 	CDODBombExploded()
 	{
 		setType("dod_bomb_exploded");
 		setMod(MOD_DOD);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CDODBombPlanted : public CBotEvent
 {
-public:
+  public:
 	CDODBombPlanted()
 	{
 		setType("dod_bomb_planted");
 		setMod(MOD_DOD);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CDODBombDefused : public CBotEvent
 {
-public:
+  public:
 	CDODBombDefused()
 	{
 		setType("dod_bomb_defused");
 		setMod(MOD_DOD);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CDODPointCaptured : public CBotEvent
 {
-public:
+  public:
 	CDODPointCaptured()
 	{
 		setType("dod_point_captured");
 		setMod(MOD_DOD);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CDODChangeClass : public CBotEvent
 {
-public:
+  public:
 	CDODChangeClass()
 	{
 		setType("player_changeclass");
 		setMod(MOD_DOD);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CDODRoundStart : public CBotEvent
 {
-public:
+  public:
 	CDODRoundStart()
 	{
 		setType("dod_round_start");
 		setMod(MOD_DOD);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CDODRoundActive : public CBotEvent
 {
-public:
+  public:
 	CDODRoundActive()
 	{
 		setType("dod_round_active");
 		setMod(MOD_DOD);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CDODRoundWin : public CBotEvent
 {
-public:
+  public:
 	CDODRoundWin()
 	{
 		setType("dod_round_win");
 		setMod(MOD_DOD);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 class CDODRoundOver : public CBotEvent
 {
-public:
+  public:
 	CDODRoundOver()
 	{
 		setType("dod_game_over");
 		setMod(MOD_DOD);
 	}
 
-	void execute ( IBotEventInterface *pEvent );
+	void execute(IBotEventInterface *pEvent);
 };
 
 typedef enum
 {
-	TYPE_KEYVALUES = 0,
+	TYPE_KEYVALUES  = 0,
 	TYPE_IGAMEEVENT = 1
-}eBotEventType;
+} eBotEventType;
 
 class IBotEventInterface
 {
-public:
-	virtual float getFloat ( const char *keyName = 0, float defaultValue = 0 ) = 0;
-	virtual int getInt ( const char *keyName = 0, int defaultValue = 0 ) = 0;
-	virtual const char *getString ( const char *keyName = 0, const char *defaultValue = 0 ) = 0;
-	virtual const char *getName () = 0;
-	virtual void setInt ( const char *keyName, int value ) = 0;
+  public:
+	virtual float getFloat(const char *keyName = 0, float defaultValue = 0)              = 0;
+	virtual int getInt(const char *keyName = 0, int defaultValue = 0)                    = 0;
+	virtual const char *getString(const char *keyName = 0, const char *defaultValue = 0) = 0;
+	virtual const char *getName()                                                        = 0;
+	virtual void setInt(const char *keyName, int value)                                  = 0;
 };
 
 class CGameEventInterface1 : public IBotEventInterface
 {
-public:
-	CGameEventInterface1 ( KeyValues *pEvent )
+  public:
+	CGameEventInterface1(KeyValues *pEvent)
 	{
 		m_pEvent = pEvent;
 	}
 
-	float getFloat ( const char *keyName = 0, float defaultValue = 0 )
+	float getFloat(const char *keyName = 0, float defaultValue = 0)
 	{
-		return m_pEvent->GetFloat(keyName,defaultValue);
+		return m_pEvent->GetFloat(keyName, defaultValue);
 	}
-	int getInt ( const char *keyName = 0, int defaultValue = 0 )
+	int getInt(const char *keyName = 0, int defaultValue = 0)
 	{
-		return m_pEvent->GetInt(keyName,defaultValue);
+		return m_pEvent->GetInt(keyName, defaultValue);
 	}
-	void setInt ( const char *keyName, int value )
+	void setInt(const char *keyName, int value)
 	{
-		m_pEvent->SetInt(keyName,value);
+		m_pEvent->SetInt(keyName, value);
 	}
-	const char *getString ( const char *keyName = 0, const char *defaultValue = 0 )
+	const char *getString(const char *keyName = 0, const char *defaultValue = 0)
 	{
-		return m_pEvent->GetString(keyName,defaultValue);
+		return m_pEvent->GetString(keyName, defaultValue);
 	}
-	const char *getName ()
+	const char *getName()
 	{
 		return m_pEvent->GetName();
 	}
 
-private:
+  private:
 	KeyValues *m_pEvent;
 };
 
 class CGameEventInterface2 : public IBotEventInterface
 {
-public:
-	CGameEventInterface2 ( IGameEvent *pEvent )
+  public:
+	CGameEventInterface2(IGameEvent *pEvent)
 	{
 		m_pEvent = pEvent;
 	}
 
-	float getFloat ( const char *keyName = 0, float defaultValue = 0 )
+	float getFloat(const char *keyName = 0, float defaultValue = 0)
 	{
-		return m_pEvent->GetFloat(keyName,defaultValue);
+		return m_pEvent->GetFloat(keyName, defaultValue);
 	}
-	int getInt ( const char *keyName = 0, int defaultValue = 0 )
+	int getInt(const char *keyName = 0, int defaultValue = 0)
 	{
-		return m_pEvent->GetInt(keyName,defaultValue);
+		return m_pEvent->GetInt(keyName, defaultValue);
 	}
-	void setInt ( const char *keyName, int value )
+	void setInt(const char *keyName, int value)
 	{
-		m_pEvent->SetInt(keyName,value);
+		m_pEvent->SetInt(keyName, value);
 	}
-	const char *getString ( const char *keyName = 0, const char *defaultValue = 0 )
+	const char *getString(const char *keyName = 0, const char *defaultValue = 0)
 	{
-		return m_pEvent->GetString(keyName,defaultValue);
+		return m_pEvent->GetString(keyName, defaultValue);
 	}
-	//Arguments needing filled? [APG]RoboCop[CL]
-	const char *getName ()
+	// Arguments needing filled? [APG]RoboCop[CL]
+	const char *getName()
 	{
 		return m_pEvent->GetName();
 	}
-private:
+
+  private:
 	IGameEvent *m_pEvent;
 };
 
 class CBotEvents
 {
-public:
-	static void setupEvents ();
+  public:
+	static void setupEvents();
 
-	static void executeEvent( void *pEvent, eBotEventType iType );
+	static void executeEvent(void *pEvent, eBotEventType iType);
 
-	static void freeMemory ();
+	static void freeMemory();
 
-	static void addEvent ( CBotEvent *pEvent );
+	static void addEvent(CBotEvent *pEvent);
 
-private:
-	static std::vector<CBotEvent*> m_theEvents;
+  private:
+	static std::vector<CBotEvent *> m_theEvents;
 };
 #endif

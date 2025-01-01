@@ -31,8 +31,11 @@
 #ifndef __BOT_COMMANDS_H__
 #define __BOT_COMMANDS_H__
 
-#include <vector>
+#include "edict.h"
+#include <cstddef>
+#include <deque>
 #include <functional>
+#include <vector>
 
 class CClient;
 
@@ -40,71 +43,84 @@ typedef enum
 {
 	COMMAND_NOT_FOUND,     // command not found
 	COMMAND_ACCESSED,      // okay
-	COMMAND_ERROR,		   // accessed but error occurred
+	COMMAND_ERROR,         // accessed but error occurred
 	COMMAND_REQUIRE_ACCESS // dont have access to command
-}eBotCommandResult;
+} eBotCommandResult;
 
-#define NEED_ARG(x) if ( !x || !*x ) return COMMAND_ERROR;
+#define NEED_ARG(x) \
+	if (!x || !*x)  \
+		return COMMAND_ERROR;
 
+#define CMD_ACCESS_NONE 0
+#define CMD_ACCESS_WAYPOINT (1 << 0)
+#define CMD_ACCESS_BOT (1 << 1)
+#define CMD_ACCESS_UTIL (1 << 2)
+#define CMD_ACCESS_CONFIG (1 << 3)
+#define CMD_ACCESS_DEBUG (1 << 4)
+#define CMD_ACCESS_USERS (1 << 5)
+#define CMD_ACCESS_DEDICATED (1 << 6) // replaces canbeUsedDedicated
 
-#define CMD_ACCESS_NONE				0
-#define CMD_ACCESS_WAYPOINT			(1<<0)
-#define CMD_ACCESS_BOT				(1<<1)
-#define CMD_ACCESS_UTIL				(1<<2)
-#define CMD_ACCESS_CONFIG			(1<<3)
-#define CMD_ACCESS_DEBUG			(1<<4)
-#define CMD_ACCESS_USERS			(1<<5)
-#define CMD_ACCESS_DEDICATED		(1<<6) // replaces canbeUsedDedicated
-
-#define CMD_ACCESS_ALL (CMD_ACCESS_WAYPOINT|CMD_ACCESS_UTIL|CMD_ACCESS_BOT|CMD_ACCESS_CONFIG|CMD_ACCESS_DEBUG|CMD_ACCESS_USERS)
+#define CMD_ACCESS_ALL \
+	(CMD_ACCESS_WAYPOINT | CMD_ACCESS_UTIL | CMD_ACCESS_BOT | CMD_ACCESS_CONFIG | CMD_ACCESS_DEBUG | CMD_ACCESS_USERS)
 
 /**
  * This is just a deque that returns nullptr if we access an out-of-bounds array element.
  */
-class BotCommandArgs : public std::deque<const char*> {
-public:
-	const char* operator[](size_t at) {
-		if (at >= this->size()) {
+class BotCommandArgs : public std::deque<const char *>
+{
+  public:
+	const char *operator[](size_t at)
+	{
+		if (at >= this->size())
+		{
 			return nullptr;
 		}
-		return std::deque<const char*>::operator[](at);
+		return std::deque<const char *>::operator[](at);
 	}
 };
 
-using BotCommandCallback = std::function<eBotCommandResult(CClient*, BotCommandArgs)>;
+using BotCommandCallback = std::function<eBotCommandResult(CClient *, BotCommandArgs)>;
 
 class CBotCommand
 {
-protected:
-	CBotCommand () : m_iAccessLevel{0}, m_szCommand{nullptr}, m_szHelp{nullptr} { }
-	
-public:
+  protected:
+	CBotCommand() : m_iAccessLevel { 0 }, m_szCommand { nullptr }, m_szHelp { nullptr }
+	{
+	}
+
+  public:
 	// initialise
-	CBotCommand(const char *command, int iAccessLevel = 0) :
-			m_iAccessLevel{iAccessLevel}, m_szCommand{command} {};
-	
-	CBotCommand(const char* command, int iAccessLevel = 0, const char* help = nullptr) :
-			m_iAccessLevel{iAccessLevel}, m_szCommand{command}, m_szHelp{help} {};
+	CBotCommand(const char *command, int iAccessLevel = 0)
+	    : m_iAccessLevel { iAccessLevel }, m_szCommand { command } {};
+
+	CBotCommand(const char *command, int iAccessLevel = 0, const char *help = nullptr)
+	    : m_iAccessLevel { iAccessLevel }, m_szCommand { command }, m_szHelp { help } {};
 
 	// check command name
-	bool isCommand ( const char *szCommand );
+	bool isCommand(const char *szCommand);
 
 	// execute command
 	// we pass byval / copy the argument list so they can be pushed / shifted without
 	// affecting the original list
 	virtual eBotCommandResult execute(CClient *pClient, BotCommandArgs args);
 
-	bool hasAccess ( CClient *pClient );
+	bool hasAccess(CClient *pClient);
 
-	virtual void printCommand ( edict_t *pPrintTo, int indent = 0);
+	virtual void printCommand(edict_t *pPrintTo, int indent = 0);
 
-	virtual void printHelp ( edict_t *pPrintTo );
+	virtual void printHelp(edict_t *pPrintTo);
 
-	virtual bool isContainer () { return false; }
+	virtual bool isContainer()
+	{
+		return false;
+	}
 
-	bool canbeUsedDedicated () { return (this->m_iAccessLevel & CMD_ACCESS_DEDICATED) != 0; }
-protected:
+	bool canbeUsedDedicated()
+	{
+		return (this->m_iAccessLevel & CMD_ACCESS_DEDICATED) != 0;
+	}
 
+  protected:
 	int m_iAccessLevel;
 	const char *m_szCommand;
 	const char *m_szHelp;
@@ -112,27 +128,37 @@ protected:
 
 class CBotCommandInline : public CBotCommand
 {
-public:
-	CBotCommandInline(const char* cmd, int iAccessLevel, BotCommandCallback callback, const char* help = nullptr) : CBotCommand(cmd, iAccessLevel, help), m_Callback(callback) {}
-	
+  public:
+	CBotCommandInline(const char *cmd, int iAccessLevel, BotCommandCallback callback, const char *help = nullptr)
+	    : CBotCommand(cmd, iAccessLevel, help), m_Callback(callback)
+	{
+	}
+
 	eBotCommandResult execute(CClient *pClient, BotCommandArgs args);
-	
+
 	BotCommandCallback m_Callback;
 };
 
 class CBotSubcommands : public CBotCommand
 {
-public:
-	CBotSubcommands(const char* cmd, int iAccessLevel, std::vector<CBotCommand*> subcommands) : CBotCommand(cmd, iAccessLevel, nullptr), m_theCommands{subcommands} {}
-	
+  public:
+	CBotSubcommands(const char *cmd, int iAccessLevel, std::vector<CBotCommand *> subcommands)
+	    : CBotCommand(cmd, iAccessLevel, nullptr), m_theCommands { subcommands }
+	{
+	}
+
 	eBotCommandResult execute(CClient *pClient, BotCommandArgs args);
-	
+
 	void printCommand(edict_t *pPrintTo, int indent = 0);
 	void printHelp(edict_t *pPrintTo);
-	
-	bool isContainer() { return true; }
-private:
-	std::vector<CBotCommand*> m_theCommands;
+
+	bool isContainer()
+	{
+		return true;
+	}
+
+  private:
+	std::vector<CBotCommand *> m_theCommands;
 };
 
 #endif

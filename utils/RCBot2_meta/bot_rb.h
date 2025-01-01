@@ -3,22 +3,23 @@
 
 class CBotRule
 {
-public:
-	CBotRule ()
+  public:
+	CBotRule()
 	{
 	}
-private:
+
+  private:
 	vector<CBotOperator> m_Rules;
 };
 
 class CBotOperator
 {
-public:
-	CBotOperator ( CBotFactOpertor op ) : m_op(op)
-	{		
+  public:
+	CBotOperator(CBotFactOpertor op) : m_op(op)
+	{
 	}
 
-	virtual bool operate ( bool bVal, CBotOperator *pNext )
+	virtual bool operate(bool bVal, CBotOperator *pNext)
 	{
 		switch (m_op)
 		{
@@ -38,18 +39,19 @@ public:
 	{
 		return -1;
 	}
-private:
+
+  private:
 	CBotFactOperator m_op;
 };
 // for use with rule list
 class CBotFact : public CBotOperator
 {
-public:
-	CBotFact ( unsigned int iFactId ) : m_fid(iFactId)
+  public:
+	CBotFact(unsigned int iFactId) : m_fid(iFactId)
 	{
 	}
 
-	bool operate ( bVal, CBotOperator *pNext )
+	bool operate(bVal, CBotOperator *pNext)
 	{
 		return m_bVal;
 	}
@@ -58,12 +60,13 @@ public:
 	{
 		return m_bVal;
 	}
-private:
+
+  private:
 	unsigned int m_fid;
 	bool m_bVal;
 };
 
-typedef enum 
+typedef enum
 {
 	OP_NONE = 0,
 	OP_PRE_NORM,
@@ -72,6 +75,6 @@ typedef enum
 	OP_OR,
 	OP_AND_NOT,
 	OP_OR_NOT
-}CBotFactOperator;
+} CBotFactOperator;
 
 #endif

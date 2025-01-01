@@ -8,7 +8,7 @@
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License, version 3.0, as published by the
  * Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
@@ -48,7 +48,7 @@ bool SM_AcquireInterfaces(char *error, size_t maxlength)
 #endif
 #if defined SMEXT_ENABLE_DBMANAGER
 	SM_FIND_IFACE_OR_FAIL(DBI, sm_dbi, error, maxlength);
-#endif 
+#endif
 #if defined SMEXT_ENABLE_GAMECONF
 	SM_FIND_IFACE_OR_FAIL(GAMECONFIG, sm_gameconfs, error, maxlength);
 #endif
@@ -69,7 +69,7 @@ bool SM_AcquireInterfaces(char *error, size_t maxlength)
 #endif
 #if defined SMEXT_ENABLE_PLUGINSYS
 	SM_FIND_IFACE_OR_FAIL(PLUGINSYSTEM, sm_plsys, error, maxlength);
-#endif 
+#endif
 #if defined SMEXT_ENABLE_MENUS
 	SM_FIND_IFACE_OR_FAIL(MENUMANAGER, sm_menus, error, maxlength);
 #endif
@@ -88,10 +88,10 @@ bool SM_AcquireInterfaces(char *error, size_t maxlength)
 
 void SM_UnsetInterfaces()
 {
-	myself = NULL;
-	smexts = NULL;
+	myself   = NULL;
+	smexts   = NULL;
 	sharesys = NULL;
-	sm_main = NULL;
+	sm_main  = NULL;
 #if defined SMEXT_ENABLE_FORWARDSYS
 	sm_forwards = NULL;
 #endif
@@ -103,7 +103,7 @@ void SM_UnsetInterfaces()
 #endif
 #if defined SMEXT_ENABLE_DBMANAGER
 	sm_dbi = NULL;
-#endif 
+#endif
 #if defined SMEXT_ENABLE_GAMECONF
 	sm_gameconfs = NULL;
 #endif
@@ -124,7 +124,7 @@ void SM_UnsetInterfaces()
 #endif
 #if defined SMEXT_ENABLE_PLUGINSYS
 	sm_plsys = NULL;
-#endif 
+#endif
 #if defined SMEXT_ENABLE_MENUS
 	sm_menus = NULL;
 #endif
@@ -139,9 +139,9 @@ void SM_UnsetInterfaces()
 #endif
 }
 
-IExtension *myself = NULL;
-IExtensionManager *smexts = NULL;
-IShareSys *sharesys = NULL;
+IExtension *myself             = NULL;
+IExtensionManager *smexts      = NULL;
+IShareSys *sharesys            = NULL;
 SourceMod::ISourceMod *sm_main = NULL;
 #if defined SMEXT_ENABLE_FORWARDSYS
 SourceMod::IForwardManager *sm_forwards = NULL;
@@ -154,7 +154,7 @@ SourceMod::IPlayerManager *sm_players = NULL;
 #endif
 #if defined SMEXT_ENABLE_DBMANAGER
 SourceMod::IDBManager *sm_dbi = NULL;
-#endif 
+#endif
 #if defined SMEXT_ENABLE_GAMECONF
 SourceMod::IGameConfigManager *sm_gameconfs = NULL;
 #endif
@@ -175,7 +175,7 @@ SourceMod::ILibrarySys *sm_libsys = NULL;
 #endif
 #if defined SMEXT_ENABLE_PLUGINSYS
 SourceMod::IPluginManager *sm_plsys = NULL;
-#endif 
+#endif
 #if defined SMEXT_ENABLE_MENUS
 SourceMod::IMenuManager *sm_menus = NULL;
 #endif

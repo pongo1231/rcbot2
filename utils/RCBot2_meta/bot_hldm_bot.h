@@ -36,55 +36,67 @@
 // bot for HLDM
 class CHLDMBot : public CBot
 {
-public:
-	bool handleAttack ( CBotWeapon *pWeapon, edict_t *pEnemy );
+  public:
+	bool handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy);
 
-	void handleWeapons ();
+	void handleWeapons();
 
-	bool isHLDM () { return true; }
+	bool isHLDM()
+	{
+		return true;
+	}
 
-	void modThink ();
+	void modThink();
 
-	void init ();
-	void setup ();
+	void init();
+	void setup();
 
-	bool startGame ();
+	bool startGame();
 
-	void died ( edict_t *pKiller, const char *pszWeapon );
-	void killed ( edict_t *pVictim, char *weapon );
+	void died(edict_t *pKiller, const char *pszWeapon);
+	void killed(edict_t *pVictim, char *weapon);
 
-	void spawnInit ();
+	void spawnInit();
 
-	bool isEnemy ( edict_t *pEdict,bool bCheckWeapons = true );
+	bool isEnemy(edict_t *pEdict, bool bCheckWeapons = true);
 
-	void getTasks (unsigned int iIgnore=0);
-	bool executeAction ( eBotAction iAction );
+	void getTasks(unsigned int iIgnore = 0);
+	bool executeAction(eBotAction iAction);
 
-	float getArmorPercent () { return (0.01f * m_pPlayerInfo->GetArmorValue()); }
+	float getArmorPercent()
+	{
+		return (0.01f * m_pPlayerInfo->GetArmorValue());
+	}
 
-	bool setVisible ( edict_t *pEntity, bool bVisible );
+	bool setVisible(edict_t *pEntity, bool bVisible);
 
-	virtual unsigned int maxEntityIndex ( ) { return gpGlobals->maxEntities; }
+	virtual unsigned int maxEntityIndex()
+	{
+		return gpGlobals->maxEntities;
+	}
 
-	void enemyLost (edict_t *pEnemy);
+	void enemyLost(edict_t *pEnemy);
 
-	inline void setFailedObject ( edict_t *pent ) 
-	{ 
-		m_FailedPhysObj = pent; 
+	inline void setFailedObject(edict_t *pent)
+	{
+		m_FailedPhysObj = pent;
 
-		if ( m_NearestPhysObj == pent ) 
+		if (m_NearestPhysObj == pent)
 			m_NearestPhysObj = NULL;
 	}
 
-	bool checkStuck ();
+	bool checkStuck();
 
-	bool willCollide ( edict_t *pEntity, bool *bCanJump, float *fTime );
+	bool willCollide(edict_t *pEntity, bool *bCanJump, float *fTime);
 
-	edict_t *getFailedObject () { return m_FailedPhysObj; }
+	edict_t *getFailedObject()
+	{
+		return m_FailedPhysObj;
+	}
 
-	virtual void touchedWpt ( CWaypoint *pWaypoint );
+	virtual void touchedWpt(CWaypoint *pWaypoint);
 
-private:
+  private:
 	// blah blah
 	MyEHandle m_NearestPhysObj;
 	MyEHandle m_NearestBreakable;
@@ -97,7 +109,7 @@ private:
 	MyEHandle m_pCharger; // nearest charger
 	MyEHandle m_pNearbyWeapon;
 	MyEHandle m_pNearestButton;
-	//MyEHandle m_pNearestBreakable;
+	// MyEHandle m_pNearestBreakable;
 	MyEHandle m_pAmmoCrate;
 	edict_t *m_pCurrentWeapon;
 
