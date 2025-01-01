@@ -6948,52 +6948,111 @@ void CBotTF2 ::modAim(edict_t *pEntity, Vector &v_origin, Vector *v_desired_offs
 
 	if (pWp)
 	{
-		if (m_iClass == TF_CLASS_SNIPER)
+		/*if (m_iClass == TF_CLASS_SNIPER)
 		{
-			if (pWp->getID() == TF2_WEAPON_BOW)
+		    if (pWp->getID() == TF2_WEAPON_BOW)
+		    {
+		        if (pWp->getProjectileSpeed() > 0)
+		        {
+		            CClient *pClient = CClients::get(pEntity);
+		            Vector vVelocity;
+
+		            if (CClassInterface::getVelocity(pEntity, &vVelocity))
+		            {
+		                if (pClient && (vVelocity == Vector(0, 0, 0)))
+		                    vVelocity = pClient->getVelocity();
+		            }
+		            else if (pClient)
+		                vVelocity = pClient->getVelocity();
+
+		            // the arrow will arc
+		            fTime = fDist2D / (pWp->getProjectileSpeed() * 0.707);
+
+		            if (rcbot_supermode.GetBool())
+		                *v_desired_offset = *v_desired_offset + ((vVelocity * fTime));
+		            else
+		                *v_desired_offset = *v_desired_offset + ((vVelocity * fTime) * m_pProfile->m_fAimSkill);
+
+		            if (sv_gravity.IsValid())
+		                v_desired_offset->z += ((pow(2, fTime) - 1.0f)
+		                                        * (sv_gravity.GetFloat() * 0.1f)); // - (getOrigin().z - v_origin.z);
+
+		            v_desired_offset->z *= 0.6f;
+		        }
+		    }
+		    else if ((v_desired_offset->z < 64.0f) && !hasSomeConditions(CONDITION_SEE_ENEMY_GROUND))
+		    {
+		        if (rcbot_supermode.GetBool())
+		            v_desired_offset->z += 15.0f;
+		        else
+		            v_desired_offset->z += randomFloat(0.0f, 16.0f);
+		    }
+		}*/
+
+		CWeapon *pWepInfo = pWp->getWeaponInfo();
+		if (pWepInfo->isProjectile())
+		{
+			//			int iSpeed = 0;
+
+			/*switch (pWp->getID())
 			{
-				if (pWp->getProjectileSpeed() > 0)
-				{
-					CClient *pClient = CClients::get(pEntity);
-					Vector vVelocity;
+			case TF2_WEAPON_ROCKETLAUNCHER:
+			// fall through
+			case TF2_WEAPON_COWMANGLER:
+			case TF2_WEAPON_FLAREGUN:
+			case TF2_WEAPON_GRENADELAUNCHER:
+			{*/
+			CClient *pClient = CClients::get(pEntity);
+			Vector vVelocity;
 
-					if (CClassInterface::getVelocity(pEntity, &vVelocity))
-					{
-						if (pClient && (vVelocity == Vector(0, 0, 0)))
-							vVelocity = pClient->getVelocity();
-					}
-					else if (pClient)
-						vVelocity = pClient->getVelocity();
+			// if ( iSpeed == 0 )
+			//	iSpeed = TF2_GRENADESPEED;
 
-					// the arrow will arc
-					fTime = fDist2D / (pWp->getProjectileSpeed() * 0.707);
-
-					if (rcbot_supermode.GetBool())
-						*v_desired_offset = *v_desired_offset + ((vVelocity * fTime));
-					else
-						*v_desired_offset = *v_desired_offset + ((vVelocity * fTime) * m_pProfile->m_fAimSkill);
-
-					if (sv_gravity.IsValid())
-						v_desired_offset->z += ((pow(2, fTime) - 1.0f)
-						                        * (sv_gravity.GetFloat() * 0.1f)); // - (getOrigin().z - v_origin.z);
-
-					v_desired_offset->z *= 0.6f;
-				}
+			// if ( pClient )
+			//{
+			if (CClassInterface ::getVelocity(pEntity, &vVelocity))
+			{
+				if (pClient && (vVelocity == Vector(0, 0, 0)))
+					vVelocity = pClient->getVelocity();
 			}
-			else if ((v_desired_offset->z < 64.0f) && !hasSomeConditions(CONDITION_SEE_ENEMY_GROUND))
+			else if (pClient)
+				vVelocity = pClient->getVelocity();
+
+			// speed = distance/time
+			// .'.
+			// time = distance/speed
+
+			bool bIsGrenade        = pWepInfo->isGrenade();
+			float fProjectileSpeed = pWepInfo->getProjectileSpeed();
+
+			if (fProjectileSpeed > 0.f)
 			{
-				if (rcbot_supermode.GetBool())
-					v_desired_offset->z += 15.0f;
+				if (bIsGrenade)
+					fTime = fDist2D / (fProjectileSpeed * 0.707);
 				else
-					v_desired_offset->z += randomFloat(0.0f, 16.0f);
+					fTime = fDist / fProjectileSpeed;
+
+				// if (rcbot_supermode.GetBool())
+				*v_desired_offset = *v_desired_offset + ((vVelocity * fTime));
+				/*else
+				 *v_desired_offset = *v_desired_offset + ((vVelocity * fTime) * m_pProfile->m_fAimSkill);*/
+
+				if ((sv_gravity.IsValid()) && bIsGrenade)
+					v_desired_offset->z +=
+					    ((pow(2, fTime) - 1.0f) * (sv_gravity.GetFloat() * 0.1f)); // - (getOrigin().z - v_origin.z);
+
+				/*if ((pWp->getID() == TF2_WEAPON_GRENADELAUNCHER) && hasSomeConditions(CONDITION_SEE_ENEMY_GROUND))
+				    v_desired_offset->z -= randomFloat(8.0f, 32.0f); // aim for ground - with grenade launcher
+				else if ((pWp->getID() == TF2_WEAPON_ROCKETLAUNCHER) || (pWp->getID() == TF2_WEAPON_COWMANGLER)
+				         || (v_origin.z > (getOrigin().z + 16.0f)))*/
+				v_desired_offset->z += randomFloat(8.0f, 32.0f); // aim for body, not ground
+				                                                 /*}
+				                                                 break;
+				                                                 }*/
 			}
 		}
-		else if (m_iClass == TF_CLASS_MEDIC)
-		{
-			if (pWp->getID() == TF2_WEAPON_SYRINGEGUN)
-				v_desired_offset->z += sqrt(fDist) * 2;
-		}
-		else if (m_iClass == TF_CLASS_HWGUY)
+
+		if (m_iClass == TF_CLASS_HWGUY)
 		{
 			if (pWp->getID() == TF2_WEAPON_MINIGUN)
 			{
@@ -7010,63 +7069,18 @@ void CBotTF2 ::modAim(edict_t *pEntity, Vector &v_origin, Vector *v_desired_offs
 				    *v_desired_offset + (((vRight * 24) - Vector(0, 0, 24)) * bot_heavyaimoffset.GetFloat());
 			}
 		}
-		else if ((m_iClass == TF_CLASS_SOLDIER) || (m_iClass == TF_CLASS_DEMOMAN))
+
+		if (m_iClass == TF_CLASS_MEDIC)
 		{
-			//			int iSpeed = 0;
+			if (pWp->getID() != TF2_WEAPON_CROSSBOW)
+				v_desired_offset->z += sqrt(fDist) * 2;
+		}
 
-			switch (pWp->getID())
-			{
-			case TF2_WEAPON_ROCKETLAUNCHER:
-			// fall through
-			case TF2_WEAPON_COWMANGLER:
-			case TF2_WEAPON_FLAREGUN:
-			case TF2_WEAPON_GRENADELAUNCHER:
-			{
-				CClient *pClient = CClients::get(pEntity);
-				Vector vVelocity;
-
-				// if ( iSpeed == 0 )
-				//	iSpeed = TF2_GRENADESPEED;
-
-				// if ( pClient )
-				//{
-				if (CClassInterface ::getVelocity(pEntity, &vVelocity))
-				{
-					if (pClient && (vVelocity == Vector(0, 0, 0)))
-						vVelocity = pClient->getVelocity();
-				}
-				else if (pClient)
-					vVelocity = pClient->getVelocity();
-
-				// speed = distance/time
-				// .'.
-				// time = distance/speed
-
-				if (pWp->getProjectileSpeed() > 0)
-				{
-					if ((pWp->getID() == TF2_WEAPON_GRENADELAUNCHER))
-						fTime = fDist2D / (pWp->getProjectileSpeed() * 0.707);
-					else
-						fTime = fDist / (pWp->getProjectileSpeed());
-
-					if (rcbot_supermode.GetBool())
-						*v_desired_offset = *v_desired_offset + ((vVelocity * fTime));
-					else
-						*v_desired_offset = *v_desired_offset + ((vVelocity * fTime) * m_pProfile->m_fAimSkill);
-
-					if ((sv_gravity.IsValid()) && (pWp->getID() == TF2_WEAPON_GRENADELAUNCHER))
-						v_desired_offset->z += ((pow(2, fTime) - 1.0f)
-						                        * (sv_gravity.GetFloat() * 0.1f)); // - (getOrigin().z - v_origin.z);
-
-					if ((pWp->getID() == TF2_WEAPON_GRENADELAUNCHER) && hasSomeConditions(CONDITION_SEE_ENEMY_GROUND))
-						v_desired_offset->z -= randomFloat(8.0f, 32.0f); // aim for ground - with grenade launcher
-					else if ((pWp->getID() == TF2_WEAPON_ROCKETLAUNCHER) || (pWp->getID() == TF2_WEAPON_COWMANGLER)
-					         || (v_origin.z > (getOrigin().z + 16.0f)))
-						v_desired_offset->z += randomFloat(8.0f, 32.0f); // aim for body, not ground
-				}
-			}
-			break;
-			}
+		if (m_iClass == TF_CLASS_SNIPER)
+		{
+			Vector eye;
+			gameclients->ClientEarPosition(pEntity, &eye);
+			v_desired_offset->z = (eye - v_origin).z;
 		}
 	}
 }
