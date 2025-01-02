@@ -31,6 +31,8 @@
 #ifndef __BOT_CONST_H__
 #define __BOT_CONST_H__
 
+#include "vector.h"
+
 #include "shareddefs.h"
 
 #ifndef __linux__
