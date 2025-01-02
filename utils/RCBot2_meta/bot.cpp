@@ -1003,31 +1003,31 @@ void CBot ::think()
 
 	m_bInitAlive  = false;
 
-	if (!m_pEnemy || m_pEnemy != m_hEnemyAimLerpEnemy)
+	if (!m_pEnemy || m_pEnemy != m_pOldEnemy)
 		m_fEnemyAimLerp = 0.f;
 	else
 	{
 		Vector vEnemyAimLerpVelocity;
 		CClassInterface::getVelocity(m_pEnemy.get(), &vEnemyAimLerpVelocity);
 
-		float fLerpTimeDelta       = engine->Time() - m_fEnemyAimLerpTime;
+		float fLerpTimeDelta         = engine->Time() - m_fEnemyAimLerpTime;
 
 		// Reset multiplier if enemy's velocity has changed drastically
-		const float fMaxDifference = 30.f;
-		m_fEnemyAimLerp            = !vEnemyAimLerpVelocity.IsValid() || vEnemyAimLerpVelocity.Length() == 0
+		const float fMaxDifference   = 600.f;
+		float fMaxDifferenceAdjusted = fMaxDifference * fLerpTimeDelta;
+		m_fEnemyAimLerp              = !vEnemyAimLerpVelocity.IsValid() || vEnemyAimLerpVelocity.Length() == 0
                                || (fabs(vEnemyAimLerpVelocity.x - m_vEnemyAimLerpVelocity.x)
                                    + fabs(vEnemyAimLerpVelocity.y - m_vEnemyAimLerpVelocity.y)
                                    + fabs(vEnemyAimLerpVelocity.z - m_vEnemyAimLerpVelocity.z))
                                           * fLerpTimeDelta
-                                      > fMaxDifference
-		                               ? 0.f
-		                               : std::min(std::max(0.f, m_fEnemyAimLerp + fLerpTimeDelta), 1.f);
+                                      > fMaxDifferenceAdjusted
+		                                 ? 0.f
+		                                 : std::min(std::max(0.f, m_fEnemyAimLerp + fLerpTimeDelta), 1.f);
 
-		m_vEnemyAimLerpVelocity    = vEnemyAimLerpVelocity;
+		m_vEnemyAimLerpVelocity      = vEnemyAimLerpVelocity;
 	}
 
-	m_fEnemyAimLerpTime  = engine->Time();
-	m_hEnemyAimLerpEnemy = m_pEnemy;
+	m_fEnemyAimLerpTime = engine->Time();
 }
 
 void CBot ::addVoiceCommand(int cmd)
@@ -1447,7 +1447,6 @@ void CBot ::spawnInit()
 	m_fEnemyAimLerp         = 0.f;
 	m_fEnemyAimLerpTime     = 0.f;
 	m_vEnemyAimLerpVelocity = Vector(0.f, 0.f, 0.f);
-	m_hEnemyAimLerpEnemy    = nullptr;
 }
 
 void CBot::setLastEnemy(edict_t *pEnemy)

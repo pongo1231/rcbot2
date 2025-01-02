@@ -1191,7 +1191,6 @@ class CBot
 	float m_fEnemyAimLerp;
 	float m_fEnemyAimLerpTime;
 	Vector m_vEnemyAimLerpVelocity;
-	MyEHandle m_hEnemyAimLerpEnemy;
 };
 
 class CBots
