@@ -32,6 +32,8 @@
 #define __BOT_CONST_H__
 
 #include "shareddefs.h"
+#include "utlvector.h"
+#include "vector.h"
 
 #ifndef __linux__
 #define BOT_WELCOME_MESSAGE "Welcome to RCBot by Cheeseh"
