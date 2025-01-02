@@ -842,9 +842,11 @@ class CBotFortress : public CBot
 	float m_fTeleporterExtPlacedTime;
 	unsigned m_iTeleportedPlayers;
 
-	// list of spies who I saw were attacked by my team-mates recently
+	// List of spies who I saw were attacked by my team-mates recently
 	// for use with spy checking
-	float m_fSpyList[MAX_PLAYERS];
+	float m_fSpyAttackedList[MAX_PLAYERS];
+	// List of spies I saw cloak in front of me
+	float m_fSpyLastUncloakedList[MAX_PLAYERS];
 
 	int m_iTeam;
 

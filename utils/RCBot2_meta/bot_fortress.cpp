@@ -787,7 +787,7 @@ void CBotFortress ::seeFriendlyHurtEnemy(edict_t *pTeammate, edict_t *pEnemy, CW
 {
 	if (CBotGlobals::isPlayer(pEnemy) && (CClassInterface::getTF2Class(pEnemy) == TF_CLASS_SPY))
 	{
-		m_fSpyList[ENTINDEX(pEnemy) - 1] = engine->Time();
+		m_fSpyAttackedList[ENTINDEX(pEnemy) - 1] = engine->Time();
 	}
 }
 
@@ -938,7 +938,8 @@ void CBotFortress ::spawnInit()
 
 	m_pLastSeeMedic.reset();
 
-	memset(m_fSpyList, 0, sizeof(float) * MAX_PLAYERS);
+	memset(m_fSpyAttackedList, 0, sizeof(float) * MAX_PLAYERS);
+	memset(m_fSpyLastUncloakedList, 0, sizeof(float) * MAX_PLAYERS);
 
 	m_fTaunting                = 0.0f; // bots not moving FIX
 
@@ -7599,18 +7600,8 @@ void CBotTF2::pointCaptured(int iPoint, int iTeam, const char *szPointName)
 
 bool CBotTF2 ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 {
-	static short int iEnemyTeam;
-	static bool bIsPipeBomb;
-	static bool bIsRocket;
-	static int bValid;
-	static bool bIsBoss;
-	static bool bIsGrenade;
-
-	bIsPipeBomb = false;
-	bIsRocket   = false;
-	bValid      = false;
-	bIsBoss     = false;
-	bIsGrenade  = false;
+	bool bIsPipeBomb = false, bIsRocket = false, bValid = false, bIsInvisible = false, bIsBoss = false,
+	     bIsGrenade = false;
 
 	if (!pEdict || !pEdict->GetUnknown())
 		return false;
@@ -7656,50 +7647,61 @@ bool CBotTF2 ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 			{
 				static float fMinReaction;
 				static float fMaxReaction;
-				static int dteam, dclass, dhealth, dindex;
-				static bool bfoundspy;
-				static float fSpyAttackTime;
+				static int dTeam, dClass, dHealth, dIndex;
+				static bool bFoundSpy;
 				static edict_t *pDisguisedAs;
 
-				bfoundspy      = true; // shout found spy if true
+				bFoundSpy = true; // shout found spy if true
 
-				fSpyAttackTime = engine->Time() - m_fSpyList[ENTINDEX(pEdict) - 1];
-
-				if (CClassInterface::getTF2SpyDisguised(pEdict, &dclass, &dteam, &dindex, &dhealth))
+				if (CClassInterface::getTF2SpyDisguised(pEdict, &dClass, &dTeam, &dIndex, &dHealth))
 				{
-					pDisguisedAs = (dindex > 0) ? (INDEXENT(dindex)) : (NULL);
+					pDisguisedAs         = (dIndex > 0) ? (INDEXENT(dIndex)) : (NULL);
+
+					int entIndex         = ENTINDEX(pEdict) - 1;
+					float fSpyAttackTime = engine->Time() - m_fSpyAttackedList[entIndex];
 
 					if (CTeamFortress2Mod::TF2_IsPlayerCloaked(pEdict)) // if he is cloaked -- can't see him
 					{
-						bValid = false;
+						bool bCloakedButVisible = CClassInterface::getTF2SpyCloakMeter(pEdict) == 0.0f
+						                       || CTeamFortress2Mod::TF2_IsPlayerOnFire(
+						                              pEdict); // if he is on fire and cloaked I can see him
+
+						const float fSpyAttackAfterCloakTime = 1.f;
+						float fSpyLastUncloakedTime          = engine->Time() - m_fSpyLastUncloakedList[entIndex];
 						// out of cloak charge or on fire -- i will see him move
-						if ((CClassInterface::getTF2SpyCloakMeter(pEdict) == 0.0f)
-						    || CTeamFortress2Mod::TF2_IsPlayerOnFire(
-						        pEdict)) // if he is on fire and cloaked I can see him
+						if (bCloakedButVisible
+						    || (fSpyLastUncloakedTime < fSpyAttackAfterCloakTime
+						        && !(CClassInterface::getTF2Conditions(pEdict) & 8192))
+						    /* If spy just cloaked I can still see him for a bit, excluding dead ringer (cond 13) */)
 						{
+							if (!bCloakedButVisible)
+								bIsInvisible = true;
 							// if I saw my team mate shoot him within the last 5 seconds, he's a spy!
 							// or no spies on team that can do this!
-							bValid = (fSpyAttackTime < 5.0f) || !isClassOnTeam(TF_CLASS_SPY, getTeam());
+							bValid = fSpyAttackTime < 5.0f || fSpyLastUncloakedTime < fSpyAttackAfterCloakTime
+							      || !isClassOnTeam(TF_CLASS_SPY, getTeam());
 						}
+						else
+							bValid = false;
 					}
-					else if (dteam == 0) // not disguised
+					else if (dTeam == 0) // not disguised
 					{
 						bValid = true;
 					}
-					else if (dteam != getTeam())
+					else if (dTeam != getTeam())
 					{
 						bValid    = true;
-						bfoundspy = false; // disguised as enemy!
+						bFoundSpy = false; // disguised as enemy!
 					}
-					else if (dindex == ENTINDEX(m_pEdict)) // if he is disguised as me -- he must be a spy!
+					else if (dIndex == ENTINDEX(m_pEdict)) // if he is disguised as me -- he must be a spy!
 					{
 						bValid = true;
 					}
-					else if (!isClassOnTeam(dclass, getTeam()))
+					else if (!isClassOnTeam(dClass, getTeam()))
 					{ // be smart - check if player disguised as a class that exists on my team
 						bValid = true;
 					}
-					else if (dhealth <= 0)
+					else if (dHealth <= 0)
 					{
 						// be smart - check if player's health is below 0
 						bValid = true;
@@ -7717,10 +7719,13 @@ bool CBotTF2 ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 						bValid = true;
 					}
 					else
-						bValid = thinkSpyIsEnemy(pEdict, (TF_Class)dclass);
+						bValid = thinkSpyIsEnemy(pEdict, (TF_Class)dClass);
 
-					if (bValid && bCheckWeapons && bfoundspy)
-						foundSpy(pEdict, (TF_Class)dclass);
+					if (bValid && !bIsInvisible)
+						m_fSpyLastUncloakedList[entIndex] = engine->Time();
+
+					if (bValid && bCheckWeapons && bFoundSpy)
+						foundSpy(pEdict, (TF_Class)dClass);
 				}
 
 				// if ( CTeamFortress2Mod::TF2_IsPlayerDisguised(pEdict) ||
@@ -7758,7 +7763,7 @@ bool CBotTF2 ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 	// "FrenzyTime" is the time it takes for the bot to check out where he got hurt
 	else if ((m_iClass != TF_CLASS_SPY) || (m_fFrenzyTime > engine->Time()))
 	{
-		iEnemyTeam = CTeamFortress2Mod::getEnemyTeam(getTeam());
+		int iEnemyTeam = CTeamFortress2Mod::getEnemyTeam(getTeam());
 
 		// don't attack sentries if spy, just sap them
 		if (((m_iClass != TF_CLASS_SPY) && CTeamFortress2Mod::isSentry(pEdict, iEnemyTeam))
