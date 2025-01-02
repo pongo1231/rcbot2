@@ -7054,7 +7054,7 @@ void CBotTF2 ::modAim(edict_t *pEntity, Vector &v_origin, Vector *v_desired_offs
 
 		if (m_iClass == TF_CLASS_HWGUY)
 		{
-			if (pWepInfo->getSlot() == 0)
+			if (pWp->getID() == TF2_WEAPON_MINIGUN)
 			{
 				Vector vForward;
 				Vector vRight;
