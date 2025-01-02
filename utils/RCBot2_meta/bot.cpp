@@ -1002,6 +1002,32 @@ void CBot ::think()
 	m_iPrevHealth = m_pPlayerInfo->GetHealth();
 
 	m_bInitAlive  = false;
+
+	if (!m_pEnemy || m_pEnemy != m_hEnemyAimLerpEnemy)
+		m_fEnemyAimLerp = 0.f;
+	else
+	{
+		Vector vEnemyAimLerpVelocity;
+		CClassInterface::getVelocity(m_pEnemy.get(), &vEnemyAimLerpVelocity);
+
+		float fLerpTimeDelta       = engine->Time() - m_fEnemyAimLerpTime;
+
+		// Reset multiplier if enemy's velocity has changed drastically
+		const float fMaxDifference = 30.f;
+		m_fEnemyAimLerp            = !vEnemyAimLerpVelocity.IsValid() || vEnemyAimLerpVelocity.Length() == 0
+                               || (fabs(vEnemyAimLerpVelocity.x - m_vEnemyAimLerpVelocity.x)
+                                   + fabs(vEnemyAimLerpVelocity.y - m_vEnemyAimLerpVelocity.y)
+                                   + fabs(vEnemyAimLerpVelocity.z - m_vEnemyAimLerpVelocity.z))
+                                          * fLerpTimeDelta
+                                      > fMaxDifference
+		                               ? 0.f
+		                               : std::min(std::max(0.f, m_fEnemyAimLerp + fLerpTimeDelta), 1.f);
+
+		m_vEnemyAimLerpVelocity    = vEnemyAimLerpVelocity;
+	}
+
+	m_fEnemyAimLerpTime  = engine->Time();
+	m_hEnemyAimLerpEnemy = m_pEnemy;
 }
 
 void CBot ::addVoiceCommand(int cmd)
@@ -1417,6 +1443,11 @@ void CBot ::spawnInit()
 
 	if (m_pVisibles != NULL)
 		m_pVisibles->reset();
+
+	m_fEnemyAimLerp         = 0.f;
+	m_fEnemyAimLerpTime     = 0.f;
+	m_vEnemyAimLerpVelocity = Vector(0.f, 0.f, 0.f);
+	m_hEnemyAimLerpEnemy    = nullptr;
 }
 
 void CBot::setLastEnemy(edict_t *pEnemy)
@@ -2759,7 +2790,12 @@ void CBot ::changeAngles(float fSpeed, float *fIdeal, float *fCurrent, float *fU
 	if (bot_anglespeed.GetFloat() < 0.01f)
 		bot_anglespeed.SetValue(0.16f);
 
-	alphaspeed = (fSpeed / 20);
+	// Really not needed for bigger sensitivities
+	// Also this does not take the skill system into account
+	if (fSpeed < 15.f)
+		fSpeed = Lerp(m_fEnemyAimLerp, fSpeed, 15.f);
+
+	alphaspeed = fSpeed / 20;
 
 	alpha      = alphaspeed * bot_anglespeed.GetFloat();
 
