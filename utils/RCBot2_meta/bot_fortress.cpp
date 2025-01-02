@@ -7662,27 +7662,31 @@ bool CBotTF2 ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 
 					if (CTeamFortress2Mod::TF2_IsPlayerCloaked(pEdict)) // if he is cloaked -- can't see him
 					{
-						bool bCloakedButVisible = CClassInterface::getTF2SpyCloakMeter(pEdict) == 0.0f
-						                       || CTeamFortress2Mod::TF2_IsPlayerOnFire(
-						                              pEdict); // if he is on fire and cloaked I can see him
+						int iConds           = CClassInterface::getTF2Conditions(pEdict);
 
-						const float fSpyAttackAfterCloakTime = 1.f;
+						bool bExposedCloaked = CClassInterface::getTF2SpyCloakMeter(pEdict) == 0.0f
+						                    || CTeamFortress2Mod::TF2_IsPlayerOnFire(
+						                           pEdict)        // if he is on fire and cloaked I can see him
+						                    || iConds & (1 << 9)  /* Flicker */
+						                    || iConds & (1 << 24) /* Jarated */
+						                    || iConds & (1 << 25) /* Bleeding */
+						                    || iConds & (1 << 27) /* Milked */
+						                    || iConds & (1 << 123) /* Gassed */;
+
+						const float fSpyAttackAfterCloakTime = .5f;
 						float fSpyLastUncloakedTime          = engine->Time() - m_fSpyLastUncloakedList[entIndex];
-						// out of cloak charge or on fire -- i will see him move
-						if (bCloakedButVisible
-						    || (fSpyLastUncloakedTime < fSpyAttackAfterCloakTime
-						        && !(CClassInterface::getTF2Conditions(pEdict) & 8192))
-						    /* If spy just cloaked I can still see him for a bit, excluding dead ringer (cond 13) */)
-						{
-							if (!bCloakedButVisible)
-								bIsInvisible = true;
-							// if I saw my team mate shoot him within the last 5 seconds, he's a spy!
-							// or no spies on team that can do this!
-							bValid = fSpyAttackTime < 5.0f || fSpyLastUncloakedTime < fSpyAttackAfterCloakTime
-							      || !isClassOnTeam(TF_CLASS_SPY, getTeam());
-						}
-						else
-							bValid = false;
+
+						// Don't update last uncloaked time if there isn't anything exposing the spy in his cloaked
+						// state
+						if (!bExposedCloaked)
+							bIsInvisible = true;
+
+						// Destroy the cloaked spy if he either:
+						// - Ran out of cloak, got damaged or touched an enemy (revealing him temporarily)
+						// - Is on fire, coating in something or bleeding
+						// - Just cloaked within fSpyAttackAfterCloakTime seconds & is not using dead ringer
+						bValid = bExposedCloaked
+						      || (fSpyLastUncloakedTime < fSpyAttackAfterCloakTime && !(iConds & (1 << 13)));
 					}
 					else if (dTeam == 0) // not disguised
 					{
