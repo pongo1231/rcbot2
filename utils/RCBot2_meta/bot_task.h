@@ -1294,10 +1294,12 @@ class CTF2_TauntTask : public CBotTask
 	virtual void debugString(char *string);
 
   private:
-	edict_t *m_pPlayer;
+	MyEHandle m_pPlayer;
 	Vector m_vOrigin;
 	float m_fDist;
 	float m_fTime;
+	float m_fTauntUntil;
+	float m_fActionTime;
 };
 
 /////////////////////
