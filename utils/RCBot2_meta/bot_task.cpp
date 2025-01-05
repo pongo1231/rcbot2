@@ -3225,7 +3225,6 @@ CBotTF2Snipe ::CBotTF2Snipe(Vector vOrigin, int iWpt)
 
 void CBotTF2Snipe ::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
-
 	CBotWeapon *pBotWeapon;
 	CWeapon *pWeapon;
 
@@ -3276,9 +3275,11 @@ void CBotTF2Snipe ::execute(CBot *pBot, CBotSchedule *pSchedule)
 		return;
 	}
 
-	if (pWeapon->getID() != TF2_WEAPON_SNIPERRIFLE)
+	if (pWeapon->getSlot() != 0)
 	{
-		if (!pBot->select_CWeapon(CWeapons::getWeapon(TF2_WEAPON_SNIPERRIFLE)))
+		CBotWeapons *pWeapons = pBot->getWeapons();
+		CBotWeapon *pWeapon   = pWeapons->getCurrentWeaponInSlot(0);
+		if (pWeapon && !pBot->select_CWeapon(pWeapon->getWeaponInfo()))
 		{
 			fail();
 			return;
