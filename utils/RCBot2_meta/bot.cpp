@@ -226,11 +226,12 @@ void CBot ::runPlayerMove()
 
 	userCmd.random_seed    = randomInt(0, 0x7fffffff);
 
+	static int offset      = rcbot_process_usercmds_offset.GetInt();
+
 	CBaseEntity *pEntity   = m_pEdict->GetIServerEntity()->GetBaseEntity();
 	(*reinterpret_cast<void (**)(CBaseEntity *pPlayer, CUserCmd *cmd, int numcmds, int totalcmds, int dropped_packets,
-	                             bool paused)>(*reinterpret_cast<void ***>(pEntity)
-	                                           + rcbot_process_usercmds_offset.GetInt()))(pEntity, &userCmd, 1, 1, 0,
-	                                                                                      false);
+	                             bool paused)>(*reinterpret_cast<void ***>(pEntity) + offset))(pEntity, &userCmd, 1, 1,
+	                                                                                           0, false);
 
 	CPlayerState *state = gameclients->GetPlayerState(m_pEdict);
 	if (state)
