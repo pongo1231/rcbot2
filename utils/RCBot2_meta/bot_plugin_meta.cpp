@@ -448,9 +448,13 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 		rcbot_runplayercmd_dods.SetValue(val);
 	if (kvl.getInt("gamerules_win", &val))
 		rcbot_gamerules_offset.SetValue(val);
+	if (kvl.getInt("rcbot_process_usercmds_offset_win", &val))
+		rcbot_process_usercmds_offset.SetValue(val);
 #else
 	if (kvl.getInt("runplayermove_dods_linux", &val))
 		rcbot_runplayercmd_dods.SetValue(val);
+	if (kvl.getInt("rcbot_process_usercmds_offset_linux", &val))
+		rcbot_process_usercmds_offset.SetValue(val);
 #endif
 
 	g_pGameRules_Obj        = new CGameRulesObject(kvl, gameServerFactory);

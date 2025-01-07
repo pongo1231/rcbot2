@@ -139,6 +139,8 @@ ConVar rcbot_bot_quota_interval("rcbot_bot_quota_interval", "10", 0,
 ConVar rcbot_show_welcome_msg("rcbot_show_welcome_msg", "1", 0, "Show welcome message on player connect");
 ConVar rcbot_force_class("rcbot_force_class", "0", 0,
                          "Force bots to choose specified class, kills alive bots on change (1 - 9, set to 0 for none)");
+ConVar rcbot_process_usercmds_offset("rcbot_process_usercmds_offset", "429", 0,
+                                     "Offset for CBasePlayer::ProcessUsercmds");
 
 ConVarRef sv_gravity("sv_gravity");
 ConVarRef mp_teamplay("mp_teamplay");

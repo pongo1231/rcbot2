@@ -41,6 +41,7 @@
 
 // #define GAME_DLL
 
+#include "PlayerState.h"
 #include "eiface.h"
 #include "mathlib.h"
 #include "vector.h"
@@ -210,9 +211,33 @@ void CBot ::runPlayerMove()
 	}
 
 #ifndef OVERRIDE_RUNCMD
-	// Controlling will be done in the RCBotPluginMeta::Hook_PlayerRunCmd hook if controlling puppet bots
-	// see bot_plugin_meta.cpp
-	m_pController->RunPlayerMove(&cmd);
+	CUserCmd userCmd;
+
+	userCmd.forwardmove    = cmd.forwardmove;
+	userCmd.sidemove       = cmd.sidemove;
+	userCmd.upmove         = cmd.upmove;
+
+	userCmd.buttons        = cmd.buttons;
+	userCmd.impulse        = cmd.impulse;
+	userCmd.viewangles     = cmd.viewangles;
+	userCmd.weaponselect   = cmd.weaponselect;
+	userCmd.tick_count     = cmd.tick_count;
+	userCmd.command_number = cmd.command_number;
+
+	userCmd.random_seed    = randomInt(0, 0x7fffffff);
+
+	CBaseEntity *pEntity   = m_pEdict->GetIServerEntity()->GetBaseEntity();
+	(*reinterpret_cast<void (**)(CBaseEntity *pPlayer, CUserCmd *cmd, int numcmds, int totalcmds, int dropped_packets,
+	                             bool paused)>(*reinterpret_cast<void ***>(pEntity)
+	                                           + rcbot_process_usercmds_offset.GetInt()))(pEntity, &userCmd, 1, 1, 0,
+	                                                                                      false);
+
+	CPlayerState *state = gameclients->GetPlayerState(m_pEdict);
+	if (state)
+	{
+		state->v_angle  = m_vViewAngles;
+		state->fixangle = FIXANGLE_ABSOLUTE;
+	}
 #endif
 }
 

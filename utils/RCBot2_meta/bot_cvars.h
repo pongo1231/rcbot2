@@ -94,6 +94,7 @@ extern ConVar rcbot_const_point_master_offset;
 /** Additional convars by pongo1231 **/
 extern ConVar rcbot_show_welcome_msg;
 extern ConVar rcbot_force_class;
+extern ConVar rcbot_process_usercmds_offset;
 
 extern ConVarRef sv_gravity;
 extern ConVarRef mp_teamplay;
