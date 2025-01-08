@@ -39,113 +39,6 @@
 #include "bot_mods.h"
 #include "bot_utility.h"
 
-const char *g_szUtils[BOT_UTIL_MAX + 1] = { "BOT_UTIL_BUILDSENTRY",
-	                                        "BOT_UTIL_BUILDDISP",
-	                                        "BOT_UTIL_BUILDTELENT",
-	                                        "BOT_UTIL_BUILDTELEXT",
-	                                        "BOT_UTIL_UPGSENTRY",
-	                                        "BOT_UTIL_UPGDISP",
-	                                        "BOT_UTIL_UPGTELENT",
-	                                        "BOT_UTIL_UPGTELEXT",
-	                                        "BOT_UTIL_UPGTMSENTRY",
-	                                        "BOT_UTIL_UPGTMDISP",
-	                                        "BOT_UTIL_UPGTMTELENT",
-	                                        "BOT_UTIL_UPGTMTELEXT",
-	                                        "BOT_UTIL_GOTODISP",
-	                                        "BOT_UTIL_GOTORESUPPLY_FOR_HEALTH",
-	                                        "BOT_UTIL_GETAMMOKIT",
-	                                        "BOT_UTIL_GETAMMOTMDISP",
-	                                        "BOT_UTIL_GETAMMODISP",
-	                                        "BOT_UTIL_GETFLAG",
-	                                        "BOT_UTIL_GETHEALTHKIT",
-	                                        "BOT_UTIL_GETFLAG_LASTKNOWN",
-	                                        "BOT_UTIL_SNIPE",
-	                                        "BOT_UTIL_ROAM",
-	                                        "BOT_UTIL_CAPTURE_FLAG",
-	                                        "BOT_UTIL_GOTORESUPPLY_FOR_AMMO",
-	                                        "BOT_UTIL_FIND_NEAREST_HEALTH",
-	                                        "BOT_UTIL_FIND_NEAREST_AMMO",
-	                                        "BOT_UTIL_ATTACK_POINT",
-	                                        "BOT_UTIL_DEFEND_POINT",
-	                                        "BOT_UTIL_DEFEND_FLAG",
-	                                        "BOT_UTIL_ENGI_LOOK_AFTER_SENTRY",
-	                                        "BOT_UTIL_DEFEND_FLAG_LASTKNOWN",
-	                                        "BOT_UTIL_PUSH_PAYLOAD_BOMB",
-	                                        "BOT_UTIL_DEFEND_PAYLOAD_BOMB",
-	                                        "BOT_UTIL_MEDIC_HEAL",
-	                                        "BOT_UTIL_MEDIC_HEAL_LAST",
-	                                        "BOT_UTIL_MEDIC_FINDPLAYER",
-	                                        "BOT_UTIL_SAP_NEAREST_SENTRY",
-	                                        "BOT_UTIL_SAP_ENEMY_SENTRY",
-	                                        "BOT_UTIL_SAP_LASTENEMY_SENTRY",
-	                                        "BOT_UTIL_SAP_DISP",
-	                                        "BOT_UTIL_BACKSTAB",
-	                                        "BOT_UTIL_REMOVE_SENTRY_SAPPER",
-	                                        "BOT_UTIL_REMOVE_DISP_SAPPER",
-	                                        "BOT_UTIL_REMOVE_TMSENTRY_SAPPER",
-	                                        "BOT_UTIL_REMOVE_TMDISP_SAPPER",
-	                                        "BOT_UTIL_DEMO_STICKYTRAP_LASTENEMY",
-	                                        "BOT_UTIL_DEMO_STICKYTRAP_POINT",
-	                                        "BOT_UTIL_DEMO_STICKYTRAP_FLAG",
-	                                        "BOT_UTIL_DEMO_STICKYTRAP_FLAG_LASTKNOWN",
-	                                        "BOT_UTIL_DEMO_STICKYTRAP_PL",
-	                                        "BOT_UTIL_REMOVE_TMTELE_SAPPER",
-	                                        "BOT_UTIL_SAP_NEAREST_TELE",
-	                                        "BOT_UTIL_SAP_ENEMY_TELE",
-	                                        "BOT_UTIL_SAP_LASTENEMY_TELE",
-	                                        "BOT_UTIL_GOTO_NEST",
-	                                        "BOT_UTIL_MESSAROUND",
-	                                        "BOT_UTIL_ENGI_MOVE_SENTRY",
-	                                        "BOT_UTIL_ENGI_MOVE_DISP",
-	                                        "BOT_UTIL_ENGI_MOVE_ENTRANCE",
-	                                        "BOT_UTIL_ENGI_MOVE_EXIT",
-	                                        "BOT_UTIL_ENGI_DESTROY_SENTRY",
-	                                        "BOT_UTIL_ENGI_DESTROY_DISP",
-	                                        "BOT_UTIL_ENGI_DESTROY_ENTRANCE",
-	                                        "BOT_UTIL_ENGI_DESTROY_EXIT",
-	                                        "BOT_UTIL_HIDE_FROM_ENEMY",
-	                                        "BOT_UTIL_MEDIC_FINDPLAYER_AT_SPAWN",
-	                                        "BOT_UTIL_HL2DM_GRAVIGUN_PICKUP",
-	                                        "BOT_UTIL_HL2DM_FIND_ARMOR",
-	                                        "BOT_UTIL_FIND_LAST_ENEMY",
-	                                        "BOT_UTIL_HL2DM_USE_CHARGER",
-	                                        "BOT_UTIL_HL2DM_USE_HEALTH_CHARGER",
-	                                        "BOT_UTIL_THROW_GRENADE",
-	                                        "BOT_UTIL_PICKUP_WEAPON",
-	                                        "BOT_UTIL_ATTACK_NEAREST_POINT",
-	                                        "BOT_UTIL_DEFEND_NEAREST_POINT",
-	                                        "BOT_UTIL_DEFEND_BOMB",
-	                                        "BOT_UTIL_DEFUSE_BOMB",
-	                                        "BOT_UTIL_PLANT_BOMB",
-	                                        "BOT_UTIL_PLANT_NEAREST_BOMB",
-	                                        "BOT_UTIL_DEFUSE_NEAREST_BOMB",
-	                                        "BOT_UTIL_DEFEND_NEAREST_BOMB",
-	                                        "BOT_UTIL_PICKUP_BOMB",
-	                                        "BOT_UTIL_PIPE_NEAREST_SENTRY",
-	                                        "BOT_UTIL_PIPE_LAST_ENEMY",
-	                                        "BOT_UTIL_PIPE_LAST_ENEMY_SENTRY",
-	                                        "BOT_UTIL_DOD_PICKUP_OBJ",
-	                                        "BOT_UTIL_HL2DM_USE_CRATE",
-	                                        "BOT_UTIL_PLACE_BUILDING",
-	                                        "BOT_UTIL_SPYCHECK_AIR",
-	                                        "BOT_UTIL_FIND_MEDIC_FOR_HEALTH",
-	                                        "BOT_UTIL_FIND_SQUAD_LEADER",
-	                                        "BOT_UTIL_FOLLOW_SQUAD_LEADER",
-	                                        "BOT_UTIL_ATTACK_SENTRY",
-	                                        "BOT_UTIL_SPAM_LAST_ENEMY",
-	                                        "BOT_UTIL_SPAM_NEAREST_SENTRY",
-	                                        "BOT_UTIL_SPAM_LAST_ENEMY_SENTRY",
-	                                        "BOT_UTIL_SAP_NEAREST_DISP",
-	                                        "BOT_UTIL_SAP_ENEMY_DISP",
-	                                        "BOT_UTIL_SAP_LASTENEMY_DISP",
-	                                        "BOT_UTIL_BUILDTELENT_SPAWN",
-	                                        "BOT_UTIL_INVESTIGATE_POINT",
-	                                        "BOT_UTIL_COVER_POINT",
-	                                        "BOT_UTIL_SNIPE_POINT",
-	                                        "BOT_UTIL_MOVEUP_MG",
-	                                        "BOT_UTIL_SNIPE_CROSSBOW",
-	                                        "BOT_UTIL_MAX" };
-
 CBotUtility ::CBotUtility(CBot *pBot, eBotAction id, bool bCanDo, float fUtil, CBotWeapon *pWeapon, int iData,
                           Vector vec)
 {
@@ -181,7 +74,7 @@ void CBotUtilities ::execute()
 	util_node_t *pnew;
 	util_node_t *prev;
 
-	m_pBest.head = NULL;
+	m_pBest.head = nullptr;
 
 	for (i = 0; i < m_Utilities.size(); i++)
 	{
@@ -197,11 +90,11 @@ void CBotUtilities ::execute()
 			// put in correct order by making a linked list
 			pnew = (util_node_t *)malloc(sizeof(util_node_t));
 
-			if (pnew != NULL)
+			if (pnew != nullptr)
 			{
 				pnew->util = pUtil;
-				pnew->next = NULL;
-				prev       = NULL;
+				pnew->next = nullptr;
+				prev       = nullptr;
 
 				if (temp)
 				{
@@ -228,7 +121,7 @@ void CBotUtilities ::execute()
 						temp = temp->next;
 					}
 
-					if (pnew->next == NULL)
+					if (pnew->next == nullptr)
 						prev->next = pnew;
 				}
 				else
@@ -246,7 +139,7 @@ void CBotUtilities ::freeMemory()
 	m_Utilities.clear();
 
 	// FREE LIST
-	while ((temp = m_pBest.head) != NULL)
+	while ((temp = m_pBest.head) != nullptr)
 	{
 		temp         = m_pBest.head;
 		m_pBest.head = m_pBest.head->next;
@@ -259,8 +152,8 @@ CBotUtility *CBotUtilities ::nextBest()
 	CBotUtility *pBest;
 	util_node_t *temp;
 
-	if (m_pBest.head == NULL)
-		return NULL;
+	if (m_pBest.head == nullptr)
+		return nullptr;
 
 	pBest        = m_pBest.head->util;
 

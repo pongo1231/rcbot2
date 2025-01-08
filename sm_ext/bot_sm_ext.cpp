@@ -75,7 +75,8 @@ const char *RCBotSourceModExt::GetExtensionDateString()
 
 bool SM_LoadExtension(char *error, size_t maxlength)
 {
-	if ((smexts = (IExtensionManager *)g_SMAPI->MetaFactory(SOURCEMOD_INTERFACE_EXTENSIONS, NULL, NULL)) == NULL)
+	if ((smexts = (IExtensionManager *)g_SMAPI->MetaFactory(SOURCEMOD_INTERFACE_EXTENSIONS, nullptr, nullptr))
+	    == nullptr)
 	{
 		if (error && maxlength)
 		{
@@ -94,7 +95,7 @@ bool SM_LoadExtension(char *error, size_t maxlength)
 #endif
 	);
 
-	if ((myself = smexts->LoadExternal(&g_RCBotSourceMod, path, "rcbot2.ext", error, maxlength)) == NULL)
+	if ((myself = smexts->LoadExternal(&g_RCBotSourceMod, path, "rcbot2.ext", error, maxlength)) == nullptr)
 	{
 		SM_UnsetInterfaces();
 		return false;

@@ -283,7 +283,7 @@ typedef enum
 class CBotTF2FunctionEnemyAtIntel : public IBotFunction
 {
   public:
-	CBotTF2FunctionEnemyAtIntel(int iTeam, Vector vPos, int type, edict_t *pPlayer = NULL, int capindex = -1)
+	CBotTF2FunctionEnemyAtIntel(int iTeam, Vector vPos, int type, edict_t *pPlayer = nullptr, int capindex = -1)
 	{
 		m_iTeam     = iTeam;
 		m_vPos      = vPos;
@@ -439,7 +439,7 @@ class CBotFortress : public CBot
 
 	inline void clearHealingEntity()
 	{
-		m_pHeal = NULL;
+		m_pHeal = nullptr;
 	}
 
 	virtual unsigned int maxEntityIndex()
@@ -475,7 +475,7 @@ class CBotFortress : public CBot
 	// linux fix 2
 	virtual edict_t *findEngineerBuiltObject(eEngiBuild iBuilding, int index)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	virtual void engineerBuild(eEngiBuild iBuilding, eEngiCmd iEngiCmd) {};
@@ -534,7 +534,7 @@ class CBotFortress : public CBot
 
 	void resetAttackingEnemy()
 	{
-		m_pAttackingEnemy = NULL;
+		m_pAttackingEnemy = nullptr;
 	}
 
 	virtual bool setVisible(edict_t *pEntity, bool bVisible);
@@ -545,7 +545,7 @@ class CBotFortress : public CBot
 	{
 		if (reset)
 		{
-			m_pFlag = NULL;
+			m_pFlag = nullptr;
 		}
 		return m_pFlag;
 	}
@@ -610,7 +610,7 @@ class CBotFortress : public CBot
 
 		if (pEnemy == m_pPrevSpy)
 		{
-			m_pPrevSpy    = NULL;
+			m_pPrevSpy    = nullptr;
 			m_fSeeSpyTime = 0.0f;
 		}
 	}
@@ -645,7 +645,7 @@ class CBotFortress : public CBot
 		m_fLastKnownTeamFlagTime = 0.0f;
 	}
 
-	virtual bool canGotoWaypoint(Vector vPrevWaypoint, CWaypoint *pWaypoint, CWaypoint *pPrev = NULL)
+	virtual bool canGotoWaypoint(Vector vPrevWaypoint, CWaypoint *pWaypoint, CWaypoint *pPrev = nullptr)
 	{
 		return CBot::canGotoWaypoint(vPrevWaypoint, pWaypoint, pPrev);
 	}
@@ -1029,7 +1029,7 @@ class CBotTF2 : public CBotFortress
 
 	void sapperDestroyed(edict_t *pSapper);
 
-	bool canGotoWaypoint(Vector vPrevWaypoint, CWaypoint *pWaypoint, CWaypoint *pPrev = NULL);
+	bool canGotoWaypoint(Vector vPrevWaypoint, CWaypoint *pWaypoint, CWaypoint *pPrev = nullptr);
 
 	bool deployStickies(eDemoTrapType type, Vector vStand, Vector vLocation, Vector vSpread, Vector *vPoint,
 	                    int *iState, int *iStickyNum, bool *bFail, float *fTime, int wptindex);

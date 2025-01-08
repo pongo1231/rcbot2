@@ -124,7 +124,7 @@ class CBotSchedule
 
 	CBotTask *currentTask()
 	{
-		return m_Tasks.empty() ? NULL : m_Tasks.front();
+		return m_Tasks.empty() ? nullptr : m_Tasks.front();
 	}
 
 	bool hasFailed()
@@ -319,19 +319,19 @@ class CBotSchedules
 		{
 			CBotSchedule *sched = m_Schedules.front();
 
-			if (sched != NULL)
+			if (sched != nullptr)
 			{
 				return sched->currentTask();
 			}
 		}
 
-		return NULL;
+		return nullptr;
 	}
 
 	CBotSchedule *getCurrentSchedule()
 	{
 		if (isEmpty())
-			return NULL;
+			return nullptr;
 
 		return m_Schedules.front();
 	}
@@ -410,7 +410,7 @@ class CBotAttackPointSched : public CBotSchedule
 {
   public:
 	CBotAttackPointSched(Vector vPoint, int iRadius, int iArea, bool bHasRoute = false, Vector vRoute = Vector(0, 0, 0),
-	                     bool bNest = false, edict_t *pLastEnemySentry = NULL);
+	                     bool bNest = false, edict_t *pLastEnemySentry = nullptr);
 
 	void init();
 };
@@ -657,7 +657,7 @@ class CGotoHideSpotSched : public CBotSchedule
 	// hide from an enemy (pEdict)
 	CGotoHideSpotSched(CBot *pBot, edict_t *pEdict, bool bIsGrenade = false);
 	// hide from a Vector
-	CGotoHideSpotSched(CBot *pBot, Vector vOrigin, IBotTaskInterrupt *interrupt = NULL);
+	CGotoHideSpotSched(CBot *pBot, Vector vOrigin, IBotTaskInterrupt *interrupt = nullptr);
 
 	void init();
 };

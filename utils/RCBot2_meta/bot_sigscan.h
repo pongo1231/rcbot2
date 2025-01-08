@@ -41,7 +41,7 @@ class CGameRulesObject : public CSignatureFunction
 
 	bool found()
 	{
-		return m_func != NULL;
+		return m_func != nullptr;
 	}
 
 	void **getGameRules()
@@ -57,14 +57,27 @@ class CCreateGameRulesObject : public CSignatureFunction
 
 	bool found()
 	{
-		return m_func != NULL;
+		return m_func != nullptr;
 	}
 
 	void **getGameRules();
 };
 
-extern CGameRulesObject *g_pGameRules_Obj;
-extern CCreateGameRulesObject *g_pGameRules_Create_Obj;
+class CDisableCurrencyPackBotCheckPatch : public CSignatureFunction
+{
+  public:
+	CDisableCurrencyPackBotCheckPatch(CRCBotKeyValueList &list, void *pAddrBase);
+
+	bool found()
+	{
+		return m_func != nullptr;
+	}
+
+	void **getGameRules();
+};
+
+inline CGameRulesObject *g_pGameRules_Obj              = nullptr;
+inline CCreateGameRulesObject *g_pGameRules_Create_Obj = nullptr;
 
 void *GetGameRules();
 #endif

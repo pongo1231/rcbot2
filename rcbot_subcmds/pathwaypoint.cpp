@@ -181,7 +181,7 @@ CBotCommandInline PathWaypointCreateFromToCommand(
 			    if (pWaypoint2 && pWaypoint2->isUsed())
 			    {
 				    pWaypoint->addPathTo(atoi(args[1]));
-				    CBotGlobals::botMessage(pClient != NULL ? pClient->getPlayer() : NULL, 0,
+				    CBotGlobals::botMessage(pClient != nullptr ? pClient->getPlayer() : nullptr, 0,
 				                            "Added path from <%d> to <%d>", atoi(args[0]), atoi(args[1]));
 
 				    pWaypoint->draw(pClient->getPlayer(), true, DRAWTYPE_DEBUGENGINE);
@@ -194,15 +194,15 @@ CBotCommandInline PathWaypointCreateFromToCommand(
 				    return COMMAND_ACCESSED;
 			    }
 			    else
-				    CBotGlobals::botMessage(pClient != NULL ? pClient->getPlayer() : NULL, 0,
+				    CBotGlobals::botMessage(pClient != nullptr ? pClient->getPlayer() : nullptr, 0,
 				                            "Waypoint id <%d> not found", atoi(args[1]));
 		    }
 		    else
-			    CBotGlobals::botMessage(pClient != NULL ? pClient->getPlayer() : NULL, 0, "Waypoint id <%d> not found",
-			                            atoi(args[0]));
+			    CBotGlobals::botMessage(pClient != nullptr ? pClient->getPlayer() : nullptr, 0,
+			                            "Waypoint id <%d> not found", atoi(args[0]));
 	    }
 	    else
-		    CBotGlobals::botMessage(pClient != NULL ? pClient->getPlayer() : NULL, 0, "missing args <id1> <id2>");
+		    CBotGlobals::botMessage(pClient != nullptr ? pClient->getPlayer() : nullptr, 0, "missing args <id1> <id2>");
 
 	    return COMMAND_ERROR;
     });
@@ -222,7 +222,7 @@ CBotCommandInline PathWaypointRemoveFromToCommand(
 			    if (pWaypoint2 && pWaypoint2->isUsed())
 			    {
 				    pWaypoint->removePathTo(atoi(args[1]));
-				    CBotGlobals::botMessage(pClient != NULL ? pClient->getPlayer() : NULL, 0,
+				    CBotGlobals::botMessage(pClient != nullptr ? pClient->getPlayer() : nullptr, 0,
 				                            "Removed path from <%d> to <%d>", atoi(args[0]), atoi(args[1]));
 
 				    pWaypoint->draw(pClient->getPlayer(), true, DRAWTYPE_DEBUGENGINE);
@@ -235,15 +235,15 @@ CBotCommandInline PathWaypointRemoveFromToCommand(
 				    return COMMAND_ACCESSED;
 			    }
 			    else
-				    CBotGlobals::botMessage(pClient != NULL ? pClient->getPlayer() : NULL, 0,
+				    CBotGlobals::botMessage(pClient != nullptr ? pClient->getPlayer() : nullptr, 0,
 				                            "Waypoint id <%d> not found", atoi(args[1]));
 		    }
 		    else
-			    CBotGlobals::botMessage(pClient != NULL ? pClient->getPlayer() : NULL, 0, "Waypoint id <%d> not found",
-			                            atoi(args[0]));
+			    CBotGlobals::botMessage(pClient != nullptr ? pClient->getPlayer() : nullptr, 0,
+			                            "Waypoint id <%d> not found", atoi(args[0]));
 	    }
 	    else
-		    CBotGlobals::botMessage(pClient != NULL ? pClient->getPlayer() : NULL, 0, "missing args <id1> <id2>");
+		    CBotGlobals::botMessage(pClient != nullptr ? pClient->getPlayer() : nullptr, 0, "missing args <id1> <id2>");
 
 	    return COMMAND_ERROR;
     });

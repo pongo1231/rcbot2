@@ -86,7 +86,7 @@ typedef void *HINSTANCE;
 #define FILENAME_1_6_CONTAGION PLATFORM_ARCH_FOLDER "rcbot.2.contagion" PLATFORM_EXT
 #define FILENAME_1_6_BMS PLATFORM_ARCH_FOLDER "rcbot.2.bms" PLATFORM_EXT
 
-HINSTANCE g_hCore   = NULL;
+HINSTANCE g_hCore   = nullptr;
 bool load_attempted = false;
 
 size_t UTIL_Format(char *buffer, size_t maxlength, const char *fmt, ...);
@@ -101,7 +101,7 @@ class FailPlugin : public SourceMM::ISmmFailPlugin
 
 	bool Load(SourceMM::PluginId id, SourceMM::ISmmAPI *ismm, char *error, size_t maxlength, bool late)
 	{
-		if (error != NULL && maxlength != 0)
+		if (error != nullptr && maxlength != 0)
 		{
 			UTIL_Format(error, maxlength, "%s", error_buffer);
 		}
@@ -142,9 +142,9 @@ METAMOD_PLUGIN *_GetPluginPtr(const char *path, int fail_api)
 #else
 		DWORD err = GetLastError();
 
-		if (FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err,
+		if (FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, err,
 		                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), s_FailPlugin.error_buffer,
-		                   sizeof(s_FailPlugin.error_buffer), NULL)
+		                   sizeof(s_FailPlugin.error_buffer), nullptr)
 		    == 0)
 		{
 			UTIL_Format(s_FailPlugin.error_buffer, sizeof(s_FailPlugin.error_buffer), "unknown error %x", err);
@@ -170,8 +170,8 @@ METAMOD_PLUGIN *_GetPluginPtr(const char *path, int fail_api)
 	return pl;
 error:
 	closelib(g_hCore);
-	g_hCore = NULL;
-	return NULL;
+	g_hCore = nullptr;
+	return nullptr;
 }
 
 DLL_EXPORT METAMOD_PLUGIN *CreateInterface_MMS(const MetamodVersionInfo *mvi, const MetamodLoaderInfo *mli)
@@ -182,7 +182,7 @@ DLL_EXPORT METAMOD_PLUGIN *CreateInterface_MMS(const MetamodVersionInfo *mvi, co
 
 	if (mvi->api_major > METAMOD_API_MAJOR)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	switch (mvi->source_engine)
@@ -303,7 +303,7 @@ DLL_EXPORT METAMOD_PLUGIN *CreateInterface_MMS(const MetamodVersionInfo *mvi, co
 		}
 		else
 		{
-			return NULL;
+			return nullptr;
 		}
 		break;
 	}
@@ -324,7 +324,7 @@ DLL_EXPORT METAMOD_PLUGIN *CreateInterface_MMS(const MetamodVersionInfo *mvi, co
 	}
 	default:
 	{
-		return NULL;
+		return nullptr;
 	}
 	}
 
@@ -339,7 +339,7 @@ DLL_EXPORT void UnloadInterface_MMS()
 	if (g_hCore)
 	{
 		closelib(g_hCore);
-		g_hCore = NULL;
+		g_hCore = nullptr;
 	}
 }
 

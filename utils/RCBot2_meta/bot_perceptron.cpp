@@ -39,8 +39,8 @@ ga_nn_value CPerceptron::m_fDefaultBias      = 1.0f;
 
 CNeuron ::CNeuron()
 {
-	m_weights = NULL;
-	m_inputs  = NULL;
+	m_weights = nullptr;
+	m_inputs  = nullptr;
 }
 
 CPerceptron ::CPerceptron(unsigned short int iInputs)

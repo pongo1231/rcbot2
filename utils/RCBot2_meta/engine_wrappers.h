@@ -78,7 +78,7 @@ inline edict_t *PEntityOfEntIndex(int iEntIndex)
 	{
 		return (edict_t *)(gpGlobals->pEdicts + iEntIndex);
 	}
-	return NULL;
+	return nullptr;
 }
 
 #else

@@ -152,7 +152,7 @@ class CBotExitMenuItem : public CBotMenuItem
 
 	void activate(CClient *pClient)
 	{
-		pClient->setCurrentMenu(NULL);
+		pClient->setCurrentMenu(nullptr);
 	}
 };
 
@@ -387,7 +387,7 @@ class CWaypointMenu : public CBotMenu
 		addMenuItem(new CWaypointEditMenu(this));
 		addMenuItem(new CPathWaypointMenu(this));
 		addMenuItem(new CWaypointFlagShowMenu(this));
-		addMenuItem(new CBotGotoMenuItem("Exit", NULL));
+		addMenuItem(new CBotGotoMenuItem("Exit", nullptr));
 	}
 
 	// CWaypointFlagMenu ( int iShow );
@@ -458,7 +458,7 @@ public:
         addMenuItem(new CMakeTFVSRCBotGame());
         addMenuItem(new CWaypointYawMenuItem());
 
-        addMenuItem(new CBotGotoMenuItem("Exit",NULL));
+        addMenuItem(new CBotGotoMenuItem("Exit",nullptr));
     }
 
     //CWaypointFlagMenu ( int iShow );

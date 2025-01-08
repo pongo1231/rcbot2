@@ -92,7 +92,7 @@ const char *CWaypointFlagMenuItem ::getCaption(CClient *pClient, WptColor &color
 
 	color               = type->getColour();
 
-	sprintf(m_szCaption, "[%s] %s", (pWpt != NULL) ? (pWpt->hasFlag(type->getBits()) ? "x" : " ") : "No Waypoint",
+	sprintf(m_szCaption, "[%s] %s", (pWpt != nullptr) ? (pWpt->hasFlag(type->getBits()) ? "x" : " ") : "No Waypoint",
 	        type->getName());
 
 	return m_szCaption;
@@ -156,7 +156,7 @@ CWaypointFlagMenu ::CWaypointFlagMenu(CBotMenu *pPrev)
 
 void CBotMenuList ::setupMenus()
 {
-	m_MenuList[BOT_MENU_WPT] = new CWaypointMenu(); // new CWaypointFlagMenu(NULL);
+	m_MenuList[BOT_MENU_WPT] = new CWaypointMenu(); // new CWaypointFlagMenu(nullptr);
 }
 
 const char *CWaypointRadiusMenu ::getCaption(CClient *pClient, WptColor &color)
@@ -332,7 +332,7 @@ const char *CWaypointPasteMenuItem ::getCaption(CClient *pClient, WptColor &colo
 
 void CWaypointPasteMenuItem ::activate(CClient *pClient)
 {
-	CWaypoints::addWaypoint(pClient, NULL, NULL, NULL, NULL, true);
+	CWaypoints::addWaypoint(pClient, nullptr, nullptr, nullptr, nullptr, true);
 }
 
 void CBotMenu ::render(CClient *pClient)

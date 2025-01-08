@@ -77,26 +77,26 @@ SH_DECL_HOOK1_void(IServerGameClients, ClientCommand, SH_NOATTRIB, 0, edict_t *)
 
 SH_DECL_MANUALHOOK2_void(MHook_PlayerRunCmd, 0, 0, 0, CUserCmd *, IMoveHelper *);
 
-IServerGameDLL *server                = NULL;
-IGameEventManager2 *gameevents        = NULL;
-IServerPluginCallbacks *vsp_callbacks = NULL;
-ICvar *icvar                          = NULL;
+IServerGameDLL *server                = nullptr;
+IGameEventManager2 *gameevents        = nullptr;
+IServerPluginCallbacks *vsp_callbacks = nullptr;
+ICvar *icvar                          = nullptr;
 IVEngineServer *engine =
-    NULL; // helper functions (messaging clients, loading content, making entities, running commands, etc)
-IFileSystem *filesystem               = NULL; // file I/O
-IGameEventManager2 *gameeventmanager  = NULL;
-IGameEventManager *gameeventmanager1  = NULL; // game events interface
-IPlayerInfoManager *playerinfomanager = NULL; // game dll interface to interact with players
-IServerPluginHelpers *helpers         = NULL; // special 3rd party plugin helpers from the engine
-IServerGameClients *gameclients       = NULL;
-IEngineTrace *enginetrace             = NULL;
-IEffects *g_pEffects                  = NULL;
-IBotManager *g_pBotManager            = NULL;
-CGlobalVars *gpGlobals                = NULL;
-IVDebugOverlay *debugoverlay          = NULL;
-IServerGameEnts *servergameents       = NULL; // for accessing the server game entities
-IServerGameDLL *servergamedll         = NULL;
-IServerTools *servertools             = NULL;
+    nullptr; // helper functions (messaging clients, loading content, making entities, running commands, etc)
+IFileSystem *filesystem               = nullptr; // file I/O
+IGameEventManager2 *gameeventmanager  = nullptr;
+IGameEventManager *gameeventmanager1  = nullptr; // game events interface
+IPlayerInfoManager *playerinfomanager = nullptr; // game dll interface to interact with players
+IServerPluginHelpers *helpers         = nullptr; // special 3rd party plugin helpers from the engine
+IServerGameClients *gameclients       = nullptr;
+IEngineTrace *enginetrace             = nullptr;
+IEffects *g_pEffects                  = nullptr;
+IBotManager *g_pBotManager            = nullptr;
+CGlobalVars *gpGlobals                = nullptr;
+IVDebugOverlay *debugoverlay          = nullptr;
+IServerGameEnts *servergameents       = nullptr; // for accessing the server game entities
+IServerGameDLL *servergamedll         = nullptr;
+IServerTools *servertools             = nullptr;
 
 RCBotPluginMeta g_RCBotPluginMeta;
 
@@ -118,7 +118,7 @@ CON_COMMAND(rcbotd, "access the bot commands on a server")
 	{
 		argList.push_back(args.Arg(i));
 	}
-	eBotCommandResult iResult = CBotGlobals::m_pCommands->execute(NULL, argList);
+	eBotCommandResult iResult = CBotGlobals::m_pCommands->execute(nullptr, argList);
 
 	if (iResult == COMMAND_ACCESSED)
 	{
@@ -390,7 +390,7 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 
 	/* Load the VSP listener.  This is usually needed for IServerPluginHelpers. */
 	ismm->AddListener(this, this);
-	if ((vsp_callbacks = ismm->GetVSPInfo(NULL)) == NULL)
+	if ((vsp_callbacks = ismm->GetVSPInfo(nullptr)) == nullptr)
 	{
 		ismm->EnableVSPListener();
 	}
@@ -479,8 +479,8 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 	// ConVar_Register( 0 );
 	// InitCVars( interfaceFactory ); // register any cvars we have defined
 
-	srand((unsigned)time(NULL)); // initialize the random seed
-	irand.seed((unsigned)time(NULL));
+	srand((unsigned)time(nullptr)); // initialize the random seed
+	irand.seed((unsigned)time(nullptr));
 
 	// Find the RCBOT2 Path from metamod VDF
 	extern IFileSystem *filesystem;
@@ -513,7 +513,7 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 
 	// CRCBotPlugin::ShowLicense();
 
-	// RandomSeed((unsigned int)time(NULL));
+	// RandomSeed((unsigned int)time(nullptr));
 
 	CClassInterface::init();
 
@@ -667,12 +667,12 @@ void *RCBotPluginMeta::OnMetamodQuery(const char *iface, int *ret)
 		BindToSourcemod();
 	}
 
-	if (ret != NULL)
+	if (ret != nullptr)
 	{
 		*ret = IFACE_OK;
 	}
 
-	return NULL;
+	return nullptr;
 }
 #endif
 
@@ -689,7 +689,7 @@ void RCBotPluginMeta::Hook_ClientCommand(edict_t *pEntity, const CCommand &args)
 void RCBotPluginMeta::Hook_ClientCommand(edict_t *pEntity)
 #endif
 {
-	static CBotMod *pMod = NULL;
+	static CBotMod *pMod = nullptr;
 
 #if SOURCE_ENGINE <= SE_DARKMESSIAH
 	CCommand args;
@@ -894,7 +894,7 @@ void RCBotPluginMeta::BotQuotaCheck()
 			CClient *client = CClients::get(i);
 			CBot *bot       = CBots::get(i);
 
-			if (bot != NULL && bot->getEdict() != NULL && bot->inUse())
+			if (bot != nullptr && bot->getEdict() != nullptr && bot->inUse())
 			{
 				IPlayerInfo *p = playerinfomanager->GetPlayerInfo(bot->getEdict());
 
@@ -904,7 +904,7 @@ void RCBotPluginMeta::BotQuotaCheck()
 				}
 			}
 
-			if (client != NULL && client->getPlayer() != NULL && client->isUsed())
+			if (client != nullptr && client->getPlayer() != nullptr && client->isUsed())
 			{
 				IPlayerInfo *p = playerinfomanager->GetPlayerInfo(client->getPlayer());
 
@@ -991,7 +991,7 @@ bool RCBotPluginMeta::Hook_LevelInit(const char *pMapName, char const *pMapEntit
 
 	CBotSquads::FreeMemory();
 
-	CClients::setListenServerClient(NULL);
+	CClients::setListenServerClient(nullptr);
 
 	// Setup game rules
 	extern void **g_pGameRules;

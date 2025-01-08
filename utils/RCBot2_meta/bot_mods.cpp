@@ -67,7 +67,7 @@ void CBotMods ::parseFile()
 
 	std::fstream fp = CBotGlobals::openFile(buffer, std::fstream::in);
 
-	CBotMod *curmod = NULL;
+	CBotMod *curmod = nullptr;
 
 	if (!fp)
 	{
@@ -121,7 +121,7 @@ void CBotMods ::parseFile()
 				m_Mods.push_back(curmod);
 			}
 
-			curmod        = NULL;
+			curmod        = nullptr;
 			weaponlist[0] = 0;
 
 			bottype       = BOTTYPE_GENERIC;
@@ -264,7 +264,7 @@ void CBotMod ::setup(const char *szModFolder, eModId iModId, eBotType iBotType, 
 
 /*CBot *CBotMod :: makeNewBots ()
 {
-    return NULL;
+    return nullptr;
 }*/
 
 bool CBotMod ::isModFolder(char *szModFolder)
@@ -293,7 +293,7 @@ void CBotMods ::freeMemory()
 	{
 		m_Mods[i]->freeMemory();
 		delete m_Mods[i];
-		m_Mods[i] = NULL;
+		m_Mods[i] = nullptr;
 	}
 
 	m_Mods.clear();
@@ -314,14 +314,14 @@ CBotMod *CBotMods ::getMod(char *szModFolder)
 	logger->Log(LogLevel::FATAL, "HL2 MODIFICATION \"%s\" NOT FOUND, EXITING... see bot_mods.ini in bot config folder",
 	            szModFolder);
 
-	return NULL;
+	return nullptr;
 }
 
 void CBotMod ::initMod()
 {
 	m_bPlayerHasSpawned = false;
 
-	CWeapons::loadWeapons(m_szWeaponListName, NULL);
+	CWeapons::loadWeapons(m_szWeaponListName, nullptr);
 }
 
 void CBotMod ::mapInit()
@@ -354,7 +354,7 @@ bool CHalfLifeDeathmatchMod ::playerSpawned(edict_t *pPlayer)
 void CHalfLifeDeathmatchMod ::initMod()
 {
 
-	CWeapons::loadWeapons((m_szWeaponListName == NULL) ? "HL2DM" : m_szWeaponListName, HL2DMWeaps);
+	CWeapons::loadWeapons((m_szWeaponListName == nullptr) ? "HL2DM" : m_szWeaponListName, HL2DMWeaps);
 
 	//	for ( i = 0; i < HL2DM_WEAPON_MAX; i ++ )
 	//	CWeapons::addWeapon(new

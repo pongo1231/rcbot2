@@ -41,13 +41,13 @@
  * @param maxlength		Maximum size of the error buffer.
  * @return				True on success, false on failure.
  * 						On failure, a null-terminated string will be stored
- * 						in the error buffer, if the buffer is non-NULL and
+ * 						in the error buffer, if the buffer is non-nullptr and
  * 						greater than 0 bytes in size.
  */
 bool SM_AcquireInterfaces(char *error, size_t maxlength);
 
 /**
- * @brief Sets each acquired interface to NULL.
+ * @brief Sets each acquired interface to nullptr.
  */
 void SM_UnsetInterfaces();
 

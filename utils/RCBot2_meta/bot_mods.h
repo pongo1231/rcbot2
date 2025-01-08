@@ -83,9 +83,9 @@ class CBotMod
   public:
 	CBotMod()
 	{
-		m_szModFolder                = NULL;
-		m_szSteamFolder              = NULL;
-		m_szWeaponListName           = NULL;
+		m_szModFolder                = nullptr;
+		m_szSteamFolder              = nullptr;
+		m_szWeaponListName           = nullptr;
 		m_iModId                     = MOD_UNSUPPORTED;
 		m_iBotType                   = BOTTYPE_GENERIC;
 		m_bPlayerHasSpawned          = false;
@@ -173,7 +173,7 @@ class CDODFlag
 public:
     CDODFlag()
     {
-        m_pEdict = NULL;
+        m_pEdict = nullptr;
         m_iId = -1;
     }
 
@@ -205,17 +205,17 @@ class CDODFlags
 	void init()
 	{
 		m_iNumControlPoints       = 0;
-		m_vCPPositions            = NULL;
+		m_vCPPositions            = nullptr;
 
-		m_iAlliesReqCappers       = NULL;
-		m_iAxisReqCappers         = NULL;
-		m_iNumAllies              = NULL;
-		m_iNumAxis                = NULL;
-		m_iOwner                  = NULL;
-		m_bBombPlanted_Unreliable = NULL;
-		m_iBombsRequired          = NULL;
-		m_iBombsRemaining         = NULL;
-		m_bBombBeingDefused       = NULL;
+		m_iAlliesReqCappers       = nullptr;
+		m_iAxisReqCappers         = nullptr;
+		m_iNumAllies              = nullptr;
+		m_iNumAxis                = nullptr;
+		m_iOwner                  = nullptr;
+		m_bBombPlanted_Unreliable = nullptr;
+		m_iBombsRequired          = nullptr;
+		m_iBombsRemaining         = nullptr;
+		m_bBombBeingDefused       = nullptr;
 		m_iNumAxisBombsOnMap      = 0;
 		m_iNumAlliesBombsOnMap    = 0;
 		memset(m_bBombPlanted, 0, sizeof(bool) * MAX_DOD_FLAGS);
@@ -247,12 +247,12 @@ class CDODFlags
 
 	int setup(edict_t *pResourceEntity);
 
-	bool getRandomEnemyControlledFlag(CBot *pBot, Vector *position, int iTeam, int *id = NULL);
-	bool getRandomTeamControlledFlag(CBot *pBot, Vector *position, int iTeam, int *id = NULL);
+	bool getRandomEnemyControlledFlag(CBot *pBot, Vector *position, int iTeam, int *id = nullptr);
+	bool getRandomTeamControlledFlag(CBot *pBot, Vector *position, int iTeam, int *id = nullptr);
 
-	bool getRandomBombToDefuse(Vector *position, int iTeam, edict_t **pBombTarget, int *id = NULL);
-	bool getRandomBombToPlant(CBot *pBot, Vector *position, int iTeam, edict_t **pBombTarget, int *id = NULL);
-	bool getRandomBombToDefend(CBot *pBot, Vector *position, int iTeam, edict_t **pBombTarget, int *id = NULL);
+	bool getRandomBombToDefuse(Vector *position, int iTeam, edict_t **pBombTarget, int *id = nullptr);
+	bool getRandomBombToPlant(CBot *pBot, Vector *position, int iTeam, edict_t **pBombTarget, int *id = nullptr);
+	bool getRandomBombToDefend(CBot *pBot, Vector *position, int iTeam, edict_t **pBombTarget, int *id = nullptr);
 
 	int findNearestObjective(Vector vOrigin);
 
@@ -380,17 +380,17 @@ class CDODFlags
 
 	inline bool canDefendBomb(int iTeam, int iId)
 	{
-		return ((m_pBombs[iId][0] != NULL) && (m_iOwner[iId] != iTeam) && isBombPlanted(iId));
+		return ((m_pBombs[iId][0] != nullptr) && (m_iOwner[iId] != iTeam) && isBombPlanted(iId));
 	}
 
 	inline bool canDefuseBomb(int iTeam, int iId)
 	{
-		return ((m_pBombs[iId][0] != NULL) && (m_iOwner[iId] == iTeam) && isBombPlanted(iId));
+		return ((m_pBombs[iId][0] != nullptr) && (m_iOwner[iId] == iTeam) && isBombPlanted(iId));
 	}
 
 	inline bool canPlantBomb(int iTeam, int iId)
 	{
-		return ((m_pBombs[iId][0] != NULL) && (m_iOwner[iId] != iTeam) && !isBombPlanted(iId));
+		return ((m_pBombs[iId][0] != nullptr) && (m_iOwner[iId] != iTeam) && !isBombPlanted(iId));
 	}
 
 	bool isTeamMateDefusing(edict_t *pIgnore, int iTeam, int id);
@@ -469,7 +469,7 @@ class CDODFlags
 		if ((id >= 0) && (id < m_iNumControlPoints))
 			return m_pFlags[id];
 
-		return NULL;
+		return nullptr;
 	}
 
 	inline int getFlagID(edict_t *pent)
@@ -485,7 +485,7 @@ class CDODFlags
 
 	inline int getBombID(edict_t *pent)
 	{
-		if (pent == NULL)
+		if (pent == nullptr)
 			return -1;
 
 		for (short int i = 0; i < m_iNumControlPoints; i++)
@@ -612,7 +612,7 @@ class CDODMod : public CBotMod
 				return m_BombWaypoints[i].pWaypoint;
 		}
 
-		return NULL;
+		return nullptr;
 	}
 
 	static inline bool isPathBomb(edict_t *pBomb)
@@ -803,7 +803,7 @@ class CTeamFortress2Mod : public CBotMod
 	{
 		setup("tf", MOD_TF2, BOTTYPE_TF2, "TF2");
 
-		m_pResourceEntity = NULL;
+		m_pResourceEntity = nullptr;
 	}
 
 	void mapInit();
@@ -960,13 +960,13 @@ class CTeamFortress2Mod : public CBotMod
 	{
 		if (iTeam == TF2_TEAM_BLUE)
 		{
-			m_pFlagCarrierBlue       = NULL;
+			m_pFlagCarrierBlue       = nullptr;
 			m_vFlagLocationBlue      = vLoc;
 			m_bFlagLocationValidBlue = true;
 		}
 		else if (iTeam == TF2_TEAM_RED)
 		{
-			m_pFlagCarrierRed       = NULL;
+			m_pFlagCarrierRed       = nullptr;
 			m_vFlagLocationRed      = vLoc;
 			m_bFlagLocationValidRed = true;
 		}
@@ -1013,15 +1013,15 @@ class CTeamFortress2Mod : public CBotMod
 		else if (iTeam == TF2_TEAM_RED)
 			return m_pFlagCarrierRed;
 
-		return NULL;
+		return nullptr;
 	}
 
 	static bool isFlagCarried(int iTeam)
 	{
 		if (iTeam == TF2_TEAM_BLUE)
-			return (m_pFlagCarrierBlue != NULL);
+			return (m_pFlagCarrierBlue != nullptr);
 		else if (iTeam == TF2_TEAM_RED)
-			return (m_pFlagCarrierRed != NULL);
+			return (m_pFlagCarrierRed != nullptr);
 
 		return false;
 	}
@@ -1042,7 +1042,7 @@ class CTeamFortress2Mod : public CBotMod
 			return m_SentryGuns[id].sentry.get();
 		}
 
-		return NULL;
+		return nullptr;
 	}
 
 	static edict_t *getSentryOwner(edict_t *pSentry)
@@ -1054,7 +1054,7 @@ class CTeamFortress2Mod : public CBotMod
 				return INDEXENT(i + 1);
 		}
 
-		return NULL;
+		return nullptr;
 	}
 
 	static bool isMySentrySapped(edict_t *pOwner)
@@ -1063,7 +1063,7 @@ class CTeamFortress2Mod : public CBotMod
 
 		if (id >= 0)
 		{
-			return (m_SentryGuns[id].sentry.get() != NULL) && (m_SentryGuns[id].sapper.get() != NULL);
+			return (m_SentryGuns[id].sentry.get() != nullptr) && (m_SentryGuns[id].sapper.get() != nullptr);
 		}
 
 		return false;
@@ -1085,8 +1085,8 @@ class CTeamFortress2Mod : public CBotMod
 
 		if (id >= 0)
 		{
-			return ((m_Teleporters[id].exit.get() != NULL) || (m_Teleporters[id].entrance.get() != NULL))
-			    && (m_Teleporters[id].sapper.get() != NULL);
+			return ((m_Teleporters[id].exit.get() != nullptr) || (m_Teleporters[id].entrance.get() != nullptr))
+			    && (m_Teleporters[id].sapper.get() != nullptr);
 		}
 
 		return false;
@@ -1098,7 +1098,7 @@ class CTeamFortress2Mod : public CBotMod
 
 		if (id >= 0)
 		{
-			return (m_Dispensers[id].disp.get() != NULL) && (m_Dispensers[id].sapper.get() != NULL);
+			return (m_Dispensers[id].disp.get() != nullptr) && (m_Dispensers[id].sapper.get() != nullptr);
 		}
 
 		return false;
@@ -1111,7 +1111,7 @@ class CTeamFortress2Mod : public CBotMod
 		for (i = 0; i < MAX_PLAYERS; i++)
 		{
 			if (m_SentryGuns[i].sentry.get() == pSentry)
-				return m_SentryGuns[i].sapper.get() != NULL;
+				return m_SentryGuns[i].sapper.get() != nullptr;
 		}
 
 		return false;
@@ -1124,7 +1124,7 @@ class CTeamFortress2Mod : public CBotMod
 		for (i = 0; i < MAX_PLAYERS; i++)
 		{
 			if ((m_Teleporters[i].entrance.get() == pTele) || (m_Teleporters[i].exit.get() == pTele))
-				return m_Teleporters[i].sapper.get() != NULL;
+				return m_Teleporters[i].sapper.get() != nullptr;
 		}
 
 		return false;
@@ -1137,7 +1137,7 @@ class CTeamFortress2Mod : public CBotMod
 		for (i = 0; i < MAX_PLAYERS; i++)
 		{
 			if (m_Dispensers[i].disp.get() == pDisp)
-				return m_Dispensers[i].sapper.get() != NULL;
+				return m_Dispensers[i].sapper.get() != nullptr;
 		}
 
 		return false;
@@ -1192,12 +1192,12 @@ class CTeamFortress2Mod : public CBotMod
 	static edict_t *getBuildingOwner(eEngiBuild object, short index);
 	static edict_t *getBuilding(eEngiBuild object, edict_t *pOwner);
 
-	static bool isBoss(edict_t *pEntity, float *fFactor = NULL);
+	static bool isBoss(edict_t *pEntity, float *fFactor = nullptr);
 
 	static void initBoss(bool bSummoned)
 	{
 		m_bBossSummoned = bSummoned;
-		m_pBoss         = NULL;
+		m_pBoss         = nullptr;
 	}
 
 	static bool isBossSummoned()
@@ -1361,7 +1361,7 @@ class CHalfLifeDeathmatchMod : public CBotMod
 				return m_LiftWaypoints[i].pEdict;
 		}
 
-		return NULL;
+		return nullptr;
 	}
 
 	// void entitySpawn ( edict_t *pEntity );

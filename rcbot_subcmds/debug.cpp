@@ -60,10 +60,10 @@ CBotCommandInline DebugBotCommand(
 		    CBotGlobals::quickTraceline(pClient->getPlayer(), vOrigin, vOrigin + forward * 1024.0f);
 		    CBaseEntity *pEntity;
 
-		    if ((pEntity = CBotGlobals::getTraceResult()->m_pEnt) != NULL)
+		    if ((pEntity = CBotGlobals::getTraceResult()->m_pEnt) != nullptr)
 		    {
 			    edict_t *pEdict = servergameents->BaseEntityToEdict(pEntity);
-			    if (CBots::getBotPointer(pEdict) != NULL)
+			    if (CBots::getBotPointer(pEdict) != nullptr)
 			    {
 				    pClient->setDebugBot(pEdict);
 				    CBotGlobals::botMessage(pClient->getPlayer(), 0, "debug bot set to bot you are looking at");
@@ -71,13 +71,13 @@ CBotCommandInline DebugBotCommand(
 			    }
 			    else
 			    {
-				    pClient->setDebugBot(NULL);
+				    pClient->setDebugBot(nullptr);
 				    CBotGlobals::botMessage(pClient->getPlayer(), 0, "debug bot cleared");
 			    }
 		    }
 		    else
 		    {
-			    pClient->setDebugBot(NULL);
+			    pClient->setDebugBot(nullptr);
 			    CBotGlobals::botMessage(pClient->getPlayer(), 0, "debug bot cleared");
 		    }
 		    return COMMAND_ERROR;
@@ -200,7 +200,7 @@ CBotCommandInline BotGoto(
     "bot_goto", CMD_ACCESS_DEBUG,
     [](CClient *pClient, BotCommandArgs args)
     {
-	    if (pClient && pClient->getDebugBot() != NULL)
+	    if (pClient && pClient->getDebugBot() != nullptr)
 	    {
 		    edict_t *pEdict = pClient->getDebugBot();
 		    CBot *pBot      = CBots::getBotPointer(pEdict);
@@ -232,7 +232,7 @@ CBotCommandInline BotFlush(
     "bot_flush", CMD_ACCESS_DEBUG,
     [](CClient *pClient, BotCommandArgs args)
     {
-	    if (pClient && pClient->getDebugBot() != NULL)
+	    if (pClient && pClient->getDebugBot() != nullptr)
 	    {
 		    edict_t *pEdict = pClient->getDebugBot();
 		    CBot *pBot      = CBots::getBotPointer(pEdict);
@@ -266,7 +266,7 @@ CBotCommandInline BotTaskCommand(
     [](CClient *pClient, BotCommandArgs args)
     {
 #ifndef __linux__
-	    if (pClient && pClient->getDebugBot() != NULL)
+	    if (pClient && pClient->getDebugBot() != nullptr)
 	    {
 		    edict_t *pEdict = pClient->getDebugBot();
 		    CBot *pBot      = CBots::getBotPointer(pEdict);
@@ -346,11 +346,11 @@ CBotCommandInline BotTaskCommand(
 								    pSched->add(snipe);
 							    }
 							    else
-								    CBotGlobals::botMessage(NULL, 0, "Bot is not a sniper");
+								    CBotGlobals::botMessage(nullptr, 0, "Bot is not a sniper");
 #endif
 						    }
 						    else
-							    CBotGlobals::botMessage(NULL, 0, "Sniper waypoint not found");
+							    CBotGlobals::botMessage(nullptr, 0, "Sniper waypoint not found");
 					    }
 				    }
 			    }
@@ -480,7 +480,7 @@ CBotCommandInline
 
 			            edict_t *pPlayer  = pClient->getPlayer();
 			            //			edict_t *pEdict;
-			            edict_t *pNearest = NULL;
+			            edict_t *pNearest = nullptr;
 			            //			float fDistance;
 			            //			float fNearest = 400.0f;
 
@@ -488,7 +488,7 @@ CBotCommandInline
 
 			            if (pNearest)
 			            {
-				            void *data = NULL;
+				            void *data = nullptr;
 
 				            extern bool g_PrintProps;
 				            unsigned int m_offset = 0;
@@ -525,19 +525,19 @@ CBotCommandInline
 								            *floatdata = atof(args[3]);
 						            }
 						            else
-							            CBotGlobals::botMessage(pPlayer, 0, "NULL");
+							            CBotGlobals::botMessage(pPlayer, 0, "nullptr");
 					            }
 					            else
-						            CBotGlobals::botMessage(NULL, 0, "OFFSET NOT FOUND");
+						            CBotGlobals::botMessage(nullptr, 0, "OFFSET NOT FOUND");
 				            }
 				            else
-					            CBotGlobals::botMessage(NULL, 0, "CLASS NOT FOUND");
+					            CBotGlobals::botMessage(nullptr, 0, "CLASS NOT FOUND");
 			            }
 			            else
-				            CBotGlobals::botMessage(NULL, 0, "EDICT NOT FOUND");
+				            CBotGlobals::botMessage(nullptr, 0, "EDICT NOT FOUND");
 		            }
 		            else
-			            CBotGlobals::botMessage(NULL, 0, "Usage: getprop CLASSNAME KEY TYPE(int,bool,float) VALUE");
+			            CBotGlobals::botMessage(nullptr, 0, "Usage: getprop CLASSNAME KEY TYPE(int,bool,float) VALUE");
 
 		            return COMMAND_ACCESSED;
 	            }
@@ -557,7 +557,7 @@ CBotCommandInline
 
 			            edict_t *pPlayer  = pClient->getPlayer();
 			            //			edict_t *pEdict;
-			            edict_t *pNearest = NULL;
+			            edict_t *pNearest = nullptr;
 			            //			float fDistance;
 			            //			float fNearest = 400.0f;
 
@@ -565,7 +565,7 @@ CBotCommandInline
 
 			            if (pNearest)
 			            {
-				            void *data = NULL;
+				            void *data = nullptr;
 
 				            extern bool g_PrintProps;
 				            unsigned int m_offset = 0;
@@ -606,19 +606,19 @@ CBotCommandInline
 							                vdata.z);
 						            }
 						            else
-							            CBotGlobals::botMessage(pPlayer, 0, "NULL");
+							            CBotGlobals::botMessage(pPlayer, 0, "nullptr");
 					            }
 					            else
-						            CBotGlobals::botMessage(NULL, 0, "OFFSET NOT FOUND");
+						            CBotGlobals::botMessage(nullptr, 0, "OFFSET NOT FOUND");
 				            }
 				            else
-					            CBotGlobals::botMessage(NULL, 0, "CLASS NOT FOUND");
+					            CBotGlobals::botMessage(nullptr, 0, "CLASS NOT FOUND");
 			            }
 			            else
-				            CBotGlobals::botMessage(NULL, 0, "EDICT NOT FOUND");
+				            CBotGlobals::botMessage(nullptr, 0, "EDICT NOT FOUND");
 		            }
 		            else
-			            CBotGlobals::botMessage(NULL, 0, "Usage: getprop CLASS CLASSNAME KEY");
+			            CBotGlobals::botMessage(nullptr, 0, "Usage: getprop CLASS CLASSNAME KEY");
 
 		            return COMMAND_ACCESSED;
 	            }
@@ -737,7 +737,7 @@ CBotCommandInline DebugMemoryScanCommand(
 	    // find edict
 	    edict_t *pEdict = CClassInterface::FindEntityByClassnameNearest(pClient->getOrigin(), args[0]);
 
-	    if (pEdict == NULL)
+	    if (pEdict == nullptr)
 	    {
 		    CBotGlobals::botMessage(pClient->getPlayer(), 0, "Edict not found");
 		    return COMMAND_ERROR;
@@ -769,7 +769,7 @@ CBotCommandInline DebugMemoryScanCommand(
 			    {
 				    string_t *str = (string_t *)mempoint;
 
-				    if (str != NULL)
+				    if (str != nullptr)
 				    {
 					    const char *pszstr = STRING(*str);
 
@@ -824,7 +824,7 @@ CBotCommandInline DebugMemoryCheckCommand(
 	    // find edict
 	    edict_t *pEdict = CClassInterface::FindEntityByClassnameNearest(pClient->getOrigin(), args[0]);
 
-	    if (pEdict == NULL)
+	    if (pEdict == nullptr)
 	    {
 		    CBotGlobals::botMessage(pClient->getPlayer(), 0, "Edict not found");
 		    return COMMAND_ERROR;
@@ -861,7 +861,7 @@ CBotCommandInline DebugMemoryCheckCommand(
 	//			CTeamControlPointData *d = (CTeamControlPointData*)((((unsigned long)pent) +
 	rcbot_const_point_data_offset.GetInt()));
 
-		        CBotGlobals::botMessage(NULL,0,"NULL MSG");
+		        CBotGlobals::botMessage(nullptr,0,"nullptr MSG");
 		    }*/
 	    }
 	    else if (strcmp(args[2], "float") == 0)
@@ -897,7 +897,7 @@ CBotCommandInline DebugMstrOffsetSearch(
 	    edict_t *pMaster =
 	        CClassInterface::FindEntityByClassnameNearest(Vector(0, 0, 0), "team_control_point_master", 65535);
 
-	    if (pMaster == NULL)
+	    if (pMaster == nullptr)
 	    {
 		    CBotGlobals::botMessage(pClient->getPlayer(), 0, "pMaster not found -- have you started the game yet?");
 		    return COMMAND_ERROR;

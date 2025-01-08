@@ -45,7 +45,7 @@ class CEdictRecipient : public IRecipientFilter
 	// require destructor
 	~CEdictRecipient()
 	{
-		m_pEdict    = NULL;
+		m_pEdict    = nullptr;
 		m_bReliable = false;
 	}
 

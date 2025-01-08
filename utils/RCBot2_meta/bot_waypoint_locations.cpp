@@ -299,8 +299,8 @@ int CWaypointLocations ::GetCoverWaypoint(Vector vPlayerOrigin, Vector vCoverFro
 {
 	int iWaypoint;
 
-	iWaypoint = CWaypointLocations::NearestWaypoint(vCoverFrom, REACHABLE_RANGE, -1, true, true, false, NULL, false, 0,
-	                                                false, true, vPlayerOrigin);
+	iWaypoint = CWaypointLocations::NearestWaypoint(vCoverFrom, REACHABLE_RANGE, -1, true, true, false, nullptr, false,
+	                                                0, false, true, vPlayerOrigin);
 
 	if (iWaypoint == -1)
 		return -1;
@@ -392,7 +392,7 @@ void CWaypointLocations ::FindNearestCoverWaypointInBucket(int i, int j, int k, 
 
 		(fDist = curr_wpt->distanceFrom(vOrigin));
 
-		if (vGoalOrigin != NULL)
+		if (vGoalOrigin != nullptr)
 		{
 			fDist += curr_wpt->distanceFrom(*vGoalOrigin);
 		}
@@ -631,7 +631,7 @@ void CWaypointLocations ::FindNearestInBucket(int i, int j, int k, const Vector 
 					bAdd = CBotGlobals::isVisible(vOther, curr_wpt->getOrigin());
 				else
 				{
-					if (pPlayer != NULL)
+					if (pPlayer != nullptr)
 					{
 						CBotGlobals::quickTraceline(pPlayer, vOrigin, curr_wpt->getOrigin());
 						bAdd = CBotGlobals::getTraceResult()->fraction >= 1.0f;

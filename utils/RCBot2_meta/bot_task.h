@@ -85,10 +85,10 @@ class CBotTask
 	CBotTask();
 	~CBotTask()
 	{
-		if (m_pInterruptFunc != NULL)
+		if (m_pInterruptFunc != nullptr)
 		{
 			delete m_pInterruptFunc;
-			m_pInterruptFunc = NULL;
+			m_pInterruptFunc = nullptr;
 		}
 	}
 	void _init();
@@ -159,7 +159,7 @@ class CFindPathTask : public CBotTask
   public:
 	CFindPathTask()
 	{
-		m_pEdict                    = NULL;
+		m_pEdict                    = nullptr;
 		m_LookTask                  = LOOK_WAYPOINT;
 		m_iWaypointId               = -1;
 		m_flags.m_data              = 0;
@@ -171,7 +171,7 @@ class CFindPathTask : public CBotTask
 	CFindPathTask(Vector vOrigin, eLookTask looktask = LOOK_WAYPOINT)
 	{
 		m_vVector                   = vOrigin;
-		m_pEdict                    = NULL; // no edict
+		m_pEdict                    = nullptr; // no edict
 		m_LookTask                  = looktask;
 		m_iWaypointId               = -1;
 		m_flags.m_data              = 0;
@@ -1309,7 +1309,7 @@ class CMoveToTask : public CBotTask
 	CMoveToTask(Vector vOrigin)
 	{
 		m_vVector = vOrigin;
-		m_pEdict  = NULL;
+		m_pEdict  = nullptr;
 
 		setFailInterrupt(CONDITION_SEE_CUR_ENEMY);
 	}
@@ -1443,7 +1443,7 @@ class CSpyCheckAir : public CBotTask
 	CSpyCheckAir()
 	{
 		m_fTime         = 0.0f;
-		m_pUnseenBefore = NULL;
+		m_pUnseenBefore = nullptr;
 		m_bHitPlayer    = false;
 	}
 

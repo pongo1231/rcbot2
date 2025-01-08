@@ -256,7 +256,7 @@ void CPlayerHurtEvent ::execute(IBotEventInterface *pEvent)
 		    {
 		        int *flags;
 
-		        if ( (flags=CClassInterface::getPlayerFlagsPointer(m_pActivator)) != NULL )
+		        if ( (flags=CClassInterface::getPlayerFlagsPointer(m_pActivator)) != nullptr )
 		        {
 		            if ( *flags & FL_GODMODE )
 		            {
@@ -269,7 +269,7 @@ void CPlayerHurtEvent ::execute(IBotEventInterface *pEvent)
 		if (m_pActivator != pAttacker)
 		{
 			if (pAttacker && (!pAttacker->m_pNetworkable || !pAttacker->m_NetworkSerialNumber))
-				pAttacker = NULL;
+				pAttacker = nullptr;
 
 			if (pBot)
 			{
@@ -299,11 +299,11 @@ void CPlayerHurtEvent ::execute(IBotEventInterface *pEvent)
 void CPlayerDeathEvent ::execute(IBotEventInterface *pEvent)
 {
 	CBot *pBot                        = CBots::getBotPointer(m_pActivator);
-	const char *weapon                = pEvent->getString("weapon", NULL);
-	CBotSquad *pPrevSquadLeadersSquad = NULL;
+	const char *weapon                = pEvent->getString("weapon", nullptr);
+	CBotSquad *pPrevSquadLeadersSquad = nullptr;
 	int iAttacker                     = pEvent->getInt("attacker", 0);
 
-	edict_t *pAttacker                = (iAttacker > 0) ? CBotGlobals::playerByUserId(iAttacker) : NULL;
+	edict_t *pAttacker                = (iAttacker > 0) ? CBotGlobals::playerByUserId(iAttacker) : nullptr;
 
 	if (pAttacker
 	    && ((CBotGlobals::entityOrigin(pAttacker) - CBotGlobals::entityOrigin(m_pActivator)).Length() > 512.0f))
@@ -315,7 +315,7 @@ void CPlayerDeathEvent ::execute(IBotEventInterface *pEvent)
 		{
 			CWeapon *pWeapon = CWeapons::getWeaponByShortName(weapon);
 
-			if (pWeapon != NULL)
+			if (pWeapon != nullptr)
 			{
 				if (pWeapon->isScoped())
 				{
@@ -353,7 +353,7 @@ void CPlayerDeathEvent ::execute(IBotEventInterface *pEvent)
 		{
 			CWeapon *pWeapon = CWeapons::getWeaponByShortName(weapon);
 
-			if (pWeapon != NULL)
+			if (pWeapon != nullptr)
 			{
 				if (pWeapon->isScoped())
 				{
@@ -386,7 +386,7 @@ void CPlayerDeathEvent ::execute(IBotEventInterface *pEvent)
 		CBots::botFunction(&func2);
 	}
 
-	if ((pPrevSquadLeadersSquad = CBotSquads::FindSquadByLeader(m_pActivator)) != NULL)
+	if ((pPrevSquadLeadersSquad = CBotSquads::FindSquadByLeader(m_pActivator)) != nullptr)
 	{
 		CBotSquads::ChangeLeader(pPrevSquadLeadersSquad);
 	}
@@ -634,7 +634,7 @@ void CTF2UpgradeObjectEvent ::execute(IBotEventInterface *pEvent)
 			edict_t *pOwner = CTeamFortress2Mod::getBuildingOwner(object, index);
 			CBotTF2 *pBot;
 
-			if ((pBot = (CBotTF2 *)CBots::getBotPointer(pOwner)) != NULL)
+			if ((pBot = (CBotTF2 *)CBots::getBotPointer(pOwner)) != nullptr)
 			{
 				pBot->addVoiceCommand(TF_VC_THANKS);
 			}
@@ -834,7 +834,7 @@ void CTF2PointStartCapture ::execute(IBotEventInterface *pEvent)
  */
 	int capteam         = pEvent->getInt("capteam", 0);
 	int capindex        = pEvent->getInt("cp", 0);
-	const char *cappers = pEvent->getString("cappers", NULL);
+	const char *cappers = pEvent->getString("cappers", nullptr);
 	//	const char *cpname = pEvent->getString("cpname");
 
 	if (cappers)
@@ -852,7 +852,7 @@ void CTF2PointStartCapture ::execute(IBotEventInterface *pEvent)
 	// CPoints::pointBeingCaptured(capteam,cpname,cappers[0]);
 
 	CBotTF2FunctionEnemyAtIntel fn(capteam, CTeamFortress2Mod::m_ObjectiveResource.GetCPPosition(capindex),
-	                               EVENT_CAPPOINT, NULL, capindex);
+	                               EVENT_CAPPOINT, nullptr, capindex);
 	CBots::botFunction(&fn);
 }
 
@@ -896,8 +896,8 @@ void CFlagEvent ::execute(IBotEventInterface *pEvent)
 	// player id
 	int player       = pEvent->getInt("player");
 
-	edict_t *pPlayer = NULL;
-	CBot *pBot       = NULL;
+	edict_t *pPlayer = nullptr;
+	CBot *pBot       = nullptr;
 
 	// Crash fix
 	if (player)
@@ -934,7 +934,7 @@ void CFlagEvent ::execute(IBotEventInterface *pEvent)
 		break;
 	case FLAG_CAPTURED: // captured
 	{
-		IPlayerInfo *p = NULL;
+		IPlayerInfo *p = nullptr;
 
 		if (pPlayer)
 		{
@@ -1013,7 +1013,7 @@ void CFlagCaptured ::execute(IBotEventInterface *pEvent)
 void CDODPointCaptured ::execute(IBotEventInterface *pEvent)
 {
 	int cp                = pEvent->getInt("cp");
-	const char *szCappers = pEvent->getString("cappers", NULL);
+	const char *szCappers = pEvent->getString("cappers", nullptr);
 	edict_t *pPlayer;
 
 	// get a capper
@@ -1081,7 +1081,7 @@ void CDODBombPlanted ::execute(IBotEventInterface *pEvent)
 	    {
 	        CBot *pBot;
 
-	        if ( (pBot = CBots::getBotPointer(m_pActivator)) != NULL )
+	        if ( (pBot = CBots::getBotPointer(m_pActivator)) != nullptr )
 	        {
 	            // hack
 	            ((CDODBot*)pBot)->removeBomb();
@@ -1250,7 +1250,7 @@ void CBotEvents ::freeMemory()
 	for (unsigned int i = 0; i < m_theEvents.size(); i++)
 	{
 		delete m_theEvents[i];
-		m_theEvents[i] = NULL;
+		m_theEvents[i] = nullptr;
 	}
 	m_theEvents.clear();
 }
@@ -1261,14 +1261,14 @@ void CBotEvents ::executeEvent(void *pEvent, eBotEventType iType)
 	int iEventId = -1;
 	bool bFound;
 
-	IBotEventInterface *pInterface = NULL;
+	IBotEventInterface *pInterface = nullptr;
 
 	if (iType == TYPE_KEYVALUES)
 		pInterface = new CGameEventInterface1((KeyValues *)pEvent);
 	else if (iType == TYPE_IGAMEEVENT)
 		pInterface = new CGameEventInterface2((IGameEvent *)pEvent);
 
-	if (pInterface == NULL)
+	if (pInterface == nullptr)
 		return;
 
 	if (iType != TYPE_IGAMEEVENT)
@@ -1290,7 +1290,7 @@ void CBotEvents ::executeEvent(void *pEvent, eBotEventType iType)
 			// set pEvent id for quick checking
 			pFound->setEventId(iEventId);
 
-			pFound->setActivator((userid >= 0) ? CBotGlobals::playerByUserId(userid) : NULL);
+			pFound->setActivator((userid >= 0) ? CBotGlobals::playerByUserId(userid) : nullptr);
 
 			pFound->execute(pInterface);
 

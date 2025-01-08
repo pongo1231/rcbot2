@@ -47,7 +47,7 @@ class CBotEvent
 	CBotEvent()
 	{
 		m_iEventId = -1;
-		m_szType   = NULL;
+		m_szType   = nullptr;
 		m_iModId   = MOD_ANY;
 	}
 

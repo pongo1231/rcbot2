@@ -172,7 +172,7 @@ class CTFObjectiveResource
 	// Data functions, called to set up the state at the beginning of a round
 	inline int GetNumControlPoints(void)
 	{
-		if (m_iNumControlPoints == NULL)
+		if (m_iNumControlPoints == nullptr)
 			return 0;
 		return *m_iNumControlPoints;
 	}
@@ -311,7 +311,7 @@ class CTeamRoundTimer
 
 	float getSetupTime()
 	{
-		if ((m_Resource.get() != NULL) && m_nSetupTimeLength)
+		if ((m_Resource.get() != nullptr) && m_nSetupTimeLength)
 			return (float)*m_nSetupTimeLength;
 		return 0.0f;
 	}

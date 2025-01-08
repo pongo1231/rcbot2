@@ -68,7 +68,7 @@ eBotCommandResult CBotCommandInline::execute(CClient *pClient, BotCommandArgs ar
 CBotCommandInline ControlCommand("control", CMD_ACCESS_BOT | CMD_ACCESS_DEDICATED,
                                  [](CClient *pClient, BotCommandArgs args)
                                  {
-	                                 edict_t *pEntity = NULL;
+	                                 edict_t *pEntity = nullptr;
 
 	                                 if (pClient)
 		                                 pEntity = pClient->getPlayer();
@@ -93,7 +93,7 @@ CBotCommandInline
                   {
 	                  //	bool bOkay = false;
 
-	                  edict_t *pEntity = NULL;
+	                  edict_t *pEntity = nullptr;
 
 	                  if (pClient)
 		                  pEntity = pClient->getPlayer();
@@ -231,15 +231,15 @@ void CBotSubcommands::printHelp(edict_t *pPrintTo)
 CBotCommandInline PrintCommands("printcommands", CMD_ACCESS_DEDICATED,
                                 [](CClient *pClient, BotCommandArgs args)
                                 {
-	                                if (pClient != NULL)
+	                                if (pClient != nullptr)
 	                                {
 		                                CBotGlobals::botMessage(pClient->getPlayer(), 0, "All bot commands:");
 		                                CBotGlobals::m_pCommands->printCommand(pClient->getPlayer());
 	                                }
 	                                else
 	                                {
-		                                CBotGlobals::botMessage(NULL, 0, "All bot commands:");
-		                                CBotGlobals::m_pCommands->printCommand(NULL);
+		                                CBotGlobals::botMessage(nullptr, 0, "All bot commands:");
+		                                CBotGlobals::m_pCommands->printCommand(nullptr);
 	                                }
 
 	                                return COMMAND_ACCESSED;

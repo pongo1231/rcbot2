@@ -121,7 +121,7 @@ class CAutoWaypointCheck : public CTypeVector<vec_t>
 class CToolTip
 {
   public:
-	CToolTip(const char *pszMessage, const char *pszSound = NULL)
+	CToolTip(const char *pszMessage, const char *pszSound = nullptr)
 	{
 		m_pszMessage = pszMessage;
 		m_pszSound   = pszSound;
@@ -139,11 +139,11 @@ class CClient
   public:
 	CClient()
 	{
-		m_szSteamID                  = NULL;
-		m_pPlayerInfo                = NULL;
-		m_pDebugBot                  = NULL;
+		m_szSteamID                  = nullptr;
+		m_pPlayerInfo                = nullptr;
+		m_pDebugBot                  = nullptr;
 		m_WaypointCopyType           = WPT_COPY_NONE;
-		m_pMenu                      = NULL;
+		m_pMenu                      = nullptr;
 		m_iMenuCommand               = -1;
 		m_fNextUpdateMenuTime        = 0.0f;
 		m_iWaypointShowFlags         = 0;
@@ -178,18 +178,18 @@ class CClient
 	{
 		if (m_bTeleportVectorValid)
 			return &m_vTeleportVector;
-		return NULL;
+		return nullptr;
 	}
 
 	inline bool isUsingMenu()
 	{
-		return (m_pMenu != NULL);
+		return (m_pMenu != nullptr);
 	}
 	inline void setCurrentMenu(CBotMenu *pMenu)
 	{
 		m_pMenu = pMenu;
 
-		if (pMenu == NULL)
+		if (pMenu == nullptr)
 			resetMenuCommands();
 		else
 			setupMenuCommands();
@@ -550,11 +550,11 @@ class CClients
 	}
 	static bool noListenServerClient()
 	{
-		return m_pListenServerClient == NULL;
+		return m_pListenServerClient == nullptr;
 	}
 	static void clientThink();
 	static bool clientsDebugging(int iLev = 0);
-	static void clientDebugMsg(int iLev, const char *szMsg, CBot *pBot = NULL);
+	static void clientDebugMsg(int iLev, const char *szMsg, CBot *pBot = nullptr);
 	static void clientDebugMsg(CBot *pBot, int iLev, const char *fmt, ...);
 	static CClient *findClientBySteamID(char *szSteamID);
 	static edict_t *getListenServerClient()
@@ -562,7 +562,7 @@ class CClients
 		if (m_pListenServerClient)
 			return m_pListenServerClient->getPlayer();
 		else
-			return NULL;
+			return nullptr;
 	}
 
 	static void initall()
@@ -572,7 +572,7 @@ class CClients
 			m_Clients[i].init();
 		}
 	}
-	static void giveMessage(char *msg, float fTime = 0.1, edict_t *pPlayer = NULL); // NULL to everyone
+	static void giveMessage(char *msg, float fTime = 0.1, edict_t *pPlayer = nullptr); // nullptr to everyone
   private:
 	static CClient m_Clients[MAX_PLAYERS];
 	static CClient *m_pListenServerClient;

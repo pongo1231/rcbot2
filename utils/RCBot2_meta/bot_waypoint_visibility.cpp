@@ -38,7 +38,7 @@
 
 #include "rcbot/logging.h"
 
-/*unsigned char *CWaypointVisibilityTable :: m_VisTable = NULL;
+/*unsigned char *CWaypointVisibilityTable :: m_VisTable = nullptr;
 bool CWaypointVisibilityTable :: bWorkVisibility = false;
 int CWaypointVisibilityTable :: iCurFrom = 0;
 int CWaypointVisibilityTable :: iCurTo = 0;*/

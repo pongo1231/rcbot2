@@ -569,7 +569,7 @@ CGotoHideSpotSched ::CGotoHideSpotSched(CBot *pBot, Vector vOrigin, IBotTaskInte
 	// run at flank while shooting
 	CFindPathTask *pHideGoalPoint = new CFindPathTask();
 
-	pBot->setCoverFrom(NULL);
+	pBot->setCoverFrom(nullptr);
 	addTask(new CFindGoodHideSpot(vOrigin));
 	addTask(pHideGoalPoint);
 
@@ -637,7 +637,7 @@ CBotAttackPointSched ::CBotAttackPointSched(Vector vPoint, int iRadius, int iAre
 {
 	int iDangerWpt = -1;
 
-	if (pLastEnemySentry != NULL)
+	if (pLastEnemySentry != nullptr)
 		iDangerWpt =
 		    CWaypointLocations::NearestWaypoint(CBotGlobals::entityOrigin(pLastEnemySentry), 200.0f, -1, true, true);
 
@@ -757,7 +757,7 @@ void CBotSchedule ::execute(CBot *pBot)
 	// why would task ever be null??
 	pTask = m_Tasks.front();
 
-	if (pTask == NULL)
+	if (pTask == nullptr)
 	{
 		m_bFailed = true;
 		return;

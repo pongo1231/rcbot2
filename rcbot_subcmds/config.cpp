@@ -44,7 +44,7 @@ CBotCommandInline
     MaxBotsCommand("max_bots", CMD_ACCESS_CONFIG | CMD_ACCESS_DEDICATED,
                    [](CClient *pClient, BotCommandArgs args)
                    {
-	                   edict_t *pEntity = NULL;
+	                   edict_t *pEntity = nullptr;
 
 	                   if (pClient)
 		                   pEntity = pClient->getPlayer();
@@ -85,7 +85,7 @@ CBotCommandInline MinBotsCommand(
     "min_bots", CMD_ACCESS_CONFIG | CMD_ACCESS_DEDICATED,
     [](CClient *pClient, BotCommandArgs args)
     {
-	    edict_t *pEntity = NULL;
+	    edict_t *pEntity = nullptr;
 
 	    if (pClient)
 		    pEntity = pClient->getPlayer();
