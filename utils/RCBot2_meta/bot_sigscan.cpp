@@ -39,7 +39,11 @@
 #include "bot_sigscan.h"
 #include "eiface.h"
 
-void **g_pGameRules = nullptr;
+CGameRulesObject *g_pGameRules_Obj                                     = nullptr;
+CCreateGameRulesObject *g_pGameRules_Create_Obj                        = nullptr;
+CDisableCurrencyPackBotCheckPatch *g_pDisableCurrencyPackBotCheckPatch = nullptr;
+
+void **g_pGameRules                                                    = nullptr;
 
 void *GetGameRules()
 {

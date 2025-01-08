@@ -49,7 +49,7 @@ class CGameRulesObject : public CSignatureFunction
 		return reinterpret_cast<void **>(m_func);
 	}
 };
-inline CGameRulesObject *g_pGameRules_Obj = nullptr;
+extern CGameRulesObject *g_pGameRules_Obj;
 
 class CCreateGameRulesObject : public CSignatureFunction
 {
@@ -63,7 +63,7 @@ class CCreateGameRulesObject : public CSignatureFunction
 
 	void **getGameRules();
 };
-inline CCreateGameRulesObject *g_pGameRules_Create_Obj = nullptr;
+extern CCreateGameRulesObject *g_pGameRules_Create_Obj;
 
 class CDisableCurrencyPackBotCheckPatch : public CSignatureFunction
 {
@@ -77,7 +77,7 @@ class CDisableCurrencyPackBotCheckPatch : public CSignatureFunction
 
 	void patchMyTouch();
 };
-inline CDisableCurrencyPackBotCheckPatch *g_pDisableCurrencyPackBotCheckPatch = nullptr;
+extern CDisableCurrencyPackBotCheckPatch *g_pDisableCurrencyPackBotCheckPatch;
 
 void *GetGameRules();
 #endif
