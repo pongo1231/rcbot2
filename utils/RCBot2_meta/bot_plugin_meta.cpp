@@ -460,6 +460,12 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 	g_pGameRules_Obj        = new CGameRulesObject(kvl, gameServerFactory);
 	g_pGameRules_Create_Obj = new CCreateGameRulesObject(kvl, gameServerFactory);
 
+#if SOURCE_ENGINE == SE_TF2
+	g_pDisableCurrencyPackBotCheckPatch = new CDisableCurrencyPackBotCheckPatch(kvl, gameServerFactory);
+	if (g_pDisableCurrencyPackBotCheckPatch->found())
+		g_pDisableCurrencyPackBotCheckPatch->patchMyTouch();
+#endif
+
 	if (fp)
 		fp.close();
 

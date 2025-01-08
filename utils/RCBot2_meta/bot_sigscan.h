@@ -49,6 +49,7 @@ class CGameRulesObject : public CSignatureFunction
 		return reinterpret_cast<void **>(m_func);
 	}
 };
+inline CGameRulesObject *g_pGameRules_Obj = nullptr;
 
 class CCreateGameRulesObject : public CSignatureFunction
 {
@@ -62,6 +63,7 @@ class CCreateGameRulesObject : public CSignatureFunction
 
 	void **getGameRules();
 };
+inline CCreateGameRulesObject *g_pGameRules_Create_Obj = nullptr;
 
 class CDisableCurrencyPackBotCheckPatch : public CSignatureFunction
 {
@@ -70,14 +72,12 @@ class CDisableCurrencyPackBotCheckPatch : public CSignatureFunction
 
 	bool found()
 	{
-		return m_func != nullptr;
+		return m_func;
 	}
 
-	void **getGameRules();
+	void patchMyTouch();
 };
-
-inline CGameRulesObject *g_pGameRules_Obj              = nullptr;
-inline CCreateGameRulesObject *g_pGameRules_Create_Obj = nullptr;
+inline CDisableCurrencyPackBotCheckPatch *g_pDisableCurrencyPackBotCheckPatch = nullptr;
 
 void *GetGameRules();
 #endif

@@ -10,6 +10,7 @@
 
 #define PAGE_SIZE 4096
 #define PAGE_ALIGN_UP(x) ((x + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
+#define PAGE_ALIGN_DOWN(x) (x & ~(PAGE_SIZE - 1))
 
 #include <errno.h>
 #include <sys/mman.h>
@@ -296,4 +297,24 @@ void **CCreateGameRulesObject::getGameRules()
 {
 	char *addr = reinterpret_cast<char *>(m_func);
 	return *reinterpret_cast<void ***>(addr + rcbot_gamerules_offset.GetInt());
+}
+
+CDisableCurrencyPackBotCheckPatch::CDisableCurrencyPackBotCheckPatch(CRCBotKeyValueList &list, void *pAddrBase)
+{
+	findFunc(list, "disable_currency_pack_bot_check_sig", pAddrBase, "\\x84\\xC0\\x75\\xC3\\xA1");
+}
+
+void CDisableCurrencyPackBotCheckPatch::patchMyTouch()
+{
+#ifdef _WIN32
+	DWORD dOldProtect;
+	VirtualProtect(m_func, 4, PAGE_EXECUTE_READWRITE, &dOldProtect);
+#elif POSIX
+	mprotect(reinterpret_cast<void *>(PAGE_ALIGN_DOWN(reinterpret_cast<intptr_t>(m_func))), PAGE_SIZE,
+	         PROT_READ | PROT_WRITE | PROT_EXEC);
+#else
+#error "Invalid platform."
+#endif
+
+	V_memset(m_func, 0x90, 4);
 }
