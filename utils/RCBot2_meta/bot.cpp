@@ -657,7 +657,7 @@ bool CBot ::setVisible(edict_t *pEntity, bool bVisible)
 	{
 		if (canAvoid(pEntity))
 		{
-			if ((m_pAvoidEntity.get() == nullptr) || (distanceFrom(pEntity) < distanceFrom(m_pAvoidEntity)))
+			if ((m_pAvoidEntity.Get() == nullptr) || (distanceFrom(pEntity) < distanceFrom(m_pAvoidEntity)))
 				m_pAvoidEntity = pEntity;
 		}
 	}
@@ -906,7 +906,7 @@ void CBot ::think()
 			m_fWantToListenTime    = engine->Time() + 1.0f;
 
 			// is player
-			if (ENTINDEX(m_pEnemy.get()) <= gpGlobals->maxClients)
+			if (ENTINDEX(m_pEnemy.Get()) <= gpGlobals->maxClients)
 				m_fLastSeeEnemyPlayer = engine->Time();
 		}
 
@@ -1034,7 +1034,7 @@ void CBot ::think()
 	else
 	{
 		Vector vEnemyAimLerpVelocity;
-		CClassInterface::getVelocity(m_pEnemy.get(), &vEnemyAimLerpVelocity);
+		CClassInterface::getVelocity(m_pEnemy.Get(), &vEnemyAimLerpVelocity);
 
 		float fLerpTimeDelta         = engine->Time() - m_fEnemyAimLerpTime;
 
@@ -1147,7 +1147,7 @@ bool CBot ::isSquadLeader(void)
 
 void CBot ::updateConditions()
 {
-	if (m_pEnemy.get() != nullptr)
+	if (m_pEnemy.Get() != nullptr)
 	{
 		if (!CBotGlobals::entityIsAlive(m_pEnemy))
 		{
@@ -1767,7 +1767,7 @@ void CBot ::debugBot(char *msg)
 
 	char task_string[256];
 
-	edict_t *pEnemy = m_pEnemy.get();
+	edict_t *pEnemy = m_pEnemy.Get();
 
 	IPlayerInfo *p  = nullptr;
 
@@ -2592,7 +2592,7 @@ void CBot ::getLookAtVector()
 		try
 		{
 
-			if (m_pLookEdict.get() != nullptr)
+			if (m_pLookEdict.Get() != nullptr)
 				setLookAt(getAimVector(m_pLookEdict));
 			// setLookAt(CBotGlobals::entityOrigin(m_pLookEdict)+Vector(0,0,32));
 
@@ -2619,7 +2619,7 @@ void CBot ::getLookAtVector()
 		try
 		{
 
-			if (m_pEnemy.get() != nullptr)
+			if (m_pEnemy.Get() != nullptr)
 			{
 				setLookAt(getAimVector(m_pEnemy));
 			}
@@ -2687,7 +2687,7 @@ void CBot ::getLookAtVector()
 				CClients::clientDebugMsg(BOT_DEBUG_AIM, "no valid route point", this);
 			}
 		}
-		else if ((m_pLastEnemy.get() != nullptr) && ((m_fLastSeeEnemy + 5.0f) > engine->Time()))
+		else if ((m_pLastEnemy.Get() != nullptr) && ((m_fLastSeeEnemy + 5.0f) > engine->Time()))
 			setLookAt(m_vLastSeeEnemy);
 		else if ((m_fCurrentDanger >= 20.0f) && m_pNavigator->getDangerPoint(&vLook))
 			setLookAt(vLook);
@@ -3548,7 +3548,7 @@ CBotLastSee ::CBotLastSee(edict_t *pEdict)
 
 void CBotLastSee ::update()
 {
-	if ((m_pLastSee.get() == nullptr) || !CBotGlobals::entityIsAlive(m_pLastSee))
+	if ((m_pLastSee.Get() == nullptr) || !CBotGlobals::entityIsAlive(m_pLastSee))
 	{
 		m_fLastSeeTime = 0.0f;
 		m_pLastSee     = nullptr;
@@ -3563,7 +3563,7 @@ void CBotLastSee ::update()
 
 bool CBotLastSee ::hasSeen(float fTime)
 {
-	return (m_pLastSee.get() != nullptr) && ((m_fLastSeeTime + fTime) > engine->Time());
+	return (m_pLastSee.Get() != nullptr) && ((m_fLastSeeTime + fTime) > engine->Time());
 }
 
 Vector CBotLastSee ::getLocation()

@@ -1,7 +1,8 @@
 #ifndef __BOT_SIGSCAN_H__
 #define __BOT_SIGSCAN_H__
 
-#include "bot_const.h"
+#include <cstddef>
+#include <cstdint>
 
 struct DynLibInfo
 {
@@ -78,6 +79,15 @@ class CDisableCurrencyPackBotCheckPatch : public CSignatureFunction
 	void patchMyTouch();
 };
 extern CDisableCurrencyPackBotCheckPatch *g_pDisableCurrencyPackBotCheckPatch;
+
+class CFindEntList : public CSignatureFunction
+{
+  public:
+	CFindEntList(CRCBotKeyValueList &list, void *pAddrBase);
+
+	uintptr_t GetAddr();
+};
+extern CFindEntList *g_pFindEntList;
 
 void *GetGameRules();
 #endif

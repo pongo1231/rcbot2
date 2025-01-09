@@ -466,6 +466,9 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 		g_pDisableCurrencyPackBotCheckPatch->patchMyTouch();
 #endif
 
+	g_pFindEntList = new CFindEntList(kvl, gameServerFactory);
+	MyEHandle::SetEntListPtr(reinterpret_cast<CBaseEntityList *>(g_pFindEntList->GetAddr()));
+
 	if (fp)
 		fp.close();
 

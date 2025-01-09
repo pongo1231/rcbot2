@@ -122,7 +122,7 @@ class CBotSquad
 
 	inline edict_t *GetLeader(void)
 	{
-		return (edict_t *)m_pLeader.get();
+		return (edict_t *)m_pLeader.Get();
 	}
 
 	void SetCombatType(eCombatType iCombatType)

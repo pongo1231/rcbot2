@@ -32,101 +32,88 @@
 #define __RCBOT_EHANDLE_H__
 
 #include "edict.h"
+#include "ehandle.h"
+#include "eiface.h"
+#include "entitylist_base.h"
+#include "rcbot/logging.h"
 
-////// entity handling in network
 class MyEHandle
 {
-  public:
-	MyEHandle()
-	{
-		m_pEnt          = nullptr;
-		m_iSerialNumber = 0;
-	}
-
-	MyEHandle(edict_t *pent)
-	{
-		m_pEnt = pent;
-
-		if (pent)
-		{
-			m_iSerialNumber = pent->m_NetworkSerialNumber;
-		}
-		else
-			m_iSerialNumber = 0;
-	}
-
-	inline bool notValid()
-	{
-		return get() == nullptr;
-	}
-	inline bool isValid()
-	{
-		return get() != nullptr;
-	}
-
-	inline edict_t *get()
-	{
-		if (m_iSerialNumber && m_pEnt)
-		{
-			if (!m_pEnt->IsFree() && (m_iSerialNumber == m_pEnt->m_NetworkSerialNumber))
-				return m_pEnt;
-		}
-		else if (m_pEnt)
-			m_pEnt = nullptr;
-
-		return nullptr;
-	}
-
-	inline edict_t *get_old()
-	{
-		return m_pEnt;
-	}
-
-	inline operator edict_t * const()
-	{ // same as get function (inlined for speed)
-		if (m_iSerialNumber && m_pEnt)
-		{
-			if (!m_pEnt->IsFree() && (m_iSerialNumber == m_pEnt->m_NetworkSerialNumber))
-				return m_pEnt;
-		}
-		else if (m_pEnt)
-			m_pEnt = nullptr;
-
-		return nullptr;
-	}
-
-	inline bool operator==(int a)
-	{
-		return ((int)get() == a);
-	}
-
-	inline bool operator==(edict_t *pent)
-	{
-		return (get() == pent);
-	}
-
-	inline bool operator==(MyEHandle &other)
-	{
-		return (get() == other.get());
-	}
-
-	inline edict_t *operator=(edict_t *pent)
-	{
-		m_pEnt = pent;
-
-		if (pent)
-		{
-			m_iSerialNumber = pent->m_NetworkSerialNumber;
-		}
-		else
-			m_iSerialNumber = 0;
-
-		return m_pEnt;
-	}
-
   private:
-	int m_iSerialNumber;
-	edict_t *m_pEnt;
+	CHandle<IServerEntity> m_Handle;
+
+  public:
+	MyEHandle() = default;
+
+	MyEHandle(edict_t *edict)
+	{
+		if (!edict)
+			m_Handle.Term();
+		else
+			m_Handle = edict->GetIServerEntity();
+	}
+
+	static CBaseEntityList *&g_pEntityList()
+	{
+		static CBaseEntityList *g_pEntityList = nullptr;
+		return g_pEntityList;
+	}
+
+	static void SetEntListPtr(CBaseEntityList *entList)
+	{
+		MyEHandle::g_pEntityList() = entList;
+	}
+
+	inline bool IsValid() const
+	{
+		return m_Handle.IsValid();
+	}
+
+	inline edict_t *Get() const
+	{
+		extern IServerGameEnts *servergameents;
+
+		auto handleEntity      = g_pEntityList()->LookupEntity(m_Handle);
+		static auto lastEntity = handleEntity;
+		if (handleEntity != lastEntity)
+		{
+			lastEntity = handleEntity;
+			logger->Log(LogLevel::WARN, "%lu", handleEntity);
+		}
+		return !handleEntity
+		         ? nullptr
+		         : servergameents->BaseEntityToEdict(reinterpret_cast<IServerEntity *>(handleEntity)->GetBaseEntity());
+	}
+
+	inline bool operator==(intptr_t a) const
+	{
+		return reinterpret_cast<intptr_t>(Get()) == a;
+	}
+
+	inline bool operator==(edict_t *edict) const
+	{
+		return Get() == edict;
+	}
+
+	inline bool operator==(MyEHandle &other) const
+	{
+		return Get() == other.Get();
+	}
+
+	inline edict_t *operator=(edict_t *edict)
+	{
+		if (!edict)
+			m_Handle.Term();
+		else
+			m_Handle = edict->GetIServerEntity();
+
+		return edict;
+	}
+
+	inline operator edict_t *() const
+	{
+		return Get();
+	}
 };
 
 #endif

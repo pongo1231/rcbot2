@@ -173,18 +173,18 @@ bool CDODBot::canGotoWaypoint(Vector vPrevWaypoint, CWaypoint *pWaypoint, CWaypo
 	return false;
 }
 
-#define UPDATE_VISIBLE_OBJECT(visobj, pent)                           \
-	if (!visobj.get() || (distanceFrom(pent) < distanceFrom(visobj))) \
-	{                                                                 \
-		visobj = pent;                                                \
+#define UPDATE_VISIBLE_OBJECT(visobj, pent)                               \
+	if (!visobj.IsValid() || (distanceFrom(pent) < distanceFrom(visobj))) \
+	{                                                                     \
+		visobj = pent;                                                    \
 	}
-#define UPDATE_VISIBLE_OBJECT_CONDITION(visobj, pent, condition)      \
-	if (!visobj.get() || (distanceFrom(pent) < distanceFrom(visobj))) \
-	{                                                                 \
-		if (condition)                                                \
-		{                                                             \
-			visobj = pent;                                            \
-		}                                                             \
+#define UPDATE_VISIBLE_OBJECT_CONDITION(visobj, pent, condition)          \
+	if (!visobj.IsValid() || (distanceFrom(pent) < distanceFrom(visobj))) \
+	{                                                                     \
+		if (condition)                                                    \
+		{                                                                 \
+			visobj = pent;                                                \
+		}                                                                 \
 	}
 #define NULLIFY_VISIBLE(visobj, pent, distance)           \
 	if (visobj == pent)                                   \
@@ -1243,7 +1243,7 @@ void CDODBot ::modThink()
 				if (!m_pSchedules->isCurrentSchedule(SCHED_RUN_FOR_COVER))
 				{
 					m_pSchedules->removeSchedule(SCHED_RUN_FOR_COVER);
-					m_pSchedules->addFront(new CGotoHideSpotSched(this, m_pEnemy.get()));
+					m_pSchedules->addFront(new CGotoHideSpotSched(this, m_pEnemy.Get()));
 				}
 			}
 		}
@@ -1287,12 +1287,12 @@ void CDODBot ::modThink()
 		// prone only if has enemy or last seen one a second ago
 		// if rcbot_prone_enemy_only is true
 		if ((hasSomeConditions(CONDITION_PRONE) || !rcbot_prone_enemy_only.GetBool()
-		     || ((m_pEnemy.get() != nullptr) || (m_fLastSeeEnemy + 5.0f > engine->Time())))
+		     || ((m_pEnemy.Get() != nullptr) || (m_fLastSeeEnemy + 5.0f > engine->Time())))
 		    && (m_fCurrentDanger >= 80.0f) && !m_bProne && (m_fProneTime < engine->Time()))
 		{
 			bool bProne = true;
 
-			if (rcbot_prone_enemy_only.GetBool() && (m_pEnemy.get() != nullptr))
+			if (rcbot_prone_enemy_only.GetBool() && (m_pEnemy.Get() != nullptr))
 			{
 				ga_nn_value inputs[3] = { distanceFrom(m_pEnemy) / 1000.0f, getHealthPercent(),
 					                      m_fCurrentDanger / MAX_BELIEF };
@@ -2234,7 +2234,7 @@ bool CDODBot ::executeAction(CBotUtility *util)
 		    util->getWeaponChoice(), CWaypoints::getWaypoint(util->getIntData()), util->getVectorData()));
 		return true;
 	case BOT_UTIL_PICKUP_WEAPON:
-		m_pSchedules->add(new CBotPickupSchedUse(m_pNearestWeapon.get()));
+		m_pSchedules->add(new CBotPickupSchedUse(m_pNearestWeapon.Get()));
 		return true;
 	case BOT_UTIL_MESSAROUND:
 	{
@@ -2845,7 +2845,7 @@ void CDODBot ::reachedCoverSpot(int flags)
 	// dont need to run there any more
 	removeCondition(CONDITION_RUN);
 
-	if (!m_pEnemy.get() && !hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
+	if (!m_pEnemy.Get() && !hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
 	{
 		// Allow bots to crouch when reloading to take cover
 		if (flags & (CWaypointTypes::W_FL_CROUCH | CWaypointTypes::W_FL_MACHINEGUN))
@@ -2884,7 +2884,7 @@ void CDODBot ::reachedCoverSpot(int flags)
 			m_fCurrentDanger = MAX_BELIEF;
 		}
 
-		if (!bDontCrouchAndHide && (m_pLastCoverFrom.get() != nullptr))
+		if (!bDontCrouchAndHide && (m_pLastCoverFrom.Get() != nullptr))
 		{
 			if (CBotGlobals::entityIsAlive(m_pLastCoverFrom))
 			{
@@ -3179,7 +3179,7 @@ void CDODBot ::getTasks(unsigned int iIgnore)
 
 	// I had an enemy a minute ago
 	ADD_UTILITY(BOT_UTIL_FIND_LAST_ENEMY,
-	            wantToFollowEnemy() && !m_bLookedForEnemyLast && (m_pLastEnemy.get() != nullptr)
+	            wantToFollowEnemy() && !m_bLookedForEnemyLast && (m_pLastEnemy.Get() != nullptr)
 	                && CBotGlobals::entityIsValid(m_pLastEnemy) && CBotGlobals::entityIsAlive(m_pLastEnemy),
 	            getHealthPercent() * 0.89f);
 
@@ -3368,9 +3368,9 @@ void CDODBot ::getTasks(unsigned int iIgnore)
 		ADD_UTILITY(BOT_UTIL_MESSAROUND, (getHealthPercent() > 0.75f), fAttackUtil);
 	}
 
-	if (!rcbot_melee_only.GetBool() && (m_pNearestWeapon.get() != nullptr) && hasSomeConditions(CONDITION_NEED_AMMO))
+	if (!rcbot_melee_only.GetBool() && (m_pNearestWeapon.Get() != nullptr) && hasSomeConditions(CONDITION_NEED_AMMO))
 	{
-		CWeapon *pNearestWeapon = CWeapons::getWeapon(m_pNearestWeapon.get()->GetClassName());
+		CWeapon *pNearestWeapon = CWeapons::getWeapon(m_pNearestWeapon.Get()->GetClassName());
 		CBotWeapon *pHaveWeapon = (pNearestWeapon == nullptr) ? nullptr : (m_pWeapons->getWeapon(pNearestWeapon));
 
 		if (pNearestWeapon && (!pHaveWeapon || !pHaveWeapon->hasWeapon() || pHaveWeapon->outOfAmmo(this)))

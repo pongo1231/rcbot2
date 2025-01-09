@@ -168,7 +168,7 @@ void CTeamFortress2Mod ::modFrame()
 			m_ObjectiveResource.m_ObjectiveResource =
 			    CClassInterface::FindEntityByNetClass(gpGlobals->maxClients + 1, "CTFObjectiveResource");
 
-			if (m_ObjectiveResource.m_ObjectiveResource.get() != nullptr)
+			if (m_ObjectiveResource.m_ObjectiveResource.Get() != nullptr)
 				m_ObjectiveResource.setup();
 		}
 		else
@@ -305,7 +305,7 @@ int CTeamFortress2Mod ::getTeleporterWaypoint(edict_t *pTele)
 
 	for (i = 0; i < MAX_PLAYERS; i++)
 	{
-		if (m_Teleporters[i].exit.get() == pTele)
+		if (m_Teleporters[i].exit.Get() == pTele)
 			return m_Teleporters[i].m_iWaypoint;
 	}
 
@@ -511,8 +511,8 @@ bool CTeamFortress2Mod ::isBoss(edict_t *pEntity, float *fFactor)
 {
 	if (m_bBossSummoned)
 	{
-		if (m_pBoss.get() && CBotGlobals::entityIsAlive(m_pBoss.get()))
-			return m_pBoss.get() == pEntity;
+		if (m_pBoss.Get() && CBotGlobals::entityIsAlive(m_pBoss.Get()))
+			return m_pBoss.Get() == pEntity;
 		else if ((strcmp(pEntity->GetClassName(), "merasmus") == 0)
 		         || (strcmp(pEntity->GetClassName(), "headless_hatman") == 0)
 		         || (strcmp(pEntity->GetClassName(), "eyeball_boss") == 0)
@@ -524,7 +524,7 @@ bool CTeamFortress2Mod ::isBoss(edict_t *pEntity, float *fFactor)
 	}
 	else if (CTeamFortress2Mod::isMapType(TF_MAP_CARTRACE))
 	{
-		if (m_pBoss.get() == pEntity)
+		if (m_pBoss.Get() == pEntity)
 			return true;
 		// for plr_hightower_event summon event is not called! Boo tf2!!!
 		else if (strcmp(pEntity->GetClassName(), "tf_zombie") == 0)
@@ -535,7 +535,7 @@ bool CTeamFortress2Mod ::isBoss(edict_t *pEntity, float *fFactor)
 	}
 	else if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
 	{
-		if (m_pBoss.get() == pEntity)
+		if (m_pBoss.Get() == pEntity)
 			return true;
 		else if (isTankBoss(pEntity))
 		{
@@ -657,9 +657,9 @@ edict_t *CTeamFortress2Mod ::getTeleporterExit(edict_t *pTele)
 
 	for (i = 0; i < MAX_PLAYERS; i++)
 	{
-		if (m_Teleporters[i].entrance.get() == pTele)
+		if (m_Teleporters[i].entrance.Get() == pTele)
 		{
-			if ((pExit = m_Teleporters[i].exit.get()) != nullptr)
+			if ((pExit = m_Teleporters[i].exit.Get()) != nullptr)
 			{
 				return pExit;
 			}
@@ -804,7 +804,7 @@ void CTeamFortress2Mod::checkMVMTankBoss(edict_t *pEntity)
 {
 	float fTankDistance = CBotGlobals::entityOrigin(pEntity).DistTo(m_vMVMCapturePoint);
 
-	if (m_pNearestTankBoss.get() != nullptr)
+	if (m_pNearestTankBoss.Get() != nullptr)
 	{
 		if (!CBotGlobals::entityIsAlive(m_pNearestTankBoss))
 		{
@@ -814,7 +814,7 @@ void CTeamFortress2Mod::checkMVMTankBoss(edict_t *pEntity)
 	}
 
 	if (CBotGlobals::entityIsAlive(pEntity)
-	    && ((m_pNearestTankBoss.get() == nullptr)
+	    && ((m_pNearestTankBoss.Get() == nullptr)
 	        || ((m_fNearestTankDistance == 0.0f) || (fTankDistance < m_fNearestTankDistance))))
 	{
 		m_fNearestTankDistance = fTankDistance;
@@ -833,7 +833,7 @@ CWaypoint *CTeamFortress2Mod ::getBestWaypointMVM(CBot *pBot, int iFlags)
 
 	edict_t *pTank;
 	// check tank boss is valid
-	if ((pTank = m_pNearestTankBoss.get()) != nullptr)
+	if ((pTank = m_pNearestTankBoss.Get()) != nullptr)
 	{
 		if (CBotGlobals::entityIsAlive(pTank) == false)
 			m_pNearestTankBoss = nullptr;
@@ -844,7 +844,7 @@ CWaypoint *CTeamFortress2Mod ::getBestWaypointMVM(CBot *pBot, int iFlags)
 		if (m_bMVMAlarmSounded)
 			return CWaypoints::randomWaypointGoalNearestArea(iFlags, TF2_TEAM_RED, 0, false, pBot, true,
 			                                                 &m_vMVMCapturePoint, -1, true, m_iCapturePointWptID);
-		else if ((m_pNearestTankBoss.get() != nullptr)
+		else if ((m_pNearestTankBoss.Get() != nullptr)
 		         && (m_fNearestTankDistance < vFlagLocation.DistTo(m_vMVMCapturePoint)))
 			return CWaypoints::randomWaypointGoalBetweenArea(iFlags, TF2_TEAM_RED, 0, false, pBot, true,
 			                                                 &m_vNearestTankLocation, &m_vMVMCapturePoint, true, -1,
@@ -973,27 +973,27 @@ bool CTeamFortress2Mod::buildingNearby(int iTeam, Vector vOrigin)
 		if (CClassInterface::getTeam(pPlayer) != iTeam)
 			continue;
 
-		if (m_SentryGuns[sentryIndex].sentry.get())
+		if (m_SentryGuns[sentryIndex].sentry.Get())
 		{
-			if ((vOrigin - CBotGlobals::entityOrigin(m_SentryGuns[sentryIndex].sentry.get())).Length() < 100)
+			if ((vOrigin - CBotGlobals::entityOrigin(m_SentryGuns[sentryIndex].sentry.Get())).Length() < 100)
 				return true;
 		}
 
-		if (m_Dispensers[sentryIndex].disp.get())
+		if (m_Dispensers[sentryIndex].disp.Get())
 		{
-			if ((vOrigin - CBotGlobals::entityOrigin(m_Dispensers[sentryIndex].disp.get())).Length() < 100)
+			if ((vOrigin - CBotGlobals::entityOrigin(m_Dispensers[sentryIndex].disp.Get())).Length() < 100)
 				return true;
 		}
 
-		if (m_Teleporters[sentryIndex].entrance.get())
+		if (m_Teleporters[sentryIndex].entrance.Get())
 		{
-			if ((vOrigin - CBotGlobals::entityOrigin(m_Teleporters[sentryIndex].entrance.get())).Length() < 100)
+			if ((vOrigin - CBotGlobals::entityOrigin(m_Teleporters[sentryIndex].entrance.Get())).Length() < 100)
 				return true;
 		}
 
-		if (m_Teleporters[sentryIndex].exit.get())
+		if (m_Teleporters[sentryIndex].exit.Get())
 		{
-			if ((vOrigin - CBotGlobals::entityOrigin(m_Teleporters[sentryIndex].exit.get())).Length() < 100)
+			if ((vOrigin - CBotGlobals::entityOrigin(m_Teleporters[sentryIndex].exit.Get())).Length() < 100)
 				return true;
 		}
 	}
@@ -1019,13 +1019,13 @@ edict_t *CTeamFortress2Mod::getBuilding(eEngiBuild object, edict_t *pOwner)
 	switch (object)
 	{
 	case ENGI_DISP:
-		return m_Dispensers[i].disp.get();
+		return m_Dispensers[i].disp.Get();
 	case ENGI_SENTRY:
-		return m_SentryGuns[i].sentry.get();
+		return m_SentryGuns[i].sentry.Get();
 	case ENGI_TELE:
-		if (m_Teleporters[i].entrance.get() != nullptr)
-			return m_Teleporters[i].entrance.get();
-		return m_Teleporters[i].exit.get();
+		if (m_Teleporters[i].entrance.Get() != nullptr)
+			return m_Teleporters[i].entrance.Get();
+		return m_Teleporters[i].exit.Get();
 	}
 
 	return nullptr;
@@ -1042,7 +1042,7 @@ edict_t *CTeamFortress2Mod ::getBuildingOwner(eEngiBuild object, short index)
 	case ENGI_DISP:
 		for (i = 0; i < MAX_PLAYERS; i++)
 		{
-			if (m_Dispensers[i].disp.get() && (ENTINDEX(m_Dispensers[i].disp.get()) == index))
+			if (m_Dispensers[i].disp.Get() && (ENTINDEX(m_Dispensers[i].disp.Get()) == index))
 				return INDEXENT(i + 1);
 		}
 		// m_SentryGuns[i].
@@ -1050,7 +1050,7 @@ edict_t *CTeamFortress2Mod ::getBuildingOwner(eEngiBuild object, short index)
 	case ENGI_SENTRY:
 		for (i = 0; i < MAX_PLAYERS; i++)
 		{
-			if (m_SentryGuns[i].sentry.get() && (ENTINDEX(m_SentryGuns[i].sentry.get()) == index))
+			if (m_SentryGuns[i].sentry.Get() && (ENTINDEX(m_SentryGuns[i].sentry.Get()) == index))
 				return INDEXENT(i + 1);
 		}
 		break;
@@ -1059,9 +1059,9 @@ edict_t *CTeamFortress2Mod ::getBuildingOwner(eEngiBuild object, short index)
 
 		for (i = 0; i < MAX_PLAYERS; i++)
 		{
-			if (tele->entrance.get() && (ENTINDEX(tele->entrance.get()) == index))
+			if (tele->entrance.Get() && (ENTINDEX(tele->entrance.Get()) == index))
 				return INDEXENT(i + 1);
-			if (tele->exit.get() && (ENTINDEX(tele->exit.get()) == index))
+			if (tele->exit.Get() && (ENTINDEX(tele->exit.Get()) == index))
 				return INDEXENT(i + 1);
 
 			tele++;
@@ -1082,7 +1082,7 @@ edict_t *CTeamFortress2Mod ::nearestDispenser(Vector vOrigin, int team)
 	for (unsigned int i = 0; i < MAX_PLAYERS; i++)
 	{
 		// m_Dispensers[i]
-		pDisp = m_Dispensers[i].disp.get();
+		pDisp = m_Dispensers[i].disp.Get();
 
 		if (pDisp)
 		{
@@ -1162,17 +1162,17 @@ void CTeamFortress2Mod::sapperDestroyed(edict_t *pOwner, eEngiBuild type, edict_
 	{
 		if (type == ENGI_TELE)
 		{
-			if (m_Teleporters[index].sapper.get_old() == pSapper)
+			if (m_Teleporters[index].sapper == pSapper)
 				m_Teleporters[index].sapper = MyEHandle();
 		}
 		else if (type == ENGI_DISP)
 		{
-			if (m_Dispensers[index].sapper.get_old() == pSapper)
+			if (m_Dispensers[index].sapper == pSapper)
 				m_Dispensers[index].sapper = MyEHandle();
 		}
 		else if (type == ENGI_SENTRY)
 		{
-			if (m_SentryGuns[index].sapper.get_old() == pSapper)
+			if (m_SentryGuns[index].sapper == pSapper)
 				m_SentryGuns[index].sapper = MyEHandle();
 		}
 	}
@@ -1180,7 +1180,7 @@ void CTeamFortress2Mod::sapperDestroyed(edict_t *pOwner, eEngiBuild type, edict_
 
 void CTeamFortress2Mod::updatePointMaster()
 {
-	if (m_PointMasterResource.get() == nullptr)
+	if (m_PointMasterResource.Get() == nullptr)
 	{
 		edict_t *pMaster =
 		    CClassInterface::FindEntityByClassnameNearest(Vector(0, 0, 0), "team_control_point_master", 65535);
@@ -1278,7 +1278,7 @@ void CTeamFortress2Mod ::roundReset()
 	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && g_pCVar->FindVar("tf_mvm_endless_force_on")->GetBool())
 		return;
 
-	if (m_ObjectiveResource.m_ObjectiveResource.get() == nullptr)
+	if (m_ObjectiveResource.m_ObjectiveResource.Get() == nullptr)
 	{
 		m_ObjectiveResource.m_ObjectiveResource =
 		    CClassInterface::FindEntityByNetClass(gpGlobals->maxClients + 1, "CTFObjectiveResource");
@@ -1290,7 +1290,7 @@ void CTeamFortress2Mod ::roundReset()
 	}
 
 	// always reset on new round
-	if (m_ObjectiveResource.m_ObjectiveResource.get() != nullptr) //! m_ObjectiveResource.isInitialised() )
+	if (m_ObjectiveResource.m_ObjectiveResource.Get() != nullptr) //! m_ObjectiveResource.isInitialised() )
 		m_ObjectiveResource.setup();
 
 	m_Timer.reset();
@@ -1419,7 +1419,7 @@ void CTeamFortress2Mod::dispenserBuilt(edict_t *pOwner, eEngiBuild type, edict_t
 
 void CTeamFortress2Mod::updateRedPayloadBomb(edict_t *pent)
 {
-	edict_t *cur = m_pPayLoadBombRed.get();
+	edict_t *cur = m_pPayLoadBombRed.Get();
 
 	if (cur != pent)
 		m_pPayLoadBombRed = pent;
@@ -1427,7 +1427,7 @@ void CTeamFortress2Mod::updateRedPayloadBomb(edict_t *pent)
 
 void CTeamFortress2Mod::updateBluePayloadBomb(edict_t *pent)
 {
-	edict_t *cur = m_pPayLoadBombBlue.get();
+	edict_t *cur = m_pPayLoadBombBlue.Get();
 
 	if (cur != pent)
 		m_pPayLoadBombBlue = pent;

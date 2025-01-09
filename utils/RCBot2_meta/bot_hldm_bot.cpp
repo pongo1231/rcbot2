@@ -210,7 +210,7 @@ bool CHLDMBot ::executeAction(eBotAction iAction)
 			models/items/ammocrate_smg1.mdl
 			*/
 
-			szModel             = m_pAmmoCrate.get()->GetIServerEntity()->GetModelName().ToCStr();
+			szModel             = m_pAmmoCrate.Get()->GetIServerEntity()->GetModelName().ToCStr();
 			type                = szModel[23];
 
 			if (type == 'a') // ar2
@@ -245,16 +245,16 @@ bool CHLDMBot ::executeAction(eBotAction iAction)
 		}
 		return false;
 	case BOT_UTIL_PICKUP_WEAPON:
-		m_pSchedules->add(new CBotPickupSched(m_pNearbyWeapon.get()));
+		m_pSchedules->add(new CBotPickupSched(m_pNearbyWeapon.Get()));
 		return true;
 	case BOT_UTIL_FIND_NEAREST_HEALTH:
-		m_pSchedules->add(new CBotPickupSched(m_pHealthKit.get()));
+		m_pSchedules->add(new CBotPickupSched(m_pHealthKit.Get()));
 		return true;
 	case BOT_UTIL_HL2DM_FIND_ARMOR:
-		m_pSchedules->add(new CBotPickupSched(m_pBattery.get()));
+		m_pSchedules->add(new CBotPickupSched(m_pBattery.Get()));
 		return true;
 	case BOT_UTIL_FIND_NEAREST_AMMO:
-		m_pSchedules->add(new CBotPickupSched(m_pAmmoKit.get()));
+		m_pSchedules->add(new CBotPickupSched(m_pAmmoKit.Get()));
 		m_fUtilTimes[iAction] = engine->Time() + randomFloat(5.0f, 10.0f);
 		return true;
 	case BOT_UTIL_HL2DM_USE_HEALTH_CHARGER:
@@ -455,7 +455,7 @@ void CHLDMBot ::getTasks(unsigned int iIgnore)
 			ADD_UTILITY(
 			    BOT_UTIL_HL2DM_GRAVIGUN_PICKUP,
 			    (!m_pEnemy || (m_pCurrentWeapon && (strcmp("weapon_physcannon", m_pCurrentWeapon->GetClassName()))))
-			        && gravgun && gravgun->hasWeapon() && (m_NearestPhysObj.get() != nullptr)
+			        && gravgun && gravgun->hasWeapon() && (m_NearestPhysObj.Get() != nullptr)
 			        && (gravgun->getWeaponIndex() > 0)
 			        && (CClassInterface::gravityGunObject(INDEXENT(gravgun->getWeaponIndex())) == nullptr),
 			    0.9f);
@@ -470,23 +470,23 @@ void CHLDMBot ::getTasks(unsigned int iIgnore)
 
 	// low on health? Pick some up if there's any near by
 	ADD_UTILITY(BOT_UTIL_HL2DM_USE_HEALTH_CHARGER,
-	            (m_pHealthCharger.get() != nullptr) && (CClassInterface::getAnimCycle(m_pHealthCharger) < 1.0f)
+	            (m_pHealthCharger.Get() != nullptr) && (CClassInterface::getAnimCycle(m_pHealthCharger) < 1.0f)
 	                && (getHealthPercent() < 1.0f),
 	            (1.0f - getHealthPercent()));
-	ADD_UTILITY(BOT_UTIL_FIND_NEAREST_HEALTH, (m_pHealthKit.get() != nullptr) && (getHealthPercent() < 1.0f),
+	ADD_UTILITY(BOT_UTIL_FIND_NEAREST_HEALTH, (m_pHealthKit.Get() != nullptr) && (getHealthPercent() < 1.0f),
 	            1.0f - getHealthPercent());
 
 	// low on armor?
-	ADD_UTILITY(BOT_UTIL_HL2DM_FIND_ARMOR, (m_pBattery.get() != nullptr) && (getArmorPercent() < 1.0f),
+	ADD_UTILITY(BOT_UTIL_HL2DM_FIND_ARMOR, (m_pBattery.Get() != nullptr) && (getArmorPercent() < 1.0f),
 	            (1.0f - getArmorPercent()) * 0.75f);
 	ADD_UTILITY(BOT_UTIL_HL2DM_USE_CHARGER,
-	            (m_pCharger.get() != nullptr) && (CClassInterface::getAnimCycle(m_pCharger) < 1.0f)
+	            (m_pCharger.Get() != nullptr) && (CClassInterface::getAnimCycle(m_pCharger) < 1.0f)
 	                && (getArmorPercent() < 1.0f),
 	            (1.0f - getArmorPercent()) * 0.75f);
 
-	ADD_UTILITY(BOT_UTIL_HL2DM_USE_CRATE, (m_pAmmoCrate.get() != nullptr) && (m_fUseCrateTime < engine->Time()), 1.0f);
+	ADD_UTILITY(BOT_UTIL_HL2DM_USE_CRATE, (m_pAmmoCrate.Get() != nullptr) && (m_fUseCrateTime < engine->Time()), 1.0f);
 	// low on ammo? ammo nearby?
-	ADD_UTILITY(BOT_UTIL_FIND_NEAREST_AMMO, (m_pAmmoKit.get() != nullptr) && (getAmmo(0) < 5),
+	ADD_UTILITY(BOT_UTIL_FIND_NEAREST_AMMO, (m_pAmmoKit.Get() != nullptr) && (getAmmo(0) < 5),
 	            0.01f * (100 - getAmmo(0)));
 
 	// always able to roam around
@@ -513,9 +513,9 @@ void CHLDMBot ::getTasks(unsigned int iIgnore)
 		}
 	}
 
-	if (m_pNearbyWeapon.get())
+	if (m_pNearbyWeapon.Get())
 	{
-		pWeapon = CWeapons::getWeapon(m_pNearbyWeapon.get()->GetClassName());
+		pWeapon = CWeapons::getWeapon(m_pNearbyWeapon.Get()->GetClassName());
 
 		if (pWeapon && !m_pWeapons->hasWeapon(pWeapon->getID()))
 		{
@@ -603,15 +603,15 @@ void CHLDMBot ::modThink()
 		}
 	}
 
-	if (m_NearestPhysObj.get())
+	if (m_NearestPhysObj.Get())
 	{
 		bool bCarry      = false;
-		edict_t *pEntity = m_NearestPhysObj.get();
+		edict_t *pEntity = m_NearestPhysObj.Get();
 
 		if (m_pCurrentWeapon && !strcmp("weapon_physcannon", m_pCurrentWeapon->GetClassName()))
 		{
 			m_pCarryingObject = CClassInterface::gravityGunObject(m_pCurrentWeapon);
-			bCarry            = (CClassInterface::gravityGunObject(m_pCurrentWeapon) == m_NearestPhysObj.get());
+			bCarry            = (CClassInterface::gravityGunObject(m_pCurrentWeapon) == m_NearestPhysObj.Get());
 		}
 
 		if (!bCarry && (distanceFrom(pEntity) < rcbot_jump_obst_dist.GetFloat()))
@@ -746,12 +746,12 @@ bool CHLDMBot ::setVisible(edict_t *pEntity, bool bVisible)
 		szClassname = pEntity->GetClassName();
 
 		if ((strncmp(szClassname, "item_ammo", 9) == 0)
-		    && (!m_pAmmoKit.get() || (fDist < distanceFrom(m_pAmmoKit.get()))))
+		    && (!m_pAmmoKit.Get() || (fDist < distanceFrom(m_pAmmoKit.Get()))))
 		{
 			m_pAmmoKit = pEntity;
 		}
 		else if ((strncmp(szClassname, "item_health", 11) == 0)
-		         && (!m_pHealthKit.get() || (fDist < distanceFrom(m_pHealthKit.get()))))
+		         && (!m_pHealthKit.Get() || (fDist < distanceFrom(m_pHealthKit.Get()))))
 		{
 			// if ( getHealthPercent() < 1.0f )
 			//	updateCondition(CONDITION_CHANGED);
@@ -759,19 +759,19 @@ bool CHLDMBot ::setVisible(edict_t *pEntity, bool bVisible)
 			m_pHealthKit = pEntity;
 		}
 		else if ((strcmp(szClassname, "item_battery") == 0)
-		         && (!m_pBattery.get() || (fDist < distanceFrom(m_pBattery.get()))))
+		         && (!m_pBattery.Get() || (fDist < distanceFrom(m_pBattery.Get()))))
 		{
 			m_pBattery = pEntity;
 		}
 		else if (((strcmp(szClassname, "func_breakable") == 0) || (strncmp(szClassname, "prop_physics", 12) == 0))
 		         && (CClassInterface::getPlayerHealth(pEntity) > 0)
-		         && (!m_NearestBreakable.get() || (fDist < distanceFrom(m_NearestBreakable.get()))))
+		         && (!m_NearestBreakable.Get() || (fDist < distanceFrom(m_NearestBreakable.Get()))))
 		{
 			m_NearestBreakable = pEntity;
 		}
 		else if ((pEntity != m_pNearestButton) && (strcmp(szClassname, "func_button") == 0))
 		{
-			if (!m_pNearestButton.get() || (fDist < distanceFrom(m_pNearestButton.get())))
+			if (!m_pNearestButton.Get() || (fDist < distanceFrom(m_pNearestButton.Get())))
 				m_pNearestButton = pEntity;
 		}
 		// covered above
@@ -782,11 +782,11 @@ bool CHLDMBot ::setVisible(edict_t *pEntity, bool bVisible)
 		}*/
 		else if ((pEntity != m_pAmmoCrate) && (strcmp(szClassname, "item_ammo_crate") == 0))
 		{
-			if (!m_pAmmoCrate.get() || (fDist < distanceFrom(m_pAmmoCrate.get())))
+			if (!m_pAmmoCrate.Get() || (fDist < distanceFrom(m_pAmmoCrate.Get())))
 				m_pAmmoCrate = pEntity;
 		}
 		else if ((pEntity != m_FailedPhysObj) && (strncmp(szClassname, "prop_physics", 12) == 0)
-		         && (!m_NearestPhysObj.get() || (fDist < distanceFrom(m_NearestPhysObj.get()))))
+		         && (!m_NearestPhysObj.Get() || (fDist < distanceFrom(m_NearestPhysObj.Get()))))
 		{
 			// if ( !m_bCarryingObject )
 			//	updateCondition(CONDITION_CHANGED);
@@ -794,9 +794,9 @@ bool CHLDMBot ::setVisible(edict_t *pEntity, bool bVisible)
 			m_NearestPhysObj = pEntity;
 		}
 		else if ((strncmp(szClassname, "item_suitcharger", 16) == 0)
-		         && (!m_pCharger.get() || (fDist < distanceFrom(m_pCharger.get()))))
+		         && (!m_pCharger.Get() || (fDist < distanceFrom(m_pCharger.Get()))))
 		{
-			if (m_pCharger.get())
+			if (m_pCharger.Get())
 			{
 				// less juice than the current one I see
 				if (CClassInterface::getAnimCycle(m_pCharger) < CClassInterface::getAnimCycle(pEntity))
@@ -811,9 +811,9 @@ bool CHLDMBot ::setVisible(edict_t *pEntity, bool bVisible)
 			m_pCharger = pEntity;
 		}
 		else if ((strncmp(szClassname, "item_healthcharger", 18) == 0)
-		         && (!m_pHealthCharger.get() || (fDist < distanceFrom(m_pHealthCharger.get()))))
+		         && (!m_pHealthCharger.Get() || (fDist < distanceFrom(m_pHealthCharger.Get()))))
 		{
-			if (m_pHealthCharger.get())
+			if (m_pHealthCharger.Get())
 			{
 				// less juice than the current one I see - forget it
 				if (CClassInterface::getAnimCycle(m_pHealthCharger) < CClassInterface::getAnimCycle(pEntity))
@@ -828,7 +828,7 @@ bool CHLDMBot ::setVisible(edict_t *pEntity, bool bVisible)
 			m_pHealthCharger = pEntity;
 		}
 		else if ((strncmp(szClassname, "weapon_", 7) == 0)
-		         && (!m_pNearbyWeapon.get() || (fDist < distanceFrom(m_pNearbyWeapon.get()))))
+		         && (!m_pNearbyWeapon.Get() || (fDist < distanceFrom(m_pNearbyWeapon.Get()))))
 		{
 			/*static CWeapon *pWeapon;
 

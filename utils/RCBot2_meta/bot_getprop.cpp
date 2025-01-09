@@ -496,7 +496,7 @@ void CClassInterface ::setupCTeamRoundTimer(CTeamRoundTimer *pTimer)
 
 bool CClassInterface ::getTF2ObjectiveResource(CTFObjectiveResource *pResource)
 {
-	edict_t *edict                 = pResource->m_ObjectiveResource.get();
+	edict_t *edict                 = pResource->m_ObjectiveResource.Get();
 
 	pResource->m_iNumControlPoints = g_GetProps[GETPROP_TF2_OBJTR_m_iNumControlPoints].getIntPointer(edict);
 	pResource->m_bBlocked          = g_GetProps[GETPROP_TF2_OBJTR_m_bBlocked].getBoolPointer(edict);

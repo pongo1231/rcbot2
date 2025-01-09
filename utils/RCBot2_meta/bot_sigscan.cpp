@@ -42,6 +42,7 @@
 CGameRulesObject *g_pGameRules_Obj                                     = nullptr;
 CCreateGameRulesObject *g_pGameRules_Create_Obj                        = nullptr;
 CDisableCurrencyPackBotCheckPatch *g_pDisableCurrencyPackBotCheckPatch = nullptr;
+CFindEntList *g_pFindEntList                                           = nullptr;
 
 void **g_pGameRules                                                    = nullptr;
 
@@ -321,4 +322,18 @@ void CDisableCurrencyPackBotCheckPatch::patchMyTouch()
 #endif
 
 	V_memset(m_func, 0x90, 4);
+}
+
+CFindEntList::CFindEntList(CRCBotKeyValueList &list, void *pAddrBase)
+{
+	// 2A is a wildcard apparently
+	findFunc(list, "find_ent_list", pAddrBase, "\\x8B\\x0D\\x2A\\x2A\\x2A\\x2A\\x89\\xE5\\x53\\x8B\\x45\\x08");
+}
+
+uintptr_t CFindEntList::GetAddr()
+{
+	if (!m_func)
+		return 0;
+
+	return *reinterpret_cast<uintptr_t *>(reinterpret_cast<uintptr_t>(m_func) + 2);
 }

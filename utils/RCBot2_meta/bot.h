@@ -217,7 +217,7 @@ class CBotLastSee
 
 	inline bool check(edict_t *pEdict)
 	{
-		return (pEdict == (m_pLastSee.get()));
+		return (pEdict == (m_pLastSee.Get()));
 	}
 
 	bool hasSeen(float fTime);
@@ -944,7 +944,7 @@ class CBot
 
 	inline bool isListeningToPlayer(edict_t *pPlayer)
 	{
-		return (m_PlayerListeningTo.get() == pPlayer);
+		return (m_PlayerListeningTo.Get() == pPlayer);
 	}
 
 	inline IBotController *getController() const

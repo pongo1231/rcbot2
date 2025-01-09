@@ -258,7 +258,7 @@ void CTeamRoundTimer::reset()
 
 	m_Resource = CClassInterface::FindEntityByNetClass(gpGlobals->maxClients + 1, "CTeamRoundTimer");
 
-	if (m_Resource.get() != nullptr)
+	if (m_Resource.Get() != nullptr)
 	{
 		CClassInterface::setupCTeamRoundTimer(this);
 	}
@@ -339,7 +339,7 @@ void CTFObjectiveResource::setup()
 
 			for (int j = 0; j < *m_iNumControlPoints; j++)
 			{
-				if (m_pControlPoints[j].get() != nullptr)
+				if (m_pControlPoints[j].Get() != nullptr)
 					continue;
 
 				if (vOrigin == m_vCPPositions[j])
@@ -469,7 +469,7 @@ bool CTFObjectiveResource ::updateDefendPoints(int team)
 	// CTeamControlPointMaster *pMaster = CTeamFortress2Mod::getPointMaster();
 	CTeamControlPointRound *pRound = CTeamFortress2Mod::getCurrentRound();
 
-	if (m_ObjectiveResource.get() == nullptr) // not set up yet
+	if (m_ObjectiveResource.Get() == nullptr) // not set up yet
 		return false;
 	if (team == 0) // invalid team
 		return false;
@@ -818,7 +818,7 @@ bool CTFObjectiveResource ::updateAttackPoints(int team)
 	CTeamControlPointRound *pRound = CTeamFortress2Mod::getCurrentRound();
 	TF2PointProb_t *arr;
 
-	if (m_ObjectiveResource.get() == nullptr) // not set up yet
+	if (m_ObjectiveResource.Get() == nullptr) // not set up yet
 		return false;
 	if (team == 0)
 		return false;

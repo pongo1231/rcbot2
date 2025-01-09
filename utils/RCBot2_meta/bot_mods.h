@@ -1039,7 +1039,7 @@ class CTeamFortress2Mod : public CBotMod
 
 		if (id >= 0)
 		{
-			return m_SentryGuns[id].sentry.get();
+			return m_SentryGuns[id].sentry.Get();
 		}
 
 		return nullptr;
@@ -1050,7 +1050,7 @@ class CTeamFortress2Mod : public CBotMod
 		// for ( short int i = 1; i <= gpGlobals->maxClients; i ++ )
 		for (short int i = 0; i < MAX_PLAYERS; i++)
 		{
-			if (m_SentryGuns[i].sentry.get() == pSentry)
+			if (m_SentryGuns[i].sentry.Get() == pSentry)
 				return INDEXENT(i + 1);
 		}
 
@@ -1063,7 +1063,7 @@ class CTeamFortress2Mod : public CBotMod
 
 		if (id >= 0)
 		{
-			return (m_SentryGuns[id].sentry.get() != nullptr) && (m_SentryGuns[id].sapper.get() != nullptr);
+			return (m_SentryGuns[id].sentry.Get() != nullptr) && (m_SentryGuns[id].sapper.Get() != nullptr);
 		}
 
 		return false;
@@ -1071,12 +1071,12 @@ class CTeamFortress2Mod : public CBotMod
 
 	static edict_t *getSentryGun(int id)
 	{
-		return m_SentryGuns[id].sentry.get();
+		return m_SentryGuns[id].sentry.Get();
 	}
 
 	static edict_t *getTeleEntrance(int id)
 	{
-		return m_Teleporters[id].entrance.get();
+		return m_Teleporters[id].entrance.Get();
 	}
 
 	static bool isMyTeleporterSapped(edict_t *pOwner)
@@ -1085,8 +1085,8 @@ class CTeamFortress2Mod : public CBotMod
 
 		if (id >= 0)
 		{
-			return ((m_Teleporters[id].exit.get() != nullptr) || (m_Teleporters[id].entrance.get() != nullptr))
-			    && (m_Teleporters[id].sapper.get() != nullptr);
+			return ((m_Teleporters[id].exit.Get() != nullptr) || (m_Teleporters[id].entrance.Get() != nullptr))
+			    && (m_Teleporters[id].sapper.Get() != nullptr);
 		}
 
 		return false;
@@ -1098,7 +1098,7 @@ class CTeamFortress2Mod : public CBotMod
 
 		if (id >= 0)
 		{
-			return (m_Dispensers[id].disp.get() != nullptr) && (m_Dispensers[id].sapper.get() != nullptr);
+			return (m_Dispensers[id].disp.Get() != nullptr) && (m_Dispensers[id].sapper.Get() != nullptr);
 		}
 
 		return false;
@@ -1110,8 +1110,8 @@ class CTeamFortress2Mod : public CBotMod
 
 		for (i = 0; i < MAX_PLAYERS; i++)
 		{
-			if (m_SentryGuns[i].sentry.get() == pSentry)
-				return m_SentryGuns[i].sapper.get() != nullptr;
+			if (m_SentryGuns[i].sentry.Get() == pSentry)
+				return m_SentryGuns[i].sapper.Get() != nullptr;
 		}
 
 		return false;
@@ -1123,8 +1123,8 @@ class CTeamFortress2Mod : public CBotMod
 
 		for (i = 0; i < MAX_PLAYERS; i++)
 		{
-			if ((m_Teleporters[i].entrance.get() == pTele) || (m_Teleporters[i].exit.get() == pTele))
-				return m_Teleporters[i].sapper.get() != nullptr;
+			if ((m_Teleporters[i].entrance.Get() == pTele) || (m_Teleporters[i].exit.Get() == pTele))
+				return m_Teleporters[i].sapper.Get() != nullptr;
 		}
 
 		return false;
@@ -1136,8 +1136,8 @@ class CTeamFortress2Mod : public CBotMod
 
 		for (i = 0; i < MAX_PLAYERS; i++)
 		{
-			if (m_Dispensers[i].disp.get() == pDisp)
-				return m_Dispensers[i].sapper.get() != nullptr;
+			if (m_Dispensers[i].disp.Get() == pDisp)
+				return m_Dispensers[i].sapper.Get() != nullptr;
 		}
 
 		return false;

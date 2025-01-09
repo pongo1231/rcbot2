@@ -519,7 +519,7 @@ void CBotDODBomb ::debugString(char *string)
 void CDODWaitForGrenadeTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 
-	if (m_pGrenade.get() == nullptr)
+	if (m_pGrenade.Get() == nullptr)
 	{
 		complete();
 	}
@@ -565,13 +565,13 @@ void CDODWaitForBombTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 		m_pRunTo = CWaypoints::getNextCoverPoint(pBot, pCurrent, m_pBlocking);
 	}
 
-	if (m_pBombTarget.get() == nullptr)
+	if (m_pBombTarget.Get() == nullptr)
 	{
 		complete();
 		return;
 	}
 
-	if (m_pBombTarget.get()->GetUnknown() == nullptr)
+	if (m_pBombTarget.Get()->GetUnknown() == nullptr)
 	{
 		complete();
 		return;
@@ -842,7 +842,7 @@ void CBotTF2PushPayloadBombTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	{
 		complete();
 	}
-	else if (m_pPayloadBomb.get() == nullptr)
+	else if (m_pPayloadBomb.Get() == nullptr)
 	{
 		complete();
 		return;
@@ -893,7 +893,7 @@ void CBotTF2DefendPayloadBombTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	{
 		complete();
 	}
-	else if (m_pPayloadBomb.get() == nullptr)
+	else if (m_pPayloadBomb.Get() == nullptr)
 	{
 		complete();
 		return;
@@ -992,7 +992,7 @@ CBotTF2UpgradeBuilding ::CBotTF2UpgradeBuilding(edict_t *pBuilding)
 
 void CBotTF2UpgradeBuilding ::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
-	edict_t *pBuilding = m_pBuilding.get();
+	edict_t *pBuilding = m_pBuilding.Get();
 	edict_t *pOwner    = nullptr;
 	pBot->wantToShoot(false);
 	pBot->wantToInvestigateSound(false);
@@ -1045,7 +1045,7 @@ void CBotHL2DMUseButton ::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	static Vector vOrigin;
 
-	if (m_pButton.get() == nullptr)
+	if (m_pButton.Get() == nullptr)
 	{
 		fail();
 		return;
@@ -1082,7 +1082,7 @@ void CBotHL2DMUseCharger ::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	static Vector vOrigin;
 
-	if (m_pCharger.get() == nullptr)
+	if (m_pCharger.Get() == nullptr)
 	{
 		fail();
 		return;
@@ -1190,7 +1190,7 @@ void CBotGravGunPickup ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	{
 		edict_t *pPhys = CClassInterface::gravityGunObject(m_Weapon);
 
-		if (pPhys == m_Prop.get())
+		if (pPhys == m_Prop.Get())
 			complete();
 		else if (pPhys || CClassInterface::gravityGunOpen(m_Weapon))
 		{
@@ -1314,7 +1314,7 @@ void CBotTaskEngiPickupBuilding ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	if (m_fTime == 0.0f)
 		m_fTime = engine->Time() + 6.0f;
 
-	if (!m_pBuilding.get())
+	if (!m_pBuilding.Get())
 	{
 		fail();
 		return;
@@ -1328,7 +1328,7 @@ void CBotTaskEngiPickupBuilding ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 
 	pBot->wantToShoot(false);
-	pBot->lookAtEdict(m_pBuilding.get());
+	pBot->lookAtEdict(m_pBuilding.Get());
 	pBot->setLookAtTask(LOOK_EDICT);
 
 	((CBotTF2 *)pBot)->updateCarrying();
@@ -1768,7 +1768,7 @@ void CBotTF2EngiLookAfter ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	else
 	{
 		CBotWeapon *pWeapon = pBot->getCurrentWeapon();
-		edict_t *pSentry    = m_pSentry.get();
+		edict_t *pSentry    = m_pSentry.Get();
 
 		pBot->wantToListen(false);
 
@@ -2177,11 +2177,11 @@ void CFindPathTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 		}
 	}
 
-	if (m_pEdict.get() != nullptr) // task edict
+	if (m_pEdict.Get() != nullptr) // task edict
 	{
 		if (m_flags.bits.m_bCompleteSeeTaskEdict)
 		{
-			if (pBot->isVisible(m_pEdict.get())
+			if (pBot->isVisible(m_pEdict.Get())
 			    && (pBot->distanceFrom(CBotGlobals::entityOrigin(m_pEdict)) < CWaypointLocations::REACHABLE_RANGE))
 				complete();
 		}
@@ -2357,7 +2357,7 @@ void CTF2_TauntTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 			return;
 		}
 
-		pBot->lookAtEdict(m_pPlayer.get());
+		pBot->lookAtEdict(m_pPlayer.Get());
 		pBot->setLookAtTask(LOOK_EDICT, 10.f);
 
 		if (pBot->distanceFrom(m_vOrigin) > m_fDist)
@@ -2390,10 +2390,10 @@ void CTF2_TauntTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 
 	bool bIsTaunting     = CClassInterface::getTF2Conditions(pBot->getEdict()) & (1 << 7);
-	Vector vPlayerOrigin = m_pPlayer.get()->GetCollideable()->GetCollisionOrigin();
+	Vector vPlayerOrigin = m_pPlayer.Get()->GetCollideable()->GetCollisionOrigin();
 
 	// Don't do anything but follow target player as long as they are still taunting and bot isn't wandering off
-	if (bIsTaunting && (CClassInterface::getTF2Conditions(m_pPlayer.get()) & (1 << 7)) && vPlayerOrigin.IsValid()
+	if (bIsTaunting && (CClassInterface::getTF2Conditions(m_pPlayer.Get()) & (1 << 7)) && vPlayerOrigin.IsValid()
 	    && pBot->distanceFrom(vPlayerOrigin) < m_fDist * 4.f)
 	{
 		// In case taunt time has expired, extend it a bit as long as target player is still taunting
@@ -2831,7 +2831,7 @@ void CBotRemoveSapper ::execute(CBot *pBot, CBotSchedule *pSchedule)
 		pBot->removeCondition(CONDITION_COVERT);
 	}
 
-	pBuilding = m_pBuilding.get();
+	pBuilding = m_pBuilding.Get();
 
 	if (!pBuilding)
 	{
@@ -3526,7 +3526,7 @@ void CBotTF2SpySap ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	CBotWeapon *weapon;
 	pBot->wantToShoot(false);
 
-	pBuilding = m_pBuilding.get();
+	pBuilding = m_pBuilding.Get();
 
 	if (!pBuilding)
 	{
@@ -3644,7 +3644,7 @@ void CBotTFUseTeleporter ::execute(CBot *pBot, CBotSchedule *pSchedule)
 			Vector vTele = CBotGlobals::entityOrigin(m_pTele);
 
 			if ((pBot->distanceFrom(vTele) > 48)
-			    || (CClassInterface::getGroundEntity(pBot->getEdict()) != m_pTele.get()))
+			    || (CClassInterface::getGroundEntity(pBot->getEdict()) != m_pTele.Get()))
 			{
 				pBot->setMoveTo((vTele));
 
@@ -3669,7 +3669,7 @@ void CBotTFUseTeleporter ::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 void CBotTFUseTeleporter ::debugString(char *string)
 {
-	sprintf(string, "CBotTFUseTeleporter\nm_pTele = %x", (int)m_pTele.get());
+	sprintf(string, "CBotTFUseTeleporter\nm_pTele = %x", (int)m_pTele.Get());
 }
 
 ///////////////////////////////////////////////////
@@ -3699,7 +3699,7 @@ void CAttackEntityTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	CBotWeapon *pWeapon;
 
-	if (m_pEdict.get() == nullptr)
+	if (m_pEdict.Get() == nullptr)
 	{
 		fail();
 		return;
@@ -4006,13 +4006,13 @@ void CFollowTask ::init()
 
 void CFollowTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
-	if (m_pFollow.get() == nullptr)
+	if (m_pFollow.Get() == nullptr)
 	{
 		fail();
 		return;
 	}
 
-	if (!CBotGlobals::entityIsAlive(m_pFollow.get()))
+	if (!CBotGlobals::entityIsAlive(m_pFollow.Get()))
 	{
 		fail();
 		return;
@@ -4054,9 +4054,9 @@ void CDODDropAmmoTask ::debugString(char *string)
 
 void CDODDropAmmoTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
-	Vector vOrigin = CBotGlobals::entityOrigin(m_pPlayer.get());
+	Vector vOrigin = CBotGlobals::entityOrigin(m_pPlayer.Get());
 
-	if (m_pPlayer.get() == nullptr)
+	if (m_pPlayer.Get() == nullptr)
 	{
 		fail();
 		return;
@@ -4116,7 +4116,7 @@ void CCrouchHideTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	pBot->wantToListen(false);
 
-	if (m_pHideFrom.get() == nullptr)
+	if (m_pHideFrom.Get() == nullptr)
 	{
 		complete();
 		return;
@@ -4391,7 +4391,7 @@ CBotTF2DemomanPipeEnemy ::CBotTF2DemomanPipeEnemy(CBotWeapon *pPipeLauncher, Vec
 
 void CBotTF2DemomanPipeEnemy ::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
-	if (m_pEnemy.get() == nullptr)
+	if (m_pEnemy.Get() == nullptr)
 	{
 		fail();
 		return;
@@ -4470,7 +4470,7 @@ void CBotTF2DemomanPipeEnemy ::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 	if ((m_pPipeLauncher->getAmmo(pBot) + m_pPipeLauncher->getClip1(pBot)) == 0)
 	{
-		if (pBot->isVisible(m_pEnemy.get()))
+		if (pBot->isVisible(m_pEnemy.Get()))
 			((CBotTF2 *)pBot)->detonateStickies(true);
 
 		complete();
@@ -4824,7 +4824,7 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 	if (CTeamFortress2Mod::TF2_IsPlayerInvuln(pBot->getEdict()))
 		fail();
 
-	if (m_pSentryGun.get() == nullptr)
+	if (m_pSentryGun.Get() == nullptr)
 	{
 		fail();
 		return;
@@ -5415,7 +5415,7 @@ CBotTF2EngineerInterrupt ::CBotTF2EngineerInterrupt(CBot *pBot)
 {
 	m_pSentryGun = CTeamFortress2Mod::getMySentryGun(pBot->getEdict());
 
-	if (m_pSentryGun.get() != nullptr)
+	if (m_pSentryGun.Get() != nullptr)
 	{
 		m_fPrevSentryHealth = CClassInterface::getSentryHealth(m_pSentryGun);
 	}
@@ -5453,7 +5453,7 @@ bool CBotTF2HurtInterrupt::isInterrupted(CBot *pBot, bool *bFailed, bool *bCompl
 
 bool CBotTF2EngineerInterrupt ::isInterrupted(CBot *pBot, bool *bFailed, bool *bCompleted)
 {
-	if (m_pSentryGun.get() != nullptr)
+	if (m_pSentryGun.Get() != nullptr)
 	{
 		if (!CClassInterface::getTF2BuildingIsMini(m_pSentryGun))
 		{
