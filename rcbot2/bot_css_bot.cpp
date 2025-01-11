@@ -1,9 +1,9 @@
-#include "bot.h"
 #include "bot_css_bot.h"
-#include "bot_globals.h"
-#include "bot_schedule.h"
 
+#include "bot.h"
+#include "bot_globals.h"
 #include "bot_mtrand.h"
+#include "botutil/css/tasks.h"
 
 void CCSSBot ::init()
 {

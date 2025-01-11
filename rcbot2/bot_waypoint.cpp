@@ -39,11 +39,11 @@
 #include "bot_globals.h"
 #include "bot_navigator.h"
 #include "bot_profile.h"
-#include "bot_schedule.h"
 #include "bot_waypoint_locations.h"
 #include "bot_waypoint_visibility.h"
 #include "bot_wpt_color.h"
 #include "bot_wpt_dist.h"
+#include "botutil/base_sched.h"
 #include "engine_wrappers.h"
 #include "logging.h"
 

@@ -1,11 +1,10 @@
-#include "engine_wrappers.h"
+#include "bot_zombie.h"
 
 #include "bot.h"
 #include "bot_globals.h"
-#include "bot_schedule.h"
 #include "bot_waypoint.h"
 #include "bot_waypoint_locations.h"
-#include "bot_zombie.h"
+#include "botutil/shared/tasks.h"
 
 bool CBotZombie ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 {

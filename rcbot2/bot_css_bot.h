@@ -28,8 +28,10 @@
  *    version.
  *
  */
-#ifndef __CSS_RCBOT_H__
-#define __CSS_RCBOT_H__
+#pragma once
+
+#include "bot.h"
+#include "edict.h"
 
 // bot for CS Source
 class CCSSBot : public CBot
@@ -56,5 +58,3 @@ class CCSSBot : public CBot
   private:
 	// blah blah
 };
-
-#endif

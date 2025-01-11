@@ -30,32 +30,31 @@
  *    version.
  *
  */
-#include "bot_plugin_meta.h"
+#include "bot_fortress.h"
 
 #include "bot.h"
-#include "bot_cvars.h"
-
-#include "ndebugoverlay.h"
-
 #include "bot_buttons.h"
 #include "bot_configfile.h"
-#include "bot_fortress.h"
+#include "bot_cvars.h"
 #include "bot_getprop.h"
 #include "bot_globals.h"
 #include "bot_mods.h"
 #include "bot_mtrand.h"
 #include "bot_navigator.h"
+#include "bot_plugin_meta.h"
 #include "bot_profile.h"
-#include "bot_schedule.h"
 #include "bot_squads.h"
-#include "bot_task.h"
 #include "bot_utility.h"
 #include "bot_visibles.h"
 #include "bot_waypoint.h"
 #include "bot_waypoint_locations.h"
 #include "bot_weapons.h"
 #include "bot_wpt_dist.h"
-#include "in_buttons.h"
+#include "botutil/shared/tasks.h"
+#include "botutil/tf2/tasks.h"
+
+#include <in_buttons.h>
+#include <ndebugoverlay.h>
 // #include "bot_hooks.h"
 
 // caxanga334: SDK 2013 contains macros for std::min and std::max which causes errors when compiling
