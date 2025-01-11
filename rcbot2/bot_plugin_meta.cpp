@@ -12,30 +12,13 @@
  * This sample plugin is public domain.
  */
 
-#include <stdio.h>
-
 #include "bot_plugin_meta.h"
-
-#include "filesystem.h"
-#include "interface.h"
-
-#ifdef __linux__
-#include "shake.h" //bir3yk
-#endif
-
-#include "irecipientfilter.h"
-#include "ndebugoverlay.h"
-
-#include "bot_cvars.h"
-
-#ifdef _WIN32
-#include <time.h>
-#endif
 
 // for IServerTools
 #include "bot.h"
 #include "bot_accessclient.h"
 #include "bot_configfile.h"
+#include "bot_cvars.h"
 #include "bot_event.h"
 #include "bot_getprop.h"
 #include "bot_globals.h"
@@ -48,12 +31,22 @@
 #include "bot_waypoint_visibility.h"
 #include "bot_weapons.h"
 #include "bot_wpt_dist.h"
+#include "build_info.h"
+#include "logging.h"
 
-#include "tier0/icommandline.h"
+#include <filesystem.h>
+#include <interface.h>
+#ifdef __linux__
+#include <shake.h> //bir3yk
+#endif
+#include <irecipientfilter.h>
+#include <ndebugoverlay.h>
+#include <tier0/icommandline.h>
 
-#include "rcbot/logging.h"
-
-#include <build_info.h>
+#include <stdio.h>
+#ifdef _WIN32
+#include <time.h>
+#endif
 
 SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, 0, bool, char const *, char const *, char const *, char const *,
               bool, bool);

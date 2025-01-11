@@ -49,8 +49,7 @@
 #include "bot_waypoint.h"
 #include "bot_waypoint_locations.h"
 #include "bot_weapons.h"
-
-#include "rcbot/logging.h"
+#include "logging.h"
 
 eTFMapType CTeamFortress2Mod ::m_MapType = TF_MAP_CTF;
 tf_tele_t CTeamFortress2Mod ::m_Teleporters[MAX_PLAYERS];

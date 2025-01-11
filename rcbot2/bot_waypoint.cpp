@@ -29,33 +29,28 @@
  *
  */
 
-#include "engine_wrappers.h"
-
-#include "filesystem.h"
-
-#include "iplayerinfo.h"
-
-#include "ndebugoverlay.h"
+#include "bot_waypoint.h"
 
 #include "bot.h"
-#include "bot_cvars.h"
-
-#include "in_buttons.h"
-
 #include "bot_client.h"
+#include "bot_cvars.h"
 #include "bot_fortress.h"
 #include "bot_getprop.h"
 #include "bot_globals.h"
 #include "bot_navigator.h"
 #include "bot_profile.h"
 #include "bot_schedule.h"
-#include "bot_waypoint.h"
 #include "bot_waypoint_locations.h"
 #include "bot_waypoint_visibility.h"
 #include "bot_wpt_color.h"
 #include "bot_wpt_dist.h"
+#include "engine_wrappers.h"
+#include "logging.h"
 
-#include "rcbot/logging.h"
+#include <filesystem.h>
+#include <in_buttons.h>
+#include <iplayerinfo.h>
+#include <ndebugoverlay.h>
 
 #include <algorithm>
 #include <vector> //bir3yk

@@ -28,25 +28,22 @@
  *    version.
  *
  */
-#include "engine_wrappers.h"
+#include "bot_mods.h"
 
 #include "bot.h"
-
-#include "in_buttons.h"
-
 #include "bot_configfile.h"
 #include "bot_dod_bot.h"
 #include "bot_fortress.h"
 #include "bot_getprop.h"
 #include "bot_globals.h"
-#include "bot_mods.h"
 #include "bot_navigator.h"
 #include "bot_perceptron.h"
 #include "bot_waypoint.h"
 #include "bot_waypoint_locations.h"
 #include "bot_weapons.h"
-
-#include "rcbot/logging.h"
+#include "engine_wrappers.h"
+#include "in_buttons.h"
+#include "logging.h"
 
 std::vector<edict_wpt_pair_t> CHalfLifeDeathmatchMod::m_LiftWaypoints;
 

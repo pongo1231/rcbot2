@@ -32,8 +32,7 @@
 #include "bot.h"
 #include "bot_globals.h"
 #include "bot_strings.h"
-
-#include "rcbot/logging.h"
+#include "logging.h"
 
 #include <vector>
 ///////////
