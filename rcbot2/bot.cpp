@@ -36,36 +36,21 @@
 //
 //============================================================================//
 
-#include <math.h>
-#include <stdio.h>
-
-// #define GAME_DLL
-
-#include "PlayerState.h"
-#include "eiface.h"
-#include "mathlib.h"
-#include "vector.h"
-#ifdef __linux__
-#include "shareddefs.h" //bir3yk
-#endif
-#include "in_buttons.h"
-#include "ndebugoverlay.h"
-
-#ifdef __linux__
-#include "shake.h" //bir3yk
-#endif
-
 #include "bot.h"
+
 #include "bot_buttons.h"
 #include "bot_coop.h"
 #include "bot_css_bot.h"
 #include "bot_cvars.h"
 #include "bot_dod_bot.h"
 #include "bot_fortress.h"
+#include "bot_getprop.h"
 #include "bot_hl1dmsrc_bot.h"
 #include "bot_hldm_bot.h"
+#include "bot_mtrand.h"
 #include "bot_navigator.h"
 #include "bot_profile.h"
+#include "bot_profiling.h"
 #include "bot_schedule.h"
 #include "bot_squads.h"
 #include "bot_visibles.h"
@@ -73,15 +58,25 @@
 #include "bot_waypoint_locations.h"
 #include "bot_weapons.h"
 #include "bot_zombie.h"
+#include "logging.h"
 
-#include "bot_mtrand.h"
+#include <PlayerState.h>
+#include <eiface.h>
+#include <mathlib.h>
+#include <vector.h>
+#ifdef __linux__
+#include <shareddefs.h> //bir3yk
+#endif
+#include <in_buttons.h>
+#include <ndebugoverlay.h>
 
-#include "bot_getprop.h"
-#include "bot_profiling.h"
-
-#include "rcbot/logging.h"
+#ifdef __linux__
+#include <shake.h> //bir3yk
+#endif
 
 #include <algorithm>
+#include <math.h>
+#include <stdio.h>
 #include <vector>
 
 #define DEG_TO_RAD(x) (x) * 0.0174533

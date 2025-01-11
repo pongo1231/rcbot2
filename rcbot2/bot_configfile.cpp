@@ -32,8 +32,7 @@
 #include "bot_configfile.h"
 #include "bot.h"
 #include "bot_globals.h"
-
-#include "rcbot/logging.h"
+#include "logging.h"
 
 std::vector<char *> CBotConfigFile::m_Commands;
 unsigned int CBotConfigFile::m_iCmd      = 0; // current command (time delayed)

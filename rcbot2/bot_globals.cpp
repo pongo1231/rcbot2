@@ -30,16 +30,16 @@
  */
 
 #include "bot_globals.h"
+
 #include "bot.h"
 #include "bot_cvars.h"
 #include "bot_getprop.h"
 #include "bot_strings.h"
 #include "bot_waypoint_locations.h"
 #include "bot_weapons.h"
+#include "logging.h"
 
-#include "ndebugoverlay.h"
-
-#include "rcbot/logging.h"
+#include <ndebugoverlay.h>
 
 #ifndef __linux__
 #include <direct.h> // for mkdir
