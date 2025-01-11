@@ -1,5 +1,7 @@
-#ifndef _BOT_ZOMBIE_H_
-#define _BOT_ZOMBIE_H_
+#pragma once
+
+#include "bot.h"
+#include "edict.h"
 
 class CBotZombie : public CBot
 {
@@ -9,5 +11,3 @@ class CBotZombie : public CBot
 
 	void getTasks(unsigned int iIgnore);
 };
-
-#endif

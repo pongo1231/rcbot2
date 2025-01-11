@@ -28,22 +28,21 @@
  *    version.
  *
  */
-
-#include "bot_plugin_meta.h"
+#include "bot_event.h"
 
 #include "bot.h"
 #include "bot_cvars.h"
 #include "bot_dod_bot.h"
-#include "bot_event.h"
 #include "bot_fortress.h"
 #include "bot_getprop.h"
 #include "bot_globals.h"
-#include "bot_schedule.h"
+#include "bot_plugin_meta.h"
 #include "bot_squads.h"
 #include "bot_strings.h"
 #include "bot_waypoint_locations.h"
 #include "bot_weapons.h"
-#include "igameevents.h"
+
+#include <igameevents.h>
 
 std::vector<CBotEvent *> CBotEvents ::m_theEvents;
 ///////////////////////////////////////////////////////

@@ -38,13 +38,14 @@
 #include "bot_mtrand.h"
 #include "bot_navigator.h"
 #include "bot_profile.h"
-#include "bot_schedule.h"
-#include "bot_task.h"
 #include "bot_utility.h"
 #include "bot_waypoint.h"
 #include "bot_waypoint_locations.h"
 #include "bot_weapons.h"
-#include "in_buttons.h"
+#include "botutil/hl2dm/tasks.h"
+#include "botutil/shared/tasks.h"
+
+#include <in_buttons.h>
 
 // initialise , i.e. set everything to a default value
 void CHLDMBot ::init()

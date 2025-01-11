@@ -51,13 +51,13 @@
 #include "bot_navigator.h"
 #include "bot_profile.h"
 #include "bot_profiling.h"
-#include "bot_schedule.h"
 #include "bot_squads.h"
 #include "bot_visibles.h"
 #include "bot_waypoint.h"
 #include "bot_waypoint_locations.h"
 #include "bot_weapons.h"
 #include "bot_zombie.h"
+#include "botutil/shared/tasks.h"
 #include "logging.h"
 
 #include <PlayerState.h>

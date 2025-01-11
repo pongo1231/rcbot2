@@ -28,10 +28,10 @@
  *    version.
  *
  */
-#ifndef __BOT_EVENT_H__
-#define __BOT_EVENT_H__
+#pragma once
 
 #include "bot_const.h"
+#include "botutil/base_task.h"
 
 #include <vector>
 
@@ -771,4 +771,3 @@ class CBotEvents
   private:
 	static std::vector<CBotEvent *> m_theEvents;
 };
-#endif

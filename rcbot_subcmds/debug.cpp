@@ -29,6 +29,8 @@
  *
  */
 
+#include "botutil/base_sched.h"
+
 CBotCommandInline DebugGameEventCommand(
     "gameevent", CMD_ACCESS_DEBUG,
     [](CClient *pClient, BotCommandArgs args)

@@ -28,25 +28,28 @@
  *    version.
  *
  */
+#include "bot_dod_bot.h"
+
 #include "bot.h"
 #include "bot_buttons.h"
 #include "bot_cvars.h"
-#include "bot_dod_bot.h"
 #include "bot_getprop.h"
 #include "bot_globals.h"
 #include "bot_mtrand.h"
 #include "bot_navigator.h"
 #include "bot_perceptron.h"
 #include "bot_profile.h"
-#include "bot_schedule.h"
 #include "bot_squads.h"
-#include "bot_task.h"
 #include "bot_waypoint.h"
 #include "bot_waypoint_locations.h"
 #include "bot_waypoint_visibility.h"
 #include "bot_weapons.h"
-#include "in_buttons.h"
-#include "ndebugoverlay.h"
+#include "botutil/dod/tasks.h"
+#include "botutil/shared/tasks.h"
+#include "botutil/tf2/mess_around_sched.h"
+
+#include <in_buttons.h>
+#include <ndebugoverlay.h>
 
 const char *g_DODClassCmd[2][6] = { { "cls_garand", "cls_tommy", "cls_bar", "cls_spring", "cls_30cal", "cls_bazooka" },
 	                                { "cls_k98", "cls_mp40", "cls_mp44", "cls_k98s", "cls_mg42", "cls_pschreck" } };

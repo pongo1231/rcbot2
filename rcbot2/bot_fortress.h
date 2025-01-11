@@ -33,6 +33,7 @@
 #ifndef __BOT_FORTRESS_H__
 #define __BOT_FORTRESS_H__
 
+#include "bot.h"
 #include "bot_utility.h"
 
 // #include <stack>
