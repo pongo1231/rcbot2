@@ -435,18 +435,19 @@ float CBotFortress ::getHealFactor(edict_t *pPlayer)
 	}
 		// drop down
 	case TF_CLASS_SPY:
-	{
-		int iClass, iTeam, iIndex, iHealth;
-
-		if (CClassInterface::getTF2SpyDisguised(pPlayer, &iClass, &iTeam, &iIndex, &iHealth))
+		if (iclass == TF_CLASS_SPY)
 		{
-			if (iTeam != m_iTeam)
+			int iClass, iTeam, iIndex, iHealth;
+
+			if (CClassInterface::getTF2SpyDisguised(pPlayer, &iClass, &iTeam, &iIndex, &iHealth))
+			{
+				if (iTeam != m_iTeam)
+					return 0.0f;
+			}
+
+			if (CTeamFortress2Mod::TF2_IsPlayerCloaked(pPlayer))
 				return 0.0f;
 		}
-
-		if (CTeamFortress2Mod::TF2_IsPlayerCloaked(pPlayer))
-			return 0.0f;
-	}
 	default:
 
 		if (!bHeavyClass && pMedigun) // add more factor bassed on uber charge level - bot can gain more uber charge
