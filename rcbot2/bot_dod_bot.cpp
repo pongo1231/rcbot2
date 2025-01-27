@@ -46,6 +46,7 @@
 #include "bot_weapons.h"
 #include "botutil/dod/tasks.h"
 #include "botutil/shared/tasks.h"
+#include "botutil/shared/throw_grenade_task.h"
 #include "botutil/tf2/mess_around_sched.h"
 
 #include <in_buttons.h>

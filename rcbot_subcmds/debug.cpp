@@ -30,6 +30,7 @@
  */
 
 #include "botutil/base_sched.h"
+#include "botutil/shared/throw_grenade_task.h"
 
 CBotCommandInline DebugGameEventCommand(
     "gameevent", CMD_ACCESS_DEBUG,
