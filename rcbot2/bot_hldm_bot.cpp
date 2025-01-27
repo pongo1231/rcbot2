@@ -44,6 +44,7 @@
 #include "bot_weapons.h"
 #include "botutil/hl2dm/tasks.h"
 #include "botutil/shared/tasks.h"
+#include "botutil/shared/throw_grenade_task.h"
 
 #include <in_buttons.h>
 
