@@ -3,8 +3,12 @@
 #ifndef __BOT_WPT_COLOR_H__
 #define __BOT_WPT_COLOR_H__
 
-#include <algorithm>
 #include <cstring>
+
+#pragma push_macro("clamp") //Fix for C++17 [APG]RoboCop[CL]
+#undef clamp
+#include <algorithm>
+#pragma pop_macro("clamp")
 
 // gone for the american spelling of 'colour' :)
 

@@ -14,6 +14,11 @@
 
 #include <cstdio>
 
+#pragma push_macro("clamp") //Fix for C++17 [APG]RoboCop[CL]
+#undef clamp
+#include <algorithm>
+#pragma pop_macro("clamp")
+
 #include "bot_plugin_meta.h"
 
 #include "filesystem.h"

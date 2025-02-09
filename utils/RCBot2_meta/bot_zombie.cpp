@@ -12,7 +12,7 @@ bool CBotZombie::isEnemy(edict_t* pEdict, bool bCheckWeapons)
 	if (pEdict == nullptr || pEdict == m_pEdict)
 		return false;
 
-	int edictIndex = ENTINDEX(pEdict);
+	const int edictIndex = ENTINDEX(pEdict);
 	if (edictIndex == 0 || edictIndex > CBotGlobals::maxClients())
 		return false;
 
