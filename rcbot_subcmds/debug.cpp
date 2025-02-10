@@ -32,6 +32,9 @@
 #include <cmath>
 
 #include "bot_commands.h"
+#include "bot_fortress.h"
+#include "bot_globals.h"
+#include "bot_waypoint.h"
 
 CBotCommandInline DebugGameEventCommand("gameevent", CMD_ACCESS_DEBUG, [](CClient* pClient, const BotCommandArgs& args)
 {
