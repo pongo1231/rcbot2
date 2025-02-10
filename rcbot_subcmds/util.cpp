@@ -113,7 +113,7 @@ CBotCommandInline NoClipCommand("noclip", CMD_ACCESS_UTIL, [](const CClient* pCl
 			*movetype &= ~15;
 			*movetype |= MOVETYPE_WALK;
 		}
-		snprintf(&msg[0], bufferSize, "%s used no_clip %d on self\n", pClient->getName(), ((*movetype & 15) == MOVETYPE_NOCLIP));
+		snprintf(msg.data(), bufferSize, "%s used no_clip %d on self\n", pClient->getName(), ((*movetype & 15) == MOVETYPE_NOCLIP));
 
 		CBotGlobals::botMessage(pEntity, 0, msg.c_str());
 		return COMMAND_ACCESSED;
@@ -142,7 +142,7 @@ CBotCommandInline GodModeUtilCommand("god", CMD_ACCESS_UTIL, [](const CClient* p
 				else
 					*playerflags |= FL_GODMODE;
 
-				snprintf(&msg[0], bufferSize, "god mode %s", (*playerflags & FL_GODMODE) ? "enabled" : "disabled");
+				snprintf(msg.data(), bufferSize, "god mode %s", (*playerflags & FL_GODMODE) ? "enabled" : "disabled");
 
 				CBotGlobals::botMessage(pEntity, 0, msg.c_str());
 
@@ -175,7 +175,7 @@ CBotCommandInline NoTouchCommand("notouch", CMD_ACCESS_UTIL, [](const CClient* p
 				else
 					*playerflags |= FL_DONTTOUCH;
 
-				snprintf(&msg[0], bufferSize, "notouch mode %s", (*playerflags & FL_DONTTOUCH) ? "enabled" : "disabled");
+				snprintf(msg.data(), bufferSize, "notouch mode %s", (*playerflags & FL_DONTTOUCH) ? "enabled" : "disabled");
 				CBotGlobals::botMessage(nullptr, 0, msg.c_str());
 
 				return COMMAND_ACCESSED;
