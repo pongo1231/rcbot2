@@ -438,7 +438,7 @@ int CBotEntProp::GetEntProp(const int entity, const PropType proptype, char *pro
 		pProp = info.prop;
 		bit_count = pProp->m_nBits;
 
-		PROP_TYPE_SWITCH(DPT_Int, "integer", 0)
+		//PROP_TYPE_SWITCH(DPT_Int, "integer", 0)
 
 #if SOURCE_ENGINE == SE_CSS || SOURCE_ENGINE == SE_HL2DM || SOURCE_ENGINE == SE_DODS \
 			|| SOURCE_ENGINE == SE_BMS || SOURCE_ENGINE == SE_SDK2013 || SOURCE_ENGINE == SE_TF2 \
@@ -565,7 +565,7 @@ int *CBotEntProp::GetEntPropPointer(const int entity, const PropType proptype, c
 		pProp = info.prop;
 		bit_count = pProp->m_nBits;
 
-		PROP_TYPE_SWITCH(DPT_Int, "integer", nullptr)
+		//PROP_TYPE_SWITCH(DPT_Int, "integer", nullptr)
 
 #if SOURCE_ENGINE == SE_CSS || SOURCE_ENGINE == SE_HL2DM || SOURCE_ENGINE == SE_DODS \
 			|| SOURCE_ENGINE == SE_BMS || SOURCE_ENGINE == SE_SDK2013 || SOURCE_ENGINE == SE_TF2 \
@@ -704,7 +704,7 @@ bool *CBotEntProp::GetEntPropBoolPointer(const int entity, const PropType propty
 		pProp = info.prop;
 		bit_count = pProp->m_nBits;
 
-		PROP_TYPE_SWITCH(DPT_Int, "integer", nullptr)
+		//PROP_TYPE_SWITCH(DPT_Int, "integer", nullptr)
 
 #if SOURCE_ENGINE == SE_CSS || SOURCE_ENGINE == SE_HL2DM || SOURCE_ENGINE == SE_DODS \
 			|| SOURCE_ENGINE == SE_BMS || SOURCE_ENGINE == SE_SDK2013 || SOURCE_ENGINE == SE_TF2 \
@@ -822,7 +822,7 @@ bool CBotEntProp::SetEntProp(const int entity, const PropType proptype, char *pr
 		pProp = info.prop;
 		bit_count = pProp->m_nBits;
 
-		PROP_TYPE_SWITCH(DPT_Int, "integer", false)
+		//PROP_TYPE_SWITCH(DPT_Int, "integer", false)
 
 #if SOURCE_ENGINE == SE_CSS || SOURCE_ENGINE == SE_HL2DM || SOURCE_ENGINE == SE_DODS \
 			|| SOURCE_ENGINE == SE_BMS || SOURCE_ENGINE == SE_SDK2013 || SOURCE_ENGINE == SE_TF2 \
@@ -935,7 +935,7 @@ float CBotEntProp::GetEntPropFloat(const int entity, const PropType proptype, ch
 		pProp = info.prop;
 		bit_count = pProp->m_nBits; // `bit_count` unused? [APG]RoboCop[CL]
 
-		PROP_TYPE_SWITCH(DPT_Float, "float", 0.0f)
+		//PROP_TYPE_SWITCH(DPT_Float, "float", 0.0f)
 
 		break;
 	
@@ -1010,7 +1010,7 @@ float *CBotEntProp::GetEntPropFloatPointer(const int entity, const PropType prop
 		pProp = info.prop;
 		bit_count = pProp->m_nBits; // `bit_count` unused? [APG]RoboCop[CL]
 
-		PROP_TYPE_SWITCH(DPT_Float, "float", nullptr)
+		//PROP_TYPE_SWITCH(DPT_Float, "float", nullptr)
 
 		break;
 	
@@ -1094,7 +1094,7 @@ bool CBotEntProp::SetEntPropFloat(const int entity, const PropType proptype, cha
 		pProp = info.prop;
 		bit_count = pProp->m_nBits; // `bit_count` unused? [APG]RoboCop[CL]
 
-		PROP_TYPE_SWITCH(DPT_Float, "float", false)
+		//PROP_TYPE_SWITCH(DPT_Float, "float", false)
 
 		break;
 	
@@ -1256,7 +1256,7 @@ int CBotEntProp::GetEntPropEnt(const int entity, const PropType proptype, char *
 		pProp = info.prop;
 		bit_count = pProp->m_nBits; // `bit_count` unused? [APG]RoboCop[CL]
 
-		PROP_TYPE_SWITCH(DPT_Int, "integer", -1)
+		//PROP_TYPE_SWITCH(DPT_Int, "integer", -1)
 
 		break;
 	
@@ -1398,7 +1398,7 @@ bool CBotEntProp::SetEntPropEnt(const int entity, const PropType proptype, char 
 		pProp = info.prop;
 		bit_count = pProp->m_nBits; // `bit_count` unused? [APG]RoboCop[CL]
 
-		PROP_TYPE_SWITCH(DPT_Int, "integer", false)
+		//PROP_TYPE_SWITCH(DPT_Int, "integer", false)
 
 		break;
 	
@@ -1552,7 +1552,7 @@ Vector CBotEntProp::GetEntPropVector(const int entity, const PropType proptype, 
 		pProp = info.prop;
 		bit_count = pProp->m_nBits; // `bit_count` unused? [APG]RoboCop[CL]
 
-		PROP_TYPE_SWITCH(DPT_Vector, "vector", Vector(0,0,0))
+		//PROP_TYPE_SWITCH(DPT_Vector, "vector", Vector(0,0,0))
 
 		break;
 	
@@ -1644,7 +1644,7 @@ Vector *CBotEntProp::GetEntPropVectorPointer(const int entity, const PropType pr
 		pProp = info.prop;
 		bit_count = pProp->m_nBits; // `bit_count` unused? [APG]RoboCop[CL]
 
-		PROP_TYPE_SWITCH(DPT_Vector, "vector", nullptr)
+		//PROP_TYPE_SWITCH(DPT_Vector, "vector", nullptr)
 
 		break;
 	
@@ -1738,7 +1738,7 @@ bool CBotEntProp::SetEntPropVector(const int entity, const PropType proptype, ch
 		pProp = info.prop;
 		bit_count = pProp->m_nBits; //Unused? [APG]RoboCop[CL]
 
-		PROP_TYPE_SWITCH(DPT_Vector, "vector", false)
+		//PROP_TYPE_SWITCH(DPT_Vector, "vector", false)
 
 		break;
 	
@@ -1866,7 +1866,7 @@ char *CBotEntProp::GetEntPropString(const int entity, const PropType proptype, c
 		pProp = info.prop;
 		bit_count = pProp->m_nBits; // `bit_count` unused? [APG]RoboCop[CL]
 
-		PROP_TYPE_SWITCH(DPT_String, "string", nullptr)
+		//PROP_TYPE_SWITCH(DPT_String, "string", nullptr)
 
 		if (pProp->GetProxyFn())
 		{

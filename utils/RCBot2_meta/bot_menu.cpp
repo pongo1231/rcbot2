@@ -1,4 +1,3 @@
-
 /*
  *    part of https://rcbot2.svn.sourceforge.net/svnroot/rcbot2
  *

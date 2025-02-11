@@ -28,13 +28,15 @@
  *    version.
  *
  */
+
+#include <cstring>
+
 #include "bot.h"
 #include "bot_black_mesa.h"
 #include "bot_buttons.h"
 #include "bot_globals.h"
 #include "bot_profile.h"
 #include "bot_mtrand.h"
-#include <cstring>
 
  //caxanga334: SDK 2013 contains macros for std::min and std::max which causes errors when compiling
 #if SOURCE_ENGINE == SE_SDK2013 || SOURCE_ENGINE == SE_BMS
