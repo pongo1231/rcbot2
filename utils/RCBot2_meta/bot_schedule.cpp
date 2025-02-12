@@ -833,7 +833,7 @@ void CBotSchedule :: execute ( CBot *pBot )
 			{
 				char dbg[512];
 
-				pTask->debugString(dbg);
+				pTask->debugString(dbg, {});
 
 				CClients::clientDebugMsg(BOT_DEBUG_TASK,dbg,pBot);
 			}

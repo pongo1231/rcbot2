@@ -253,6 +253,19 @@ bool CBot :: walkingTowardsWaypoint ( CWaypoint *pWaypoint, bool *bOffsetApplied
 		removeCondition(CONDITION_LIFT);
 	}
 
+	/* //TODO: Add bot condition when on ladders? [APG]RoboCop[CL]
+	if (pWaypoint->hasFlag(CWaypointTypes::W_FL_LADDER))
+	{
+		if (onLadder())
+		{
+			updateCondition(CONDITION_LADDER);
+		}
+		else
+		{
+			removeCondition(CONDITION_LADDER);
+		}
+	}*/
+
 	if ( !*bOffsetApplied )
 	{
 		const float fRadius = pWaypoint->getRadius();
@@ -1793,7 +1806,7 @@ void CBot ::debugBot(char *msg)
 	
 
 	if ( hastask )
-		m_pSchedules->getCurrentTask()->debugString(task_string);
+		m_pSchedules->getCurrentTask()->debugString(task_string, {});
 
 	const bool hasNextPoint = m_pNavigator->hasNextPoint();
 	const int currentWaypointID = hasNextPoint ? m_pNavigator->getCurrentWaypointID() : -1;

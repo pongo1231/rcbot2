@@ -124,7 +124,7 @@ public:
 	bool hasFlag (const int iFlag) const { return (m_iFlags & iFlag) == iFlag; }
 	void setFlag (const int iFlag) { m_iFlags |= iFlag; }
 	void clearFailInterrupts () { m_iFailInterruptConditionsHave = m_iFailInterruptConditionsDontHave = 0; }	
-	virtual void debugString ( char *string ) { string[0] = 0; }
+	virtual void debugString (char* string, size_t bufferSize) { string[0] = 0; }
 
 	//bool isID ( eTaskID eTaskId ) { };
 
@@ -212,7 +212,7 @@ public:
 
 	void setLookTask (const eLookTask task) { m_LookTask = task; }
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 
 
@@ -257,7 +257,7 @@ public:
 		m_fTime = 0.0f;
 	}
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	
 	MyEHandle m_pSentryGun;
@@ -282,7 +282,7 @@ public:
 
 	Vector getTarget () { return m_vTarget; }
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotTF2Spam");
 	}
@@ -311,7 +311,7 @@ public:
 
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotTF2DemomanPipeJump");
 	}
@@ -338,7 +338,7 @@ public:
 	CBotTF2DemomanPipeEnemy ( CBotWeapon *pPipeLauncher, const Vector& vEnemy, edict_t *pEnemy );
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotTF2DemomanPipeEnemy");
 	}
@@ -363,7 +363,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotTF2DemomanPipeTrap");
 	}
@@ -388,7 +388,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"Finding Pipe Waypoint");
 	}
@@ -423,7 +423,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"Grav Gun Pickup");
 	}
@@ -452,7 +452,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"Use Charger");
 	}
@@ -480,7 +480,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"Use Button");
 	}
@@ -497,7 +497,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotTF2MedicHeal");
 	}
@@ -515,7 +515,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotRemoveSapper");
 	}
@@ -533,7 +533,7 @@ public:
 
 	void execute(CBot *pBot, CBotSchedule *pSchedule) override;
 
-	void debugString(char *string) override
+	void debugString(char* string, size_t bufferSize) override
 	{
 		std::sprintf(string, "CBotUseLunchBoxDrink");
 	}
@@ -548,7 +548,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotUseBuffITem");
 	}
@@ -563,7 +563,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotBackstab");
 	}
@@ -583,7 +583,7 @@ public:
 
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotFollowSquadLeader");
 	}
@@ -607,7 +607,7 @@ public:
 
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotFollowSquadLeader");
 	}
@@ -627,7 +627,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotNest");
 	}
@@ -653,7 +653,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotDefendTask");
 	}
@@ -684,7 +684,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotInvestigateTask");
 	}
@@ -709,7 +709,7 @@ public:
 		
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotTF2EngiLookAfter");
 	}
@@ -726,7 +726,7 @@ public:
 
 	void execute(CBot *pBot, CBotSchedule *pSchedule) override;
 
-	void debugString(char *string) override
+	void debugString(char* string, size_t bufferSize) override
 	{
 		std::sprintf(string, "CBotSnipe");
 	}
@@ -755,7 +755,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotSnipe");
 	}
@@ -785,7 +785,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override; 
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 
 private:
 	float m_fTime;
@@ -808,7 +808,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override; 
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 
 private:
 	float m_fTime;
@@ -829,7 +829,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CBotTF2SpyDisguise");
 	}
@@ -842,7 +842,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 
 	void oneTryOnly () { m_iTries = 2; }
 
@@ -868,7 +868,7 @@ public:
 		m_fTime = 0.0f;
 	}
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
 private:
@@ -884,7 +884,7 @@ public:
 		m_fTime = 0.0f;
 	}
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
 private:
@@ -902,7 +902,7 @@ public:
 		m_pBlocking = pBlocking;
 	}
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
 private:
@@ -918,7 +918,7 @@ public:
 	CBotDODBomb ( int iBombType, int iBombID, edict_t *m_pBomb, const Vector& vPosition, int iPrevOwner );
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	Vector m_vOrigin;
 	float m_fTime;
@@ -934,7 +934,7 @@ public:
 	CBotDODAttackPoint ( int iFlagID, const Vector& vOrigin, float fRadius );
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	Vector m_vOrigin;
 	Vector m_vMoveTo;
@@ -951,7 +951,7 @@ public:
 	CBotTF2AttackPoint (int iArea, const Vector& vOrigin, float fRadius);
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	Vector m_vOrigin;
 	Vector m_vMoveTo;
@@ -967,7 +967,7 @@ public:
 	CBotTF2ShootLastEnemyPosition (const Vector& vPosition, edict_t *pEnemy, const Vector& m_vVelocity );
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	MyEHandle m_pEnemy;
 	Vector m_vPosition;
@@ -980,7 +980,7 @@ public:
 	CBotTF2DefendPoint (int iArea, const Vector& vOrigin, float fRadius);
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	Vector m_vOrigin;
 	Vector m_vMoveTo;
@@ -999,7 +999,7 @@ public:
 
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	Vector m_vOrigin;
 	Vector m_vMoveTo;
@@ -1016,7 +1016,7 @@ public:
 	CBotTF2PushPayloadBombTask (edict_t * pPayloadBomb);
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	MyEHandle m_pPayloadBomb;
 	Vector m_vMoveTo;
@@ -1032,7 +1032,7 @@ public:
 	CBotTF2DefendPayloadBombTask (edict_t * pPayloadBomb);
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	MyEHandle m_pPayloadBomb;
 	Vector m_vMoveTo;
@@ -1048,7 +1048,7 @@ public:
 	CBotTF2UpgradeBuilding ( edict_t *pBuilding );
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	MyEHandle m_pBuilding;
 	float m_fTime;
@@ -1060,7 +1060,7 @@ public:
 	CBotTF2WaitAmmoTask (const Vector& vOrigin );
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	Vector m_vOrigin;
 	float m_fWaitTime;
@@ -1072,7 +1072,7 @@ public:
 	CBotTF2WaitHealthTask (const Vector& vOrigin );
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	Vector m_vOrigin;
 	float m_fWaitTime;
@@ -1084,7 +1084,7 @@ public:
 	CBotTFDoubleJump (); // going here
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	float m_fTime;
 };
@@ -1096,7 +1096,7 @@ public:
 	CBotTFRocketJump (); // going here
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	float m_fTime;
 	float m_fJumpTime;
@@ -1110,7 +1110,7 @@ public:
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	MyEHandle m_pBuilding;
 	float m_fTime;
@@ -1123,7 +1123,7 @@ public:
 	CBotTFUseTeleporter ( edict_t *pTele ); // going to use this 
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	MyEHandle m_pTele;
 	float m_fTime;
@@ -1135,7 +1135,7 @@ class CBotTaskEngiPickupBuilding : public CBotTask
 public:
 	CBotTaskEngiPickupBuilding ( edict_t *pBuilding ); // going to use this 
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	MyEHandle m_pBuilding;
 	float m_fTime;
@@ -1146,7 +1146,7 @@ class CBotTaskEngiPlaceBuilding : public CBotTask
 public:
 	CBotTaskEngiPlaceBuilding ( eEngiBuild iObject, const Vector& vOrigin ); // going to use this 
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	Vector m_vOrigin;
 	float m_fTime;
@@ -1161,7 +1161,7 @@ public:
 	CBotTF2WaitFlagTask (const Vector& vOrigin, bool bFind = false );
 	
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	Vector m_vOrigin;
 	float m_fWaitTime;
@@ -1174,7 +1174,7 @@ public:
 	CThrowGrenadeTask ( CBotWeapon *pWeapon, int ammo, const Vector& vLoc );
 	void init () override;
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	Vector m_vLoc;
 	CBotWeapon *m_pWeapon;
@@ -1189,7 +1189,7 @@ public:
 	CAttackEntityTask ( edict_t *pEdict );
 	void init () override;
 	void execute (CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	MyEHandle m_pEdict;
 };
@@ -1212,7 +1212,7 @@ class CCSSPerformBuyTask : public CBotTask
 public:
 	void init() override;
 	void execute(CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString(char *string) override
+	void debugString(char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CSS Perform Buy");
 	}
@@ -1228,7 +1228,7 @@ public:
 		setFailInterrupt(CONDITION_SEE_CUR_ENEMY);
 	}
 	void execute(CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString(char *string) override
+	void debugString(char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CSS Plant C4");
 	}
@@ -1248,7 +1248,7 @@ public:
 		setCompleteInterrupt(CONDITION_ENEMY_DEAD);
 	}	
 	void execute(CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString(char *string) override;
+	void debugString(char* string, size_t bufferSize) override;
 private:
 	CBaseHandle m_hEnemy;
 	bool isBrush; // Is my enemy a brush entity?
@@ -1265,7 +1265,7 @@ public:
 		setFailInterrupt(CONDITION_SEE_CUR_ENEMY);
 	}
 	void execute(CBot *pBot,CBotSchedule *pSchedule) override;
-	void debugString(char *string) override
+	void debugString(char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CSS Defuse C4\nBomb Vector (%0.4f,%0.4f,%0.4f)", m_vBomb.x, m_vBomb.y, m_vBomb.z);
 	}
@@ -1290,7 +1290,7 @@ public:
 		m_iWaypointType = iWaypointType;
 	}
 	void execute(CBot *pBot, CBotSchedule *pSchedule) override;
-	void debugString(char *string) override
+	void debugString(char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CSS Guard Task\nm_fEnemyTime = %.1f\nm_fTime = %.1f", m_fEnemyTime, m_fTime);
 	}
@@ -1310,10 +1310,9 @@ private:
 class CTF2_TauntTask : public CBotTask
 {
 public:
-	CTF2_TauntTask (edict_t* pPlayer, const Vector& vOrigin, const float fDist) : m_vOrigin(vOrigin)
+	CTF2_TauntTask (edict_t* pPlayer, const Vector& vOrigin, const float fDist)
+	: m_pPlayer(pPlayer), m_vOrigin(vOrigin), m_fDist(fDist)
 	{
-		m_pPlayer = pPlayer;
-		m_fDist = fDist;
 		m_fTime = 0.0f;
 		m_fTauntUntil = 0.0f;
 		m_fActionTime = 0.0f;
@@ -1321,7 +1320,7 @@ public:
 
 	void init () override;
 	void execute ( CBot *pBot, CBotSchedule *pSchedule ) override;
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 
 private:
 	MyEHandle m_pPlayer;
@@ -1348,7 +1347,7 @@ public:
 
 	void init () override;
 	void execute ( CBot *pBot, CBotSchedule *pSchedule ) override;
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 	
 private:
 	float fPrevDist;
@@ -1363,7 +1362,7 @@ public:
 
 	void execute ( CBot *pBot, CBotSchedule *pSchedule ) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CMessAround");
 	}
@@ -1381,7 +1380,7 @@ public:
 
 	void execute ( CBot *pBot, CBotSchedule *pSchedule ) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CFindLastEnemy");
 	}
@@ -1401,7 +1400,7 @@ public:
 
 	void execute ( CBot *pBot, CBotSchedule *pSchedule ) override;
 
-	void debugString ( char *string ) override
+	void debugString (char* string, size_t bufferSize) override
 	{
 		std::sprintf(string,"CFindGoodHideSpot");
 	}
@@ -1418,7 +1417,7 @@ public:
 
 	void execute ( CBot *pBot, CBotSchedule *pSchedule ) override;
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	Vector m_vHideFrom;
 	float m_fHideTime;
@@ -1433,7 +1432,7 @@ public:
 
 	void execute ( CBot *pBot, CBotSchedule *pSchedule ) override;
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	MyEHandle m_pFollow;
 	float m_fFollowTime;
@@ -1450,7 +1449,7 @@ public:
 
 	void execute ( CBot *pBot, CBotSchedule *pSchedule ) override;
 
-	void debugString ( char *string ) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	MyEHandle m_pHideFrom;
 	float m_fHideTime;
@@ -1473,7 +1472,7 @@ public:
 
 	void execute ( CBot *pBot, CBotSchedule *pSchedule ) override;
 
-	void debugString (char *string) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	edict_t *m_pUnseenBefore;
 	int seenlist;
@@ -1522,7 +1521,7 @@ public:
 		m_bAimSet = true;
 	}
 	void execute ( CBot *pBot, CBotSchedule *pSchedule ) override;
-	void debugString (char *string) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	float m_fTime;
 	bool m_bAimSet;
@@ -1539,7 +1538,7 @@ public:
 		m_bTimeSet = false;
 	}
 	void execute ( CBot *pBot, CBotSchedule *pSchedule ) override;
-	void debugString (char *string) override;
+	void debugString (char* string, size_t bufferSize) override;
 private:
 	Vector m_vMinePos;
 	float m_fDist;
@@ -1556,7 +1555,7 @@ public:
 		m_pWeapon = pWeapon;
 		m_vPos = Vector(0,0,0);
 	}
-	void debugString(char *string) override
+	void debugString(char* string, size_t bufferSize) override
 	{
 		std::sprintf(string, "Break Item Crate");
 	}
@@ -1576,7 +1575,7 @@ public:
 		m_iType = type;
 		m_flTime = engine->Time() + randomFloat(8.0f, 10.0f);
 	}
-	void debugString(char *string) override
+	void debugString(char* string, size_t bufferSize) override
 	{
 		std::sprintf(string, "Use Charger");
 	}

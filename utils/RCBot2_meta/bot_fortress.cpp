@@ -4943,7 +4943,7 @@ void CBotTF2 :: getTasks ( unsigned iIgnore )
 			            ((m_iClass!=TF_CLASS_SPY)||!isDisguised()) && (m_pPushPayloadBomb!=NULL),
 			            fGetFlagUtility+randomFloat(-0.1f,0.2f))
 		}
-		else
+		else if (iTeam == TF2_TEAM_RED)
 		{
 			ADD_UTILITY(BOT_UTIL_DEFEND_PAYLOAD_BOMB,
 			            ((m_iClass!=TF_CLASS_SPY)||!isDisguised()) && (m_pDefendPayloadBomb!=NULL),
@@ -4961,7 +4961,7 @@ void CBotTF2 :: getTasks ( unsigned iIgnore )
 				fGetFlagUtility+ (hasSomeConditions(CONDITION_PUSH)?0.25f:randomFloat(-0.1f,0.2f)))
 			// Goto Payload bomb
 		}
-		else
+		else if (iTeam == TF2_TEAM_RED)
 		{
 			// Defend Payload bomb
 			ADD_UTILITY(BOT_UTIL_DEFEND_PAYLOAD_BOMB,
