@@ -551,12 +551,6 @@ bool CTeamFortress2Mod ::isBoss (edict_t *pEntity, float *fFactor)
 			m_pBoss = pEntity;
 			return true;
 		}
-		// TODO: to prevent shooting at ghosts? [APG]RoboCop[CL]
-		if (std::strcmp(pEntity->GetClassName(),"ghost")==0)
-		{
-			m_pBoss = pEntity;
-			return false;
-		}
 		
 	}
 	else if ( CTeamFortress2Mod::isMapType(TF_MAP_MVM) )
