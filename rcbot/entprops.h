@@ -51,21 +51,21 @@ class CBotEntProp
 {
 public:
 	void Init(bool reset = false);
-	int GetEntProp(int entity, PropType proptype, char *prop, int size = 4, int element = 0);
-	int *GetEntPropPointer(int entity, PropType proptype, char *prop, int size = 4, int element = 0);
-	bool GetEntPropBool(int entity, PropType proptype, char *prop, int element = 0);
-	bool *GetEntPropBoolPointer(int entity, PropType proptype, char *prop, int element = 0);
-	bool SetEntProp(int entity, PropType proptype, char *prop, int value, int size = 4, int element = 0);
-	float GetEntPropFloat(int entity, PropType proptype, char *prop, int element = 0);
-	float *GetEntPropFloatPointer(int entity, PropType proptype, char *prop, int element = 0);
-	bool SetEntPropFloat(int entity, PropType proptype, char *prop, float value, int element = 0);
-	int GetEntPropEnt(int entity, PropType proptype, char *prop, int element = 0);
-	bool SetEntPropEnt(int entity, PropType proptype, char *prop, int other, int element = 0);
-	Vector GetEntPropVector(int entity, PropType proptype, char *prop, int element = 0);
-	Vector *GetEntPropVectorPointer(int entity, PropType proptype, char *prop, int element = 0);
-	bool SetEntPropVector(int entity, PropType proptype, char *prop, const Vector& value, int element = 0);
-	char *GetEntPropString(int entity, PropType proptype, char *prop, int maxlen, int *len, int element = 0);
-	bool SetEntPropString(int entity, PropType proptype, char *prop, char *value, int element = 0);
+	int GetEntProp(int entity, PropType proptype, const char *prop, int size = 4, int element = 0);
+	int *GetEntPropPointer(int entity, PropType proptype, const char *prop, int size = 4, int element = 0);
+	bool GetEntPropBool(int entity, PropType proptype, const char *prop, int element = 0);
+	bool *GetEntPropBoolPointer(int entity, PropType proptype, const char *prop, int element = 0);
+	bool SetEntProp(int entity, PropType proptype, const char *prop, int value, int size = 4, int element = 0);
+	float GetEntPropFloat(int entity, PropType proptype, const char *prop, int element = 0);
+	float *GetEntPropFloatPointer(int entity, PropType proptype, const char *prop, int element = 0);
+	bool SetEntPropFloat(int entity, PropType proptype, const char *prop, float value, int element = 0);
+	int GetEntPropEnt(int entity, PropType proptype, const char *prop, int element = 0);
+	bool SetEntPropEnt(int entity, PropType proptype, const char *prop, int other, int element = 0);
+	Vector GetEntPropVector(int entity, PropType proptype, const char *prop, int element = 0);
+	Vector *GetEntPropVectorPointer(int entity, PropType proptype, const char *prop, int element = 0);
+	bool SetEntPropVector(int entity, PropType proptype, const char *prop, const Vector& value, int element = 0);
+	char *GetEntPropString(int entity, PropType proptype, const char *prop, int maxlen, int *len, int element = 0);
+	bool SetEntPropString(int entity, PropType proptype, const char *prop, const char *value, int element = 0);
 	int GetEntData(int entity, int offset, int size = 4);
 	bool SetEntData(int entity, int offset, int value, int size = 4, bool changeState = false);
 	float GetEntDataFloat(int entity, int offset);
@@ -75,18 +75,18 @@ public:
 	Vector GetEntDataVector(int entity, int offset);
 	bool SetEntDataVector(int entity, int offset, const Vector& value, bool changeState = false);
 	char *GetEntDataString(int entity, int offset, int maxlen, int *len);
-	bool SetEntDataString(int entity, int offset, char *value, int maxlen, bool changeState = false);
-	int GameRules_GetProp(char *prop, int size = 4, int element = 0) const;
-	float GameRules_GetPropFloat(char *prop, int element = 0) const;
-	int GameRules_GetPropEnt(char *prop, int element = 0) const;
-	Vector GameRules_GetPropVector(char *prop, int element = 0) const;
-	char *GameRules_GetPropString(char *prop, int *len, int maxlen, int element = 0) const;
+	bool SetEntDataString(int entity, int offset, const char *value, int maxlen, bool changeState = false);
+	int GameRules_GetProp(const char *prop, int size = 4, int element = 0) const;
+	float GameRules_GetPropFloat(const char *prop, int element = 0) const;
+	int GameRules_GetPropEnt(const char *prop, int element = 0) const;
+	Vector GameRules_GetPropVector(const char *prop, int element = 0) const;
+	char *GameRules_GetPropString(const char *prop, int *len, int maxlen, int element = 0) const;
 	RoundState GameRules_GetRoundState() const;
 
 private:
 	bool IsNetworkedEntity(CBaseEntity *pEntity);
 	edict_t *BaseEntityToEdict(CBaseEntity *pEntity);
-	bool FindSendProp(SourceMod::sm_sendprop_info_t *info, CBaseEntity *pEntity, char *prop, int entity);
+	bool FindSendProp(SourceMod::sm_sendprop_info_t *info, CBaseEntity *pEntity, const char *prop, int entity);
 	int MatchTypeDescAsInteger(_fieldtypes type, int flags);
 	bool IndexToAThings(int num, CBaseEntity **pEntData, edict_t **pEdictData);
 	CBaseEntity *GetEntity(int entity);

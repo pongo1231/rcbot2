@@ -48,25 +48,17 @@ bool CTF2Conditions::TF2_IsPlayerInCondition(const int client, const TFCond cond
 {
 	const int iCond = cond;
 
-	char nPlayerCond1[] = "m_nPlayerCond";
-	char nPlayerCond2[] = "_condition_bits";
-
-	char nPlayerCondEx1[] = "m_nPlayerCondEx";
-	char nPlayerCondEx2[] = "m_nPlayerCondEx2";
-	char nPlayerCondEx3[] = "m_nPlayerCondEx3";
-	char nPlayerCondEx4[] = "m_nPlayerCondEx4";
-
 	switch (iCond / 32)
 	{
 		case 0:
 		{
 			const int bit = 1 << iCond;
-			if ((entprops->GetEntProp(client, Prop_Send, nPlayerCond1) & bit) == bit)
+			if ((entprops->GetEntProp(client, Prop_Send, "m_nPlayerCond") & bit) == bit)
 			{
 				return true;
 			}
 
-			if ((entprops->GetEntProp(client, Prop_Send, nPlayerCond2) & bit) == bit)
+			if ((entprops->GetEntProp(client, Prop_Send, "_condition_bits") & bit) == bit)
 			{
 				return true;
 			}
@@ -75,7 +67,7 @@ bool CTF2Conditions::TF2_IsPlayerInCondition(const int client, const TFCond cond
 		case 1:
 		{
 			const int bit = (1 << (iCond - 32));
-			if ((entprops->GetEntProp(client, Prop_Send, nPlayerCondEx1) & bit) == bit)
+			if ((entprops->GetEntProp(client, Prop_Send, "m_nPlayerCondEx") & bit) == bit)
 			{
 				return true;
 			}
@@ -84,7 +76,7 @@ bool CTF2Conditions::TF2_IsPlayerInCondition(const int client, const TFCond cond
 		case 2:
 		{
 			const int bit = (1 << (iCond - 64));
-			if ((entprops->GetEntProp(client, Prop_Send, nPlayerCondEx2) & bit) == bit)
+			if ((entprops->GetEntProp(client, Prop_Send, "m_nPlayerCondEx2") & bit) == bit)
 			{
 				return true;
 			}
@@ -93,7 +85,7 @@ bool CTF2Conditions::TF2_IsPlayerInCondition(const int client, const TFCond cond
 		case 3:
 		{
 			const int bit = (1 << (iCond - 96));
-			if ((entprops->GetEntProp(client, Prop_Send, nPlayerCondEx3) & bit) == bit)
+			if ((entprops->GetEntProp(client, Prop_Send, "m_nPlayerCondEx3") & bit) == bit)
 			{
 				return true;
 			}
@@ -102,7 +94,7 @@ bool CTF2Conditions::TF2_IsPlayerInCondition(const int client, const TFCond cond
 		case 4:
 		{
 			const int bit = (1 << (iCond - 128));
-			if ((entprops->GetEntProp(client, Prop_Send, nPlayerCondEx4) & bit) == bit)
+			if ((entprops->GetEntProp(client, Prop_Send, "m_nPlayerCondEx4") & bit) == bit)
 			{
 				return true;
 			}
