@@ -7515,6 +7515,8 @@ bool CBotTF2::isEnemy(edict_t* pEdict, const bool bCheckWeapons)
 					return false; // Don't attack MvM bots who are inside spawn.
 				if (CTF2Conditions::TF2_IsPlayerInCondition(edictIndex, TFCond_HalloweenGhostMode))
 					return false; // Don't attack Ghost Players
+     				if (CTF2Conditions::TF2_IsPlayerInCondition(engine->IndexOfEdict(pEdict), TFCond_Stealthed))
+				return false; // Don't attack invisible players or bots who used magic spell - RussiaTails
 			}*/
 			
 			if ( m_iClass == TF_CLASS_SPY )	
