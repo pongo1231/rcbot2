@@ -7,7 +7,7 @@
 
 #include <in_buttons.h>
 
-void CSpyCheckAir ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CSpyCheckAir::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	CBotTF2 *pBotTF2 = (CBotTF2 *)pBot;
 	CBotWeapon *pWeapon;
@@ -221,7 +221,7 @@ void CSpyCheckAir ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CSpyCheckAir ::debugString(char *string)
+void CSpyCheckAir::debugString(char *string)
 {
 	sprintf(string, "CSpyCheckAir: checking for spies");
 }

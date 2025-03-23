@@ -35,7 +35,7 @@
 #include "bot_strings.h"
 
 // List of all timers
-CProfileTimer CProfileTimers ::m_Timers[PROFILING_TIMERS] = {
+CProfileTimer CProfileTimers::m_Timers[PROFILING_TIMERS] = {
 	CProfileTimer("CBots::botThink()"), // BOTS_THINK_TIMER
 	CProfileTimer("CBot::think()"),     // BOT_THINK_TIMER
 	CProfileTimer("Nav::findRoute()"),  // BOT_ROUTE_TIMER
@@ -64,7 +64,7 @@ extern __inline__ unsigned long long int rdtsc()
 }
 #endif
 
-CProfileTimer ::CProfileTimer(const char *szFunction)
+CProfileTimer::CProfileTimer(const char *szFunction)
 {
 	m_szFunction = CStrings::getString(szFunction);
 	m_min        = 9999999999;
@@ -75,7 +75,7 @@ CProfileTimer ::CProfileTimer(const char *szFunction)
 }
 
 // "Begin" Timer i.e. update time
-void CProfileTimer ::Start()
+void CProfileTimer::Start()
 {
 #ifdef _WIN32
 	QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER *>(&start_cycle));
@@ -84,7 +84,7 @@ void CProfileTimer ::Start()
 #endif
 }
 // Stop Timer, work out min/max values and set invoked
-void CProfileTimer ::Stop()
+void CProfileTimer::Stop()
 {
 #ifdef _WIN32
 	unsigned __int64 end_cycle;
@@ -108,7 +108,7 @@ void CProfileTimer ::Stop()
 
 // print the values, first work out average (use max/min/previous values),
 // and work out percentage of power
-void CProfileTimer ::print(double *high)
+void CProfileTimer::print(double *high)
 {
 	if ((m_iInvoked > 0) && m_szFunction)
 	{
@@ -143,7 +143,7 @@ CProfileTimer *CProfileTimers::getTimer(int id)
 	return nullptr;
 }
 // do this every map start
-void CProfileTimers ::reset()
+void CProfileTimers::reset()
 {
 	m_fNextUpdate = 0;
 }

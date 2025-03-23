@@ -4,14 +4,14 @@
 #include "bot_mtrand.h"
 #include "bot_weapons.h"
 
-CBotTFRocketJump ::CBotTFRocketJump()
+CBotTFRocketJump::CBotTFRocketJump()
 {
 	m_fTime     = 0.0f;
 	m_fJumpTime = 0.0f;
 	m_iState    = 0;
 }
 
-void CBotTFRocketJump ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTFRocketJump::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	CBotWeapon *pBotWeapon;
 	CWeapon *pWeapon;
@@ -57,7 +57,7 @@ void CBotTFRocketJump ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CBotTFRocketJump ::debugString(char *string)
+void CBotTFRocketJump::debugString(char *string)
 {
 	sprintf(string, "CBotTFRocketJump");
 }

@@ -6,17 +6,17 @@
 
 #include <in_buttons.h>
 
-CBotTask ::CBotTask()
+CBotTask::CBotTask()
 {
 	_init();
 }
 
-bool CBotTask ::timedOut()
+bool CBotTask::timedOut()
 {
 	return (this->m_fTimeOut != 0) && (engine->Time() < this->m_fTimeOut);
 }
 
-eTaskState CBotTask ::isInterrupted(CBot *pBot)
+eTaskState CBotTask::isInterrupted(CBot *pBot)
 {
 	if (m_pInterruptFunc != nullptr)
 	{
@@ -59,7 +59,7 @@ eTaskState CBotTask ::isInterrupted(CBot *pBot)
 	return STATE_RUNNING;
 }
 
-void CBotTask ::_init()
+void CBotTask::_init()
 {
 	m_pInterruptFunc                       = nullptr;
 	m_iFlags                               = 0;
@@ -76,60 +76,60 @@ void CBotTask ::_init()
 	init();
 }
 
-void CBotTask ::init()
+void CBotTask::init()
 {
 	return;
 }
 
-void CBotTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	return;
 }
 
-bool CBotTask ::hasFailed()
+bool CBotTask::hasFailed()
 {
 	return m_iState == STATE_FAIL;
 }
 
-bool CBotTask ::isComplete()
+bool CBotTask::isComplete()
 {
 	return m_iState == STATE_COMPLETE;
 }
 /*
-void CBotTask :: setVector ( Vector vOrigin )
+void CBotTask::setVector ( Vector vOrigin )
 {
     m_vVector = vOrigin;
 }
 
-void CBotTask :: setFloat ( float fFloat )
+void CBotTask::setFloat ( float fFloat )
 {
     m_fFloat = fFloat;
 }
 
-void CBotTask :: setEdict ( edict_t *pEdict )
+void CBotTask::setEdict ( edict_t *pEdict )
 {
     m_pEdict = pEdict;
 }
 */
 // if this condition is true it will complete, if bUnset is true, the condition must be false to be complete
-void CBotTask ::setCompleteInterrupt(int iInterruptHave, int iInterruptDontHave)
+void CBotTask::setCompleteInterrupt(int iInterruptHave, int iInterruptDontHave)
 {
 	m_iCompleteInterruptConditionsHave     = iInterruptHave;
 	m_iCompleteInterruptConditionsDontHave = iInterruptDontHave;
 }
 
-void CBotTask ::setFailInterrupt(int iInterruptHave, int iInterruptDontHave)
+void CBotTask::setFailInterrupt(int iInterruptHave, int iInterruptDontHave)
 {
 	m_iFailInterruptConditionsHave     = iInterruptHave;
 	m_iFailInterruptConditionsDontHave = iInterruptDontHave;
 }
 
-void CBotTask ::fail()
+void CBotTask::fail()
 {
 	m_iState = STATE_FAIL;
 }
 
-void CBotTask ::complete()
+void CBotTask::complete()
 {
 	m_iState = STATE_COMPLETE;
 }

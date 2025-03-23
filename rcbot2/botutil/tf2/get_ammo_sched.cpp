@@ -3,7 +3,7 @@
 #include "botutil/shared/find_path_task.h"
 #include "botutil/tf2/wait_ammo_task.h"
 
-CBotTF2GetAmmoSched ::CBotTF2GetAmmoSched(Vector vOrigin)
+CBotTF2GetAmmoSched::CBotTF2GetAmmoSched(Vector vOrigin)
 {
 	CFindPathTask *task1       = new CFindPathTask(vOrigin);
 	CBotTF2WaitAmmoTask *task2 = new CBotTF2WaitAmmoTask(vOrigin);
@@ -17,7 +17,7 @@ CBotTF2GetAmmoSched ::CBotTF2GetAmmoSched(Vector vOrigin)
 	addTask(task2); // second
 }
 
-void CBotTF2GetAmmoSched ::init()
+void CBotTF2GetAmmoSched::init()
 {
 	setID(SCHED_TF2_GET_AMMO);
 }

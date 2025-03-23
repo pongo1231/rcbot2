@@ -3,7 +3,7 @@
 #include "bot_getprop.h"
 #include "bot_mods.h"
 
-CBotTF2EngineerInterrupt ::CBotTF2EngineerInterrupt(CBot *pBot)
+CBotTF2EngineerInterrupt::CBotTF2EngineerInterrupt(CBot *pBot)
 {
 	m_pSentryGun = CTeamFortress2Mod::getMySentryGun(pBot->getEdict());
 
@@ -13,7 +13,7 @@ CBotTF2EngineerInterrupt ::CBotTF2EngineerInterrupt(CBot *pBot)
 		m_fPrevSentryHealth = 0;
 }
 
-bool CBotTF2EngineerInterrupt ::isInterrupted(CBot *pBot, bool *bFailed, bool *bCompleted)
+bool CBotTF2EngineerInterrupt::isInterrupted(CBot *pBot, bool *bFailed, bool *bCompleted)
 {
 	if (m_pSentryGun.get() != nullptr)
 	{

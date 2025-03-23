@@ -7,7 +7,7 @@
 
 #include <in_buttons.h>
 
-CBotTF2MedicHeal ::CBotTF2MedicHeal()
+CBotTF2MedicHeal::CBotTF2MedicHeal()
 {
 	m_pHeal         = nullptr;
 	m_bHealerJumped = false;

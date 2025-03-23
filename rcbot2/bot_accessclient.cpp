@@ -37,33 +37,33 @@
 #include <vector>
 ///////////
 
-std::vector<CAccessClient *> CAccessClients ::m_Clients;
+std::vector<CAccessClient *> CAccessClients::m_Clients;
 
 ///////////
 
-CAccessClient ::CAccessClient(char *szSteamId, int iAccessLevel)
+CAccessClient::CAccessClient(char *szSteamId, int iAccessLevel)
 {
 	m_iAccessLevel = iAccessLevel;
 	m_szSteamId    = CStrings::getString(szSteamId);
 }
 
-bool CAccessClient ::forBot()
+bool CAccessClient::forBot()
 {
 	return isForSteamId("BOT");
 }
 
-bool CAccessClient ::isForSteamId(const char *szSteamId)
+bool CAccessClient::isForSteamId(const char *szSteamId)
 {
 	logger->Log(LogLevel::DEBUG, "AccessClient: '%s','%s'", m_szSteamId, szSteamId);
 	return FStrEq(m_szSteamId, szSteamId);
 }
 
-void CAccessClient ::save(std::fstream &fp)
+void CAccessClient::save(std::fstream &fp)
 {
 	fp << '"' << m_szSteamId << '"' << ":" << m_iAccessLevel << "\n";
 }
 
-void CAccessClient ::giveAccessToClient(CClient *pClient)
+void CAccessClient::giveAccessToClient(CClient *pClient)
 {
 	// notify player
 	if (!forBot())
@@ -76,7 +76,7 @@ void CAccessClient ::giveAccessToClient(CClient *pClient)
 
 //////////////
 
-void CAccessClients ::showUsers(edict_t *pEntity)
+void CAccessClients::showUsers(edict_t *pEntity)
 {
 	CAccessClient *pPlayer;
 	CClient *pClient;
@@ -101,7 +101,7 @@ void CAccessClients ::showUsers(edict_t *pEntity)
 	}
 }
 
-void CAccessClients ::freeMemory()
+void CAccessClients::freeMemory()
 {
 	for (unsigned int i = 0; i < m_Clients.size(); i++)
 	{
@@ -112,7 +112,7 @@ void CAccessClients ::freeMemory()
 	m_Clients.clear();
 }
 
-void CAccessClients ::load()
+void CAccessClients::load()
 {
 	char filename[1024];
 
@@ -195,7 +195,7 @@ void CAccessClients ::load()
 		logger->Log(LogLevel::ERROR, "Failed to open file '%s' for reading", filename);
 }
 
-void CAccessClients ::save()
+void CAccessClients::save()
 {
 	char filename[1024];
 
@@ -210,7 +210,7 @@ void CAccessClients ::save()
 		logger->Log(LogLevel::ERROR, "Failed to open file '%s' for writing", filename);
 }
 
-void CAccessClients ::checkClientAccess(CClient *pClient)
+void CAccessClients::checkClientAccess(CClient *pClient)
 {
 	for (unsigned int i = 0; i < m_Clients.size(); i++)
 	{

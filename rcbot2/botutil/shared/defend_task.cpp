@@ -3,7 +3,7 @@
 #include "bot_mods.h"
 #include "bot_mtrand.h"
 
-void CBotDefendTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotDefendTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	static float fDist;
 

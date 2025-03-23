@@ -4,7 +4,7 @@
 
 #include <in_buttons.h>
 
-CBotTF2AttackPoint ::CBotTF2AttackPoint(int iArea, Vector vOrigin, int iRadius)
+CBotTF2AttackPoint::CBotTF2AttackPoint(int iArea, Vector vOrigin, int iRadius)
 {
 	m_vOrigin     = vOrigin;
 	m_fAttackTime = 0;
@@ -13,7 +13,7 @@ CBotTF2AttackPoint ::CBotTF2AttackPoint(int iArea, Vector vOrigin, int iRadius)
 	m_iRadius     = iRadius;
 }
 
-void CBotTF2AttackPoint ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2AttackPoint::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	int iCpIndex     = CTeamFortress2Mod::m_ObjectiveResource.m_WaypointAreaToIndexTranslation[m_iArea];
 	int iTeam        = pBot->getTeam();
@@ -89,7 +89,7 @@ void CBotTF2AttackPoint ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CBotTF2AttackPoint ::debugString(char *string)
+void CBotTF2AttackPoint::debugString(char *string)
 {
 	sprintf(string, "CBotTF2AttackPoint (%d,%0.1f,%0.1f,%0.1f,%d)", m_iArea, m_vOrigin.x, m_vOrigin.y, m_vOrigin.z,
 	        m_iRadius);

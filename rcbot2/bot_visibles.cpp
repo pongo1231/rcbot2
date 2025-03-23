@@ -44,18 +44,18 @@
 extern IVDebugOverlay *debugoverlay;
 ////////////////////////////////////////////
 
-byte CBotVisibles ::m_bPvs[MAX_MAP_CLUSTERS / 8];
+byte CBotVisibles::m_bPvs[MAX_MAP_CLUSTERS / 8];
 
 ////////////////////////////////////////
 
 /*
-void CTF2FindFlagFunc :: execute ( edict_t *pEntity )
+void CTF2FindFlagFunc::execute ( edict_t *pEntity )
 {
     if ( m_pBot->
     if ( strcmp(pEntity->GetClassName(),"");
 }
 
-void CTF2FindFlagFunc :: init ()
+void CTF2FindFlagFunc::init ()
 {
     m_pBest = nullptr;
     m_fBestFactor = 0;
@@ -63,7 +63,7 @@ void CTF2FindFlagFunc :: init ()
 
 ////////////////////////////////////////
 
-void CFindEnemyFunc ::execute(edict_t *pEntity)
+void CFindEnemyFunc::execute(edict_t *pEntity)
 {
 	if (m_pBot->isEnemy(pEntity))
 	{
@@ -77,18 +77,18 @@ void CFindEnemyFunc ::execute(edict_t *pEntity)
 	}
 }
 
-float CFindEnemyFunc ::getFactor(edict_t *pEntity)
+float CFindEnemyFunc::getFactor(edict_t *pEntity)
 {
 	return m_pBot->getEnemyFactor(pEntity);
 }
 
-void CFindEnemyFunc ::setOldEnemy(edict_t *pEntity)
+void CFindEnemyFunc::setOldEnemy(edict_t *pEntity)
 {
 	m_pBest       = pEntity;
 	m_fBestFactor = getFactor(pEntity);
 }
 
-void CFindEnemyFunc ::init()
+void CFindEnemyFunc::init()
 {
 	m_pBest       = nullptr;
 	m_fBestFactor = 0;
@@ -96,7 +96,7 @@ void CFindEnemyFunc ::init()
 
 ///////////////////////////////////////////
 
-CBotVisibles ::CBotVisibles(CBot *pBot)
+CBotVisibles::CBotVisibles(CBot *pBot)
 {
 	m_pBot            = pBot;
 	m_iMaxIndex       = m_pBot->maxEntityIndex();
@@ -105,20 +105,20 @@ CBotVisibles ::CBotVisibles(CBot *pBot)
 	reset();
 }
 
-CBotVisibles ::~CBotVisibles()
+CBotVisibles::~CBotVisibles()
 {
 	m_pBot = nullptr;
 	delete[] m_iIndicesVisible;
 	m_iIndicesVisible = nullptr;
 }
 
-void CBotVisibles ::eachVisible(CVisibleFunc *pFunc)
+void CBotVisibles::eachVisible(CVisibleFunc *pFunc)
 {
 	for (edict_t *pEnt : m_VisibleSet)
 		pFunc->execute(pEnt);
 }
 
-void CBotVisibles ::reset()
+void CBotVisibles::reset()
 {
 	memset(m_iIndicesVisible, 0, sizeof(unsigned char) * m_iMaxSize);
 	m_VisibleSet.clear();
@@ -126,7 +126,7 @@ void CBotVisibles ::reset()
 	m_iCurPlayer    = 1;
 }
 
-void CBotVisibles ::debugString(char *string)
+void CBotVisibles::debugString(char *string)
 {
 	// char szEntities[1024];
 	char szNum[10];
@@ -157,7 +157,7 @@ void CBotVisibles ::debugString(char *string)
 @param	bVisible	returns if the entity is visible or not
 @param  iIndex      saves recalling INDEXENT
 */
-void CBotVisibles ::checkVisible(edict_t *pEntity, int *iTicks, bool *bVisible, int &iIndex, bool bCheckHead)
+void CBotVisibles::checkVisible(edict_t *pEntity, int *iTicks, bool *bVisible, int &iIndex, bool bCheckHead)
 {
 	// make these static, calling a function with data many times
 	// static Vector vectorSurroundMins, vectorSurroundMaxs;
@@ -230,7 +230,7 @@ void CBotVisibles ::checkVisible(edict_t *pEntity, int *iTicks, bool *bVisible, 
 	}
 }
 
-void CBotVisibles ::updateVisibles()
+void CBotVisibles::updateVisibles()
 {
 	static bool bVisible;
 	static edict_t *pEntity;
@@ -368,7 +368,7 @@ void CBotVisibles ::updateVisibles()
 #endif
 }
 
-bool CBotVisibles ::isVisible(edict_t *pEdict)
+bool CBotVisibles::isVisible(edict_t *pEdict)
 {
 	static int iIndex;
 	static int iByte;
@@ -387,7 +387,7 @@ bool CBotVisibles ::isVisible(edict_t *pEdict)
 	return ((*(m_iIndicesVisible + iByte)) & (1 << iBit)) == (1 << iBit);
 }
 
-void CBotVisibles ::setVisible(edict_t *pEdict, bool bVisible)
+void CBotVisibles::setVisible(edict_t *pEdict, bool bVisible)
 {
 	static int iIndex;
 	static int iByte;

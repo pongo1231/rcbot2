@@ -6,7 +6,7 @@
 #include "bot_waypoint_locations.h"
 #include "botutil/shared/tasks.h"
 
-bool CBotZombie ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
+bool CBotZombie::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 {
 	if (pEdict == m_pEdict)
 		return false;
@@ -23,12 +23,12 @@ bool CBotZombie ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 	return true;
 }
 
-void CBotZombie ::modThink(void)
+void CBotZombie::modThink(void)
 {
 	//
 }
 
-void CBotZombie ::getTasks(unsigned int iIgnore)
+void CBotZombie::getTasks(unsigned int iIgnore)
 {
 	if (m_pEnemy)
 		m_pSchedules->add(new CBotGotoOriginSched(m_pEnemy));

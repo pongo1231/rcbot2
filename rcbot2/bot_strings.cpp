@@ -37,12 +37,12 @@
 
 std::vector<char *> CStrings::m_Strings[MAX_STRINGS_HASH];
 
-CStrings ::CStrings()
+CStrings::CStrings()
 {
 	return;
 }
 
-void CStrings ::freeAllMemory()
+void CStrings::freeAllMemory()
 {
 	char *pszFree;
 
@@ -64,7 +64,7 @@ void CStrings ::freeAllMemory()
 }
 
 // Either : 1 . Return the existing string or 2 . make a new string and return it.
-char *CStrings ::getString(const char *szString)
+char *CStrings::getString(const char *szString)
 {
 	if (szString == nullptr)
 		return nullptr;

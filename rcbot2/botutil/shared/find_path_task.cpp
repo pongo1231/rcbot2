@@ -6,7 +6,7 @@
 #include "bot_waypoint_locations.h"
 #include "botutil/base_sched.h"
 
-CFindPathTask ::CFindPathTask(int iWaypointId, eLookTask looktask)
+CFindPathTask::CFindPathTask(int iWaypointId, eLookTask looktask)
 {
 	m_iWaypointId               = iWaypointId;
 	m_LookTask                  = looktask;
@@ -17,7 +17,7 @@ CFindPathTask ::CFindPathTask(int iWaypointId, eLookTask looktask)
 	m_bGetPassedIntAsWaypointId = false;
 }
 
-void CFindPathTask ::init()
+void CFindPathTask::init()
 {
 	m_flags.m_data              = 0;
 	m_iInt                      = 0;
@@ -27,7 +27,7 @@ void CFindPathTask ::init()
 	// setFailInterrupt(CONDITION_SEE_CUR_ENEMY);
 }
 
-CFindPathTask ::CFindPathTask(edict_t *pEdict)
+CFindPathTask::CFindPathTask(edict_t *pEdict)
 {
 	m_iWaypointId               = -1;
 	m_pEdict                    = pEdict;
@@ -39,13 +39,13 @@ CFindPathTask ::CFindPathTask(edict_t *pEdict)
 	m_bGetPassedIntAsWaypointId = false;
 }
 
-void CFindPathTask ::debugString(char *string)
+void CFindPathTask::debugString(char *string)
 {
 	sprintf(string, "CFindPathTask\n m_iInt = %d\n m_vVector = (%0.4f,%0.4f,%0.4f)", m_iInt, m_vVector.x, m_vVector.y,
 	        m_vVector.z);
 }
 
-void CFindPathTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CFindPathTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	bool bFail = false;
 

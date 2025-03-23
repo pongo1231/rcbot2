@@ -1,22 +1,22 @@
 #include "hide_task.h"
 #include "bot_mtrand.h"
 
-CHideTask ::CHideTask(Vector vHideFrom)
+CHideTask::CHideTask(Vector vHideFrom)
 {
 	m_vHideFrom = vHideFrom;
 }
 
-void CHideTask ::debugString(char *string)
+void CHideTask::debugString(char *string)
 {
 	sprintf(string, "CHideTask\nm_vHideFrom =(%0.4f,%0.4f,%0.4f)", m_vHideFrom.x, m_vHideFrom.y, m_vHideFrom.z);
 }
 
-void CHideTask ::init()
+void CHideTask::init()
 {
 	m_fHideTime = 0;
 }
 
-void CHideTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CHideTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	pBot->stopMoving();
 	pBot->setLookVector(m_vHideFrom);

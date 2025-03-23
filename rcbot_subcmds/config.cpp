@@ -70,7 +70,7 @@ CBotCommandInline
 
 		                   if (!err)
 		                   {
-			                   CBots ::setMaxBots(max);
+			                   CBots::setMaxBots(max);
 
 			                   CBotGlobals::botMessage(pEntity, 0, "max_bots set to %d", max);
 		                   }
@@ -111,7 +111,7 @@ CBotCommandInline MinBotsCommand(
 
 		    if (!err)
 		    {
-			    CBots ::setMinBots(min);
+			    CBots::setMinBots(min);
 
 			    CBotGlobals::botMessage(pEntity, 0, "min_bots set to %d", min);
 		    }

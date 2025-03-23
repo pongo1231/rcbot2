@@ -3,7 +3,7 @@
 #include "botutil/shared/find_path_task.h"
 #include "botutil/tf2/engi/remove_sapper_task.h"
 
-CBotRemoveSapperSched ::CBotRemoveSapperSched(edict_t *pBuilding, eEngiBuild id)
+CBotRemoveSapperSched::CBotRemoveSapperSched(edict_t *pBuilding, eEngiBuild id)
 {
 	CFindPathTask *pathtask = new CFindPathTask(pBuilding);
 	addTask(pathtask);
@@ -12,7 +12,7 @@ CBotRemoveSapperSched ::CBotRemoveSapperSched(edict_t *pBuilding, eEngiBuild id)
 	addTask(new CBotRemoveSapper(pBuilding, id));
 }
 
-void CBotRemoveSapperSched ::init()
+void CBotRemoveSapperSched::init()
 {
 	setID(SCHED_REMOVESAPPER);
 }

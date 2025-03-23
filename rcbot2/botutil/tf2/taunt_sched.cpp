@@ -5,7 +5,7 @@
 #include "botutil/shared/move_to_task.h"
 #include "botutil/tf2/taunt_task.h"
 
-CBotTauntSchedule ::CBotTauntSchedule(edict_t *pPlayer, float fYaw)
+CBotTauntSchedule::CBotTauntSchedule(edict_t *pPlayer, float fYaw)
 {
 	QAngle angles = QAngle(0, fYaw, 0);
 	Vector forward;
@@ -30,7 +30,7 @@ CBotTauntSchedule ::CBotTauntSchedule(edict_t *pPlayer, float fYaw)
 	addTask(new CTF2_TauntTask(pPlayer, vGoto, 5.f));
 }
 
-void CBotTauntSchedule ::init()
+void CBotTauntSchedule::init()
 {
 	setID(SCHED_TAUNT);
 }

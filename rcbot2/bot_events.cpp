@@ -44,7 +44,7 @@
 
 #include <igameevents.h>
 
-std::vector<CBotEvent *> CBotEvents ::m_theEvents;
+std::vector<CBotEvent *> CBotEvents::m_theEvents;
 ///////////////////////////////////////////////////////
 
 class CBotSeeFriendlyKill : public IBotFunction
@@ -236,12 +236,12 @@ class CTF2BroadcastRoundWin : public IBotFunction
 };
 ////////////////////////////////////////////////
 
-void CRoundStartEvent ::execute(IBotEventInterface *pEvent)
+void CRoundStartEvent::execute(IBotEventInterface *pEvent)
 {
 	CBots::roundStart();
 }
 
-void CPlayerHurtEvent ::execute(IBotEventInterface *pEvent)
+void CPlayerHurtEvent::execute(IBotEventInterface *pEvent)
 {
 	CBot *pBot    = CBots::getBotPointer(m_pActivator);
 	int iAttacker = pEvent->getInt("attacker", 0);
@@ -291,7 +291,7 @@ void CPlayerHurtEvent ::execute(IBotEventInterface *pEvent)
 	// CBots::botFunction()
 }
 
-void CPlayerDeathEvent ::execute(IBotEventInterface *pEvent)
+void CPlayerDeathEvent::execute(IBotEventInterface *pEvent)
 {
 	CBot *pBot                        = CBots::getBotPointer(m_pActivator);
 	const char *weapon                = pEvent->getString("weapon", nullptr);
@@ -383,23 +383,23 @@ void CPlayerDeathEvent ::execute(IBotEventInterface *pEvent)
 		CBotSquads::ChangeLeader(pPrevSquadLeadersSquad);
 }
 
-void CBombPickupEvent ::execute(IBotEventInterface *pEvent)
+void CBombPickupEvent::execute(IBotEventInterface *pEvent)
 {
 }
 
-void CPlayerFootstepEvent ::execute(IBotEventInterface *pEvent)
+void CPlayerFootstepEvent::execute(IBotEventInterface *pEvent)
 {
 }
 
-void CBombDroppedEvent ::execute(IBotEventInterface *pEvent)
+void CBombDroppedEvent::execute(IBotEventInterface *pEvent)
 {
 }
 
-void CWeaponFireEvent ::execute(IBotEventInterface *pEvent)
+void CWeaponFireEvent::execute(IBotEventInterface *pEvent)
 {
 }
 
-void CPlayerSpawnEvent ::execute(IBotEventInterface *pEvent)
+void CPlayerSpawnEvent::execute(IBotEventInterface *pEvent)
 {
 	CBot *pBot = CBots::getBotPointer(m_pActivator);
 
@@ -415,7 +415,7 @@ void CPlayerSpawnEvent ::execute(IBotEventInterface *pEvent)
 #endif
 }
 
-void CBulletImpactEvent ::execute(IBotEventInterface *pEvent)
+void CBulletImpactEvent::execute(IBotEventInterface *pEvent)
 {
 	CBot *pBot = CBots::getBotPointer(m_pActivator);
 
@@ -431,7 +431,7 @@ void CBulletImpactEvent ::execute(IBotEventInterface *pEvent)
 [RCBot] [DEBUG game_event] object = 2
 [RCBot] [DEBUG game_event] sapperid = 400
 */
-void CTF2ObjectSapped ::execute(IBotEventInterface *pEvent)
+void CTF2ObjectSapped::execute(IBotEventInterface *pEvent)
 {
 	int owner    = pEvent->getInt("ownerid", -1);
 	int building = pEvent->getInt("object", -1);
@@ -455,7 +455,7 @@ void CTF2ObjectSapped ::execute(IBotEventInterface *pEvent)
 	}
 }
 
-void CTF2RoundActive ::execute(IBotEventInterface *pEvent)
+void CTF2RoundActive::execute(IBotEventInterface *pEvent)
 {
 	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
 		CTeamFortress2Mod::roundStarted();
@@ -463,24 +463,24 @@ void CTF2RoundActive ::execute(IBotEventInterface *pEvent)
 		CTeamFortress2Mod::resetSetupTime();
 }
 
-void COverTimeBegin ::execute(IBotEventInterface *pEvent)
+void COverTimeBegin::execute(IBotEventInterface *pEvent)
 {
 	CBroadcastOvertime function;
 
 	CBots::botFunction(&function);
 }
 
-void CBossSummonedEvent ::execute(IBotEventInterface *pEvent)
+void CBossSummonedEvent::execute(IBotEventInterface *pEvent)
 {
 	CTeamFortress2Mod::initBoss(true);
 }
 
-void CBossKilledEvent ::execute(IBotEventInterface *pEvent)
+void CBossKilledEvent::execute(IBotEventInterface *pEvent)
 {
 	CTeamFortress2Mod::initBoss(false);
 }
 
-void CPlayerTeleported ::execute(IBotEventInterface *pEvent)
+void CPlayerTeleported::execute(IBotEventInterface *pEvent)
 {
 	int builderid = pEvent->getInt("builderid", -1);
 
@@ -497,7 +497,7 @@ void CPlayerTeleported ::execute(IBotEventInterface *pEvent)
 	}
 }
 
-void CPlayerHealed ::execute(IBotEventInterface *pEvent)
+void CPlayerHealed::execute(IBotEventInterface *pEvent)
 {
 	int patient = pEvent->getInt("patient", -1);
 	int healer  = pEvent->getInt("healer", -1);
@@ -539,7 +539,7 @@ void CPlayerHealed ::execute(IBotEventInterface *pEvent)
 [RCBot] [DEBUG game_event] index = 436
 [RCBot] [DEBUG game_event] was_building = 0
 */
-void CTF2ObjectDestroyed ::execute(IBotEventInterface *pEvent)
+void CTF2ObjectDestroyed::execute(IBotEventInterface *pEvent)
 {
 	int type         = pEvent->getInt("objecttype", -1);
 	int index        = pEvent->getInt("index", -1);
@@ -581,7 +581,7 @@ void CTF2ObjectDestroyed ::execute(IBotEventInterface *pEvent)
 	}
 }
 
-void CPostInventoryApplicationTF2 ::execute(IBotEventInterface *pEvent)
+void CPostInventoryApplicationTF2::execute(IBotEventInterface *pEvent)
 {
 	int iUserID     = pEvent->getInt("userid");
 
@@ -601,7 +601,7 @@ byte 	object
 short 	index
 bool 	isbuilder
 */
-void CTF2UpgradeObjectEvent ::execute(IBotEventInterface *pEvent)
+void CTF2UpgradeObjectEvent::execute(IBotEventInterface *pEvent)
 {
 	if (bot_use_vc_commands.GetBool() && randomInt(0, 1))
 	{
@@ -621,7 +621,7 @@ void CTF2UpgradeObjectEvent ::execute(IBotEventInterface *pEvent)
 	}
 }
 
-void CTF2RoundWinEvent ::execute(IBotEventInterface *pEvent)
+void CTF2RoundWinEvent::execute(IBotEventInterface *pEvent)
 {
 	int iWinningTeam = pEvent->getInt("team");
 
@@ -631,12 +631,12 @@ void CTF2RoundWinEvent ::execute(IBotEventInterface *pEvent)
 	CTeamFortress2Mod::roundWon(iWinningTeam);
 }
 
-void CTF2SetupFinished ::execute(IBotEventInterface *pEvent)
+void CTF2SetupFinished::execute(IBotEventInterface *pEvent)
 {
 	CTeamFortress2Mod::roundStarted();
 }
 
-void CTF2BuiltObjectEvent ::execute(IBotEventInterface *pEvent)
+void CTF2BuiltObjectEvent::execute(IBotEventInterface *pEvent)
 {
 	eEngiBuild type    = (eEngiBuild)pEvent->getInt("object");
 	int index          = pEvent->getInt("index");
@@ -673,7 +673,7 @@ void CTF2BuiltObjectEvent ::execute(IBotEventInterface *pEvent)
 		((CBotFortress *)pBot)->engiBuildSuccess((eEngiBuild)pEvent->getInt("object"), pEvent->getInt("index"));
 }
 
-void CTF2ChangeClass ::execute(IBotEventInterface *pEvent)
+void CTF2ChangeClass::execute(IBotEventInterface *pEvent)
 {
 	CBot *pBot = CBots::getBotPointer(m_pActivator);
 
@@ -686,7 +686,7 @@ void CTF2ChangeClass ::execute(IBotEventInterface *pEvent)
 	}
 }
 
-void CTF2MVMWaveCompleteEvent ::execute(IBotEventInterface *pEvent)
+void CTF2MVMWaveCompleteEvent::execute(IBotEventInterface *pEvent)
 {
 	CBotWaveCompleteMVM func;
 
@@ -696,13 +696,13 @@ void CTF2MVMWaveCompleteEvent ::execute(IBotEventInterface *pEvent)
 	CBots::botFunction(&func);
 }
 
-void CTF2MVMWaveFailedEvent ::execute(IBotEventInterface *pEvent)
+void CTF2MVMWaveFailedEvent::execute(IBotEventInterface *pEvent)
 {
 	CTeamFortress2Mod::MVMAlarmReset();
 	CTeamFortress2Mod::roundReset();
 }
 
-void CTF2RoundStart ::execute(IBotEventInterface *pEvent)
+void CTF2RoundStart::execute(IBotEventInterface *pEvent)
 {
 	// 04/07/09 : add full reset
 
@@ -731,7 +731,7 @@ byte 	cp
 string 	cpname
 float 	time_remaining
 */
-void CTF2PointStopCapture ::execute(IBotEventInterface *pEvent)
+void CTF2PointStopCapture::execute(IBotEventInterface *pEvent)
 {
 	int capindex = pEvent->getInt("cp", 0);
 
@@ -747,24 +747,24 @@ byte 	cp 	index of the point that was blocked
 string 	cpname 	name of the point
 byte 	blocker 	index of the player that blocked the cap
 */
-void CTF2PointBlockedCapture ::execute(IBotEventInterface *pEvent)
+void CTF2PointBlockedCapture::execute(IBotEventInterface *pEvent)
 {
 	int capindex = pEvent->getInt("cp", 0);
 
 	CTeamFortress2Mod::removeCappers(capindex);
 }
-void CTF2PointUnlocked ::execute(IBotEventInterface *pEvent)
+void CTF2PointUnlocked::execute(IBotEventInterface *pEvent)
 {
 	CTeamFortress2Mod::setPointOpenTime(0);
 	//
 }
 
-void CTF2PointLocked ::execute(IBotEventInterface *pEvent)
+void CTF2PointLocked::execute(IBotEventInterface *pEvent)
 {
 	//
 }
 
-void CTF2PointStartTouch ::execute(IBotEventInterface *pEvent)
+void CTF2PointStartTouch::execute(IBotEventInterface *pEvent)
 {
 	int capindex     = pEvent->getInt("area", 0);
 	int iplayerIndex = pEvent->getInt("player", -1);
@@ -779,7 +779,7 @@ void CTF2PointStartTouch ::execute(IBotEventInterface *pEvent)
 	}
 }
 
-void CTF2PointEndTouch ::execute(IBotEventInterface *pEvent)
+void CTF2PointEndTouch::execute(IBotEventInterface *pEvent)
 {
 	int capindex     = pEvent->getInt("area", 0);
 	int iplayerIndex = pEvent->getInt("player", -1);
@@ -794,7 +794,7 @@ void CTF2PointEndTouch ::execute(IBotEventInterface *pEvent)
 	}
 }
 
-void CTF2PointStartCapture ::execute(IBotEventInterface *pEvent)
+void CTF2PointStartCapture::execute(IBotEventInterface *pEvent)
 { /*
   [RCBot] [DEBUG game_event] teamplay_point_startcapture
  [RCBot] [DEBUG game_event] cp = 0
@@ -829,7 +829,7 @@ void CTF2PointStartCapture ::execute(IBotEventInterface *pEvent)
 	CBots::botFunction(&fn);
 }
 
-void CTF2MannVsMachineAlarm ::execute(IBotEventInterface *pEvent)
+void CTF2MannVsMachineAlarm::execute(IBotEventInterface *pEvent)
 {
 	CBroadcastMVMAlarm alarm = CBroadcastMVMAlarm(CTeamFortress2Mod::getMVMCapturePointRadius());
 
@@ -839,7 +839,7 @@ void CTF2MannVsMachineAlarm ::execute(IBotEventInterface *pEvent)
 	CBots::botFunction(&alarm);
 }
 
-void CTF2PointCaptured ::execute(IBotEventInterface *pEvent)
+void CTF2PointCaptured::execute(IBotEventInterface *pEvent)
 {
 	CBroadcastCapturedPoint cap =
 	    CBroadcastCapturedPoint(pEvent->getInt("cp"), pEvent->getInt("team"), pEvent->getString("cpname"));
@@ -862,7 +862,7 @@ void CTF2PointCaptured ::execute(IBotEventInterface *pEvent)
 #define FLAG_DROPPED 4
 #define FLAG_RETURN 5
 
-void CFlagEvent ::execute(IBotEventInterface *pEvent)
+void CFlagEvent::execute(IBotEventInterface *pEvent)
 {
 	// dropped / picked up ID
 	int type         = pEvent->getInt("eventtype");
@@ -977,11 +977,11 @@ void CFlagEvent ::execute(IBotEventInterface *pEvent)
 	}
 }
 
-void CFlagCaptured ::execute(IBotEventInterface *pEvent)
+void CFlagCaptured::execute(IBotEventInterface *pEvent)
 {
 }
 /////////////////////////////////////////////////
-void CDODPointCaptured ::execute(IBotEventInterface *pEvent)
+void CDODPointCaptured::execute(IBotEventInterface *pEvent)
 {
 	int cp                = pEvent->getInt("cp");
 	const char *szCappers = pEvent->getString("cappers", nullptr);
@@ -1012,7 +1012,7 @@ void CDODPointCaptured ::execute(IBotEventInterface *pEvent)
 	}
 }
 
-void CDODBombExploded ::execute(IBotEventInterface *pEvent)
+void CDODBombExploded::execute(IBotEventInterface *pEvent)
 {
 	int cp   = pEvent->getInt("cp");
 	int team = CClassInterface::getTeam(m_pActivator);
@@ -1027,7 +1027,7 @@ void CDODBombExploded ::execute(IBotEventInterface *pEvent)
 	CDODMod::m_Flags.setBombPlanted(cp, false);
 }
 
-void CDODBombDefused ::execute(IBotEventInterface *pEvent)
+void CDODBombDefused::execute(IBotEventInterface *pEvent)
 {
 	int cp   = pEvent->getInt("cp");
 	int team = pEvent->getInt("team");
@@ -1039,7 +1039,7 @@ void CDODBombDefused ::execute(IBotEventInterface *pEvent)
 	CBots::botFunction(&func);
 }
 
-void CDODBombPlanted ::execute(IBotEventInterface *pEvent)
+void CDODBombPlanted::execute(IBotEventInterface *pEvent)
 {
 	int cp   = pEvent->getInt("cp");
 	int team = pEvent->getInt("team");
@@ -1062,26 +1062,26 @@ void CDODBombPlanted ::execute(IBotEventInterface *pEvent)
 	CDODMod::m_Flags.setBombPlanted(cp, true);
 }
 
-void CDODRoundStart ::execute(IBotEventInterface *pEvent)
+void CDODRoundStart::execute(IBotEventInterface *pEvent)
 {
 	CDODMod::roundStart();
 }
 
-void CDODRoundActive ::execute(IBotEventInterface *pEvent)
+void CDODRoundActive::execute(IBotEventInterface *pEvent)
 {
 }
 
-void CDODRoundWin ::execute(IBotEventInterface *pEvent)
-{
-	// CDODMod::m_Flags.reset();
-}
-
-void CDODRoundOver ::execute(IBotEventInterface *pEvent)
+void CDODRoundWin::execute(IBotEventInterface *pEvent)
 {
 	// CDODMod::m_Flags.reset();
 }
 
-void CDODChangeClass ::execute(IBotEventInterface *pEvent)
+void CDODRoundOver::execute(IBotEventInterface *pEvent)
+{
+	// CDODMod::m_Flags.reset();
+}
+
+void CDODChangeClass::execute(IBotEventInterface *pEvent)
 {
 	if (m_pActivator)
 	{
@@ -1102,7 +1102,7 @@ void CDODChangeClass ::execute(IBotEventInterface *pEvent)
 [RCBot] [DEBUG GAME_EVENT] 	weapon = 14
 [RCBot] [DEBUG GAME_EVENT] [END "dod_stats_weapon_attack"]*/
 
-void CDODFireWeaponEvent ::execute(IBotEventInterface *pEvent)
+void CDODFireWeaponEvent::execute(IBotEventInterface *pEvent)
 {
 	int iAttacker = pEvent->getInt("attacker", -1);
 
@@ -1118,23 +1118,23 @@ void CDODFireWeaponEvent ::execute(IBotEventInterface *pEvent)
 
 ///////////////////////////////////////////////////////
 
-void CBotEvent ::setType(char *szType)
+void CBotEvent::setType(char *szType)
 {
 	m_szType = CStrings::getString(szType);
 }
 
-bool CBotEvent ::forCurrentMod()
+bool CBotEvent::forCurrentMod()
 {
 	return ((m_iModId == MOD_ANY) || (CBotGlobals::isMod(m_iModId)));
 }
 // should we execute this ??
-inline bool CBotEvent ::isType(const char *szType)
+inline bool CBotEvent::isType(const char *szType)
 {
 	return forCurrentMod() && FStrEq(m_szType, szType);
 }
 
 ///////////////////////////////////////////////////////
-void CBotEvents ::setupEvents()
+void CBotEvents::setupEvents()
 {
 	addEvent(new CTF2MVMWaveCompleteEvent());
 	addEvent(new CTF2MVMWaveFailedEvent());
@@ -1202,7 +1202,7 @@ void CBotEvents ::setupEvents()
 	addEvent(new CTF2PointEndTouch());
 }
 
-void CBotEvents ::addEvent(CBotEvent *pEvent)
+void CBotEvents::addEvent(CBotEvent *pEvent)
 {
 	extern IGameEventManager2 *gameeventmanager;
 	// extern CRCBotMetaPlugin g_RCBOTServerPlugin;
@@ -1214,7 +1214,7 @@ void CBotEvents ::addEvent(CBotEvent *pEvent)
 	m_theEvents.push_back(pEvent);
 }
 
-void CBotEvents ::freeMemory()
+void CBotEvents::freeMemory()
 {
 	for (unsigned int i = 0; i < m_theEvents.size(); i++)
 	{
@@ -1224,7 +1224,7 @@ void CBotEvents ::freeMemory()
 	m_theEvents.clear();
 }
 
-void CBotEvents ::executeEvent(void *pEvent, eBotEventType iType)
+void CBotEvents::executeEvent(void *pEvent, eBotEventType iType)
 {
 	CBotEvent *pFound;
 	int iEventId = -1;

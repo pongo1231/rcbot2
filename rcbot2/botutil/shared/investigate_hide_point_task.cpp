@@ -3,7 +3,7 @@
 #include "bot_mtrand.h"
 #include "bot_waypoint.h"
 
-CBotInvestigateHidePoint ::CBotInvestigateHidePoint(int iWaypointIndexToInvestigate, int iOriginalWaypointIndex)
+CBotInvestigateHidePoint::CBotInvestigateHidePoint(int iWaypointIndexToInvestigate, int iOriginalWaypointIndex)
 {
 	CWaypoint *pWaypoint    = CWaypoints::getWaypoint(iWaypointIndexToInvestigate);
 	CWaypoint *pOriginalWpt = CWaypoints::getWaypoint(iOriginalWaypointIndex);

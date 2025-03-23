@@ -3,8 +3,8 @@
 #include "bot_mods.h"
 #include "bot_weapons.h"
 
-CBotTF2DemomanPipeTrap ::CBotTF2DemomanPipeTrap(eDemoTrapType type, Vector vStand, Vector vLoc, Vector vSpread,
-                                                bool bAutoDetonate, int wptarea)
+CBotTF2DemomanPipeTrap::CBotTF2DemomanPipeTrap(eDemoTrapType type, Vector vStand, Vector vLoc, Vector vSpread,
+                                               bool bAutoDetonate, int wptarea)
 {
 	m_vPoint        = vLoc;
 	m_vLocation     = vLoc;
@@ -18,7 +18,7 @@ CBotTF2DemomanPipeTrap ::CBotTF2DemomanPipeTrap(eDemoTrapType type, Vector vStan
 	m_iWptArea      = wptarea;
 }
 
-void CBotTF2DemomanPipeTrap ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2DemomanPipeTrap::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	bool bFail       = false;
 	CBotTF2 *pTF2Bot = static_cast<CBotTF2 *>(pBot);

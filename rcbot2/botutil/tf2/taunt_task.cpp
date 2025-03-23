@@ -4,14 +4,14 @@
 #include "bot_getprop.h"
 #include "bot_mtrand.h"
 
-void CTF2_TauntTask ::init()
+void CTF2_TauntTask::init()
 {
 	m_fTime       = 0;
 	m_fTauntUntil = 0.f;
 	m_fActionTime = 0.f;
 }
 
-void CTF2_TauntTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CTF2_TauntTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	if (!m_pPlayer)
 	{
@@ -116,7 +116,7 @@ void CTF2_TauntTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	complete();
 }
 
-void CTF2_TauntTask ::debugString(char *string)
+void CTF2_TauntTask::debugString(char *string)
 {
 	sprintf(string, "CTF2_TauntTask");
 }

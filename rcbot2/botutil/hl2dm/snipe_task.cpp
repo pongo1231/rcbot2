@@ -5,8 +5,8 @@
 #include "bot_waypoint.h"
 #include "bot_weapons.h"
 
-CBotHL2DMSnipe ::CBotHL2DMSnipe(CBotWeapon *pWeaponToUse, Vector vOrigin, float fYaw, bool bUseZ, float z,
-                                int iWaypointType)
+CBotHL2DMSnipe::CBotHL2DMSnipe(CBotWeapon *pWeaponToUse, Vector vOrigin, float fYaw, bool bUseZ, float z,
+                               int iWaypointType)
 {
 	QAngle angle;
 	m_fEnemyTime = 0.0f;
@@ -22,13 +22,13 @@ CBotHL2DMSnipe ::CBotHL2DMSnipe(CBotWeapon *pWeaponToUse, Vector vOrigin, float 
 	m_iWaypointType = iWaypointType;
 }
 
-void CBotHL2DMSnipe ::debugString(char *string)
+void CBotHL2DMSnipe::debugString(char *string)
 {
 	sprintf(string, "CBotHL2DMSnipe\nm_fTime = %0.2f\npWeaponToUse = %s\nm_bUseZ = %s\nm_z = %0.2f", m_fTime,
 	        m_pWeaponToUse->getWeaponInfo()->getWeaponName(), m_bUseZ ? "true" : "false", m_z);
 }
 
-void CBotHL2DMSnipe ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotHL2DMSnipe::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	static CBotWeapon *pCurrentWeapon;
 	static CWeapon *pWeapon;

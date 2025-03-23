@@ -5,7 +5,7 @@
 #include "bot_hldm_bot.h"
 #include "bot_weapons.h"
 
-void CBotGravGunPickup ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotGravGunPickup::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	static Vector vOrigin;
 	static Vector vBotOrigin;

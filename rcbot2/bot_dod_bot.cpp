@@ -56,7 +56,7 @@ const char *g_DODClassCmd[2][6] = { { "cls_garand", "cls_tommy", "cls_bar", "cls
 	                                { "cls_k98", "cls_mp40", "cls_mp44", "cls_k98s", "cls_mg42", "cls_pschreck" } };
 
 // could be a bomb
-void CBroadcastBombEvent ::execute(CBot *pBot)
+void CBroadcastBombEvent::execute(CBot *pBot)
 {
 	CDODBot *pDODBot = (CDODBot *)pBot;
 
@@ -64,7 +64,7 @@ void CBroadcastBombEvent ::execute(CBot *pBot)
 }
 
 // The lower the better
-float CDODBot ::getEnemyFactor(edict_t *pEnemy)
+float CDODBot::getEnemyFactor(edict_t *pEnemy)
 {
 	float fPreFactor = CBot::getEnemyFactor(pEnemy);
 
@@ -76,7 +76,7 @@ float CDODBot ::getEnemyFactor(edict_t *pEnemy)
 }
 
 // could be a bomb or flag capture event
-void CDODBot ::bombEvent(int iEvent, int iCP, int iTeam)
+void CDODBot::bombEvent(int iEvent, int iCP, int iTeam)
 {
 	int iWaypoint = CDODMod::m_Flags.getWaypointAtFlag(iCP);
 
@@ -93,13 +93,13 @@ void CDODBot ::bombEvent(int iEvent, int iCP, int iTeam)
 	}
 }
 
-CDODBot ::CDODBot()
+CDODBot::CDODBot()
 {
 	CBot();
 	init(true);
 }
 
-void CDODBot ::init(bool bVarInit)
+void CDODBot::init(bool bVarInit)
 {
 	CBot::init(bVarInit);
 
@@ -108,7 +108,7 @@ void CDODBot ::init(bool bVarInit)
 	m_pWantToProne   = nullptr;
 }
 
-void CDODBot ::setup()
+void CDODBot::setup()
 {
 	CBot::setup();
 
@@ -116,7 +116,7 @@ void CDODBot ::setup()
 		m_pWantToProne = new CPerceptron(3); // health , distance from enemy, danger out of 255
 }
 
-void CDODBot ::freeMapMemory()
+void CDODBot::freeMapMemory()
 {
 	if (m_pWantToProne)
 		delete m_pWantToProne;
@@ -203,7 +203,7 @@ bool CDODBot::canGotoWaypoint(Vector vPrevWaypoint, CWaypoint *pWaypoint, CWaypo
 		}                                                                \
 	}
 
-bool CDODBot ::setVisible(edict_t *pEntity, bool bVisible)
+bool CDODBot::setVisible(edict_t *pEntity, bool bVisible)
 {
 	// static float fDist;
 	static const char *szClassname;
@@ -319,12 +319,12 @@ bool CDODBot ::setVisible(edict_t *pEntity, bool bVisible)
 	return bValid;
 }
 
-void CDODBot ::selectedClass(int iClass)
+void CDODBot::selectedClass(int iClass)
 {
 	m_iSelectedClass = iClass;
 }
 
-bool CDODBot ::startGame()
+bool CDODBot::startGame()
 {
 	static int iTeam;
 
@@ -389,7 +389,7 @@ bool CDODBot ::startGame()
 	return true;
 }
 
-void CDODBot ::killed(edict_t *pVictim, char *weapon)
+void CDODBot::killed(edict_t *pVictim, char *weapon)
 {
 	CBot::killed(pVictim, weapon);
 
@@ -418,7 +418,7 @@ void CDODBot ::killed(edict_t *pVictim, char *weapon)
 	return;
 }
 
-void CDODBot ::died(edict_t *pKiller, const char *pszWeapon)
+void CDODBot::died(edict_t *pKiller, const char *pszWeapon)
 {
 	CBot::died(pKiller, pszWeapon);
 
@@ -450,7 +450,7 @@ void CDODBot ::died(edict_t *pKiller, const char *pszWeapon)
 }
 
 // TO COMPLETE
-void CDODBot ::seeFriendlyDie(edict_t *pDied, edict_t *pKiller, CWeapon *pWeapon)
+void CDODBot::seeFriendlyDie(edict_t *pDied, edict_t *pKiller, CWeapon *pWeapon)
 {
 	static CWaypoint *pWpt;
 
@@ -678,7 +678,7 @@ void CDODBot ::seeFriendlyDie(edict_t *pDied, edict_t *pKiller, CWeapon *pWeapon
 	}
 }
 
-void CDODBot ::seeFriendlyKill(edict_t *pTeamMate, edict_t *pDied, CWeapon *pWeapon)
+void CDODBot::seeFriendlyKill(edict_t *pTeamMate, edict_t *pDied, CWeapon *pWeapon)
 {
 	static CWaypoint *pWpt;
 	static CBotWeapon *pCurrentWeapon;
@@ -743,14 +743,14 @@ void CDODBot ::seeFriendlyKill(edict_t *pTeamMate, edict_t *pDied, CWeapon *pWea
 	}
 }
 
-void CDODBot ::dropAmmo()
+void CDODBot::dropAmmo()
 {
 	m_bDroppedAmmoThisRound = true;
 	helpers->ClientCommand(m_pEdict, "dropammo");
 }
 
 // use weapon ID later, use getCurrentWeapon for now
-bool CDODBot ::wantToListenToPlayerAttack(edict_t *pPlayer, int iWeaponID)
+bool CDODBot::wantToListenToPlayerAttack(edict_t *pPlayer, int iWeaponID)
 {
 	edict_t *pentWeapon = CClassInterface::getCurrentWeapon(pPlayer);
 
@@ -773,7 +773,7 @@ bool CDODBot ::wantToListenToPlayerAttack(edict_t *pPlayer, int iWeaponID)
 	return false;
 }
 
-void CDODBot ::spawnInit()
+void CDODBot::spawnInit()
 {
 	CBot::spawnInit();
 
@@ -825,7 +825,7 @@ void CDODBot ::spawnInit()
 	m_LastHearVoiceCommand = DOD_VC_INVALID;
 }
 
-bool CDODBot ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
+bool CDODBot::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 {
 	int entity_index = ENTINDEX(pEdict);
 	// #ifdef _DEBUG
@@ -898,7 +898,7 @@ bool CDODBot ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 	return true;
 }
 
-void CDODBot ::handleWeapons()
+void CDODBot::handleWeapons()
 {
 	//
 	// Handle attacking at this point
@@ -938,7 +938,7 @@ void CDODBot ::handleWeapons()
 	}
 }
 
-void CDODBot ::touchedWpt(CWaypoint *pWaypoint, int iNextWaypoint, int iPrevWaypoint)
+void CDODBot::touchedWpt(CWaypoint *pWaypoint, int iNextWaypoint, int iPrevWaypoint)
 {
 	static int wptindex;
 
@@ -1101,7 +1101,7 @@ void CDODBot ::touchedWpt(CWaypoint *pWaypoint, int iNextWaypoint, int iPrevWayp
 	    m_pNavigator->beliefOne(wptindex,BELIEF_SAFETY,0);*/
 }
 
-void CDODBot ::changeClass()
+void CDODBot::changeClass()
 {
 	int iTeam = getTeam();
 	// change class
@@ -1111,7 +1111,7 @@ void CDODBot ::changeClass()
 	m_fChangeClassTime = engine->Time() + randomFloat(bot_min_cc_time.GetFloat(), bot_max_cc_time.GetFloat());
 }
 
-void CDODBot ::chooseClass(bool bIsChangingClass)
+void CDODBot::chooseClass(bool bIsChangingClass)
 {
 	float fClassFitness[6]; // 6 classes
 	float fTotalFitness = 0;
@@ -1163,7 +1163,7 @@ void CDODBot ::chooseClass(bool bIsChangingClass)
 	}
 }
 
-void CDODBot ::prone()
+void CDODBot::prone()
 {
 	if (!hasSomeConditions(CONDITION_RUN) && !m_bProne && (m_fProneTime < engine->Time()))
 	{
@@ -1171,7 +1171,7 @@ void CDODBot ::prone()
 		m_fProneTime = engine->Time() + randomFloat(4.0f, 8.0f);
 	}
 }
-void CDODBot ::unProne()
+void CDODBot::unProne()
 {
 	if (m_bProne && (hasSomeConditions(CONDITION_RUN) || (m_fProneTime < engine->Time())))
 	{
@@ -1180,7 +1180,7 @@ void CDODBot ::unProne()
 	}
 }
 
-void CDODBot ::modThink()
+void CDODBot::modThink()
 {
 	static float fMaxSpeed;
 	static CBotWeapon *pWeapon;
@@ -1474,12 +1474,12 @@ void CDODBot ::modThink()
 	}
 }
 
-void CDODBot ::defending()
+void CDODBot::defending()
 {
 	// check to go prone or not
 }
 
-void CDODBot ::voiceCommand(int cmd)
+void CDODBot::voiceCommand(int cmd)
 {
 	// find voice command
 	extern eDODVoiceCommand_t g_DODVoiceCommands[DOD_VC_INVALID];
@@ -1494,7 +1494,7 @@ void CDODBot ::voiceCommand(int cmd)
 	helpers->ClientCommand(m_pEdict, scmd);
 }
 
-void CDODBot ::signal(const char *signal)
+void CDODBot::signal(const char *signal)
 {
 	char scmd[64];
 
@@ -1503,7 +1503,7 @@ void CDODBot ::signal(const char *signal)
 	helpers->ClientCommand(m_pEdict, scmd);
 }
 
-void CDODBot ::friendlyFire(edict_t *pEdict)
+void CDODBot::friendlyFire(edict_t *pEdict)
 {
 	if (isVisible(pEdict))
 		addVoiceCommand(DOD_VC_CEASEFIRE);
@@ -1511,7 +1511,7 @@ void CDODBot ::friendlyFire(edict_t *pEdict)
 
 #define IF_WANT_TO_LISTEN if (isVisible(pPlayer) || (inSquad() && (m_pSquad->GetLeader() == pPlayer)))
 
-void CDODBot ::hearVoiceCommand(edict_t *pPlayer, byte cmd)
+void CDODBot::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 {
 	switch (cmd)
 	{
@@ -1971,12 +1971,12 @@ void CDODBot ::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 		m_fLastVoiceCommand[cmd] = engine->Time() + randomFloat(1.0f, 3.0f);
 }
 
-void CDODBot ::sayInPosition()
+void CDODBot::sayInPosition()
 {
 	signal("yes");
 }
 
-void CDODBot ::sayMoveOut()
+void CDODBot::sayMoveOut()
 {
 	signal("moveout");
 	// forced squad leader to do something rather than just lark about
@@ -1986,7 +1986,7 @@ void CDODBot ::sayMoveOut()
 	updateCondition(CONDITION_CHANGED);
 }
 
-bool CDODBot ::withinTeammate()
+bool CDODBot::withinTeammate()
 {
 	// check if the bot is right next to a team mate (sometimes bots can't deploy if theyr are next to one already)
 
@@ -2030,7 +2030,7 @@ void CDODBot::areaClear()
 }
 
 // Listen for players who are shooting --- USE EVENT (CDODFireWeaponEvent)
-void CDODBot ::listenForPlayers()
+void CDODBot::listenForPlayers()
 {
 	if (m_fListenTime > engine->Time()) // already listening to something ?
 	{
@@ -2115,7 +2115,7 @@ void CDODBot ::listenForPlayers()
 
 // Successful actions must return true
 // unsuccessful return false so that another may be attempted
-bool CDODBot ::executeAction(CBotUtility *util)
+bool CDODBot::executeAction(CBotUtility *util)
 {
 	int iBombType = 0;
 	int id        = -1;
@@ -2815,7 +2815,7 @@ bool CDODBot ::executeAction(CBotUtility *util)
 	return false;
 }
 
-void CDODBot ::reachedCoverSpot(int flags)
+void CDODBot::reachedCoverSpot(int flags)
 {
 	// reached cover
 	// dont need to run there any more
@@ -2911,7 +2911,7 @@ bool CDODBot::checkStuck()
 	return false;
 }
 
-bool CDODBot ::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
+bool CDODBot::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 {
 	static bool bAttack;
 	static float fDelay; // delay to reduce recoil
@@ -3070,7 +3070,7 @@ CBotWeapon *CDODBot::getMG()
 	                                               : m_pWeapons->getWeapon(CWeapons::getWeapon(DOD_WEAPON_MG42));
 }
 
-bool CDODBot ::hasMG()
+bool CDODBot::hasMG()
 {
 	return m_pWeapons->hasWeapon(DOD_WEAPON_20CAL) || m_pWeapons->hasWeapon(DOD_WEAPON_MG42);
 }
@@ -3082,7 +3082,7 @@ CBotWeapon *CDODBot::getSniperRifle()
 	         : m_pWeapons->getWeapon(CWeapons::getWeapon(DOD_WEAPON_SPRING));
 }
 
-bool CDODBot ::hasSniperRifle()
+bool CDODBot::hasSniperRifle()
 {
 	return m_pWeapons->hasWeapon(DOD_WEAPON_K98_SCOPED) || m_pWeapons->hasWeapon(DOD_WEAPON_SPRING);
 }
@@ -3090,7 +3090,7 @@ bool CDODBot ::hasSniperRifle()
 #define BOT_DEFEND 0
 #define BOT_ATTACK 1
 
-void CDODBot ::getTasks(unsigned int iIgnore)
+void CDODBot::getTasks(unsigned int iIgnore)
 {
 	static CBotUtilities utils;
 	static CBotUtility *next;
@@ -3450,7 +3450,7 @@ void CDODBot ::getTasks(unsigned int iIgnore)
 	utils.freeMemory();
 }
 
-bool CDODBot ::select_CWeapon(CWeapon *pWeapon)
+bool CDODBot::select_CWeapon(CWeapon *pWeapon)
 {
 	char cmd[128];
 
@@ -3461,7 +3461,7 @@ bool CDODBot ::select_CWeapon(CWeapon *pWeapon)
 	return true;
 }
 
-bool CDODBot ::selectBotWeapon(CBotWeapon *pBotWeapon)
+bool CDODBot::selectBotWeapon(CBotWeapon *pBotWeapon)
 {
 	CWeapon *pSelect = pBotWeapon->getWeaponInfo();
 
@@ -3482,7 +3482,7 @@ bool CDODBot ::selectBotWeapon(CBotWeapon *pBotWeapon)
 	return false;
 }
 
-void CDODBot ::updateConditions()
+void CDODBot::updateConditions()
 {
 	CBot::updateConditions();
 
@@ -3493,7 +3493,7 @@ void CDODBot ::updateConditions()
 	}
 }
 
-bool CDODBot ::walkingTowardsWaypoint(CWaypoint *pWaypoint, bool *bOffsetApplied, Vector &vOffset)
+bool CDODBot::walkingTowardsWaypoint(CWaypoint *pWaypoint, bool *bOffsetApplied, Vector &vOffset)
 {
 	if (pWaypoint->hasFlag(CWaypointTypes::W_FL_PRONE))
 	{
@@ -3515,8 +3515,8 @@ bool CDODBot ::walkingTowardsWaypoint(CWaypoint *pWaypoint, bool *bOffsetApplied
 	return false;
 }
 
-void CDODBot ::modAim(edict_t *pEntity, Vector &v_origin, Vector *v_desired_offset, Vector &v_size, float fDist,
-                      float fDist2D)
+void CDODBot::modAim(edict_t *pEntity, Vector &v_origin, Vector *v_desired_offset, Vector &v_size, float fDist,
+                     float fDist2D)
 {
 	// static Vector vAim;
 	static short int iSlot;
@@ -3605,7 +3605,7 @@ void CDODBot ::modAim(edict_t *pEntity, Vector &v_origin, Vector *v_desired_offs
 	// return vAim;
 }
 
-bool CDODBot ::isVisibleThroughSmoke(edict_t *pSmoke, edict_t *pCheck)
+bool CDODBot::isVisibleThroughSmoke(edict_t *pSmoke, edict_t *pCheck)
 {
 	// if ( isVisible(pCheck) )
 	//{

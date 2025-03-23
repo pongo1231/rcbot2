@@ -2,13 +2,13 @@
 
 #include "bot_mtrand.h"
 
-CBotTF2WaitAmmoTask ::CBotTF2WaitAmmoTask(Vector vOrigin)
+CBotTF2WaitAmmoTask::CBotTF2WaitAmmoTask(Vector vOrigin)
 {
 	m_vOrigin   = vOrigin;
 	m_fWaitTime = 0.0f;
 }
 
-void CBotTF2WaitAmmoTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2WaitAmmoTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	if (!m_fWaitTime)
 		m_fWaitTime = engine->Time() + randomFloat(5.0f, 10.0f);
@@ -23,7 +23,7 @@ void CBotTF2WaitAmmoTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 		pBot->stopMoving();
 }
 
-void CBotTF2WaitAmmoTask ::debugString(char *string)
+void CBotTF2WaitAmmoTask::debugString(char *string)
 {
 	sprintf(string, "CBotTF2WaitAmmoTask");
 }

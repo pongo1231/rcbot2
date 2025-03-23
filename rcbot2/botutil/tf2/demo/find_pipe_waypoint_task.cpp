@@ -35,7 +35,7 @@ CBotTF2FindPipeWaypoint::CBotTF2FindPipeWaypoint(Vector vOrigin, Vector vTarget)
 	}
 }
 // a concurrentish pipe waypoint search
-void CBotTF2FindPipeWaypoint ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2FindPipeWaypoint::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	CWaypoint *pTempi, *pTempj;
 	float fidist, fjdist;

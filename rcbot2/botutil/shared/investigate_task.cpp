@@ -3,7 +3,7 @@
 #include "bot_getprop.h"
 #include "bot_waypoint_locations.h"
 
-void CBotInvestigateTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotInvestigateTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	if (m_fTime == 0)
 	{

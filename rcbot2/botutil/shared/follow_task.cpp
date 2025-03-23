@@ -3,7 +3,7 @@
 #include "bot_getprop.h"
 #include "bot_globals.h"
 
-CFollowTask ::CFollowTask(edict_t *pFollow)
+CFollowTask::CFollowTask(edict_t *pFollow)
 {
 	m_pFollow        = pFollow;
 	m_fFollowTime    = 0;
@@ -11,7 +11,7 @@ CFollowTask ::CFollowTask(edict_t *pFollow)
 	CClassInterface::getVelocity(pFollow, &m_vLastSeeVelocity);
 }
 
-void CFollowTask ::init()
+void CFollowTask::init()
 {
 }
 

@@ -33,18 +33,18 @@
 #include "bot_ga.h"
 #include "bot_mtrand.h"
 
-CBotGAValues ::CBotGAValues()
+CBotGAValues::CBotGAValues()
 {
 	init();
 }
 
-void CBotGAValues ::init(void)
+void CBotGAValues::init(void)
 {
 	clear();
 	setFitness(0);
 }
 
-CBotGAValues ::CBotGAValues(std::vector<float> values)
+CBotGAValues::CBotGAValues(std::vector<float> values)
 {
 	clear();
 	setFitness(0);
@@ -52,13 +52,13 @@ CBotGAValues ::CBotGAValues(std::vector<float> values)
 	setVector(values);
 }
 
-void CBotGAValues ::clear()
+void CBotGAValues::clear()
 {
 	m_theValues.clear();
 }
 
 // crossover with other individual
-void CBotGAValues ::crossOver(IIndividual *other)
+void CBotGAValues::crossOver(IIndividual *other)
 {
 	unsigned int iPoint = randomInt(0, m_theValues.size());
 	float fTemp;
@@ -83,7 +83,7 @@ void CBotGAValues ::crossOver(IIndividual *other)
 }
 
 // mutate some values
-void CBotGAValues ::mutate()
+void CBotGAValues::mutate()
 {
 	for (unsigned int i = 0; i < m_theValues.size(); i++)
 	{
@@ -96,24 +96,24 @@ void CBotGAValues ::mutate()
 	}
 }
 
-float CBotGAValues ::get(int iIndex)
+float CBotGAValues::get(int iIndex)
 {
 	return m_theValues[iIndex];
 }
 
-void CBotGAValues ::set(int iIndex, float fVal)
+void CBotGAValues::set(int iIndex, float fVal)
 {
 	m_theValues[iIndex] = fVal;
 }
 
-void CBotGAValues ::addRnd()
+void CBotGAValues::addRnd()
 {
 	m_theValues.push_back(randomFloat(0, 1));
 }
 
 // get new copy of this
 // sub classes return their class with own values
-IIndividual *CBotGAValues ::copy()
+IIndividual *CBotGAValues::copy()
 {
 	IIndividual *individual = new CBotGAValues(m_theValues);
 
@@ -122,13 +122,13 @@ IIndividual *CBotGAValues ::copy()
 	return individual;
 }
 
-void CBotGAValues ::setVector(std::vector<float> values)
+void CBotGAValues::setVector(std::vector<float> values)
 {
 	for (unsigned int i = 0; i < values.size(); i++)
 		m_theValues.push_back(values[i]);
 }
 
-void CBotGAValues ::freeMemory()
+void CBotGAValues::freeMemory()
 {
 	m_theValues.clear();
 }

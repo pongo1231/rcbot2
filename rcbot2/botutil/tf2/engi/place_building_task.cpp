@@ -3,7 +3,7 @@
 #include "bot_globals.h"
 #include "bot_mods.h"
 
-CBotTaskEngiPlaceBuilding ::CBotTaskEngiPlaceBuilding(eEngiBuild iObject, Vector vOrigin)
+CBotTaskEngiPlaceBuilding::CBotTaskEngiPlaceBuilding(eEngiBuild iObject, Vector vOrigin)
 {
 	m_vOrigin = vOrigin;
 	m_fTime   = 0.0f;
@@ -13,7 +13,7 @@ CBotTaskEngiPlaceBuilding ::CBotTaskEngiPlaceBuilding(eEngiBuild iObject, Vector
 }
 
 // unused
-void CBotTaskEngiPlaceBuilding ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTaskEngiPlaceBuilding::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	pBot->wantToInvestigateSound(false);
 
@@ -59,7 +59,7 @@ void CBotTaskEngiPlaceBuilding ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CBotTaskEngiPlaceBuilding ::debugString(char *string)
+void CBotTaskEngiPlaceBuilding::debugString(char *string)
 {
 	sprintf(string, "CBotTaskEngiPlaceBuilding");
 }

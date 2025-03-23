@@ -3,7 +3,7 @@
 #include "bot_getprop.h"
 #include "bot_waypoint_locations.h"
 
-void CDODWaitForBombTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CDODWaitForBombTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	if (m_fTime == 0.0f)
 	{
@@ -60,7 +60,7 @@ void CDODWaitForBombTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	pBot->setLookAtTask(LOOK_EDICT);
 }
 
-void CDODWaitForBombTask ::debugString(char *string)
+void CDODWaitForBombTask::debugString(char *string)
 {
 	sprintf(string, "CDODWaitForBombTask");
 }

@@ -5,12 +5,12 @@
 #include "botutil/shared/find_path_task.h"
 #include "botutil/tf2/spy/sap_task.h"
 
-void CBotSpySapBuildingSched ::init()
+void CBotSpySapBuildingSched::init()
 {
 	setID(SCHED_SPY_SAP_BUILDING);
 }
 
-CBotSpySapBuildingSched ::CBotSpySapBuildingSched(edict_t *pBuilding, eEngiBuild id)
+CBotSpySapBuildingSched::CBotSpySapBuildingSched(edict_t *pBuilding, eEngiBuild id)
 {
 	CFindPathTask *findpath = new CFindPathTask(pBuilding);
 

@@ -41,7 +41,7 @@ float CBotConfigFile::m_fNextCommandTime = 0.0f;
 //
 bot_util_t CRCBotTF2UtilFile::m_fUtils[UTIL_TYPE_MAX][BOT_UTIL_MAX][9];
 
-void CBotConfigFile ::load()
+void CBotConfigFile::load()
 {
 	char filename[512];
 	char line[256];
@@ -79,7 +79,7 @@ void CBotConfigFile ::load()
 	}
 }
 
-void CBotConfigFile ::doNextCommand()
+void CBotConfigFile::doNextCommand()
 {
 	char cmd[64] = { 0 };
 
@@ -94,7 +94,7 @@ void CBotConfigFile ::doNextCommand()
 	}
 }
 
-void CBotConfigFile ::executeCommands()
+void CBotConfigFile::executeCommands()
 {
 	char cmd[64] = { 0 };
 
@@ -110,7 +110,7 @@ void CBotConfigFile ::executeCommands()
 	engine->ServerExecute();
 }
 
-void CRCBotTF2UtilFile ::init()
+void CRCBotTF2UtilFile::init()
 {
 	short unsigned int i, j, k;
 
@@ -127,7 +127,7 @@ void CRCBotTF2UtilFile ::init()
 	}
 }
 
-void CRCBotTF2UtilFile ::addUtilPerturbation(eBotAction iAction, eTF2UtilType iUtil, float fUtility[9][2])
+void CRCBotTF2UtilFile::addUtilPerturbation(eBotAction iAction, eTF2UtilType iUtil, float fUtility[9][2])
 {
 	short unsigned int i;
 
@@ -138,7 +138,7 @@ void CRCBotTF2UtilFile ::addUtilPerturbation(eBotAction iAction, eTF2UtilType iU
 	}
 }
 
-void CRCBotTF2UtilFile ::loadConfig()
+void CRCBotTF2UtilFile::loadConfig()
 {
 	eTF2UtilType iFile;
 	char szFullFilename[512];

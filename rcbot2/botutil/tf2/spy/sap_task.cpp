@@ -6,14 +6,14 @@
 
 #include <in_buttons.h>
 
-CBotTF2SpySap ::CBotTF2SpySap(edict_t *pBuilding, eEngiBuild id)
+CBotTF2SpySap::CBotTF2SpySap(edict_t *pBuilding, eEngiBuild id)
 {
 	m_pBuilding = MyEHandle(pBuilding);
 	m_fTime     = 0.0f;
 	m_id        = id;
 }
 
-void CBotTF2SpySap ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	edict_t *pBuilding;
 	CBotTF2 *tf2Bot = (CBotTF2 *)pBot;
@@ -91,7 +91,7 @@ void CBotTF2SpySap ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CBotTF2SpySap ::debugString(char *string)
+void CBotTF2SpySap::debugString(char *string)
 {
 	sprintf(string, "CBotTF2SpySap");
 }

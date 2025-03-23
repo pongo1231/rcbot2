@@ -4,7 +4,7 @@
 #include "bot_globals.h"
 #include "bot_mods.h"
 
-CBotDODBomb ::CBotDODBomb(int iBombType, int iBombID, edict_t *pBomb, Vector vPosition, int iPrevOwner)
+CBotDODBomb::CBotDODBomb(int iBombType, int iBombID, edict_t *pBomb, Vector vPosition, int iPrevOwner)
 {
 	m_iType   = iBombType;
 	m_iBombID = iBombID;
@@ -18,7 +18,7 @@ CBotDODBomb ::CBotDODBomb(int iBombType, int iBombID, edict_t *pBomb, Vector vPo
 	m_iPrevTeam   = iPrevOwner;
 }
 
-void CBotDODBomb ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotDODBomb::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	bool bWorking = false;
 
@@ -114,7 +114,7 @@ void CBotDODBomb ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CBotDODBomb ::debugString(char *string)
+void CBotDODBomb::debugString(char *string)
 {
 	sprintf(string, "CBotDODBomb\nm_iType = %d\nm_iBombID = %d\nm_fTime = %0.2f\nm_iPrevTeam = %d", m_iType, m_iBombID,
 	        m_fTime, m_iPrevTeam);

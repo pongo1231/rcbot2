@@ -3,13 +3,13 @@
 #include "bot_fortress.h"
 #include "bot_mtrand.h"
 
-CBotTF2WaitHealthTask ::CBotTF2WaitHealthTask(Vector vOrigin)
+CBotTF2WaitHealthTask::CBotTF2WaitHealthTask(Vector vOrigin)
 {
 	m_vOrigin   = vOrigin;
 	m_fWaitTime = 0;
 }
 
-void CBotTF2WaitHealthTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2WaitHealthTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	if (!m_fWaitTime)
 		m_fWaitTime = engine->Time() + randomFloat(5.0f, 10.0f);
@@ -46,7 +46,7 @@ void CBotTF2WaitHealthTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CBotTF2WaitHealthTask ::debugString(char *string)
+void CBotTF2WaitHealthTask::debugString(char *string)
 {
 	sprintf(string, "CBotTF2WaitHealthTask\nm_vOrigin = (%0.4f,%0.4f,%0.4f)", m_vOrigin.x, m_vOrigin.y, m_vOrigin.z);
 }

@@ -4,8 +4,8 @@
 #include "botutil/tf2/engi/pickup_building_task.h"
 #include "botutil/tf2/engi/place_building_task.h"
 
-CBotEngiMoveBuilding ::CBotEngiMoveBuilding(edict_t *pBotEdict, edict_t *pBuilding, eEngiBuild iObject,
-                                            Vector vNewLocation, bool bCarrying)
+CBotEngiMoveBuilding::CBotEngiMoveBuilding(edict_t *pBotEdict, edict_t *pBuilding, eEngiBuild iObject,
+                                           Vector vNewLocation, bool bCarrying)
 {
 	// not carrying
 	if (!bCarrying)
@@ -19,7 +19,7 @@ CBotEngiMoveBuilding ::CBotEngiMoveBuilding(edict_t *pBotEdict, edict_t *pBuildi
 	addTask(new CBotTaskEngiPlaceBuilding(iObject, vNewLocation));
 }
 
-void CBotEngiMoveBuilding ::init()
+void CBotEngiMoveBuilding::init()
 {
 	setID(SCHED_TF2_ENGI_MOVE_BUILDING);
 }

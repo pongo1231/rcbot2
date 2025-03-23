@@ -4,14 +4,14 @@
 #include "bot_globals.h"
 #include "bot_navigator.h"
 
-CBotTFUseTeleporter ::CBotTFUseTeleporter(edict_t *pTele)
+CBotTFUseTeleporter::CBotTFUseTeleporter(edict_t *pTele)
 { // going to use this
 
 	m_pTele = pTele;
 	m_fTime = 0.0;
 }
 
-void CBotTFUseTeleporter ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTFUseTeleporter::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	if (!m_pTele || !CBotGlobals::entityIsValid(m_pTele))
 	{
@@ -72,7 +72,7 @@ void CBotTFUseTeleporter ::execute(CBot *pBot, CBotSchedule *pSchedule)
 		fail();
 }
 
-void CBotTFUseTeleporter ::debugString(char *string)
+void CBotTFUseTeleporter::debugString(char *string)
 {
 	sprintf(string, "CBotTFUseTeleporter\nm_pTele = %x", (int)m_pTele.get());
 }

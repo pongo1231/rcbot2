@@ -2,7 +2,7 @@
 
 #include "bot_mods.h"
 
-CBotTF2DefendPoint ::CBotTF2DefendPoint(int iArea, Vector vOrigin, int iRadius)
+CBotTF2DefendPoint::CBotTF2DefendPoint(int iArea, Vector vOrigin, int iRadius)
 {
 	m_vOrigin     = vOrigin;
 	m_fDefendTime = 0;
@@ -11,7 +11,7 @@ CBotTF2DefendPoint ::CBotTF2DefendPoint(int iArea, Vector vOrigin, int iRadius)
 	m_iRadius     = iRadius;
 }
 
-void CBotTF2DefendPoint ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2DefendPoint::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	int iCpIndex = CTeamFortress2Mod::m_ObjectiveResource.m_WaypointAreaToIndexTranslation[m_iArea];
 	int iTeam    = pBot->getTeam();
@@ -59,7 +59,7 @@ void CBotTF2DefendPoint ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CBotTF2DefendPoint ::debugString(char *string)
+void CBotTF2DefendPoint::debugString(char *string)
 {
 	sprintf(string, "CBotTF2DefendPoint\nm_iArea=%d\nm_vOrigin=(%0.1f,%0.1f,%0.1f,%d)", m_iArea, m_vOrigin.x,
 	        m_vOrigin.y, m_vOrigin.z, m_iRadius);

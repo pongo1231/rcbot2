@@ -37,13 +37,13 @@
 ga_nn_value CPerceptron::m_fDefaultLearnRate = 0.5f;
 ga_nn_value CPerceptron::m_fDefaultBias      = 1.0f;
 
-CNeuron ::CNeuron()
+CNeuron::CNeuron()
 {
 	m_weights = nullptr;
 	m_inputs  = nullptr;
 }
 
-CPerceptron ::CPerceptron(unsigned short int iInputs)
+CPerceptron::CPerceptron(unsigned short int iInputs)
 {
 	m_inputs    = new ga_nn_value[iInputs]; //.clear();
 	m_weights   = new ga_nn_value[iInputs];
@@ -57,17 +57,17 @@ CPerceptron ::CPerceptron(unsigned short int iInputs)
 		m_weights[i] = -0.3f + randomFloat(0.0f, 0.6f);
 }
 
-void CPerceptron ::setWeights(ga_nn_value *weights)
+void CPerceptron::setWeights(ga_nn_value *weights)
 {
 	memcpy(m_weights, weights, sizeof(ga_nn_value) * m_iInputs);
 }
 
-void CNeuron ::input(ga_nn_value *inputs)
+void CNeuron::input(ga_nn_value *inputs)
 {
 	memcpy(m_inputs, inputs, sizeof(ga_nn_value) * m_iInputs);
 }
 
-ga_nn_value CPerceptron ::execute()
+ga_nn_value CPerceptron::execute()
 {
 	static unsigned short int i;
 	static ga_nn_value *w;
@@ -91,17 +91,17 @@ ga_nn_value CPerceptron ::execute()
 	return m_output;
 }
 
-bool CPerceptron ::fired()
+bool CPerceptron::fired()
 {
 	return m_output >= 0.5f;
 }
 
-ga_nn_value CPerceptron ::getOutput()
+ga_nn_value CPerceptron::getOutput()
 {
 	return m_output;
 }
 
-void CPerceptron ::train(ga_nn_value expectedOutput)
+void CPerceptron::train(ga_nn_value expectedOutput)
 {
 	static unsigned short int i;
 	static ga_nn_value *w;
@@ -121,7 +121,7 @@ void CPerceptron ::train(ga_nn_value expectedOutput)
 	}
 }
 
-void CLogisticalNeuron ::train() // ITransfer *transferFunction, bool usebias )
+void CLogisticalNeuron::train() // ITransfer *transferFunction, bool usebias )
 {
 	static unsigned short int i;
 	static ga_nn_value *w;
@@ -144,7 +144,7 @@ void CLogisticalNeuron ::train() // ITransfer *transferFunction, bool usebias )
 	m_Bias += m_LearnRate * m_error;
 }
 
-ga_nn_value CLogisticalNeuron ::execute() //, bool usebias )
+ga_nn_value CLogisticalNeuron::execute() //, bool usebias )
 {
 	static unsigned short int i;
 	static ga_nn_value *w;
@@ -188,9 +188,9 @@ void CLogisticalNeuron::init(unsigned short int iInputs, ga_nn_value learnrate)
 	m_LearnRate = learnrate;
 }
 
-CBotNeuralNet ::CBotNeuralNet(unsigned short int numinputs, unsigned short int numhiddenlayers,
-                              unsigned short int neuronsperhiddenlayer, unsigned short int numoutputs,
-                              ga_nn_value learnrate)
+CBotNeuralNet::CBotNeuralNet(unsigned short int numinputs, unsigned short int numhiddenlayers,
+                             unsigned short int neuronsperhiddenlayer, unsigned short int numoutputs,
+                             ga_nn_value learnrate)
 {
 	register unsigned short int i;
 	register unsigned short int j;
@@ -225,7 +225,7 @@ CBotNeuralNet ::CBotNeuralNet(unsigned short int numinputs, unsigned short int n
 
 #define RCPP_VERB_EPOCHS 1000
 
-void CBotNeuralNet ::batch_train(CTrainingSet *tset, unsigned short int epochs)
+void CBotNeuralNet::batch_train(CTrainingSet *tset, unsigned short int epochs)
 {
 	ga_nn_value *outs;
 	ga_nn_value exp_out; // expected
@@ -339,7 +339,7 @@ void CBotNeuralNet ::batch_train(CTrainingSet *tset, unsigned short int epochs)
 	delete[] outs;
 }
 
-void CBotNeuralNet ::execute(ga_nn_value *inputs, ga_nn_value *outputs, ga_nn_value fMin, ga_nn_value fMax)
+void CBotNeuralNet::execute(ga_nn_value *inputs, ga_nn_value *outputs, ga_nn_value fMin, ga_nn_value fMax)
 {
 
 	static CLogisticalNeuron *pNode;

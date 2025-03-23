@@ -2,7 +2,7 @@
 
 #include "bot_globals.h"
 
-CBotTF2DefendPayloadBombTask ::CBotTF2DefendPayloadBombTask(edict_t *pPayloadBomb)
+CBotTF2DefendPayloadBombTask::CBotTF2DefendPayloadBombTask(edict_t *pPayloadBomb)
 {
 	m_pPayloadBomb  = pPayloadBomb;
 	m_fDefendTime   = 0;
@@ -10,7 +10,7 @@ CBotTF2DefendPayloadBombTask ::CBotTF2DefendPayloadBombTask(edict_t *pPayloadBom
 	m_vRandomOffset = Vector(0, 0, 0);
 }
 
-void CBotTF2DefendPayloadBombTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2DefendPayloadBombTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	if (m_fDefendTime == 0)
 	{
@@ -41,7 +41,7 @@ void CBotTF2DefendPayloadBombTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CBotTF2DefendPayloadBombTask ::debugString(char *string)
+void CBotTF2DefendPayloadBombTask::debugString(char *string)
 {
 	sprintf(string, "CBotTF2DefendPayloadBombTask (%0.1f,%0.1f,%0.1f)", m_vOrigin.x, m_vOrigin.y, m_vOrigin.z);
 }

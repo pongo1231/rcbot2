@@ -5,7 +5,7 @@
 #include "botutil/tf2/engi/interrupt.h"
 #include "botutil/tf2/wait_health_task.h"
 
-CBotUseDispSched ::CBotUseDispSched(CBot *pBot, edict_t *pDisp) //, bool bNest )
+CBotUseDispSched::CBotUseDispSched(CBot *pBot, edict_t *pDisp) //, bool bNest )
 {
 	CFindPathTask *pathtask          = new CFindPathTask(pDisp);
 	CBotTF2WaitHealthTask *gethealth = new CBotTF2WaitHealthTask(CBotGlobals::entityOrigin(pDisp));
@@ -19,7 +19,7 @@ CBotUseDispSched ::CBotUseDispSched(CBot *pBot, edict_t *pDisp) //, bool bNest )
 	//	addTask(new CBotNest()); // third
 }
 
-void CBotUseDispSched ::init()
+void CBotUseDispSched::init()
 {
 	setID(SCHED_USE_DISPENSER);
 }

@@ -6,12 +6,12 @@
 
 #include "vstdlib/random.h" // for random functions
 
-void CBotCoop ::modThink()
+void CBotCoop::modThink()
 {
 	// find enemies and health stations / objectives etc
 }
 
-bool CBotCoop ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
+bool CBotCoop::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 {
 	const char *classname;
 
@@ -38,7 +38,7 @@ bool CBotCoop ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 	return false;
 }
 
-bool CBotCoop ::startGame()
+bool CBotCoop::startGame()
 {
 	return true;
 }

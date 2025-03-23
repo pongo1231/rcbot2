@@ -38,12 +38,12 @@
 
 #include <stdio.h>
 
-/*unsigned char *CWaypointVisibilityTable :: m_VisTable = nullptr;
-bool CWaypointVisibilityTable :: bWorkVisibility = false;
-int CWaypointVisibilityTable :: iCurFrom = 0;
-int CWaypointVisibilityTable :: iCurTo = 0;*/
+/*unsigned char *CWaypointVisibilityTable::m_VisTable = nullptr;
+bool CWaypointVisibilityTable::bWorkVisibility = false;
+int CWaypointVisibilityTable::iCurFrom = 0;
+int CWaypointVisibilityTable::iCurTo = 0;*/
 
-void CWaypointVisibilityTable ::workVisibility()
+void CWaypointVisibilityTable::workVisibility()
 {
 	int percent;
 	int iTicks                        = 0;
@@ -105,7 +105,7 @@ void CWaypointVisibilityTable ::workVisibility()
 	}
 }
 
-void CWaypointVisibilityTable ::workVisibilityForWaypoint(int i, int iNumWaypoints, bool bTwoway)
+void CWaypointVisibilityTable::workVisibilityForWaypoint(int i, int iNumWaypoints, bool bTwoway)
 {
 	static CWaypoint *Waypoint1;
 	static CWaypoint *Waypoint2;
@@ -138,7 +138,7 @@ void CWaypointVisibilityTable ::workVisibilityForWaypoint(int i, int iNumWaypoin
 	}
 }
 
-void CWaypointVisibilityTable ::WorkOutVisibilityTable()
+void CWaypointVisibilityTable::WorkOutVisibilityTable()
 {
 	register short int i;
 
@@ -151,7 +151,7 @@ void CWaypointVisibilityTable ::WorkOutVisibilityTable()
 		workVisibilityForWaypoint(i, iNumWaypoints, false);
 }
 
-bool CWaypointVisibilityTable ::SaveToFile(void)
+bool CWaypointVisibilityTable::SaveToFile(void)
 {
 	char filename[1024];
 	wpt_vis_header_t header;
@@ -176,7 +176,7 @@ bool CWaypointVisibilityTable ::SaveToFile(void)
 	return true;
 }
 
-bool CWaypointVisibilityTable ::ReadFromFile(int numwaypoints)
+bool CWaypointVisibilityTable::ReadFromFile(int numwaypoints)
 {
 	char filename[1024];
 

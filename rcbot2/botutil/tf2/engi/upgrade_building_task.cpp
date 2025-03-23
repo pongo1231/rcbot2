@@ -4,13 +4,13 @@
 #include "bot_globals.h"
 #include "bot_mods.h"
 
-CBotTF2UpgradeBuilding ::CBotTF2UpgradeBuilding(edict_t *pBuilding)
+CBotTF2UpgradeBuilding::CBotTF2UpgradeBuilding(edict_t *pBuilding)
 {
 	m_pBuilding = pBuilding;
 	m_fTime     = 0.0f;
 }
 
-void CBotTF2UpgradeBuilding ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2UpgradeBuilding::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	edict_t *pBuilding = m_pBuilding.get();
 	edict_t *pOwner    = nullptr;

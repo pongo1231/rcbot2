@@ -3,7 +3,7 @@
 #include "bot_globals.h"
 #include "bot_mods.h"
 
-CBotTFEngiBuildTask ::CBotTFEngiBuildTask(eEngiBuild iObject, CWaypoint *pWaypoint)
+CBotTFEngiBuildTask::CBotTFEngiBuildTask(eEngiBuild iObject, CWaypoint *pWaypoint)
 {
 	m_iObject          = iObject;
 	m_vOrigin          = pWaypoint->getOrigin() + pWaypoint->applyRadius();
@@ -20,7 +20,7 @@ CBotTFEngiBuildTask ::CBotTFEngiBuildTask(eEngiBuild iObject, CWaypoint *pWaypoi
 	m_fRadius       = pWaypoint->getRadius();
 }
 
-void CBotTFEngiBuildTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTFEngiBuildTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	CBotFortress *tfBot;
 
@@ -164,7 +164,7 @@ void CBotTFEngiBuildTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CBotTFEngiBuildTask ::debugString(char *string)
+void CBotTFEngiBuildTask::debugString(char *string)
 {
 	sprintf(string, "CBotTFEngiBuildTask (%d,%0.4f,%0.4f,%0.4f)", m_iObject, m_vOrigin.x, m_vOrigin.y, m_vOrigin.z);
 }

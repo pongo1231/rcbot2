@@ -2,12 +2,12 @@
 
 #include "bot_mtrand.h"
 
-void CAutoBuy ::init()
+void CAutoBuy::init()
 {
 	m_bTimeset = false;
 }
 
-void CAutoBuy ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CAutoBuy::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	if (!m_bTimeset)
 	{

@@ -5,7 +5,7 @@
 #include "botutil/tf2/engi/build_building_task.h"
 #include "botutil/tf2/engi/interrupt.h"
 
-CBotTFEngiBuild ::CBotTFEngiBuild(CBot *pBot, eEngiBuild iObject, CWaypoint *pWaypoint)
+CBotTFEngiBuild::CBotTFEngiBuild(CBot *pBot, eEngiBuild iObject, CWaypoint *pWaypoint)
 {
 	CFindPathTask *pathtask = new CFindPathTask(CWaypoints::getWaypointIndex(pWaypoint));
 	addTask(pathtask); // first
@@ -15,7 +15,7 @@ CBotTFEngiBuild ::CBotTFEngiBuild(CBot *pBot, eEngiBuild iObject, CWaypoint *pWa
 	addTask(new CBotTFEngiBuildTask(iObject, pWaypoint)); // second
 }
 
-void CBotTFEngiBuild ::init()
+void CBotTFEngiBuild::init()
 {
 	setID(SCHED_TF_BUILD);
 }

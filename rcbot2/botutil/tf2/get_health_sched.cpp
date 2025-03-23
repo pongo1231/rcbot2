@@ -3,7 +3,7 @@
 #include "botutil/shared/find_path_task.h"
 #include "botutil/tf2/wait_health_task.h"
 
-CBotTF2GetHealthSched ::CBotTF2GetHealthSched(Vector vOrigin)
+CBotTF2GetHealthSched::CBotTF2GetHealthSched(Vector vOrigin)
 {
 	CFindPathTask *task1         = new CFindPathTask(vOrigin);
 	CBotTF2WaitHealthTask *task2 = new CBotTF2WaitHealthTask(vOrigin);
@@ -17,7 +17,7 @@ CBotTF2GetHealthSched ::CBotTF2GetHealthSched(Vector vOrigin)
 	addTask(task2); // second
 }
 
-void CBotTF2GetHealthSched ::init()
+void CBotTF2GetHealthSched::init()
 {
 	setID(SCHED_TF2_GET_HEALTH);
 }

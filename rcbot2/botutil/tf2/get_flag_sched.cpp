@@ -3,7 +3,7 @@
 #include "botutil/shared/find_path_task.h"
 #include "botutil/tf2/wait_flag_task.h"
 
-CBotTF2GetFlagSched ::CBotTF2GetFlagSched(Vector vOrigin, bool bUseRoute, Vector vRoute)
+CBotTF2GetFlagSched::CBotTF2GetFlagSched(Vector vOrigin, bool bUseRoute, Vector vRoute)
 {
 	if (bUseRoute)
 		addTask(new CFindPathTask(vRoute));
@@ -12,7 +12,7 @@ CBotTF2GetFlagSched ::CBotTF2GetFlagSched(Vector vOrigin, bool bUseRoute, Vector
 	addTask(new CBotTF2WaitFlagTask(vOrigin)); // second
 }
 
-void CBotTF2GetFlagSched ::init()
+void CBotTF2GetFlagSched::init()
 {
 	setID(SCHED_TF2_GET_FLAG);
 }

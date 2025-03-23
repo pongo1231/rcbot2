@@ -14,7 +14,7 @@ typedef struct
 int CWaypointDistances::m_Distances[CWaypoints::MAX_WAYPOINTS][CWaypoints::MAX_WAYPOINTS];
 float CWaypointDistances::m_fSaveTime = 0;
 
-void CWaypointDistances ::load()
+void CWaypointDistances::load()
 {
 	char filename[1024];
 	wpt_dist_hdr_t hdr;
@@ -42,7 +42,7 @@ void CWaypointDistances ::load()
 	}
 }
 
-void CWaypointDistances ::save()
+void CWaypointDistances::save()
 {
 	// if ( m_fSaveTime < engine->Time() )
 	//{
@@ -77,7 +77,7 @@ void CWaypointDistances ::save()
 	//}
 }
 
-float CWaypointDistances ::getDistance(int iFrom, int iTo)
+float CWaypointDistances::getDistance(int iFrom, int iTo)
 {
 	if (m_Distances[iFrom][iTo] == -1)
 		return (CWaypoints::getWaypoint(iFrom)->getOrigin() - CWaypoints::getWaypoint(iTo)->getOrigin()).Length();

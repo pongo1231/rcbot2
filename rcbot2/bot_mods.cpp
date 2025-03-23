@@ -47,7 +47,7 @@
 
 std::vector<edict_wpt_pair_t> CHalfLifeDeathmatchMod::m_LiftWaypoints;
 
-void CBotMods ::parseFile()
+void CBotMods::parseFile()
 {
 	char buffer[1024];
 	unsigned int len;
@@ -221,7 +221,7 @@ void CBotMods ::parseFile()
 	}
 }
 
-void CBotMods ::readMods()
+void CBotMods::readMods()
 {
 // TODO improve game detection
 // caxanga334: Better game detection required if we want to support multiple mods on the same engine (IE: SDK 2013)
@@ -249,7 +249,7 @@ void CBotMods ::readMods()
 
 //////////////////////////////////////////////////////////////////////////////
 
-void CBotMod ::setup(const char *szModFolder, eModId iModId, eBotType iBotType, const char *szWeaponListName)
+void CBotMod::setup(const char *szModFolder, eModId iModId, eBotType iBotType, const char *szWeaponListName)
 {
 	m_szModFolder = CStrings::getString(szModFolder);
 	m_iModId      = iModId;
@@ -259,22 +259,22 @@ void CBotMod ::setup(const char *szModFolder, eModId iModId, eBotType iBotType, 
 		m_szWeaponListName = CStrings::getString(szWeaponListName);
 }
 
-/*CBot *CBotMod :: makeNewBots ()
+/*CBot *CBotMod::makeNewBots ()
 {
     return nullptr;
 }*/
 
-bool CBotMod ::isModFolder(char *szModFolder)
+bool CBotMod::isModFolder(char *szModFolder)
 {
 	return FStrEq(m_szModFolder, szModFolder);
 }
 
-char *CBotMod ::getModFolder()
+char *CBotMod::getModFolder()
 {
 	return m_szModFolder;
 }
 
-eModId CBotMod ::getModId()
+eModId CBotMod::getModId()
 {
 	return m_iModId;
 }
@@ -284,7 +284,7 @@ eModId CBotMod ::getModId()
 
 std::vector<CBotMod *> CBotMods::m_Mods;
 
-void CBotMods ::freeMemory()
+void CBotMods::freeMemory()
 {
 	for (unsigned int i = 0; i < m_Mods.size(); i++)
 	{
@@ -296,7 +296,7 @@ void CBotMods ::freeMemory()
 	m_Mods.clear();
 }
 
-CBotMod *CBotMods ::getMod(char *szModFolder)
+CBotMod *CBotMods::getMod(char *szModFolder)
 {
 	for (unsigned int i = 0; i < m_Mods.size(); i++)
 	{
@@ -314,19 +314,19 @@ CBotMod *CBotMods ::getMod(char *szModFolder)
 	return nullptr;
 }
 
-void CBotMod ::initMod()
+void CBotMod::initMod()
 {
 	m_bPlayerHasSpawned = false;
 
 	CWeapons::loadWeapons(m_szWeaponListName, nullptr);
 }
 
-void CBotMod ::mapInit()
+void CBotMod::mapInit()
 {
 	m_bPlayerHasSpawned = false;
 }
 
-bool CBotMod ::playerSpawned(edict_t *pEntity)
+bool CBotMod::playerSpawned(edict_t *pEntity)
 {
 	if (m_bPlayerHasSpawned)
 		return false;
@@ -336,7 +336,7 @@ bool CBotMod ::playerSpawned(edict_t *pEntity)
 	return true;
 }
 
-bool CHalfLifeDeathmatchMod ::playerSpawned(edict_t *pPlayer)
+bool CHalfLifeDeathmatchMod::playerSpawned(edict_t *pPlayer)
 {
 	if (CBotMod::playerSpawned(pPlayer))
 	{
@@ -348,7 +348,7 @@ bool CHalfLifeDeathmatchMod ::playerSpawned(edict_t *pPlayer)
 	return true;
 }
 
-void CHalfLifeDeathmatchMod ::initMod()
+void CHalfLifeDeathmatchMod::initMod()
 {
 
 	CWeapons::loadWeapons((m_szWeaponListName == nullptr) ? "HL2DM" : m_szWeaponListName, HL2DMWeaps);
@@ -358,7 +358,7 @@ void CHalfLifeDeathmatchMod ::initMod()
 	// CWeapon(HL2DMWeaps[i]));//.iSlot,HL2DMWeaps[i].szWeaponName,HL2DMWeaps[i].iId,HL2DMWeaps[i].m_iFlags,HL2DMWeaps[i].m_iAmmoIndex,HL2DMWeaps[i].minPrimDist,HL2DMWeaps[i].maxPrimDist,HL2DMWeaps[i].m_iPreference,HL2DMWeaps[i].m_fProjSpeed));
 }
 
-void CHalfLifeDeathmatchMod ::mapInit()
+void CHalfLifeDeathmatchMod::mapInit()
 {
 	CBotMod::mapInit();
 

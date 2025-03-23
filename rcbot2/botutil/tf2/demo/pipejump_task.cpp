@@ -7,8 +7,8 @@
 
 #include <in_buttons.h>
 
-CBotTF2DemomanPipeJump ::CBotTF2DemomanPipeJump(CBot *pBot, Vector vWaypointGround, Vector vWaypointNext,
-                                                CBotWeapon *pWeapon)
+CBotTF2DemomanPipeJump::CBotTF2DemomanPipeJump(CBot *pBot, Vector vWaypointGround, Vector vWaypointNext,
+                                               CBotWeapon *pWeapon)
 {
 	m_iStartingAmmo = pWeapon->getClip1(pBot);
 	m_vStart        = vWaypointGround - Vector(0, 0, 48.0);
@@ -20,7 +20,7 @@ CBotTF2DemomanPipeJump ::CBotTF2DemomanPipeJump(CBot *pBot, Vector vWaypointGrou
 	m_bFired        = false;
 }
 
-void CBotTF2DemomanPipeJump ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2DemomanPipeJump::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	pBot->wantToListen(false);
 

@@ -56,7 +56,7 @@ extern IVDebugOverlay *debugoverlay;
 #include "rcbot_subcmds/waypoint.cpp"
 
 // temporarily declared at the bottom
-// CBotSubcommands *CBotGlobals :: m_pCommands;
+// CBotSubcommands *CBotGlobals::m_pCommands;
 
 eBotCommandResult CBotCommandInline::execute(CClient *pClient, BotCommandArgs args)
 {
@@ -143,14 +143,14 @@ CBotCommandInline KickBotCommand(
     },
     "usage \"kickbot\" or \"kickbot <team>\" : kicks random bot or bot on team: <team>");
 
-bool CBotCommand ::hasAccess(CClient *pClient)
+bool CBotCommand::hasAccess(CClient *pClient)
 {
 	// check access level excluding dedicated server flag
 	int iClientAccessLevel = this->m_iAccessLevel & ~CMD_ACCESS_DEDICATED;
 	return (iClientAccessLevel & pClient->accessLevel()) == iClientAccessLevel;
 }
 
-bool CBotCommand ::isCommand(const char *szCommand)
+bool CBotCommand::isCommand(const char *szCommand)
 {
 	return FStrEq(szCommand, m_szCommand);
 }
@@ -238,7 +238,7 @@ CBotCommandInline PrintCommands("printcommands", CMD_ACCESS_DEDICATED,
 
 ///////////////////////////////////////////
 
-void CBotCommand ::printCommand(edict_t *pPrintTo, int indent)
+void CBotCommand::printCommand(edict_t *pPrintTo, int indent)
 {
 	if (indent)
 	{
@@ -266,7 +266,7 @@ void CBotCommand ::printCommand(edict_t *pPrintTo, int indent)
 	}
 }
 
-void CBotCommand ::printHelp(edict_t *pPrintTo)
+void CBotCommand::printHelp(edict_t *pPrintTo)
 {
 	if (m_szHelp)
 		CBotGlobals::botMessage(pPrintTo, 0, m_szHelp);

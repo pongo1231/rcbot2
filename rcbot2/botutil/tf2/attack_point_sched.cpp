@@ -6,8 +6,8 @@
 #include "botutil/tf2/attack_point_task.h"
 #include "botutil/tf2/nest_task.h"
 
-CBotAttackPointSched ::CBotAttackPointSched(Vector vPoint, int iRadius, int iArea, bool bHasRoute, Vector vRoute,
-                                            bool bNest, edict_t *pLastEnemySentry)
+CBotAttackPointSched::CBotAttackPointSched(Vector vPoint, int iRadius, int iArea, bool bHasRoute, Vector vRoute,
+                                           bool bNest, edict_t *pLastEnemySentry)
 {
 	int iDangerWpt = -1;
 
@@ -32,7 +32,7 @@ CBotAttackPointSched ::CBotAttackPointSched(Vector vPoint, int iRadius, int iAre
 	addTask(new CBotTF2AttackPoint(iArea, vPoint, iRadius)); // third / second
 }
 
-void CBotAttackPointSched ::init()
+void CBotAttackPointSched::init()
 {
 	setID(SCHED_ATTACKPOINT);
 }

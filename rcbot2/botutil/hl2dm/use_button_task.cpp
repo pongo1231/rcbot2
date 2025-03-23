@@ -2,7 +2,7 @@
 
 #include "bot_globals.h"
 
-void CBotHL2DMUseButton ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotHL2DMUseButton::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	static Vector vOrigin;
 

@@ -36,9 +36,9 @@
 #include "bot_mtrand.h"
 #include "bot_som.h"
 
-float CSom ::m_fLearnRate = 1.0;
+float CSom::m_fLearnRate = 1.0;
 
-CSom ::CSom(int iW, int iH, int iIn)
+CSom::CSom(int iW, int iH, int iIn)
 {
 	unsigned short id = 0;
 
@@ -55,12 +55,12 @@ CSom ::CSom(int iW, int iH, int iIn)
 	m_iEpochs = 0;
 }
 
-CSom ::~CSom()
+CSom::~CSom()
 {
 	m_Neurons.clear();
 }
 
-CSomNeuron *CSom ::getBMU(std::vector<float> *inputs)
+CSomNeuron *CSom::getBMU(std::vector<float> *inputs)
 {
 	CSomNeuron *winner = nullptr;
 	float bestdistance = 0;
@@ -80,7 +80,7 @@ CSomNeuron *CSom ::getBMU(std::vector<float> *inputs)
 	return winner;
 }
 
-void CSom ::updateAround(std::vector<float> *inputs, CSomNeuron *bmu)
+void CSom::updateAround(std::vector<float> *inputs, CSomNeuron *bmu)
 {
 	float dist;
 	float nsiz = (m_fNSize * m_fNSize);
@@ -94,7 +94,7 @@ void CSom ::updateAround(std::vector<float> *inputs, CSomNeuron *bmu)
 	}
 }
 
-CSomNeuron *CSom ::inputOne(std::vector<float> *inputs)
+CSomNeuron *CSom::inputOne(std::vector<float> *inputs)
 {
 	CSomNeuron *winner = getBMU(inputs);
 
@@ -107,12 +107,12 @@ CSomNeuron *CSom ::inputOne(std::vector<float> *inputs)
 	return winner;
 }
 
-CSomNeuron *CSom ::input(std::vector<std::vector<float>> *inputs)
+CSomNeuron *CSom::input(std::vector<std::vector<float>> *inputs)
 {
 	return inputOne(&((*inputs)[randomInt(0, (int)inputs->size() - 1)]));
 }
 
-void CSom ::display()
+void CSom::display()
 {
 	// printf("\nDisplaying...\n");
 
@@ -124,7 +124,7 @@ void CSom ::display()
 	}
 }
 
-void CSomNeuron ::update(std::vector<float> *inputs, float inf)
+void CSomNeuron::update(std::vector<float> *inputs, float inf)
 {
 	float change;
 
@@ -136,18 +136,18 @@ void CSomNeuron ::update(std::vector<float> *inputs, float inf)
 	}
 }
 
-CSomNeuron ::~CSomNeuron()
+CSomNeuron::~CSomNeuron()
 {
 	fWeights.clear();
 }
 
-CSomNeuron ::CSomNeuron()
+CSomNeuron::CSomNeuron()
 {
 	m_iId = 0;
 	return;
 }
 
-CSomNeuron ::CSomNeuron(unsigned short iId, int iInp, int iX, int iY)
+CSomNeuron::CSomNeuron(unsigned short iId, int iInp, int iX, int iY)
 {
 	m_iX  = (float)iX;
 	m_iY  = (float)iY;
@@ -157,7 +157,7 @@ CSomNeuron ::CSomNeuron(unsigned short iId, int iInp, int iX, int iY)
 		fWeights.push_back(randomFloat(0, 1));
 }
 
-float CSomNeuron ::distance(std::vector<float> *inputs)
+float CSomNeuron::distance(std::vector<float> *inputs)
 {
 	float dist = 0;
 	float comp;
@@ -172,18 +172,18 @@ float CSomNeuron ::distance(std::vector<float> *inputs)
 	return dist;
 }
 
-std::vector<float> *CSomNeuron ::weights()
+std::vector<float> *CSomNeuron::weights()
 {
 	return &fWeights;
 }
 
-void CSomNeuron ::displayWeights()
+void CSomNeuron::displayWeights()
 {
 	for (unsigned int i = 0; i < fWeights.size(); i++)
 		printf("%0.4f,", fWeights[i]);
 }
 
-float CSomNeuron ::neighbourDistance(CSomNeuron *other)
+float CSomNeuron::neighbourDistance(CSomNeuron *other)
 {
 	float distx = getX() - other->getX();
 	float disty = getY() - other->getY();

@@ -3,7 +3,7 @@
 #include "bot_globals.h"
 #include "bot_weapons.h"
 
-CBotTF2ShootLastEnemyPosition ::CBotTF2ShootLastEnemyPosition(Vector vPosition, edict_t *pEnemy, Vector m_vVelocity)
+CBotTF2ShootLastEnemyPosition::CBotTF2ShootLastEnemyPosition(Vector vPosition, edict_t *pEnemy, Vector m_vVelocity)
 {
 	float len   = m_vVelocity.Length();
 
@@ -16,7 +16,7 @@ CBotTF2ShootLastEnemyPosition ::CBotTF2ShootLastEnemyPosition(Vector vPosition, 
 	m_fTime  = 0;
 }
 
-void CBotTF2ShootLastEnemyPosition ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2ShootLastEnemyPosition::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	CBotWeapon *pWeapon   = pBot->getCurrentWeapon();
 	CBotTF2 *pTF2Bot      = (CBotTF2 *)pBot;
@@ -76,7 +76,7 @@ void CBotTF2ShootLastEnemyPosition ::execute(CBot *pBot, CBotSchedule *pSchedule
 	pBot->setLookAtTask(LOOK_VECTOR);
 }
 
-void CBotTF2ShootLastEnemyPosition ::debugString(char *string)
+void CBotTF2ShootLastEnemyPosition::debugString(char *string)
 {
 	sprintf(string, "CBotTF2ShootLastEnemyPosition\nm_vPosition = (%0.4f,%0.4f,%0.4f)", m_vPosition.x, m_vPosition.y,
 	        m_vPosition.z);

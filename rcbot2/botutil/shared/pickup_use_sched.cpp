@@ -11,7 +11,7 @@ CBotPickupSchedUse::CBotPickupSchedUse(edict_t *pEdict)
 	addTask(new CBotHL2DMUseButton(pEdict));
 }
 
-void CBotPickupSchedUse ::init()
+void CBotPickupSchedUse::init()
 {
 	setID(SCHED_PICKUP);
 }

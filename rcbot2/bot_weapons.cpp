@@ -223,7 +223,7 @@ WeaponsData_t TF2Weaps[] = {
 	{ 0, 0, "\0", 0, 0, 0, 0, 0, 0 } // signal last weapon
 };
 
-bool CBotWeapon ::needToReload(CBot *pBot)
+bool CBotWeapon::needToReload(CBot *pBot)
 {
 	if (m_iClip1)
 		return (*m_iClip1 == 0) && (getAmmo(pBot) > 0);
@@ -232,9 +232,9 @@ bool CBotWeapon ::needToReload(CBot *pBot)
 }
 
 // static init (all weapons in game)
-std::vector<CWeapon *> CWeapons ::m_theWeapons;
+std::vector<CWeapon *> CWeapons::m_theWeapons;
 
-int CBotWeapon ::getAmmo(CBot *pBot, int type)
+int CBotWeapon::getAmmo(CBot *pBot, int type)
 {
 	if (type == AMMO_PRIM)
 		return pBot->getAmmo(m_pWeaponInfo->getAmmoIndex1());
@@ -293,7 +293,7 @@ CBotWeapons::CBotWeapons(CBot *pBot)
 	m_iWeaponsSignature  = 0x0;
 }
 
-edict_t *CWeapons ::findWeapon(edict_t *pPlayer, const char *pszWeaponName)
+edict_t *CWeapons::findWeapon(edict_t *pPlayer, const char *pszWeaponName)
 {
 	register unsigned short int j;
 	CBaseHandle *m_Weapons = CClassInterface::getWeaponList(pPlayer);
@@ -390,7 +390,7 @@ bool CBotWeapons::update(bool bOverrideAllFromEngine)
 	return false;
 }
 /*
-bool CBotWeapons ::update ( bool bOverrideAllFromEngine )
+bool CBotWeapons::update ( bool bOverrideAllFromEngine )
 {
     // create mask of weapons data
     short int i = 0;
@@ -475,8 +475,8 @@ strcmp(pWeapon->GetClassName(),m_BotWeapon_iter->getWeaponInfo()->getWeaponName(
     return false;
 }*/
 
-CBotWeapon *CBotWeapons ::getBestWeapon(edict_t *pEnemy, bool bAllowMelee, bool bAllowMeleeFallback, bool bMeleeOnly,
-                                        bool bExplosivesOnly, bool bIgnorePrimaryMinimum)
+CBotWeapon *CBotWeapons::getBestWeapon(edict_t *pEnemy, bool bAllowMelee, bool bAllowMeleeFallback, bool bMeleeOnly,
+                                       bool bExplosivesOnly, bool bIgnorePrimaryMinimum)
 {
 	CBotWeapon *m_theBestWeapon = nullptr;
 	CBotWeapon *m_FallbackMelee = nullptr;
@@ -611,7 +611,7 @@ CBotWeapon *CBotWeapons::addWeapon(CWeapon *pWeaponInfo, int iId, edict_t *pent,
 	return &m_theWeapons[iId];
 }
 /*
-void CBotWeapons :: addWeapon ( int iId, edict_t *pent, bool bOverrideAll )
+void CBotWeapons::addWeapon ( int iId, edict_t *pent, bool bOverrideAll )
 {
 register int i = 0;
 Vector origin;
@@ -657,7 +657,7 @@ return;
 }
 
 }*/
-CBotWeapon *CBotWeapons ::getWeapon(CWeapon *pWeapon)
+CBotWeapon *CBotWeapons::getWeapon(CWeapon *pWeapon)
 {
 	for (register unsigned int i = 0; i < MAX_WEAPONS; i++)
 		if (m_theWeapons[i].getWeaponInfo() == pWeapon)
@@ -666,7 +666,7 @@ CBotWeapon *CBotWeapons ::getWeapon(CWeapon *pWeapon)
 	return nullptr;
 }
 
-CBotWeapon *CBotWeapons ::getCurrentWeaponInSlot(int iSlot)
+CBotWeapon *CBotWeapons::getCurrentWeaponInSlot(int iSlot)
 {
 	for (register unsigned int i = 0; i < MAX_WEAPONS; i++)
 		if (m_theWeapons[i].hasWeapon() && m_theWeapons[i].getWeaponInfo()
@@ -794,7 +794,7 @@ void CBotWeapons::clearWeapons()
 }
 
 // returns weapon with highest priority even if no ammo
-CBotWeapon *CBotWeapons ::getPrimaryWeapon()
+CBotWeapon *CBotWeapons::getPrimaryWeapon()
 {
 	CBotWeapon *pBest = nullptr;
 
@@ -846,7 +846,7 @@ CBotWeapon *CBotWeapons::getActiveWeapon(const char *szWeaponName, edict_t *pWea
 	return toReturn;
 }
 /*
-bool CBotWeaponGravGun ::outOfAmmo (CBot *pBot)
+bool CBotWeaponGravGun::outOfAmmo (CBot *pBot)
 {
     if ( m_pEnt )
         (return CClassInterface::gravityGunObject(m_pEnt)==nullptr);
@@ -854,7 +854,7 @@ bool CBotWeaponGravGun ::outOfAmmo (CBot *pBot)
     return true;
 }
 */
-bool CBotWeapon ::outOfAmmo(CBot *pBot)
+bool CBotWeapon::outOfAmmo(CBot *pBot)
 {
 	if (m_pWeaponInfo && m_pWeaponInfo->isGravGun() && m_pEnt)
 		return (CClassInterface::gravityGunObject(m_pEnt) == nullptr);
@@ -867,7 +867,7 @@ bool CBotWeapon ::outOfAmmo(CBot *pBot)
 	return getAmmo(pBot) == 0;
 }
 /*
-bool CBotWeapon :: needToReload(CBot *pBot)
+bool CBotWeapon::needToReload(CBot *pBot)
 {
     return getAmmo(pBot)==0;
 }*/
@@ -955,34 +955,34 @@ class CGetWeapShortName : public IWeaponFunc
 	CWeapon *m_pFound;
 };
 
-CWeapon *CWeapons ::getWeapon(const int iId)
+CWeapon *CWeapons::getWeapon(const int iId)
 {
 	CGetWeapID pFunc = CGetWeapID(iId);
 	eachWeapon(&pFunc);
 	return pFunc.get();
 }
 
-CWeapon *CWeapons ::getWeapon(const char *szWeapon)
+CWeapon *CWeapons::getWeapon(const char *szWeapon)
 {
 	CGetWeapCName pFunc = CGetWeapCName(szWeapon);
 	eachWeapon(&pFunc);
 	return pFunc.get();
 }
 
-CWeapon *CWeapons ::getWeaponByShortName(const char *szWeapon)
+CWeapon *CWeapons::getWeaponByShortName(const char *szWeapon)
 {
 	CGetWeapShortName pFunc = CGetWeapShortName(szWeapon);
 	eachWeapon(&pFunc);
 	return pFunc.get();
 }
 
-void CWeapons ::eachWeapon(IWeaponFunc *pFunc)
+void CWeapons::eachWeapon(IWeaponFunc *pFunc)
 {
 	for (unsigned int i = 0; i < m_theWeapons.size(); i++)
 		pFunc->execute(m_theWeapons[i]);
 }
 
-void CWeapons ::freeMemory()
+void CWeapons::freeMemory()
 {
 	for (unsigned int i = 0; i < m_theWeapons.size(); i++)
 	{

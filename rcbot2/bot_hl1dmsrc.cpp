@@ -36,27 +36,27 @@
 
 #include "bot_mtrand.h"
 
-void CHL1DMSrcBot ::init()
+void CHL1DMSrcBot::init()
 {
 	CBot::init();
 }
 
-void CHL1DMSrcBot ::setup()
+void CHL1DMSrcBot::setup()
 {
 	CBot::setup();
 }
 
-bool CHL1DMSrcBot ::startGame()
+bool CHL1DMSrcBot::startGame()
 {
 	return true;
 }
 
-void CHL1DMSrcBot ::killed(edict_t *pVictim)
+void CHL1DMSrcBot::killed(edict_t *pVictim)
 {
 	return;
 }
 
-void CHL1DMSrcBot ::died(edict_t *pKiller)
+void CHL1DMSrcBot::died(edict_t *pKiller)
 {
 	spawnInit();
 
@@ -64,12 +64,12 @@ void CHL1DMSrcBot ::died(edict_t *pKiller)
 		m_pButtons->attack();
 }
 
-void CHL1DMSrcBot ::spawnInit()
+void CHL1DMSrcBot::spawnInit()
 {
 	CBot::spawnInit();
 }
 
-bool CHL1DMSrcBot ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
+bool CHL1DMSrcBot::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 {
 	if (!pEdict)
 		return false;
@@ -108,7 +108,7 @@ bool CHL1DMSrcBot ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 	return true;
 }
 
-void CHL1DMSrcBot ::modThink()
+void CHL1DMSrcBot::modThink()
 {
 	// find weapons and neat stuff
 }

@@ -2,12 +2,12 @@
 
 #include "bot_weapons.h"
 
-CAttackEntityTask ::CAttackEntityTask(edict_t *pEdict)
+CAttackEntityTask::CAttackEntityTask(edict_t *pEdict)
 {
 	m_pEdict = pEdict;
 }
 
-void CAttackEntityTask ::debugString(char *string)
+void CAttackEntityTask::debugString(char *string)
 {
 	int id = -1;
 
@@ -17,13 +17,13 @@ void CAttackEntityTask ::debugString(char *string)
 	sprintf(string, "CAttackEntityTask (%d)", id);
 }
 
-void CAttackEntityTask ::init()
+void CAttackEntityTask::init()
 {
 	// setFailInterrupt ( CONDITION_ENEMY_OBSCURED );
 	// setCompleteInterrupt ( CONDITION_ENEMY_DEAD );
 }
 
-void CAttackEntityTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CAttackEntityTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	CBotWeapon *pWeapon;
 

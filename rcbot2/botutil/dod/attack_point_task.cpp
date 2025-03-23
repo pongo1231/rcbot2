@@ -3,7 +3,7 @@
 #include "bot_mods.h"
 #include "bot_navigator.h"
 
-CBotDODAttackPoint ::CBotDODAttackPoint(int iFlagID, Vector vOrigin, float fRadius)
+CBotDODAttackPoint::CBotDODAttackPoint(int iFlagID, Vector vOrigin, float fRadius)
 {
 	m_vOrigin     = vOrigin;
 	m_fAttackTime = 0;
@@ -12,7 +12,7 @@ CBotDODAttackPoint ::CBotDODAttackPoint(int iFlagID, Vector vOrigin, float fRadi
 	m_fRadius     = fRadius;
 }
 
-void CBotDODAttackPoint ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotDODAttackPoint::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	static int iTeam;
 
@@ -91,7 +91,7 @@ void CBotDODAttackPoint ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CBotDODAttackPoint ::debugString(char *string)
+void CBotDODAttackPoint::debugString(char *string)
 {
 	sprintf(string, "CBotDODAttackPoint\nm_iFlagID = %d\n m_vOrigin = (%0.1f,%0.1f,%0.1f,radius = %0.1f)", m_iFlagID,
 	        m_vOrigin.x, m_vOrigin.y, m_vOrigin.z, m_fRadius);

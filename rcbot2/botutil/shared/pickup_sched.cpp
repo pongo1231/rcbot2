@@ -9,7 +9,7 @@ CBotPickupSched::CBotPickupSched(edict_t *pEdict)
 	addTask(new CMoveToTask(pEdict));
 }
 
-void CBotPickupSched ::init()
+void CBotPickupSched::init()
 {
 	setID(SCHED_PICKUP);
 }

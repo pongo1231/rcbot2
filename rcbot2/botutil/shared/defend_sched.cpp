@@ -4,7 +4,7 @@
 #include "botutil/shared/defend_task.h"
 #include "botutil/shared/find_path_task.h"
 
-CBotDefendSched ::CBotDefendSched(Vector vOrigin, float fMaxTime)
+CBotDefendSched::CBotDefendSched(Vector vOrigin, float fMaxTime)
 {
 	addTask(new CFindPathTask(vOrigin));
 	addTask(new CBotDefendTask(vOrigin, fMaxTime));
@@ -21,7 +21,7 @@ CBotDefendSched::CBotDefendSched(int iWaypointID, float fMaxTime)
 	                           pWaypoint->getFlags()));
 }
 
-void CBotDefendSched ::init()
+void CBotDefendSched::init()
 {
 	setID(SCHED_DEFEND);
 }

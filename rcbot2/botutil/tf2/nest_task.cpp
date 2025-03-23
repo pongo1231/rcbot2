@@ -3,7 +3,7 @@
 #include "bot_fortress.h"
 #include "bot_mtrand.h"
 
-void CBotNest ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotNest::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	CBotTF2 *pBotTF2 = (CBotTF2 *)pBot;
 

@@ -5,14 +5,14 @@
 #include "bot_mtrand.h"
 #include "botutil/css/tasks.h"
 
-void CCSSBot ::init()
+void CCSSBot::init()
 {
 	CBot::init(); // require this
 
 	// initialize stuff for counter-strike source bot
 }
 
-void CCSSBot ::setup()
+void CCSSBot::setup()
 {
 	CBot::setup(); // require this
 
@@ -23,14 +23,14 @@ void CCSSBot ::setup()
 	engine->SetFakeClientConVarValue(m_pEdict, "cl_autohelp", "0");
 }
 
-bool CCSSBot ::isAlive()
+bool CCSSBot::isAlive()
 {
 	if (!CBot::isAlive())
 		return false;
 	return (getOrigin() != Vector(0, 0, 0));
 }
 
-bool CCSSBot ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
+bool CCSSBot::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 {
 	if (ENTINDEX(pEdict) > CBotGlobals::maxClients())
 		return false;
@@ -52,7 +52,7 @@ bool CCSSBot ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 	return (p->GetTeamIndex() != getTeam());
 }
 
-bool CCSSBot ::startGame()
+bool CCSSBot::startGame()
 {
 	// do whatever is necessary here to join the game...
 	IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(m_pEdict);
@@ -63,12 +63,12 @@ bool CCSSBot ::startGame()
 	return (pInfo->GetTeamIndex() != 0);
 }
 
-void CCSSBot ::died()
+void CCSSBot::died()
 {
 	spawnInit();
 }
 
-void CCSSBot ::spawnInit()
+void CCSSBot::spawnInit()
 {
 	CBot::spawnInit();
 

@@ -6,7 +6,7 @@
 #include "bot_mtrand.h"
 #include "bot_weapons.h"
 
-CThrowGrenadeTask ::CThrowGrenadeTask(CBotWeapon *pWeapon, int ammo, Vector vLoc)
+CThrowGrenadeTask::CThrowGrenadeTask(CBotWeapon *pWeapon, int ammo, Vector vLoc)
 {
 	m_pWeapon         = pWeapon;
 	m_fTime           = 0;
@@ -16,7 +16,7 @@ CThrowGrenadeTask ::CThrowGrenadeTask(CBotWeapon *pWeapon, int ammo, Vector vLoc
 	m_iAmmo           = ammo;
 }
 
-void CThrowGrenadeTask ::init()
+void CThrowGrenadeTask::init()
 {
 	m_fTime = 0;
 }
@@ -27,7 +27,7 @@ void CThrowGrenadeTask::debugString(char *string)
 	        m_fTime);
 }
 
-void CThrowGrenadeTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CThrowGrenadeTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	if (m_fTime == 0)
 	{

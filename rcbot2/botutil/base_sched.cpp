@@ -87,7 +87,7 @@ const char *szSchedules[SCHED_MAX + 1] = { "SCHED_NONE",
 	                                       "SCHED_TAUNT",
 	                                       "SCHED_MAX" };
 
-void CBotSchedule ::execute(CBot *pBot)
+void CBotSchedule::execute(CBot *pBot)
 {
 	// current task
 	static CBotTask *pTask;
@@ -140,7 +140,7 @@ void CBotSchedule ::execute(CBot *pBot)
 		removeTop();
 }
 
-void CBotSchedule ::addTask(CBotTask *pTask)
+void CBotSchedule::addTask(CBotTask *pTask)
 {
 	// initialize
 	pTask->init();
@@ -148,26 +148,26 @@ void CBotSchedule ::addTask(CBotTask *pTask)
 	m_Tasks.push_back(pTask);
 }
 
-void CBotSchedule ::removeTop()
+void CBotSchedule::removeTop()
 {
 	CBotTask *pTask = m_Tasks.front();
 	m_Tasks.pop_front();
 	delete pTask;
 }
 
-const char *CBotSchedule ::getIDString()
+const char *CBotSchedule::getIDString()
 {
 	return szSchedules[m_iSchedId];
 }
 
 /////////////////////
 
-CBotSchedule ::CBotSchedule()
+CBotSchedule::CBotSchedule()
 {
 	_init();
 }
 
-void CBotSchedule ::_init()
+void CBotSchedule::_init()
 {
 	m_bFailed  = false;
 	m_bitsPass = 0;
@@ -182,22 +182,22 @@ void CBotSchedule ::_init()
 	init();
 }
 
-void CBotSchedule ::passInt(int i)
+void CBotSchedule::passInt(int i)
 {
 	iPass = i;
 	m_bitsPass |= BITS_SCHED_PASS_INT;
 }
-void CBotSchedule ::passFloat(float f)
+void CBotSchedule::passFloat(float f)
 {
 	fPass = f;
 	m_bitsPass |= BITS_SCHED_PASS_FLOAT;
 }
-void CBotSchedule ::passVector(Vector v)
+void CBotSchedule::passVector(Vector v)
 {
 	vPass = v;
 	m_bitsPass |= BITS_SCHED_PASS_VECTOR;
 }
-void CBotSchedule ::passEdict(edict_t *p)
+void CBotSchedule::passEdict(edict_t *p)
 {
 	pPass = p;
 	m_bitsPass |= BITS_SCHED_PASS_EDICT;

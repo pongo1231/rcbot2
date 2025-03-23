@@ -2,7 +2,7 @@
 
 #include "bot_globals.h"
 
-CCrouchHideTask ::CCrouchHideTask(edict_t *pHideFrom)
+CCrouchHideTask::CCrouchHideTask(edict_t *pHideFrom)
 {
 	m_pHideFrom      = pHideFrom;
 	m_vLastSeeVector = CBotGlobals::entityOrigin(pHideFrom);
@@ -11,19 +11,19 @@ CCrouchHideTask ::CCrouchHideTask(edict_t *pHideFrom)
 	m_fHideTime      = 0.0f;
 }
 
-void CCrouchHideTask ::init()
+void CCrouchHideTask::init()
 {
 	m_bCrouching  = true; // duck
 	m_fChangeTime = 0.0f;
 	m_fHideTime   = 0.0f;
 }
 
-void CCrouchHideTask ::debugString(char *string)
+void CCrouchHideTask::debugString(char *string)
 {
 	sprintf(string, "CCrouchHideTask\nm_pHideFrom =(%s)", engine->GetPlayerNetworkIDString(m_pHideFrom));
 }
 
-void CCrouchHideTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CCrouchHideTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	pBot->wantToListen(false);
 

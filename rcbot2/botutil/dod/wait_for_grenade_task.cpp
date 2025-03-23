@@ -3,7 +3,7 @@
 #include "bot_dod_bot.h"
 #include "bot_globals.h"
 
-void CDODWaitForGrenadeTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CDODWaitForGrenadeTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 
 	if (m_pGrenade.get() == nullptr)
@@ -28,7 +28,7 @@ void CDODWaitForGrenadeTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CDODWaitForGrenadeTask ::debugString(char *string)
+void CDODWaitForGrenadeTask::debugString(char *string)
 {
 	sprintf(string, "CDODWaitForGrenadeTask");
 }

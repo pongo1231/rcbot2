@@ -95,7 +95,7 @@ void CTFObjectiveResource::updatePoints()
 	CTeamFortress2Mod::m_ObjectiveResource.updateValidWaypointAreas();
 }
 // INPUT = Waypoint Area
-bool CTFObjectiveResource ::isWaypointAreaValid(int wptarea, int waypointflags)
+bool CTFObjectiveResource::isWaypointAreaValid(int wptarea, int waypointflags)
 {
 	//	CWaypoint *pWaypoint;
 
@@ -256,7 +256,7 @@ void CTeamRoundTimer::reset()
 	if (m_Resource.get() != nullptr)
 		CClassInterface::setupCTeamRoundTimer(this);
 }
-bool CTeamControlPointRound ::isPointInRound(edict_t *point_pent)
+bool CTeamControlPointRound::isPointInRound(edict_t *point_pent)
 {
 	edict_t *pPoint;
 	for (int i = 0; i < m_ControlPoints.Count(); i++)
@@ -379,7 +379,7 @@ void CTFObjectiveResource::setup()
 	m_bInitialised = true;
 }
 
-int CTFObjectiveResource ::getControlPointArea(edict_t *pPoint)
+int CTFObjectiveResource::getControlPointArea(edict_t *pPoint)
 {
 	for (int j = 0; j < *m_iNumControlPoints; j++)
 		if (m_pControlPoints[j] == pPoint)
@@ -444,7 +444,7 @@ int CTFObjectiveResource::NearestArea(Vector vOrigin)
 //MAP_CLASS(CTeamControlPoint,(((unsigned long)pent) + offset),knownoffset);
 }*/
 
-bool CTFObjectiveResource ::updateDefendPoints(int team)
+bool CTFObjectiveResource::updateDefendPoints(int team)
 {
 	/*int other = (team==2)?3:2;
 
@@ -759,7 +759,7 @@ bool CTFObjectiveResource ::updateDefendPoints(int team)
 	return false;
 }
 
-void CTFObjectiveResource ::think()
+void CTFObjectiveResource::think()
 {
 	if (m_bInitialised && (m_fNextCheckMonitoredPoint < engine->Time()))
 	{
@@ -798,7 +798,7 @@ void CTFObjectiveResource ::think()
 }
 
 // return true if bots should change attack point
-bool CTFObjectiveResource ::updateAttackPoints(int team)
+bool CTFObjectiveResource::updateAttackPoints(int team)
 {
 	int prev;
 	int signature                  = 0;
@@ -1023,12 +1023,12 @@ bool CTFObjectiveResource ::updateAttackPoints(int team)
 	return false;
 }
 
-void CTFObjectiveResource ::updateCaptureTime(int index)
+void CTFObjectiveResource::updateCaptureTime(int index)
 {
 	m_fLastCaptureTime[index] = engine->Time();
 }
 
-float CTFObjectiveResource ::getLastCaptureTime(int index)
+float CTFObjectiveResource::getLastCaptureTime(int index)
 {
 	return m_fLastCaptureTime[index];
 }

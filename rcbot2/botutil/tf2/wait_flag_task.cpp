@@ -2,14 +2,14 @@
 
 #include "bot_fortress.h"
 
-CBotTF2WaitFlagTask ::CBotTF2WaitFlagTask(Vector vOrigin, bool bFind)
+CBotTF2WaitFlagTask::CBotTF2WaitFlagTask(Vector vOrigin, bool bFind)
 {
 	m_vOrigin   = vOrigin;
 	m_fWaitTime = 0;
 	m_bFind     = bFind;
 }
 
-void CBotTF2WaitFlagTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2WaitFlagTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	if (!m_fWaitTime)
 	{
@@ -41,7 +41,7 @@ void CBotTF2WaitFlagTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CBotTF2WaitFlagTask ::debugString(char *string)
+void CBotTF2WaitFlagTask::debugString(char *string)
 {
 	sprintf(string, "CBotTF2WaitFlagTask\nm_vOrigin = (%0.4f,%0.4f,%0.4f)", m_vOrigin.x, m_vOrigin.y, m_vOrigin.z);
 }

@@ -245,7 +245,7 @@ void CBotSquad::Init()
 }
 
 // Change a leader of a squad, this can cause lots of effects
-void CBotSquads ::ChangeLeader(CBotSquad *pSquad)
+void CBotSquads::ChangeLeader(CBotSquad *pSquad)
 {
 	// first change leader to next squad member
 	pSquad->ChangeLeader();
@@ -283,7 +283,7 @@ void CBotSquad::ChangeLeader(void)
 	}
 }
 
-Vector CBotSquad ::GetFormationVector(edict_t *pEdict)
+Vector CBotSquad::GetFormationVector(edict_t *pEdict)
 {
 	Vector vLeaderOrigin;
 	Vector vBase;
@@ -407,7 +407,7 @@ size_t CBotSquad::numMembers()
 	return m_SquadMembers.size();
 }
 
-void CBotSquad ::ReturnAllToFormation(void)
+void CBotSquad::ReturnAllToFormation(void)
 {
 	for (edict_t *member : m_SquadMembers)
 	{

@@ -4,7 +4,7 @@
 #include "bot_globals.h"
 #include "bot_hldm_bot.h"
 
-void CBotHL2DMUseCharger ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotHL2DMUseCharger::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	static Vector vOrigin;
 

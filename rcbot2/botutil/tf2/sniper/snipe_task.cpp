@@ -6,7 +6,7 @@
 #include "bot_waypoint_visibility.h"
 #include "bot_weapons.h"
 
-CBotTF2Snipe ::CBotTF2Snipe(Vector vOrigin, int iWpt)
+CBotTF2Snipe::CBotTF2Snipe(Vector vOrigin, int iWpt)
 {
 	CWaypoint *pWaypoint = CWaypoints::getWaypoint(iWpt);
 	m_iSnipeWaypoint     = iWpt;
@@ -22,7 +22,7 @@ CBotTF2Snipe ::CBotTF2Snipe(Vector vOrigin, int iWpt)
 	m_iArea      = pWaypoint->getArea();
 }
 
-void CBotTF2Snipe ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2Snipe::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	CBotWeapon *pBotWeapon;
 	CWeapon *pWeapon;

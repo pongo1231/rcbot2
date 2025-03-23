@@ -3,13 +3,13 @@
 #include "bot_globals.h"
 #include "bot_weapons.h"
 
-CBotBackstab ::CBotBackstab(edict_t *_pEnemy)
+CBotBackstab::CBotBackstab(edict_t *_pEnemy)
 {
 	m_fTime = 0.0f;
 	pEnemy  = _pEnemy;
 }
 
-void CBotBackstab ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotBackstab::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	Vector vrear;
 	Vector vangles;

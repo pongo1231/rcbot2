@@ -3,7 +3,7 @@
 #include "bot_globals.h"
 #include "bot_mods.h"
 
-CBotRemoveSapper ::CBotRemoveSapper(edict_t *pBuilding, eEngiBuild id)
+CBotRemoveSapper::CBotRemoveSapper(edict_t *pBuilding, eEngiBuild id)
 {
 	m_fTime     = 0.0f;
 	m_pBuilding = MyEHandle(pBuilding);
@@ -11,7 +11,7 @@ CBotRemoveSapper ::CBotRemoveSapper(edict_t *pBuilding, eEngiBuild id)
 	m_fHealTime = 0.0f;
 }
 
-void CBotRemoveSapper ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotRemoveSapper::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	// int i = 0;
 	edict_t *pBuilding;

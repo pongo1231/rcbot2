@@ -2,7 +2,7 @@
 
 #include "bot_globals.h"
 
-CBotTF2PushPayloadBombTask ::CBotTF2PushPayloadBombTask(edict_t *pPayloadBomb)
+CBotTF2PushPayloadBombTask::CBotTF2PushPayloadBombTask(edict_t *pPayloadBomb)
 {
 	m_pPayloadBomb  = pPayloadBomb;
 	m_fPushTime     = 0;
@@ -10,7 +10,7 @@ CBotTF2PushPayloadBombTask ::CBotTF2PushPayloadBombTask(edict_t *pPayloadBomb)
 	m_vRandomOffset = Vector(0, 0, 0);
 }
 
-void CBotTF2PushPayloadBombTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2PushPayloadBombTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	pBot->wantToInvestigateSound(false);
 
@@ -49,7 +49,7 @@ void CBotTF2PushPayloadBombTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CBotTF2PushPayloadBombTask ::debugString(char *string)
+void CBotTF2PushPayloadBombTask::debugString(char *string)
 {
 	sprintf(string, "CBotTF2PushPayloadBombTask (%0.1f,%0.1f,%0.1f)", m_vOrigin.x, m_vOrigin.y, m_vOrigin.z);
 }

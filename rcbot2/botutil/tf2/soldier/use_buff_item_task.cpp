@@ -4,7 +4,7 @@
 #include "bot_mtrand.h"
 #include "bot_weapons.h"
 
-CBotUseBuffItem ::CBotUseBuffItem()
+CBotUseBuffItem::CBotUseBuffItem()
 {
 	m_fTime = 0.0f;
 }

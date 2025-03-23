@@ -2,12 +2,12 @@
 
 #include "bot_globals.h"
 
-void CDODDropAmmoTask ::debugString(char *string)
+void CDODDropAmmoTask::debugString(char *string)
 {
 	sprintf(string, "CDODDropAmmoTask");
 }
 
-void CDODDropAmmoTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CDODDropAmmoTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	Vector vOrigin = CBotGlobals::entityOrigin(m_pPlayer.get());
 

@@ -37,10 +37,10 @@
 #include "bot_visibles.h"
 #include "logging.h"
 
-std::vector<CBotProfile *> CBotProfiles ::m_Profiles;
-CBotProfile *CBotProfiles ::m_pDefaultProfile = nullptr;
+std::vector<CBotProfile *> CBotProfiles::m_Profiles;
+CBotProfile *CBotProfiles::m_pDefaultProfile = nullptr;
 
-CBotProfile ::CBotProfile(CBotProfile &other)
+CBotProfile::CBotProfile(CBotProfile &other)
 {
 	*this     = other;
 
@@ -48,8 +48,8 @@ CBotProfile ::CBotProfile(CBotProfile &other)
 	m_szModel = CStrings::getString(other.m_szModel);
 }
 
-CBotProfile ::CBotProfile(const char *szName, const char *szModel, int iTeam, int iVisionTicks, int iPathTicks,
-                          int iVisionTicksClients, int iSensitivity, float fBraveness, float fAimSkill, int iClass)
+CBotProfile::CBotProfile(const char *szName, const char *szModel, int iTeam, int iVisionTicks, int iPathTicks,
+                         int iVisionTicksClients, int iSensitivity, float fBraveness, float fAimSkill, int iClass)
 {
 	m_iVisionTicksClients = iVisionTicksClients;
 	m_iSensitivity        = iSensitivity;
@@ -63,7 +63,7 @@ CBotProfile ::CBotProfile(const char *szName, const char *szModel, int iTeam, in
 	m_iClass              = iClass;
 }
 
-void CBotProfiles ::deleteProfiles()
+void CBotProfiles::deleteProfiles()
 {
 	for (unsigned int i = 0; i < m_Profiles.size(); i++)
 	{
@@ -78,7 +78,7 @@ void CBotProfiles ::deleteProfiles()
 }
 
 // find profiles and setup list
-void CBotProfiles ::setupProfiles()
+void CBotProfiles::setupProfiles()
 {
 	unsigned int iId;
 	bool bDone;
@@ -162,7 +162,7 @@ void CBotProfiles ::setupProfiles()
 	}
 }
 
-CBotProfile *CBotProfiles ::getDefaultProfile()
+CBotProfile *CBotProfiles::getDefaultProfile()
 {
 	if (m_pDefaultProfile == nullptr)
 		logger->Log(LogLevel::FATAL,
@@ -172,7 +172,7 @@ CBotProfile *CBotProfiles ::getDefaultProfile()
 }
 
 // return a profile unused by a bot
-CBotProfile *CBotProfiles ::getRandomFreeProfile()
+CBotProfile *CBotProfiles::getRandomFreeProfile()
 {
 	unsigned int i;
 	std::vector<CBotProfile *> freeProfiles;

@@ -4,7 +4,7 @@
 #include "botutil/shared/find_path_task.h"
 #include "botutil/tf2/spy/backstab_task.h"
 
-CBotBackstabSched ::CBotBackstabSched(edict_t *pEnemy)
+CBotBackstabSched::CBotBackstabSched(edict_t *pEnemy)
 {
 	Vector vrear;
 	Vector vangles;
@@ -16,7 +16,7 @@ CBotBackstabSched ::CBotBackstabSched(edict_t *pEnemy)
 	addTask(new CBotBackstab(pEnemy));
 }
 
-void CBotBackstabSched ::init()
+void CBotBackstabSched::init()
 {
 	setID(SCHED_BACKSTAB);
 }

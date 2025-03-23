@@ -5,14 +5,14 @@
 #include "botutil/shared/find_last_enemy_task.h"
 #include "botutil/shared/find_path_task.h"
 
-CBotFollowLastEnemy ::CBotFollowLastEnemy(CBot *pBot, edict_t *pEnemy, Vector vLastSee)
+CBotFollowLastEnemy::CBotFollowLastEnemy(CBot *pBot, edict_t *pEnemy, Vector vLastSee)
 {
 	Vector vVelocity         = Vector(0, 0, 0);
 	CClient *pClient         = CClients::get(pEnemy);
 
 	CFindPathTask *pFindPath = new CFindPathTask(vLastSee, LOOK_LAST_ENEMY);
 
-	if (CClassInterface ::getVelocity(pEnemy, &vVelocity))
+	if (CClassInterface::getVelocity(pEnemy, &vVelocity))
 	{
 		if (pClient && (vVelocity == Vector(0, 0, 0)))
 			vVelocity = pClient->getVelocity();
@@ -38,7 +38,7 @@ CBotFollowLastEnemy ::CBotFollowLastEnemy(CBot *pBot, edict_t *pEnemy, Vector vL
 	pFindPath->setNoInterruptions();
 }
 
-void CBotFollowLastEnemy ::init()
+void CBotFollowLastEnemy::init()
 {
 	setID(SCHED_FOLLOW_LAST_ENEMY);
 }

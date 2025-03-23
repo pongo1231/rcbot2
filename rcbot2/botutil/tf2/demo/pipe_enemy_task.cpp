@@ -7,7 +7,7 @@
 
 #include <in_buttons.h>
 
-CBotTF2DemomanPipeEnemy ::CBotTF2DemomanPipeEnemy(CBotWeapon *pPipeLauncher, Vector vEnemy, edict_t *pEnemy)
+CBotTF2DemomanPipeEnemy::CBotTF2DemomanPipeEnemy(CBotWeapon *pPipeLauncher, Vector vEnemy, edict_t *pEnemy)
 {
 	m_vEnemy          = vEnemy;
 	m_pEnemy          = MyEHandle(pEnemy);
@@ -18,7 +18,7 @@ CBotTF2DemomanPipeEnemy ::CBotTF2DemomanPipeEnemy(CBotWeapon *pPipeLauncher, Vec
 	m_fHeldAttackTime = 0.0f;
 }
 
-void CBotTF2DemomanPipeEnemy ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2DemomanPipeEnemy::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	if (m_pEnemy.get() == nullptr)
 	{

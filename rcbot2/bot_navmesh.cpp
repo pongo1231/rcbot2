@@ -34,40 +34,40 @@
 
 // #include "nav_mesh.h"
 
-bool CNavMeshNavigator ::workRoute(Vector vFrom, Vector vTo, bool *bFail, bool bRestart, bool bNoInterruptions,
-                                   int iGoalId, int iConditions, int iDangerId)
+bool CNavMeshNavigator::workRoute(Vector vFrom, Vector vTo, bool *bFail, bool bRestart, bool bNoInterruptions,
+                                  int iGoalId, int iConditions, int iDangerId)
 {
 	return true;
 }
 
-Vector CNavMeshNavigator ::getNextPoint()
+Vector CNavMeshNavigator::getNextPoint()
 {
 	return Vector(0, 0, 0);
 }
 
-void CNavMeshNavigator ::updatePosition()
+void CNavMeshNavigator::updatePosition()
 {
 }
 
-void CNavMeshNavigator ::freeMapMemory()
+void CNavMeshNavigator::freeMapMemory()
 {
 }
 
-void CNavMeshNavigator ::freeAllMemory()
+void CNavMeshNavigator::freeAllMemory()
 {
 }
 
-bool CNavMeshNavigator ::routeFound()
-{
-	return false;
-}
-
-bool CNavMeshNavigator ::hasNextPoint()
+bool CNavMeshNavigator::routeFound()
 {
 	return false;
 }
 
-void CNavMeshNavigator ::init()
+bool CNavMeshNavigator::hasNextPoint()
+{
+	return false;
+}
+
+void CNavMeshNavigator::init()
 {
 	// m_theNavMesh->Reset();
 }

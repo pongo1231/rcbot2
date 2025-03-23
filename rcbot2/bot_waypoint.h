@@ -153,7 +153,7 @@ public:
 class CWaypointTypes
 {
   public:
-	// if you're adding a new waypoint type, don't forget to update CWaypointTypes :: setup()
+	// if you're adding a new waypoint type, don't forget to update CWaypointTypes ::setup()
 	static const int W_FL_NONE           = 0;
 	static const int W_FL_JUMP           = (1 << 0);
 	static const int W_FL_CROUCH         = (1 << 1);

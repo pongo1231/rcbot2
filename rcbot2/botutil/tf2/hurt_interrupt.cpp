@@ -1,6 +1,6 @@
 #include "hurt_interrupt.h"
 
-CBotTF2HurtInterrupt ::CBotTF2HurtInterrupt(CBot *pBot)
+CBotTF2HurtInterrupt::CBotTF2HurtInterrupt(CBot *pBot)
 {
 	m_iHealth = pBot->getHealthPercent();
 }

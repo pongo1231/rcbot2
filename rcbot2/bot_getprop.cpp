@@ -6,8 +6,8 @@
 #include "engine_wrappers.h"
 #include "server_class.h"
 
-CClassInterfaceValue CClassInterface ::g_GetProps[GET_PROPDATA_MAX];
-bool CClassInterfaceValue ::m_berror = false;
+CClassInterfaceValue CClassInterface::g_GetProps[GET_PROPDATA_MAX];
+bool CClassInterfaceValue::m_berror = false;
 
 extern IServerGameDLL *servergamedll;
 
@@ -201,14 +201,14 @@ bool UTIL_FindSendPropInfo(ServerClass *pInfo, const char *szType, unsigned int 
 	return true;
 }
 
-CBaseHandle *CClassInterfaceValue ::getEntityHandle(edict_t *edict)
+CBaseHandle *CClassInterfaceValue::getEntityHandle(edict_t *edict)
 {
 	getData(edict);
 
 	return (CBaseHandle *)m_data;
 }
 
-edict_t *CClassInterfaceValue ::getEntity(edict_t *edict)
+edict_t *CClassInterfaceValue::getEntity(edict_t *edict)
 {
 	static CBaseHandle *hndl;
 
@@ -227,7 +227,7 @@ edict_t *CClassInterfaceValue ::getEntity(edict_t *edict)
 	return nullptr;
 }
 
-void CClassInterfaceValue ::init(char *key, char *value, unsigned int preoffset)
+void CClassInterfaceValue::init(char *key, char *value, unsigned int preoffset)
 {
 	m_class     = CStrings::getString(key);
 	m_value     = CStrings::getString(value);
@@ -266,7 +266,7 @@ void UTIL_FindPropPrint(const char *prop_name)
 	}
 }
 
-void CClassInterfaceValue ::findOffset()
+void CClassInterfaceValue::findOffset()
 {
 	// if (!m_offset)
 	//{
@@ -462,7 +462,7 @@ void CClassInterface::init()
 	}
 }
 
-void CClassInterface ::setupCTeamRoundTimer(CTeamRoundTimer *pTimer)
+void CClassInterface::setupCTeamRoundTimer(CTeamRoundTimer *pTimer)
 {
 	/*
 	    GETPROP_TF2_RNDTM_m_flTimerEndTime,
@@ -476,7 +476,7 @@ void CClassInterface ::setupCTeamRoundTimer(CTeamRoundTimer *pTimer)
 
 // #define GETTF2OBJ_INT(x) pResource->x = g_GetProps[GETPROP_TF2_OBJTR_#x].getIntPointer(edict);
 
-bool CClassInterface ::getTF2ObjectiveResource(CTFObjectiveResource *pResource)
+bool CClassInterface::getTF2ObjectiveResource(CTFObjectiveResource *pResource)
 {
 	edict_t *edict                 = pResource->m_ObjectiveResource.get();
 
@@ -509,7 +509,7 @@ bool CClassInterface ::getTF2ObjectiveResource(CTFObjectiveResource *pResource)
 	return true;
 }
 
-void CClassInterfaceValue ::getData(void *edict, bool bIsEdict)
+void CClassInterfaceValue::getData(void *edict, bool bIsEdict)
 {
 	static IServerUnknown *pUnknown;
 	static CBaseEntity *pEntity;

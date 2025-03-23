@@ -5,13 +5,13 @@
 
 #include <in_buttons.h>
 
-CBotTaskEngiPickupBuilding ::CBotTaskEngiPickupBuilding(edict_t *pBuilding)
+CBotTaskEngiPickupBuilding::CBotTaskEngiPickupBuilding(edict_t *pBuilding)
 {
 	m_pBuilding = pBuilding;
 	m_fTime     = 0.0f;
 }
 // move building / move sentry / move disp / move tele
-void CBotTaskEngiPickupBuilding ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTaskEngiPickupBuilding::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	CBotWeapon *pWeapon = pBot->getCurrentWeapon();
 
@@ -64,7 +64,7 @@ void CBotTaskEngiPickupBuilding ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	else
 		pBot->setMoveTo((CBotGlobals::entityOrigin(m_pBuilding)));
 }
-void CBotTaskEngiPickupBuilding ::debugString(char *string)
+void CBotTaskEngiPickupBuilding::debugString(char *string)
 {
 	sprintf(string, "CBotTaskEngiPickupBuilding");
 }

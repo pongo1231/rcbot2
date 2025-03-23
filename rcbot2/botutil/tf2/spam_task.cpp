@@ -6,7 +6,7 @@
 #include "botutil/base_sched.h"
 #include "util/grenade.h"
 
-CBotTF2Spam ::CBotTF2Spam(CBot *pBot, Vector vStart, int iYaw, CBotWeapon *pWeapon)
+CBotTF2Spam::CBotTF2Spam(CBot *pBot, Vector vStart, int iYaw, CBotWeapon *pWeapon)
 {
 	Vector forward;
 	QAngle angle = QAngle(0, iYaw, 0);
@@ -21,7 +21,7 @@ CBotTF2Spam ::CBotTF2Spam(CBot *pBot, Vector vStart, int iYaw, CBotWeapon *pWeap
 	m_fTime   = 0.0f;
 }
 
-CBotTF2Spam ::CBotTF2Spam(Vector vStart, Vector vTarget, CBotWeapon *pWeapon)
+CBotTF2Spam::CBotTF2Spam(Vector vStart, Vector vTarget, CBotWeapon *pWeapon)
 {
 	m_vTarget = vTarget;
 	m_pWeapon = pWeapon;
@@ -30,12 +30,12 @@ CBotTF2Spam ::CBotTF2Spam(Vector vStart, Vector vTarget, CBotWeapon *pWeapon)
 	m_fTime   = 0.0f;
 }
 
-float CBotTF2Spam ::getDistance()
+float CBotTF2Spam::getDistance()
 {
 	return (m_vStart - m_vTarget).Length();
 }
 
-void CBotTF2Spam ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2Spam::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	pBot->wantToShoot(false);
 	pBot->wantToListen(false);

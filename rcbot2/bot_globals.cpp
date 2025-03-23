@@ -57,17 +57,17 @@
 extern IServerGameEnts *servergameents;
 
 ///////////
-trace_t CBotGlobals ::m_TraceResult;
-char *CBotGlobals ::m_szModFolder        = nullptr;
-eModId CBotGlobals ::m_iCurrentMod       = MOD_UNSUPPORTED;
-CBotMod *CBotGlobals ::m_pCurrentMod     = nullptr;
-bool CBotGlobals ::m_bMapRunning         = false;
-int CBotGlobals ::m_iMaxClients          = 0;
-int CBotGlobals ::m_iEventVersion        = 1;
-int CBotGlobals ::m_iWaypointDisplayType = 0;
-char CBotGlobals ::m_szMapName[MAX_MAP_STRING_LEN];
-bool CBotGlobals ::m_bTeamplay      = false;
-char *CBotGlobals ::m_szRCBotFolder = nullptr;
+trace_t CBotGlobals::m_TraceResult;
+char *CBotGlobals::m_szModFolder        = nullptr;
+eModId CBotGlobals::m_iCurrentMod       = MOD_UNSUPPORTED;
+CBotMod *CBotGlobals::m_pCurrentMod     = nullptr;
+bool CBotGlobals::m_bMapRunning         = false;
+int CBotGlobals::m_iMaxClients          = 0;
+int CBotGlobals::m_iEventVersion        = 1;
+int CBotGlobals::m_iWaypointDisplayType = 0;
+char CBotGlobals::m_szMapName[MAX_MAP_STRING_LEN];
+bool CBotGlobals::m_bTeamplay      = false;
+char *CBotGlobals::m_szRCBotFolder = nullptr;
 
 ///////////
 
@@ -103,40 +103,40 @@ class CTraceFilterVis : public CTraceFilter
 	edict_t *m_pHit;
 };
 
-CBotGlobals ::CBotGlobals()
+CBotGlobals::CBotGlobals()
 {
 	init();
 }
 
-void CBotGlobals ::init()
+void CBotGlobals::init()
 {
 	m_iCurrentMod    = MOD_UNSUPPORTED;
 	m_szModFolder[0] = 0;
 }
 
-bool CBotGlobals ::isAlivePlayer(edict_t *pEntity)
+bool CBotGlobals::isAlivePlayer(edict_t *pEntity)
 {
 	return pEntity && ENTINDEX(pEntity) && (ENTINDEX(pEntity) <= gpGlobals->maxClients) && (entityIsAlive(pEntity));
 }
 
 // new map
-void CBotGlobals ::setMapName(const char *szMapName)
+void CBotGlobals::setMapName(const char *szMapName)
 {
 	strncpy(m_szMapName, szMapName, MAX_MAP_STRING_LEN - 1);
 	m_szMapName[MAX_MAP_STRING_LEN - 1] = 0;
 }
 
-char *CBotGlobals ::getMapName()
+char *CBotGlobals::getMapName()
 {
 	return m_szMapName;
 }
 
-bool CBotGlobals ::isCurrentMod(eModId modid)
+bool CBotGlobals::isCurrentMod(eModId modid)
 {
 	return m_pCurrentMod->getModId() == modid;
 }
 
-int CBotGlobals ::numPlayersOnTeam(int iTeam, bool bAliveOnly)
+int CBotGlobals::numPlayersOnTeam(int iTeam, bool bAliveOnly)
 {
 	int i   = 0;
 	int num = 0;
@@ -221,8 +221,8 @@ void CBotGlobals::readRCBotFolder()
 	mainkv->deleteThis();
 }
 
-float CBotGlobals ::grenadeWillLand(Vector vOrigin, Vector vEnemy, float fProjSpeed, float fGrenadePrimeTime,
-                                    float *fAngle)
+float CBotGlobals::grenadeWillLand(Vector vOrigin, Vector vEnemy, float fProjSpeed, float fGrenadePrimeTime,
+                                   float *fAngle)
 {
 	static float g;
 	Vector v_comp   = vEnemy - vOrigin;
@@ -263,8 +263,8 @@ float CBotGlobals ::grenadeWillLand(Vector vOrigin, Vector vEnemy, float fProjSp
 	return false;
 }
 
-// TO DO :: put in CClients ?
-edict_t *CBotGlobals ::findPlayerByTruncName(const char *name)
+// TO DO::put in CClients ?
+edict_t *CBotGlobals::findPlayerByTruncName(const char *name)
 // find a player by a truncated name "name".
 // e.g. name = "Jo" might find a player called "John"
 {
@@ -357,7 +357,7 @@ class CTraceFilterSimple : public CTraceFilter
 	int m_collisionGroup;
 };
 
-bool CBotGlobals ::checkOpensLater(Vector vSrc, Vector vDest)
+bool CBotGlobals::checkOpensLater(Vector vSrc, Vector vDest)
 {
 	CTraceFilterSimple traceFilter(nullptr, nullptr, MASK_PLAYERSOLID);
 
@@ -366,7 +366,7 @@ bool CBotGlobals ::checkOpensLater(Vector vSrc, Vector vDest)
 	return (traceVisible(nullptr));
 }
 
-bool CBotGlobals ::isVisibleHitAllExceptPlayer(edict_t *pPlayer, Vector vSrc, Vector vDest, edict_t *pDest)
+bool CBotGlobals::isVisibleHitAllExceptPlayer(edict_t *pPlayer, Vector vSrc, Vector vDest, edict_t *pDest)
 {
 	const IHandleEntity *ignore = pPlayer->GetIServerEntity();
 
@@ -377,7 +377,7 @@ bool CBotGlobals ::isVisibleHitAllExceptPlayer(edict_t *pPlayer, Vector vSrc, Ve
 	return (traceVisible(pDest));
 }
 
-bool CBotGlobals ::isVisible(edict_t *pPlayer, Vector vSrc, Vector vDest)
+bool CBotGlobals::isVisible(edict_t *pPlayer, Vector vSrc, Vector vDest)
 {
 	CTraceFilterWorldAndPropsOnly filter;
 
@@ -386,7 +386,7 @@ bool CBotGlobals ::isVisible(edict_t *pPlayer, Vector vSrc, Vector vDest)
 	return (traceVisible(nullptr));
 }
 
-bool CBotGlobals ::isVisible(edict_t *pPlayer, Vector vSrc, edict_t *pDest)
+bool CBotGlobals::isVisible(edict_t *pPlayer, Vector vSrc, edict_t *pDest)
 {
 	// CTraceFilterWorldAndPropsOnly filter;//	CTraceFilterHitAll filter;
 
@@ -397,7 +397,7 @@ bool CBotGlobals ::isVisible(edict_t *pPlayer, Vector vSrc, edict_t *pDest)
 	return (traceVisible(pDest));
 }
 
-bool CBotGlobals ::isShotVisible(edict_t *pPlayer, Vector vSrc, Vector vDest, edict_t *pDest)
+bool CBotGlobals::isShotVisible(edict_t *pPlayer, Vector vSrc, Vector vDest, edict_t *pDest)
 {
 	// CTraceFilterWorldAndPropsOnly filter;//	CTraceFilterHitAll filter;
 
@@ -408,7 +408,7 @@ bool CBotGlobals ::isShotVisible(edict_t *pPlayer, Vector vSrc, Vector vDest, ed
 	return (traceVisible(pDest));
 }
 
-bool CBotGlobals ::isVisible(Vector vSrc, Vector vDest)
+bool CBotGlobals::isVisible(Vector vSrc, Vector vDest)
 {
 	CTraceFilterWorldAndPropsOnly filter;
 
@@ -417,7 +417,7 @@ bool CBotGlobals ::isVisible(Vector vSrc, Vector vDest)
 	return traceVisible(nullptr);
 }
 
-void CBotGlobals ::traceLine(Vector vSrc, Vector vDest, unsigned int mask, ITraceFilter *pFilter)
+void CBotGlobals::traceLine(Vector vSrc, Vector vDest, unsigned int mask, ITraceFilter *pFilter)
 {
 	Ray_t ray;
 	memset(&m_TraceResult, 0, sizeof(trace_t));
@@ -425,7 +425,7 @@ void CBotGlobals ::traceLine(Vector vSrc, Vector vDest, unsigned int mask, ITrac
 	enginetrace->TraceRay(ray, mask, pFilter, &m_TraceResult);
 }
 
-float CBotGlobals ::quickTraceline(edict_t *pIgnore, Vector vSrc, Vector vDest)
+float CBotGlobals::quickTraceline(edict_t *pIgnore, Vector vSrc, Vector vDest)
 {
 	CTraceFilterVis filter = CTraceFilterVis(pIgnore);
 
@@ -436,7 +436,7 @@ float CBotGlobals ::quickTraceline(edict_t *pIgnore, Vector vSrc, Vector vDest)
 	return m_TraceResult.fraction;
 }
 
-float CBotGlobals ::DotProductFromOrigin(edict_t *pEnemy, Vector pOrigin)
+float CBotGlobals::DotProductFromOrigin(edict_t *pEnemy, Vector pOrigin)
 {
 	static Vector vecLOS;
 	static float flDot;
@@ -463,7 +463,7 @@ float CBotGlobals ::DotProductFromOrigin(edict_t *pEnemy, Vector pOrigin)
 	return flDot;
 }
 
-float CBotGlobals ::DotProductFromOrigin(Vector vPlayer, Vector vFacing, QAngle eyes)
+float CBotGlobals::DotProductFromOrigin(Vector vPlayer, Vector vFacing, QAngle eyes)
 {
 	static Vector vecLOS;
 	static float flDot;
@@ -481,7 +481,7 @@ float CBotGlobals ::DotProductFromOrigin(Vector vPlayer, Vector vFacing, QAngle 
 	return flDot;
 }
 
-bool CBotGlobals ::traceVisible(edict_t *pEnt)
+bool CBotGlobals::traceVisible(edict_t *pEnt)
 {
 	return (m_TraceResult.fraction >= 1.0)
 	    || (m_TraceResult.m_pEnt && pEnt && (m_TraceResult.m_pEnt == pEnt->GetUnknown()->GetBaseEntity()));
@@ -503,7 +503,7 @@ bool CBotGlobals::initModFolder()
 	return true;
 }
 
-bool CBotGlobals ::gameStart()
+bool CBotGlobals::gameStart()
 {
 	char szGameFolder[512];
 	engine->GetGameDir(szGameFolder, 512);
@@ -547,11 +547,11 @@ bool CBotGlobals ::gameStart()
 	}
 }
 
-void CBotGlobals ::levelInit()
+void CBotGlobals::levelInit()
 {
 }
 
-int CBotGlobals ::countTeamMatesNearOrigin(Vector vOrigin, float fRange, int iTeam, edict_t *pIgnore)
+int CBotGlobals::countTeamMatesNearOrigin(Vector vOrigin, float fRange, int iTeam, edict_t *pIgnore)
 {
 	int iCount = 0;
 	IPlayerInfo *p;
@@ -583,7 +583,7 @@ int CBotGlobals ::countTeamMatesNearOrigin(Vector vOrigin, float fRange, int iTe
 	return iCount;
 }
 
-int CBotGlobals ::numClients()
+int CBotGlobals::numClients()
 {
 	int iCount = 0;
 
@@ -605,7 +605,7 @@ int CBotGlobals ::numClients()
 	return iCount;
 }
 
-bool CBotGlobals ::entityIsAlive(edict_t *pEntity)
+bool CBotGlobals::entityIsAlive(edict_t *pEntity)
 {
 	static short int index;
 
@@ -626,7 +626,7 @@ bool CBotGlobals ::entityIsAlive(edict_t *pEntity)
 	// return pBaseEntity->IsAlive();
 }
 
-edict_t *CBotGlobals ::playerByUserId(int iUserId)
+edict_t *CBotGlobals::playerByUserId(int iUserId)
 {
 	for (int i = 1; i <= maxClients(); i++)
 	{
@@ -642,13 +642,13 @@ edict_t *CBotGlobals ::playerByUserId(int iUserId)
 	return nullptr;
 }
 
-int CBotGlobals ::getTeam(edict_t *pEntity)
+int CBotGlobals::getTeam(edict_t *pEntity)
 {
 	IPlayerInfo *p = playerinfomanager->GetPlayerInfo(pEntity);
 	return p->GetTeamIndex();
 }
 
-bool CBotGlobals ::isNetworkable(edict_t *pEntity)
+bool CBotGlobals::isNetworkable(edict_t *pEntity)
 {
 	static IServerEntity *pServerEnt;
 
@@ -658,7 +658,7 @@ bool CBotGlobals ::isNetworkable(edict_t *pEntity)
 }
 
 /*
-inline Vector CBotGlobals :: entityOrigin ( edict_t *pEntity )
+inline Vector CBotGlobals::entityOrigin ( edict_t *pEntity )
 {
     return pEntity->GetIServerEntity()->GetCollideable()->GetCollisionOrigin();
 
@@ -672,7 +672,7 @@ inline Vector CBotGlobals :: entityOrigin ( edict_t *pEntity )
     return vOrigin;
 }*/
 
-void CBotGlobals ::serverSay(char *fmt, ...)
+void CBotGlobals::serverSay(char *fmt, ...)
 {
 	va_list argptr;
 	static char string[1024];
@@ -690,8 +690,8 @@ void CBotGlobals ::serverSay(char *fmt, ...)
 	engine->ServerCommand(string);
 }
 
-// TO DO :: put into CClient
-bool CBotGlobals ::setWaypointDisplayType(int iType)
+// TO DO::put into CClient
+bool CBotGlobals::setWaypointDisplayType(int iType)
 {
 	if ((iType >= 0) && (iType <= 1))
 	{
@@ -702,7 +702,7 @@ bool CBotGlobals ::setWaypointDisplayType(int iType)
 	return false;
 }
 // work on this
-bool CBotGlobals ::walkableFromTo(edict_t *pPlayer, Vector v_src, Vector v_dest)
+bool CBotGlobals::walkableFromTo(edict_t *pPlayer, Vector v_src, Vector v_dest)
 {
 	CTraceFilterVis filter = CTraceFilterVis(pPlayer);
 	float fDistance        = sqrt((v_dest - v_src).LengthSqr());
@@ -817,8 +817,8 @@ bool CBotGlobals ::walkableFromTo(edict_t *pPlayer, Vector v_src, Vector v_dest)
 	// return true;
 }
 
-bool CBotGlobals ::boundingBoxTouch2d(const Vector2D &a1, const Vector2D &a2, const Vector2D &bmins,
-                                      const Vector2D &bmaxs)
+bool CBotGlobals::boundingBoxTouch2d(const Vector2D &a1, const Vector2D &a2, const Vector2D &bmins,
+                                     const Vector2D &bmaxs)
 {
 	Vector2D amins = Vector2D(std::min(a1.x, a2.x), std::min(a1.y, a2.y));
 	Vector2D amaxs = Vector2D(std::max(a1.x, a2.x), std::max(a1.y, a2.y));
@@ -827,7 +827,7 @@ bool CBotGlobals ::boundingBoxTouch2d(const Vector2D &a1, const Vector2D &a2, co
 	        || ((bmaxs.x >= amins.x) && (bmaxs.y >= amins.y)) && ((bmaxs.x <= amaxs.x) && (bmaxs.y <= amaxs.y)));
 }
 
-bool CBotGlobals ::boundingBoxTouch3d(const Vector &a1, const Vector &a2, const Vector &bmins, const Vector &bmaxs)
+bool CBotGlobals::boundingBoxTouch3d(const Vector &a1, const Vector &a2, const Vector &bmins, const Vector &bmaxs)
 {
 	Vector amins = Vector(std::min(a1.x, a2.x), std::min(a1.y, a2.y), std::min(a1.z, a2.z));
 	Vector amaxs = Vector(std::max(a1.x, a2.x), std::max(a1.y, a2.y), std::max(a1.z, a2.z));
@@ -838,8 +838,8 @@ bool CBotGlobals ::boundingBoxTouch3d(const Vector &a1, const Vector &a2, const 
 	               && ((bmaxs.x <= amaxs.x) && (bmaxs.y <= amaxs.y) && (bmaxs.z <= amaxs.z)));
 }
 
-bool CBotGlobals ::onOppositeSides2d(const Vector2D &amins, const Vector2D &amaxs, const Vector2D &bmins,
-                                     const Vector2D &bmaxs)
+bool CBotGlobals::onOppositeSides2d(const Vector2D &amins, const Vector2D &amaxs, const Vector2D &bmins,
+                                    const Vector2D &bmaxs)
 {
 	float g = (amaxs.x - amins.x) * (bmins.y - amins.y) - (amaxs.y - amins.y) * (bmins.x - amins.x);
 
@@ -848,7 +848,7 @@ bool CBotGlobals ::onOppositeSides2d(const Vector2D &amins, const Vector2D &amax
 	return (g * h) <= 0.0f;
 }
 
-bool CBotGlobals ::onOppositeSides3d(const Vector &amins, const Vector &amaxs, const Vector &bmins, const Vector &bmaxs)
+bool CBotGlobals::onOppositeSides3d(const Vector &amins, const Vector &amaxs, const Vector &bmins, const Vector &bmaxs)
 {
 	amins.Cross(bmins);
 	amaxs.Cross(bmaxs);
@@ -862,18 +862,18 @@ bool CBotGlobals ::onOppositeSides3d(const Vector &amins, const Vector &amaxs, c
 	return (g * h) <= 0.0f;
 }
 
-bool CBotGlobals ::linesTouching2d(const Vector2D &amins, const Vector2D &amaxs, const Vector2D &bmins,
-                                   const Vector2D &bmaxs)
+bool CBotGlobals::linesTouching2d(const Vector2D &amins, const Vector2D &amaxs, const Vector2D &bmins,
+                                  const Vector2D &bmaxs)
 {
 	return onOppositeSides2d(amins, amaxs, bmins, bmaxs) && boundingBoxTouch2d(amins, amaxs, bmins, bmaxs);
 }
 
-bool CBotGlobals ::linesTouching3d(const Vector &amins, const Vector &amaxs, const Vector &bmins, const Vector &bmaxs)
+bool CBotGlobals::linesTouching3d(const Vector &amins, const Vector &amaxs, const Vector &bmins, const Vector &bmaxs)
 {
 	return onOppositeSides3d(amins, amaxs, bmins, bmaxs) && boundingBoxTouch3d(amins, amaxs, bmins, bmaxs);
 }
 
-void CBotGlobals ::botMessage(edict_t *pEntity, int iErr, const char *fmt, ...)
+void CBotGlobals::botMessage(edict_t *pEntity, int iErr, const char *fmt, ...)
 {
 	va_list argptr;
 	static char string[1024];
@@ -904,7 +904,7 @@ void CBotGlobals ::botMessage(edict_t *pEntity, int iErr, const char *fmt, ...)
 		Msg(string);
 }
 
-bool CBotGlobals ::makeFolders(const char *szFile)
+bool CBotGlobals::makeFolders(const char *szFile)
 {
 #ifndef __linux__
 	char *delimiter = "\\";
@@ -950,7 +950,7 @@ bool CBotGlobals ::makeFolders(const char *szFile)
 	return true;
 }
 
-void CBotGlobals ::addDirectoryDelimiter(char *szString)
+void CBotGlobals::addDirectoryDelimiter(char *szString)
 {
 #ifndef __linux__
 	strcat(szString, "\\");
@@ -959,7 +959,7 @@ void CBotGlobals ::addDirectoryDelimiter(char *szString)
 #endif
 }
 
-bool CBotGlobals ::isBreakableOpen(edict_t *pBreakable)
+bool CBotGlobals::isBreakableOpen(edict_t *pBreakable)
 {
 	return ((CClassInterface::getEffects(pBreakable) & EF_NODRAW) == EF_NODRAW);
 }
@@ -974,7 +974,7 @@ Vector CBotGlobals::getVelocity(edict_t *pPlayer)
 	return Vector(0, 0, 0);
 }
 
-std::fstream CBotGlobals ::openFile(const char *szFile, std::ios_base::openmode mode)
+std::fstream CBotGlobals::openFile(const char *szFile, std::ios_base::openmode mode)
 {
 	std::fstream fp;
 	fp.open(szFile, mode);
@@ -999,8 +999,8 @@ std::fstream CBotGlobals ::openFile(const char *szFile, std::ios_base::openmode 
 	return fp;
 }
 
-void CBotGlobals ::buildFileName(char *szOutput, const char *szFile, const char *szFolder, const char *szExtension,
-                                 bool bModDependent)
+void CBotGlobals::buildFileName(char *szOutput, const char *szFile, const char *szFolder, const char *szExtension,
+                                bool bModDependent)
 {
 	if (m_szRCBotFolder == nullptr)
 	{
@@ -1071,7 +1071,7 @@ QAngle CBotGlobals::playerAngles(edict_t *pPlayer)
 	return lastCmd.viewangles;
 }
 
-QAngle CBotGlobals ::entityEyeAngles(edict_t *pEntity)
+QAngle CBotGlobals::entityEyeAngles(edict_t *pEntity)
 {
 	return playerinfomanager->GetPlayerInfo(pEntity)->GetAbsAngles();
 	// CBaseEntity *pBaseEntity = CBaseEntity::Instance(pEntity);
@@ -1079,7 +1079,7 @@ QAngle CBotGlobals ::entityEyeAngles(edict_t *pEntity)
 	// return pBaseEntity->EyeAngles();
 }
 
-void CBotGlobals ::fixFloatAngle(float *fAngle)
+void CBotGlobals::fixFloatAngle(float *fAngle)
 {
 	if (*fAngle > 180)
 		*fAngle = *fAngle - 360;
@@ -1087,7 +1087,7 @@ void CBotGlobals ::fixFloatAngle(float *fAngle)
 		*fAngle = *fAngle + 360;
 }
 
-void CBotGlobals ::fixFloatDegrees360(float *pFloat)
+void CBotGlobals::fixFloatDegrees360(float *pFloat)
 {
 	if (*pFloat > 360)
 		*pFloat -= 360;
@@ -1095,7 +1095,7 @@ void CBotGlobals ::fixFloatDegrees360(float *pFloat)
 		*pFloat += 360;
 }
 
-float CBotGlobals ::yawAngleFromEdict(edict_t *pEntity, Vector vOrigin)
+float CBotGlobals::yawAngleFromEdict(edict_t *pEntity, Vector vOrigin)
 {
 	/*
 	float fAngle;

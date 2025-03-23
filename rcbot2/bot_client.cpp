@@ -63,7 +63,7 @@ void CToolTip::send(edict_t *pPlayer)
 		engine->ClientCommand(pPlayer, "play %s", m_pszSound);
 }
 
-void CClient ::init()
+void CClient::init()
 {
 	m_iWaypointShowFlags   = 0;
 	m_fMonitorHighFiveTime = 0;
@@ -100,23 +100,23 @@ void CClient ::init()
 	m_fUpdatePos            = 0;
 }
 
-bool CClient ::needToRenderMenu()
+bool CClient::needToRenderMenu()
 {
 	return m_fNextUpdateMenuTime < engine->Time();
 }
 
-void CClient ::updateRenderMenuTime()
+void CClient::updateRenderMenuTime()
 {
 	m_fNextUpdateMenuTime = engine->Time() + rcbot_menu_update_time2.GetFloat();
 }
 
-void CClient ::setEdict(edict_t *pPlayer)
+void CClient::setEdict(edict_t *pPlayer)
 {
 	m_pPlayer     = pPlayer;
 	m_pPlayerInfo = playerinfomanager->GetPlayerInfo(pPlayer);
 }
 
-void CClient ::setupMenuCommands()
+void CClient::setupMenuCommands()
 {
 	/*engine->ClientCommand(m_pPlayer,"alias \"rcbot_setup\" \"bind 0 menuselect0\"");
 	engine->ClientCommand(m_pPlayer,"rcbot_setup");bind 2 \"menuselect 2\"");*/
@@ -132,7 +132,7 @@ void CClient ::setupMenuCommands()
 	engine->ClientCommand(m_pPlayer, "bind 0 \"menuselect 0\"");
 }
 
-void CClient ::resetMenuCommands()
+void CClient::resetMenuCommands()
 {
 	/*engine->ClientCommand(m_pPlayer,"alias \"rcbot_reset\" \"bind 0 slot10\"");
 	engine->ClientCommand(m_pPlayer,"rcbot_reset");bind 2 \"menuselect 2\"");*/
@@ -148,7 +148,7 @@ void CClient ::resetMenuCommands()
 	engine->ClientCommand(m_pPlayer, "bind 0 \"slot10\"");
 }
 
-void CClient ::playSound(const char *pszSound)
+void CClient::playSound(const char *pszSound)
 {
 	if (isWaypointOn())
 	{
@@ -157,8 +157,8 @@ void CClient ::playSound(const char *pszSound)
 	}
 }
 
-void CClient ::autoEventWaypoint(int iType, float fRadius, bool bAtOtherOrigin, int iTeam, Vector vOrigin,
-                                 bool bIgnoreTeam, bool bAutoType)
+void CClient::autoEventWaypoint(int iType, float fRadius, bool bAtOtherOrigin, int iTeam, Vector vOrigin,
+                                bool bIgnoreTeam, bool bAutoType)
 {
 	m_iAutoEventWaypoint         = iType;
 	m_fAutoEventWaypointRadius   = fRadius;
@@ -186,7 +186,7 @@ void CClient ::autoEventWaypoint(int iType, float fRadius, bool bAtOtherOrigin, 
 	}
 }
 
-void CClient ::teleportTo(Vector vOrigin)
+void CClient::teleportTo(Vector vOrigin)
 {
 	m_bIsTeleporting  = true;
 	m_fTeleportTime   = engine->Time() + 0.1f;
@@ -243,7 +243,7 @@ class CBotFunc_HighFiveSearch : public IBotFunction
 };
 
 // called each frame
-void CClient ::think()
+void CClient::think()
 {
 	// if ( m_pPlayer  )
 	//	HookGiveNamedItem(m_pPlayer);
@@ -964,7 +964,7 @@ void CClients::giveMessage(char *msg, float fTime, edict_t *pPlayer)
 	}
 }
 
-const char *CClient ::getName()
+const char *CClient::getName()
 {
 	IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo(m_pPlayer);
 
@@ -974,13 +974,13 @@ const char *CClient ::getName()
 	return nullptr;
 }
 
-void CClient ::setTeleportVector()
+void CClient::setTeleportVector()
 {
 	m_vTeleportVector      = getOrigin();
 	m_bTeleportVectorValid = true;
 }
 
-void CClient ::clientActive()
+void CClient::clientActive()
 {
 	// get steam id
 	IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo(m_pPlayer);
@@ -997,20 +997,20 @@ void CClient ::clientActive()
 	}
 }
 // this player joins with pPlayer edict
-void CClient ::clientConnected(edict_t *pPlayer)
+void CClient::clientConnected(edict_t *pPlayer)
 {
 	init();
 	// set player edict
 	setEdict(pPlayer);
 }
 
-void CClient ::updateCurrentWaypoint()
+void CClient::updateCurrentWaypoint()
 {
 	setWaypoint(CWaypointLocations::NearestWaypoint(getOrigin(), 50, -1, false, true, false, nullptr, false, 0, false,
 	                                                false, Vector(0, 0, 0), m_iWaypointShowFlags));
 }
 // this player disconnects
-void CClient ::clientDisconnected()
+void CClient::clientDisconnected()
 {
 	// is bot?
 	CBot *pBot = CBots::getBotPointer(m_pPlayer);
@@ -1040,17 +1040,17 @@ void CClient ::clientDisconnected()
 	init();
 }
 
-int CClient ::accessLevel()
+int CClient::accessLevel()
 {
 	return m_iAccessLevel;
 }
 
-bool CClient ::isUsed()
+bool CClient::isUsed()
 {
 	return (m_pPlayer != nullptr);
 }
 
-Vector CClient ::getOrigin()
+Vector CClient::getOrigin()
 {
 	IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo(m_pPlayer);
 
@@ -1061,14 +1061,14 @@ Vector CClient ::getOrigin()
 	     + Vector(0, 0, 32); // m_pPlayer->GetCollideable()->GetCollisionOrigin();
 }
 
-void CClients ::clientActive(edict_t *pPlayer)
+void CClients::clientActive(edict_t *pPlayer)
 {
 	CClient *pClient = &m_Clients[slotOfEdict(pPlayer)];
 
 	pClient->clientActive();
 }
 
-CClient *CClients ::clientConnected(edict_t *pPlayer)
+CClient *CClients::clientConnected(edict_t *pPlayer)
 {
 	CClient *pClient = &m_Clients[slotOfEdict(pPlayer)];
 
@@ -1077,19 +1077,19 @@ CClient *CClients ::clientConnected(edict_t *pPlayer)
 	return pClient;
 }
 
-void CClients ::init(edict_t *pPlayer)
+void CClients::init(edict_t *pPlayer)
 {
 	m_Clients[slotOfEdict(pPlayer)].init();
 }
 
-void CClients ::clientDisconnected(edict_t *pPlayer)
+void CClients::clientDisconnected(edict_t *pPlayer)
 {
 	CClient *pClient = &m_Clients[slotOfEdict(pPlayer)];
 
 	pClient->clientDisconnected();
 }
 
-void CClients ::clientThink()
+void CClients::clientThink()
 {
 	static CClient *pClient;
 
@@ -1113,7 +1113,7 @@ void CClients ::clientThink()
 	}
 }
 
-CClient *CClients ::findClientBySteamID(char *szSteamID)
+CClient *CClients::findClientBySteamID(char *szSteamID)
 {
 	CClient *pClient;
 
@@ -1146,7 +1146,7 @@ void CClients::clientDebugMsg(CBot *pBot, int iLev, const char *fmt, ...)
 const char *g_szDebugTags[15] = { "GAME_EVENT", "NAV",    "SPEED", "VIS",  "TASK", "BUTTONS", "USERCMD", "UTIL",
 	                              "PROFILE",    "EDICTS", "THINK", "LOOK", "HUD",  "AIM",     "CHAT" };
 
-void CClients ::clientDebugMsg(int iLev, const char *szMsg, CBot *pBot)
+void CClients::clientDebugMsg(int iLev, const char *szMsg, CBot *pBot)
 {
 	CClient *pClient;
 
@@ -1173,12 +1173,12 @@ void CClients ::clientDebugMsg(int iLev, const char *szMsg, CBot *pBot)
 }
 
 // get index in array
-int CClients ::slotOfEdict(edict_t *pPlayer)
+int CClients::slotOfEdict(edict_t *pPlayer)
 {
 	return ENTINDEX(pPlayer) - 1;
 }
 
-bool CClients ::clientsDebugging(int iLev)
+bool CClients::clientsDebugging(int iLev)
 {
 	if (iLev == 0)
 		return m_bClientsDebugging;
@@ -1202,7 +1202,7 @@ bool CClients ::clientsDebugging(int iLev)
 	return false;
 }
 
-void CClient ::setWaypointCut(CWaypoint *pWaypoint)
+void CClient::setWaypointCut(CWaypoint *pWaypoint)
 {
 	if (pWaypoint)
 	{
@@ -1219,7 +1219,7 @@ void CClient ::setWaypointCut(CWaypoint *pWaypoint)
 	}
 }
 
-void CClient ::setWaypointCopy(CWaypoint *pWaypoint)
+void CClient::setWaypointCopy(CWaypoint *pWaypoint)
 {
 	if (pWaypoint)
 	{

@@ -2,12 +2,12 @@
 
 #include <in_buttons.h>
 
-CBotTFDoubleJump ::CBotTFDoubleJump()
+CBotTFDoubleJump::CBotTFDoubleJump()
 {
 	m_fTime = 0.0f;
 }
 
-void CBotTFDoubleJump ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTFDoubleJump::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	pBot->wantToListen(false);
 
@@ -24,7 +24,7 @@ void CBotTFDoubleJump ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 }
 
-void CBotTFDoubleJump ::debugString(char *string)
+void CBotTFDoubleJump::debugString(char *string)
 {
 	sprintf(string, "CbotTFDoublejump");
 }

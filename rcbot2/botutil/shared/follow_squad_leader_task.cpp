@@ -4,7 +4,7 @@
 #include "bot_mtrand.h"
 #include "bot_squads.h"
 
-void CBotFollowSquadLeader ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotFollowSquadLeader::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	edict_t *pSquadLeader;
 	float fDist;

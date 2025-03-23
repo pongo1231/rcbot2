@@ -4,7 +4,7 @@
 #include "bot_globals.h"
 #include "bot_weapons.h"
 
-void CBotTF2EngiLookAfter ::execute(CBot *pBot, CBotSchedule *pSchedule)
+void CBotTF2EngiLookAfter::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	CBotFortress *tfBot = (CBotFortress *)pBot;
 

@@ -4,7 +4,7 @@
 #include "botutil/shared/find_good_hide_spot_task.h"
 #include "botutil/shared/find_path_task.h"
 
-CGotoHideSpotSched ::CGotoHideSpotSched(CBot *pBot, edict_t *pEdict, bool bIsGrenade)
+CGotoHideSpotSched::CGotoHideSpotSched(CBot *pBot, edict_t *pEdict, bool bIsGrenade)
 {
 	// run at flank while shooting
 	CFindPathTask *pHideGoalPoint = new CFindPathTask(pEdict);
@@ -30,7 +30,7 @@ CGotoHideSpotSched ::CGotoHideSpotSched(CBot *pBot, edict_t *pEdict, bool bIsGre
 	}
 }
 
-CGotoHideSpotSched ::CGotoHideSpotSched(CBot *pBot, Vector vOrigin, IBotTaskInterrupt *interrupt)
+CGotoHideSpotSched::CGotoHideSpotSched(CBot *pBot, Vector vOrigin, IBotTaskInterrupt *interrupt)
 {
 	// run at flank while shooting
 	CFindPathTask *pHideGoalPoint = new CFindPathTask();
@@ -46,7 +46,7 @@ CGotoHideSpotSched ::CGotoHideSpotSched(CBot *pBot, Vector vOrigin, IBotTaskInte
 	pHideGoalPoint->getPassedVector();
 }
 
-void CGotoHideSpotSched ::init()
+void CGotoHideSpotSched::init()
 {
 	setID(SCHED_GOOD_HIDE_SPOT);
 }

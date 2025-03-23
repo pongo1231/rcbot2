@@ -5,7 +5,7 @@
 #include "botutil/tf2/engi/interrupt.h"
 #include "botutil/tf2/engi/upgrade_building_task.h"
 
-CBotTFEngiUpgrade ::CBotTFEngiUpgrade(CBot *pBot, edict_t *pBuilding)
+CBotTFEngiUpgrade::CBotTFEngiUpgrade(CBot *pBot, edict_t *pBuilding)
 {
 	CFindPathTask *pathtask = new CFindPathTask(pBuilding);
 
@@ -29,7 +29,7 @@ CBotTFEngiUpgrade ::CBotTFEngiUpgrade(CBot *pBot, edict_t *pBuilding)
 	}
 }
 
-void CBotTFEngiUpgrade ::init()
+void CBotTFEngiUpgrade::init()
 {
 	setID(SCHED_UPGRADE);
 }

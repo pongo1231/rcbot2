@@ -454,7 +454,7 @@ class CBotFortress : public CBot
 
 	virtual void getTasks(unsigned int iIgnore = 0)
 	{
-		CBot ::getTasks(iIgnore);
+		CBot::getTasks(iIgnore);
 	}
 
 	virtual void died(edict_t *pKiller, const char *pszWeapon);

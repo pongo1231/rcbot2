@@ -149,8 +149,8 @@ const std::unordered_map<int, const char *> g_szUtils = {
 };
 #undef UTIL
 
-CBotUtility ::CBotUtility(CBot *pBot, eBotAction id, bool bCanDo, float fUtil, CBotWeapon *pWeapon, int iData,
-                          Vector vec)
+CBotUtility::CBotUtility(CBot *pBot, eBotAction id, bool bCanDo, float fUtil, CBotWeapon *pWeapon, int iData,
+                         Vector vec)
 {
 	m_iData    = iData;
 	m_fUtility = fUtil;
@@ -174,7 +174,7 @@ CBotUtility ::CBotUtility(CBot *pBot, eBotAction id, bool bCanDo, float fUtil, C
 }
 
 // Execute a list of possible actions and put them into order of available actions against utility
-void CBotUtilities ::execute()
+void CBotUtilities::execute()
 {
 	unsigned int i = 0;
 	CBotUtility *pUtil;
@@ -243,7 +243,7 @@ void CBotUtilities ::execute()
 	// return pBest;
 }
 
-void CBotUtilities ::freeMemory()
+void CBotUtilities::freeMemory()
 {
 	util_node_t *temp;
 	m_Utilities.clear();
@@ -257,7 +257,7 @@ void CBotUtilities ::freeMemory()
 	}
 }
 
-CBotUtility *CBotUtilities ::nextBest()
+CBotUtility *CBotUtilities::nextBest()
 {
 	CBotUtility *pBest;
 	util_node_t *temp;

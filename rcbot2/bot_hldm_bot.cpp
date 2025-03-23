@@ -49,26 +49,26 @@
 #include <in_buttons.h>
 
 // initialise , i.e. set everything to a default value
-void CHLDMBot ::init()
+void CHLDMBot::init()
 {
 	CBot::init();
 }
 
 // initialize structures and classes used be the bot
 // i.e. create 'new' classes
-void CHLDMBot ::setup()
+void CHLDMBot::setup()
 {
 	CBot::setup();
 }
 
 // the bot doesn't need to do anything to start a game in HL2DM
-bool CHLDMBot ::startGame()
+bool CHLDMBot::startGame()
 {
 	return true;
 }
 
 // the bot killed pVictim
-void CHLDMBot ::killed(edict_t *pVictim, char *weapon)
+void CHLDMBot::killed(edict_t *pVictim, char *weapon)
 {
 	CBot::killed(pVictim, weapon);
 
@@ -79,7 +79,7 @@ void CHLDMBot ::killed(edict_t *pVictim, char *weapon)
 }
 
 // the bot was killed by pKiller
-void CHLDMBot ::died(edict_t *pKiller, const char *pszWeapon)
+void CHLDMBot::died(edict_t *pKiller, const char *pszWeapon)
 {
 	// re-initialize stuff per life
 	CBot::died(pKiller, pszWeapon);
@@ -97,7 +97,7 @@ void CHLDMBot ::died(edict_t *pKiller, const char *pszWeapon)
 	}
 }
 
-void CHLDMBot ::touchedWpt(CWaypoint *pWaypoint)
+void CHLDMBot::touchedWpt(CWaypoint *pWaypoint)
 {
 	CBot::touchedWpt(pWaypoint);
 
@@ -117,7 +117,7 @@ void CHLDMBot ::touchedWpt(CWaypoint *pWaypoint)
 	}
 }
 // new life
-void CHLDMBot ::spawnInit()
+void CHLDMBot::spawnInit()
 {
 	CBot::spawnInit();
 
@@ -143,7 +143,7 @@ void CHLDMBot ::spawnInit()
 // Is pEdict an enemy? return true if enemy / false if not
 // if checkWeapons is true, check if current weapon can attack enemy
 //							return false if not
-bool CHLDMBot ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
+bool CHLDMBot::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 {
 	static int entity_index;
 
@@ -191,7 +191,7 @@ bool CHLDMBot ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 }
 
 // from the bots UTILITIES , execute the given action
-bool CHLDMBot ::executeAction(eBotAction iAction)
+bool CHLDMBot::executeAction(eBotAction iAction)
 {
 	switch (iAction)
 	{
@@ -375,7 +375,7 @@ bool CHLDMBot ::executeAction(eBotAction iAction)
 // return false if it is impossible to shoot this enemy; i.e. change enemy
 // return true: if it is possible to shoot this enemy
 // decide whether or not the bot shoot attack by calling primaryAttack or secondaryAttack
-bool CHLDMBot ::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
+bool CHLDMBot::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 {
 	if (pWeapon)
 	{
@@ -421,7 +421,7 @@ bool CHLDMBot ::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 	return false;
 }
 // time to think about something new to do
-void CHLDMBot ::getTasks(unsigned int iIgnore)
+void CHLDMBot::getTasks(unsigned int iIgnore)
 {
 	static CBotUtilities utils;
 	static CBotUtility *next;
@@ -546,7 +546,7 @@ void CHLDMBot ::getTasks(unsigned int iIgnore)
 	utils.freeMemory();
 }
 
-void CHLDMBot ::modThink()
+void CHLDMBot::modThink()
 {
 	m_fIdealMoveSpeed = CClassInterface::getMaxSpeed(m_pEdict);
 
@@ -652,7 +652,7 @@ bool CHLDMBot::checkStuck()
 	return bStuck;
 }
 
-bool CHLDMBot ::willCollide(edict_t *pEntity, bool *bCanJump, float *fTime)
+bool CHLDMBot::willCollide(edict_t *pEntity, bool *bCanJump, float *fTime)
 {
 	static Vector vel;
 	static Vector v_size;
@@ -690,7 +690,7 @@ bool CHLDMBot ::willCollide(edict_t *pEntity, bool *bCanJump, float *fTime)
 	return false;
 }
 
-void CHLDMBot ::handleWeapons()
+void CHLDMBot::handleWeapons()
 {
 	//
 	// Handle attacking at this point
@@ -721,7 +721,7 @@ void CHLDMBot ::handleWeapons()
 	}
 }
 // update some edicts in my memory if I see them or not
-bool CHLDMBot ::setVisible(edict_t *pEntity, bool bVisible)
+bool CHLDMBot::setVisible(edict_t *pEntity, bool bVisible)
 {
 	static float fDist;
 	const char *szClassname;
@@ -856,7 +856,7 @@ bool CHLDMBot ::setVisible(edict_t *pEntity, bool bVisible)
 }
 
 // lost my enemy - rethink my next move by flushiing schedules
-void CHLDMBot ::enemyLost(edict_t *pEnemy)
+void CHLDMBot::enemyLost(edict_t *pEnemy)
 {
 	updateCondition(CONDITION_CHANGED);
 	// m_pSchedules->freeMemory();
