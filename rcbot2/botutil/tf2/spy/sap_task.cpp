@@ -77,22 +77,17 @@ void CBotTF2SpySap ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	{
 		helpers->ClientCommand(pBot->getEdict(), "build 3 0");
 	}
+	else if (pBot->distanceFrom(pBuilding) > 100)
+	{
+		pBot->setMoveTo((CBotGlobals::entityOrigin(pBuilding)));
+	}
 	else
 	{
-		if (pBot->distanceFrom(pBuilding) > 100)
-		{
-			pBot->setMoveTo((CBotGlobals::entityOrigin(pBuilding)));
-		}
-		else
-		{
-			if (CTeamFortress2Mod::TF2_IsPlayerCloaked(pBot->getEdict()))
-			{
-				tf2Bot->spyUnCloak();
-			}
-			else if (randomInt(0, 1))
-				pBot->tapButton(IN_ATTACK);
-			// complete();
-		}
+		if (CTeamFortress2Mod::TF2_IsPlayerCloaked(pBot->getEdict()))
+			tf2Bot->spyUnCloak();
+		else if (randomInt(0, 1))
+			pBot->tapButton(IN_ATTACK);
+		// complete();
 	}
 }
 

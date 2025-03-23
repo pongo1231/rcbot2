@@ -68,9 +68,7 @@ void CBotDODSnipe ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	if (pCurrentWeapon != m_pWeaponToUse)
 	{
 		if (!pBot->select_CWeapon(CWeapons::getWeapon(m_pWeaponToUse->getID())))
-		{
 			fail();
-		}
 
 		return;
 	}

@@ -98,12 +98,8 @@ class CWaypointLocations
 		for (i = 0; i < MAX_WPT_BUCKETS; i++)
 		{
 			for (j = 0; j < MAX_WPT_BUCKETS; j++)
-			{
 				for (k = 0; k < MAX_WPT_BUCKETS; k++)
-				{
 					m_iLocations[i][j][k].clear();
-				}
-			}
 		}
 	}
 

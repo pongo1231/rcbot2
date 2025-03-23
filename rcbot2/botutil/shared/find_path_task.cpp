@@ -80,9 +80,7 @@ void CFindPathTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 		CProfileTimer *timer = CProfileTimers::getTimer(BOT_ROUTE_TIMER);
 
 		if (CClients::clientsDebugging(BOT_DEBUG_PROFILE))
-		{
 			timer->Start();
-		}
 #endif
 
 		if (pNav->workRoute(pBot->getOrigin(), m_vVector, &bFail, (m_iInt == 0), m_flags.bits.m_bNoInterruptions,
@@ -97,9 +95,7 @@ void CFindPathTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 #ifdef _DEBUG
 		if (CClients::clientsDebugging(BOT_DEBUG_PROFILE))
-		{
 			timer->Stop();
-		}
 #endif
 
 		pBot->debugMsg(BOT_DEBUG_NAV, "Trying to work out route");
@@ -181,9 +177,7 @@ void CFindPathTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 		if (m_flags.bits.m_bFailTaskEdictDied)
 		{
 			if ((m_pEdict == nullptr) || !CBotGlobals::entityIsAlive(m_pEdict))
-			{
 				fail();
-			}
 		}
 	}
 	else if (m_flags.bits.m_bFailTaskEdictDied)

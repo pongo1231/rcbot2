@@ -146,9 +146,7 @@ void CBotProfiles ::setupProfiles()
 			}
 
 			if (kvl.getFloat("braveness", &flWholeValuePercent))
-			{
 				read.m_fBraveness = flWholeValuePercent / 100.0f;
-			}
 
 			kvl.getInt("class", &read.m_iClass);
 
@@ -180,10 +178,8 @@ CBotProfile *CBotProfiles ::getRandomFreeProfile()
 	std::vector<CBotProfile *> freeProfiles;
 
 	for (i = 0; i < m_Profiles.size(); i++)
-	{
 		if (!CBots::findBotByProfile(m_Profiles[i]))
 			freeProfiles.push_back(m_Profiles[i]);
-	}
 
 	if (freeProfiles.empty())
 		return nullptr;

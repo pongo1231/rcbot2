@@ -81,9 +81,7 @@ void CDODBot ::bombEvent(int iEvent, int iCP, int iTeam)
 	int iWaypoint = CDODMod::m_Flags.getWaypointAtFlag(iCP);
 
 	if (iTeam && (iWaypoint != -1))
-	{
 		m_pNavigator->beliefOne(iWaypoint, (iTeam == m_iTeam) ? BELIEF_SAFETY : BELIEF_DANGER, 200.0f);
-	}
 
 	// this might be called twice within a second,
 	// make sure we only update tasks once per second at most
@@ -147,9 +145,7 @@ bool CDODBot::canGotoWaypoint(Vector vPrevWaypoint, CWaypoint *pWaypoint, CWaypo
 			if (CBotGlobals::entityIsValid(pBreakable))
 			{
 				if (!CBotGlobals::isBreakableOpen(pBreakable))
-				{
 					return m_pWeapons->hasExplosives();
-				}
 			}
 		}
 		else if (pWaypoint->hasFlag(CWaypointTypes::W_FL_BOMB_TO_OPEN))
@@ -579,14 +575,10 @@ void CDODBot ::seeFriendlyDie(edict_t *pDied, edict_t *pKiller, CWeapon *pWeapon
             m_vLastSeeEnemy, getOrigin(), 1500.0f, -1, true, true, false, false, 0, false));
 
 		if (pWpt)
-		{
 			m_vLastSeeEnemyBlastWaypoint = pWpt->getOrigin();
-		}
 
 		if (inSquad() && isSquadLeader())
-		{
 			addVoiceCommand(DOD_VC_HOLD);
-		}
 
 		if (!hasEnemy())
 		{
@@ -860,9 +852,7 @@ bool CDODBot ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 			if (rcbot_shoot_breakables.GetBool())
 			{
 				if (bRegisteredBreakable) // this breakable is registered as explosive only
-				{
 					return (distanceFrom(pEdict) > BLAST_RADIUS) && m_pWeapons->hasExplosives();
-				}
 				// else if ( (m_fLastSeeEnemy + 5.0f) > engine->Time() )
 				else if (DotProductFromOrigin(CBotGlobals::entityOrigin(pEdict)) > rcbot_shoot_breakable_cos.GetFloat())
 					return ((m_fLastSeeEnemyPlayer + 3.0f) < engine->Time())
@@ -1253,9 +1243,7 @@ void CDODBot ::modThink()
 		}
 
 		if (pWeapon && pWeapon->isZoomable() && CClassInterface::isSniperWeaponZoomed(m_pCurrentWeapon))
-		{
 			m_fFov = 20.0f;
-		}
 	}
 
 	if (onLadder())
@@ -1306,9 +1294,7 @@ void CDODBot ::modThink()
 			}
 
 			if (bProne)
-			{
 				prone();
-			}
 		}
 
 		setMoveSpeed(fMaxSpeed / 4);
@@ -1520,9 +1506,7 @@ void CDODBot ::signal(const char *signal)
 void CDODBot ::friendlyFire(edict_t *pEdict)
 {
 	if (isVisible(pEdict))
-	{
 		addVoiceCommand(DOD_VC_CEASEFIRE);
-	}
 }
 
 #define IF_WANT_TO_LISTEN if (isVisible(pPlayer) || (inSquad() && (m_pSquad->GetLeader() == pPlayer)))
@@ -1800,9 +1784,7 @@ void CDODBot ::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 						else
 						{
 							if (randomFloat(0.0f, 1.0f) > 0.25f)
-							{
 								addVoiceCommand(DOD_VC_NO);
-							}
 
 							delete pSched;
 							return; // can't find the player
@@ -1815,9 +1797,7 @@ void CDODBot ::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 					m_pSchedules->addFront(pSched);
 
 					if (randomFloat(0.0f, 1.0f) > (inSquad() ? 0.25f : 0.75f))
-					{
 						addVoiceCommand(DOD_VC_YES);
-					}
 				}
 			}
 			else if (randomFloat(0.0f, 1.0f) > 0.75f)
@@ -2366,9 +2346,7 @@ bool CDODBot ::executeAction(CBotUtility *util)
 		removeCondition(CONDITION_PUSH);
 
 		if (CDODMod::m_Flags.getNumFlagsOwned(m_iTeam) == (CDODMod::m_Flags.getNumFlags() - 1))
-		{
 			addVoiceCommand(DOD_VC_GOGOGO);
-		}
 
 		return true;
 	}
@@ -2408,9 +2386,7 @@ bool CDODBot ::executeAction(CBotUtility *util)
 				if (!CDODMod::isBombMap() || !CDODMod::isCommunalBombPoint())
 				{
 					if (CDODMod::m_Flags.getRandomEnemyControlledFlag(this, &vGoal, getTeam(), &iFlagID))
-					{
 						pWaypoint = CWaypoints::randomWaypointGoal(iWaypointType, m_iTeam, iFlagID, true, this);
-					}
 				}
 				else
 				{
@@ -2442,15 +2418,11 @@ bool CDODBot ::executeAction(CBotUtility *util)
 			else // defend
 			{
 				if (CDODMod::m_Flags.getRandomTeamControlledFlag(this, &vGoal, getTeam(), &iFlagID))
-				{
 					pWaypoint = CWaypoints::randomWaypointGoal(iWaypointType, m_iTeam, iFlagID, true, this);
-				}
 			}
 
 			if (pWaypoint == nullptr)
-			{
 				pWaypoint = CWaypoints::randomWaypointGoal(iWaypointType, m_iTeam);
-			}
 		}
 
 		if (pWaypoint)
@@ -3023,9 +2995,7 @@ bool CDODBot ::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 						if (pWeapon->isExplosive())
 							bAttack = CClassInterface::isRocketDeployed(pWeaponEdict);
 						else
-						{
 							bAttack = CClassInterface::isMachineGunDeployed(pWeaponEdict);
-						}
 
 						if (!bAttack)
 							fDelay = randomFloat(0.7f, 1.2f);
@@ -3265,9 +3235,7 @@ void CDODBot ::getTasks(unsigned int iIgnore)
 		}
 
 		if (CDODMod::mapHasBombs())
-		{
 			ADD_UTILITY(BOT_UTIL_PICKUP_BOMB, !m_bHasBomb, hasSomeConditions(CONDITION_NEED_BOMB) ? 1.0f : 0.75f);
-		}
 	}
 	// bomb map
 
@@ -3368,9 +3336,7 @@ void CDODBot ::getTasks(unsigned int iIgnore)
 	}
 
 	if (bCanMessAround)
-	{
 		ADD_UTILITY(BOT_UTIL_MESSAROUND, (getHealthPercent() > 0.75f), fAttackUtil);
-	}
 
 	if (!rcbot_melee_only.GetBool() && (m_pNearestWeapon.get() != nullptr) && hasSomeConditions(CONDITION_NEED_AMMO))
 	{
@@ -3378,9 +3344,7 @@ void CDODBot ::getTasks(unsigned int iIgnore)
 		CBotWeapon *pHaveWeapon = (pNearestWeapon == nullptr) ? nullptr : (m_pWeapons->getWeapon(pNearestWeapon));
 
 		if (pNearestWeapon && (!pHaveWeapon || !pHaveWeapon->hasWeapon() || pHaveWeapon->outOfAmmo(this)))
-		{
 			ADD_UTILITY(BOT_UTIL_PICKUP_WEAPON, true, 0.6f + pNearestWeapon->getPreference() * 0.1f);
-		}
 		// BOT_UTIL_DOD_PICKUP_OBJ
 	}
 	// sniping or machinegunning
@@ -3525,9 +3489,7 @@ void CDODBot ::updateConditions()
 	if (m_pPrimaryWeapon != nullptr)
 	{
 		if (m_pPrimaryWeapon->outOfAmmo(this))
-		{
 			updateCondition(CONDITION_NEED_AMMO);
-		}
 	}
 }
 
@@ -3545,9 +3507,7 @@ bool CDODBot ::walkingTowardsWaypoint(CWaypoint *pWaypoint, bool *bOffsetApplied
 	if (CBot::walkingTowardsWaypoint(pWaypoint, bOffsetApplied, vOffset))
 	{
 		if (pWaypoint->hasFlag(CWaypointTypes::W_FL_BOMB_TO_OPEN))
-		{
 			vOffset += (CDODMod::getGround(pWaypoint) - pWaypoint->getOrigin());
-		}
 
 		return true;
 	}
@@ -3585,9 +3545,7 @@ void CDODBot ::modAim(edict_t *pEntity, Vector &v_origin, Vector *v_desired_offs
 		CClassInterface::getPlayerInfoDOD(pEntity, &bIsEnemyProne, &fEnemyStamina);
 		// .. so update
 		if (bIsEnemyProne)
-		{
 			v_desired_offset->z -= randomFloat(0.0, 8.0f);
-		}
 		// aiming for head done in Cbot::getaimVector
 		/*else if ( hasSomeConditions(CONDITION_SEE_ENEMY_HEAD) )
 		{

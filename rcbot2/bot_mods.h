@@ -223,9 +223,7 @@ class CDODFlags
 		memset(m_pBombs, 0, sizeof(edict_t *) * MAX_DOD_FLAGS * 2);
 
 		for (short int i = 0; i < MAX_DOD_FLAGS; i++)
-		{
 			m_iWaypoint[i] = -1;
-		}
 	}
 
 	int getNumFlags()
@@ -237,10 +235,8 @@ class CDODFlags
 		int count = 0;
 
 		for (short int i = 0; i < m_iNumControlPoints; i++)
-		{
 			if (m_iOwner[i] == iTeam)
 				count++;
-		}
 
 		return count;
 	}
@@ -266,10 +262,8 @@ class CDODFlags
 		int count = 0;
 
 		for (short int i = 0; i < m_iNumControlPoints; i++)
-		{
 			if (canDefendBomb(iTeam, i))
 				count++;
-		}
 
 		return count;
 	}
@@ -279,10 +273,8 @@ class CDODFlags
 		int count = 0;
 
 		for (short int i = 0; i < m_iNumControlPoints; i++)
-		{
 			if (canDefuseBomb(iTeam, i))
 				count++;
-		}
 
 		return count;
 	}
@@ -292,10 +284,8 @@ class CDODFlags
 		int count = 0;
 
 		for (short int i = 0; i < m_iNumControlPoints; i++)
-		{
 			if (canPlantBomb(iTeam, i))
 				count += getNumBombsRequired(i);
-		}
 
 		return count;
 	}
@@ -320,10 +310,8 @@ class CDODFlags
 		int count = 0;
 
 		for (short int i = 0; i < m_iNumControlPoints; i++)
-		{
 			if (canPlantBomb(iTeam, i))
 				count += getNumBombsRemaining(i);
-		}
 
 		return count;
 	}
@@ -345,10 +333,8 @@ class CDODFlags
 		int count = 0;
 
 		for (short int i = 0; i < m_iNumControlPoints; i++)
-		{
 			if (m_iOwner[i] == iTeam)
 				count++;
-		}
 
 		return count;
 	}
@@ -475,10 +461,8 @@ class CDODFlags
 	inline int getFlagID(edict_t *pent)
 	{
 		for (short int i = 0; i < m_iNumControlPoints; i++)
-		{
 			if (m_pFlags[i] == pent)
 				return i;
-		}
 
 		return -1;
 	}
@@ -489,10 +473,8 @@ class CDODFlags
 			return -1;
 
 		for (short int i = 0; i < m_iNumControlPoints; i++)
-		{
 			if ((m_pBombs[i][0] == pent) || (m_pBombs[i][1] == pent))
 				return i;
-		}
 
 		return -1;
 	}
@@ -607,10 +589,8 @@ class CDODMod : public CBotMod
 	static inline CWaypoint *getBombWaypoint(edict_t *pBomb)
 	{
 		for (unsigned int i = 0; i < m_BombWaypoints.size(); i++)
-		{
 			if (m_BombWaypoints[i].pEdict == pBomb)
 				return m_BombWaypoints[i].pWaypoint;
-		}
 
 		return nullptr;
 	}
@@ -618,10 +598,8 @@ class CDODMod : public CBotMod
 	static inline bool isPathBomb(edict_t *pBomb)
 	{
 		for (unsigned int i = 0; i < m_BombWaypoints.size(); i++)
-		{
 			if (m_BombWaypoints[i].pEdict == pBomb)
 				return true;
-		}
 
 		return false;
 	}
@@ -1038,9 +1016,7 @@ class CTeamFortress2Mod : public CBotMod
 		int id = ENTINDEX(pOwner) - 1;
 
 		if (id >= 0)
-		{
 			return m_SentryGuns[id].sentry.get();
-		}
 
 		return nullptr;
 	}
@@ -1049,10 +1025,8 @@ class CTeamFortress2Mod : public CBotMod
 	{
 		// for ( short int i = 1; i <= gpGlobals->maxClients; i ++ )
 		for (short int i = 0; i < MAX_PLAYERS; i++)
-		{
 			if (m_SentryGuns[i].sentry.get() == pSentry)
 				return INDEXENT(i + 1);
-		}
 
 		return nullptr;
 	}
@@ -1062,9 +1036,7 @@ class CTeamFortress2Mod : public CBotMod
 		int id = ENTINDEX(pOwner) - 1;
 
 		if (id >= 0)
-		{
 			return (m_SentryGuns[id].sentry.get() != nullptr) && (m_SentryGuns[id].sapper.get() != nullptr);
-		}
 
 		return false;
 	}
@@ -1097,9 +1069,7 @@ class CTeamFortress2Mod : public CBotMod
 		int id = ENTINDEX(pOwner) - 1;
 
 		if (id >= 0)
-		{
 			return (m_Dispensers[id].disp.get() != nullptr) && (m_Dispensers[id].sapper.get() != nullptr);
-		}
 
 		return false;
 	}
@@ -1109,10 +1079,8 @@ class CTeamFortress2Mod : public CBotMod
 		unsigned int i;
 
 		for (i = 0; i < MAX_PLAYERS; i++)
-		{
 			if (m_SentryGuns[i].sentry.get() == pSentry)
 				return m_SentryGuns[i].sapper.get() != nullptr;
-		}
 
 		return false;
 	}
@@ -1122,10 +1090,8 @@ class CTeamFortress2Mod : public CBotMod
 		unsigned int i;
 
 		for (i = 0; i < MAX_PLAYERS; i++)
-		{
 			if ((m_Teleporters[i].entrance.get() == pTele) || (m_Teleporters[i].exit.get() == pTele))
 				return m_Teleporters[i].sapper.get() != nullptr;
-		}
 
 		return false;
 	}
@@ -1135,10 +1101,8 @@ class CTeamFortress2Mod : public CBotMod
 		unsigned int i;
 
 		for (i = 0; i < MAX_PLAYERS; i++)
-		{
 			if (m_Dispensers[i].disp.get() == pDisp)
 				return m_Dispensers[i].sapper.get() != nullptr;
-		}
 
 		return false;
 	}
@@ -1356,10 +1320,8 @@ class CHalfLifeDeathmatchMod : public CBotMod
 	static inline edict_t *getButtonAtWaypoint(CWaypoint *pWaypoint)
 	{
 		for (unsigned int i = 0; i < m_LiftWaypoints.size(); i++)
-		{
 			if (m_LiftWaypoints[i].pWaypoint == pWaypoint)
 				return m_LiftWaypoints[i].pEdict;
-		}
 
 		return nullptr;
 	}

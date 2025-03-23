@@ -50,9 +50,7 @@ void CBotDODBomb ::execute(CBot *pBot, CBotSchedule *pSchedule)
 		bWorking = CClassInterface::isPlayerPlantingBomb_DOD(pBot->getEdict());
 
 		if (CDODMod::m_Flags.isBombPlanted(m_iBombID))
-		{
 			complete();
-		}
 		else if (CDODMod::m_Flags.isTeamMatePlanting(pBot->getEdict(), pBot->getTeam(), m_iBombID))
 			complete(); // team mate doing my job
 

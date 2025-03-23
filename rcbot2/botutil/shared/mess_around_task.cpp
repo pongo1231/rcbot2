@@ -58,9 +58,7 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 		pBot->setLookAtTask(LOOK_VECTOR);
 
 		if (!pBot->FInViewCone(m_pFriendly))
-		{
 			ok = false;
-		}
 
 		if (pBot->distanceFrom(m_pFriendly) > 100)
 		{
@@ -95,13 +93,10 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 	{
 		if (randomInt(0, 1))
 			pBot->jump();
-		else
+		else if (pBot->isTF2())
 		{
-			if (pBot->isTF2())
-			{
-				if (((CBotTF2 *)pBot)->getClass() == TF_CLASS_HWGUY)
-					pBot->secondaryAttack(true);
-			}
+			if (((CBotTF2 *)pBot)->getClass() == TF_CLASS_HWGUY)
+				pBot->secondaryAttack(true);
 		}
 
 		if (!m_fTime)

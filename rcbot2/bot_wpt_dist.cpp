@@ -27,9 +27,7 @@ void CWaypointDistances ::load()
 		std::fstream bfp = CBotGlobals::openFile(filename, std::fstream::in | std::fstream::binary);
 
 		if (!bfp)
-		{
 			return; // give up
-		}
 
 		bfp.read(reinterpret_cast<char *>(&hdr), sizeof(wpt_dist_hdr_t));
 

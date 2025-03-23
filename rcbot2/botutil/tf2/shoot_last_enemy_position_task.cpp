@@ -49,13 +49,9 @@ void CBotTF2ShootLastEnemyPosition ::execute(CBot *pBot, CBotSchedule *pSchedule
 	pBot->wantToListen(false);
 
 	if (pTF2Bot->getClass() == TF_CLASS_SOLDIER)
-	{
 		pChange = CWeapons::getWeapon(TF2_WEAPON_ROCKETLAUNCHER);
-	}
 	else if (pTF2Bot->getClass() == TF_CLASS_DEMOMAN)
-	{
 		pChange = CWeapons::getWeapon(TF2_WEAPON_GRENADELAUNCHER);
-	}
 
 	if (!pChange)
 	{
@@ -72,14 +68,9 @@ void CBotTF2ShootLastEnemyPosition ::execute(CBot *pBot, CBotSchedule *pSchedule
 	}
 
 	if (pChangeTo != pWeapon)
-	{
 		pBot->selectBotWeapon(pChangeTo);
-	}
-	else
-	{
-		if (randomInt(0, 1))
-			pBot->primaryAttack(false);
-	}
+	else if (randomInt(0, 1))
+		pBot->primaryAttack(false);
 
 	pBot->setLookVector(m_vPosition);
 	pBot->setLookAtTask(LOOK_VECTOR);

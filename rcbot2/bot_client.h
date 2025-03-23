@@ -328,13 +328,9 @@ class CClient
 	void setDebug(int iLevel, bool bSet)
 	{
 		if (bSet)
-		{
 			m_iDebugLevels |= (1 << iLevel);
-		}
 		else
-		{
 			m_iDebugLevels &= ~(1 << iLevel);
-		}
 	}
 	bool isDebugOn(int iLevel)
 	{
@@ -568,9 +564,7 @@ class CClients
 	static void initall()
 	{
 		for (int i = 0; i < MAX_PLAYERS; i++)
-		{
 			m_Clients[i].init();
-		}
 	}
 	static void giveMessage(char *msg, float fTime = 0.1, edict_t *pPlayer = nullptr); // nullptr to everyone
   private:

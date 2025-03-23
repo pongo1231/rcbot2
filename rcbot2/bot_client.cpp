@@ -259,9 +259,7 @@ void CClient ::think()
 	//{
 
 	if ((m_pPlayer != nullptr) && (m_pPlayerInfo == nullptr))
-	{
 		m_pPlayerInfo = playerinfomanager->GetPlayerInfo(m_pPlayer);
-	}
 
 #if SOURCE_ENGINE == SE_TF2
 	if ((m_fMonitorHighFiveTime < engine->Time()) && (m_pPlayer != nullptr) && (m_pPlayerInfo != nullptr)
@@ -357,9 +355,7 @@ void CClient ::think()
 		IPlayerInfo *p = playerinfomanager->GetPlayerInfo(m_pPlayer);
 
 		if (isDebugOn(BOT_DEBUG_SPEED))
-		{
 			CBotGlobals::botMessage(m_pPlayer, 0, "speed = %0.0f", m_fSpeed);
-		}
 
 		if (isDebugOn(BOT_DEBUG_USERCMD))
 		{
@@ -460,9 +456,7 @@ void CClient ::think()
 				m_vLastAutoWaypointCheckPos[0].SetVector(getOrigin());
 
 			for (i = start; i < MAX_STORED_AUTOWAYPOINT; i++)
-			{
 				m_vLastAutoWaypointCheckPos[i].UnSetPoint();
-			}
 
 			m_vLastAutoWaypointPlacePos = getOrigin();
 			m_bSetUpAutoWaypoint        = TRUE;
@@ -665,9 +659,7 @@ void CClient ::think()
 
 				// need to unset every check point when going on ladder first time
 				for (int i = 0; i < MAX_STORED_AUTOWAYPOINT; i++)
-				{
 					m_vLastAutoWaypointCheckPos[i].UnSetPoint();
-				}
 			}
 			else if (!(iMoveType == MOVETYPE_FLY) && (m_iLastMoveType == MOVETYPE_FLY))
 			{
@@ -775,20 +767,14 @@ void CClient ::think()
 				int last   = 0;
 
 				for (n = 0; n < MAX_STORED_AUTOWAYPOINT; n++)
-				{
 					if (m_vLastAutoWaypointCheckPos[n].IsVectorSet())
-					{
 						numset++;
-					}
-				}
 
 				if (numset == MAX_STORED_AUTOWAYPOINT)
 				{
 					// move check points down
 					for (n = 0; n < (MAX_STORED_AUTOWAYPOINT - 1); n++)
-					{
 						m_vLastAutoWaypointCheckPos[n] = m_vLastAutoWaypointCheckPos[n + 1];
-					}
 
 					last = MAX_STORED_AUTOWAYPOINT - 1;
 				}
@@ -801,9 +787,7 @@ void CClient ::think()
 
 				// sort out flags for this waypoint depending on player
 				if ((iPlayerFlags & FL_DUCKING) == FL_DUCKING)
-				{
 					iFlags |= CWaypointTypes::W_FL_CROUCH; // crouching waypoint
-				}
 
 				if (iMoveType == MOVETYPE_LADDER)
 					iFlags |= CWaypointTypes::W_FL_LADDER; // waypoint on a ladder
@@ -939,9 +923,7 @@ void CClient ::think()
 					}
 
 					for (n = n; n < MAX_STORED_AUTOWAYPOINT; n++)
-					{
 						m_vLastAutoWaypointCheckPos[n].UnSetPoint();
-					}
 				}
 
 				m_fLastAutoWaypointCheckTime = engine->Time() + 0.5f;
@@ -977,9 +959,7 @@ void CClients::giveMessage(char *msg, float fTime, edict_t *pPlayer)
 			pClient = get(i);
 
 			if (pClient)
-			{
 				pClient->giveMessage(msg, fTime);
-			}
 		}
 	}
 }
@@ -1047,9 +1027,7 @@ void CClient ::clientDisconnected()
 	if (!engine->IsDedicatedServer())
 	{
 		if (CClients::isListenServerClient(this))
-		{
 			CClients::setListenServerClient(nullptr);
-		}
 	}
 
 	/*extern IServerGameEnts *servergameents;
@@ -1077,9 +1055,7 @@ Vector CClient ::getOrigin()
 	IPlayerInfo *playerinfo = playerinfomanager->GetPlayerInfo(m_pPlayer);
 
 	if (playerinfo)
-	{
 		return playerinfo->GetAbsOrigin() + Vector(0, 0, 32);
-	}
 
 	return CBotGlobals::entityOrigin(m_pPlayer)
 	     + Vector(0, 0, 32); // m_pPlayer->GetCollideable()->GetCollisionOrigin();
@@ -1237,9 +1213,7 @@ void CClient ::setWaypointCut(CWaypoint *pWaypoint)
 		m_WaypointCutPaths.clear();
 
 		for (i = 0; i < pWaypoint->numPaths(); i++)
-		{
 			m_WaypointCutPaths.push_back(pWaypoint->getPath(i));
-		}
 
 		m_WaypointCopyType = WPT_COPY_CUT;
 	}

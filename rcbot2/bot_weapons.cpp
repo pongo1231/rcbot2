@@ -226,9 +226,7 @@ WeaponsData_t TF2Weaps[] = {
 bool CBotWeapon ::needToReload(CBot *pBot)
 {
 	if (m_iClip1)
-	{
 		return (*m_iClip1 == 0) && (getAmmo(pBot) > 0);
-	}
 
 	return false;
 }
@@ -274,10 +272,8 @@ bool CBotWeapons::hasWeapon(int id)
 		if (m_theWeapons[i].hasWeapon() == false)
 			continue;
 		if (m_theWeapons[i].getID() == id)
-		// find weapon info from weapon id
-		{
+			// find weapon info from weapon id
 			return true;
-		}
 	}
 	return false;
 }
@@ -365,9 +361,7 @@ bool CBotWeapons::update(bool bOverrideAllFromEngine)
 			pWeapon       = INDEXENT(m_Weapon_iter->GetEntryIndex());
 
 			if (!pWeapon || pWeapon->IsFree())
-			{
 				continue;
-			}
 
 			iWeaponState         = CClassInterface::getWeaponState(pWeapon);
 
@@ -666,10 +660,8 @@ return;
 CBotWeapon *CBotWeapons ::getWeapon(CWeapon *pWeapon)
 {
 	for (register unsigned int i = 0; i < MAX_WEAPONS; i++)
-	{
 		if (m_theWeapons[i].getWeaponInfo() == pWeapon)
 			return &(m_theWeapons[i]);
-	}
 
 	return nullptr;
 }
@@ -677,11 +669,9 @@ CBotWeapon *CBotWeapons ::getWeapon(CWeapon *pWeapon)
 CBotWeapon *CBotWeapons ::getCurrentWeaponInSlot(int iSlot)
 {
 	for (register unsigned int i = 0; i < MAX_WEAPONS; i++)
-	{
 		if (m_theWeapons[i].hasWeapon() && m_theWeapons[i].getWeaponInfo()
 		    && (m_theWeapons[i].getWeaponInfo()->getSlot() == iSlot))
 			return &(m_theWeapons[i]);
-	}
 
 	return nullptr;
 }
@@ -816,9 +806,7 @@ CBotWeapon *CBotWeapons ::getPrimaryWeapon()
 			continue;
 
 		if ((pBest == nullptr) || (pBest->getPreference() < pWeap->getPreference()))
-		{
 			pBest = pWeap;
-		}
 	}
 
 	return pBest;
@@ -851,9 +839,7 @@ CBotWeapon *CBotWeapons::getActiveWeapon(const char *szWeaponName, edict_t *pWea
 			}
 
 			if (pWeaponUpdate && toReturn)
-			{
 				toReturn->setWeaponEntity(pWeaponUpdate, bOverrideAmmoTypes);
-			}
 		}
 	}
 
@@ -993,9 +979,7 @@ CWeapon *CWeapons ::getWeaponByShortName(const char *szWeapon)
 void CWeapons ::eachWeapon(IWeaponFunc *pFunc)
 {
 	for (unsigned int i = 0; i < m_theWeapons.size(); i++)
-	{
 		pFunc->execute(m_theWeapons[i]);
-	}
 }
 
 void CWeapons ::freeMemory()

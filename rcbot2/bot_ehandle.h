@@ -48,9 +48,7 @@ class MyEHandle
 		m_pEnt = pent;
 
 		if (pent)
-		{
 			m_iSerialNumber = pent->m_NetworkSerialNumber;
-		}
 		else
 			m_iSerialNumber = 0;
 	}
@@ -115,9 +113,7 @@ class MyEHandle
 		m_pEnt = pent;
 
 		if (pent)
-		{
 			m_iSerialNumber = pent->m_NetworkSerialNumber;
-		}
 		else
 			m_iSerialNumber = 0;
 

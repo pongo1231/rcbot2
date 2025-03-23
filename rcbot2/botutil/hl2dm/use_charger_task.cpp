@@ -17,9 +17,7 @@ void CBotHL2DMUseCharger ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	vOrigin = CBotGlobals::entityOrigin(m_pCharger);
 
 	if (m_fTime == 0.0f)
-	{
 		m_fTime = engine->Time() + randomFloat(4.0f, 6.0f);
-	}
 
 	if (m_fTime < engine->Time())
 		complete();
@@ -36,11 +34,7 @@ void CBotHL2DMUseCharger ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	pBot->setLookAtTask(LOOK_VECTOR);
 
 	if (pBot->distanceFrom(m_pCharger) > 96)
-	{
 		pBot->setMoveTo(vOrigin);
-	}
 	else if (pBot->isFacing(vOrigin))
-	{
 		pBot->use();
-	}
 }

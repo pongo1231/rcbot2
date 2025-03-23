@@ -72,9 +72,7 @@ class BotCommandArgs : public std::deque<const char *>
 	const char *operator[](size_t at)
 	{
 		if (at >= this->size())
-		{
 			return nullptr;
-		}
 		return std::deque<const char *>::operator[](at);
 	}
 };

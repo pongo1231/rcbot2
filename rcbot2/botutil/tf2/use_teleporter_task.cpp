@@ -46,34 +46,30 @@ void CBotTFUseTeleporter ::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 		fail();
 	}
-	else
+	else if (CTeamFortress2Mod::getTeleporterExit(m_pTele)) // exit is still alive?
 	{
-		if (CTeamFortress2Mod::getTeleporterExit(m_pTele)) // exit is still alive?
+		Vector vTele = CBotGlobals::entityOrigin(m_pTele);
+
+		if ((pBot->distanceFrom(vTele) > 48) || (CClassInterface::getGroundEntity(pBot->getEdict()) != m_pTele.get()))
 		{
-			Vector vTele = CBotGlobals::entityOrigin(m_pTele);
+			pBot->setMoveTo((vTele));
 
-			if ((pBot->distanceFrom(vTele) > 48)
-			    || (CClassInterface::getGroundEntity(pBot->getEdict()) != m_pTele.get()))
+			if ((m_vLastOrigin - pBot->getOrigin()).Length() > 50)
 			{
-				pBot->setMoveTo((vTele));
+				pBot->getNavigator()->freeMapMemory(); // restart navigator
 
-				if ((m_vLastOrigin - pBot->getOrigin()).Length() > 50)
-				{
-					pBot->getNavigator()->freeMapMemory(); // restart navigator
-
-					complete(); // finished
-				}
+				complete(); // finished
 			}
-			else
-			{
-				pBot->stopMoving();
-			}
-
-			m_vLastOrigin = pBot->getOrigin();
 		}
 		else
-			fail();
+		{
+			pBot->stopMoving();
+		}
+
+		m_vLastOrigin = pBot->getOrigin();
 	}
+	else
+		fail();
 }
 
 void CBotTFUseTeleporter ::debugString(char *string)

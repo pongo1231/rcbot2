@@ -90,10 +90,8 @@ CRCBotKeyValueList ::~CRCBotKeyValueList()
 CRCBotKeyValue *CRCBotKeyValueList ::getKV(const char *key)
 {
 	for (unsigned int i = 0; i < m_KVs.size(); i++)
-	{
 		if (FStrEq(m_KVs[i]->getKey(), key))
 			return m_KVs[i];
-	}
 
 	return nullptr;
 }

@@ -166,9 +166,7 @@ const char *CWaypointRadiusMenu ::getCaption(CClient *pClient, WptColor &color)
 	float fRadius   = 0;
 
 	if (pWpt)
-	{
 		fRadius = pWpt->getRadius();
-	}
 
 	sprintf(m_szCaption, "Waypoint Radius (%0.1f)", fRadius);
 	color = WptColor::white;
@@ -183,9 +181,7 @@ const char *CWaypointAreaMenu ::getCaption(CClient *pClient, WptColor &color)
 	int iArea       = 0;
 
 	if (pWpt)
-	{
 		iArea = pWpt->getArea();
-	}
 
 	sprintf(m_szCaption, "Waypoint Area (%d)", iArea);
 	color = WptColor::white;
@@ -233,9 +229,7 @@ void CWaypointAreaIncrease ::activate(CClient *pClient)
 	CWaypoint *pWpt = CWaypoints::getWaypoint(iWpt);
 
 	if (pWpt)
-	{
 		pWpt->setArea(pWpt->getArea() + 1);
-	}
 }
 
 void CWaypointAreaDecrease ::activate(CClient *pClient)
@@ -244,9 +238,7 @@ void CWaypointAreaDecrease ::activate(CClient *pClient)
 	CWaypoint *pWpt = CWaypoints::getWaypoint(iWpt);
 
 	if (pWpt)
-	{
 		pWpt->setArea(pWpt->getArea() - 1);
-	}
 }
 
 void CWaypointRadiusIncrease ::activate(CClient *pClient)
@@ -317,9 +309,7 @@ void CWaypointCopyMenuItem ::activate(CClient *pClient)
 	CWaypoint *pwpt = CWaypoints::getWaypoint(pClient->currentWaypoint());
 
 	if (pwpt)
-	{
 		pClient->setWaypointCopy(pwpt);
-	}
 }
 
 const char *CWaypointPasteMenuItem ::getCaption(CClient *pClient, WptColor &color)

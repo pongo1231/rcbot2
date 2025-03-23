@@ -31,9 +31,7 @@ void CBotZombie ::modThink(void)
 void CBotZombie ::getTasks(unsigned int iIgnore)
 {
 	if (m_pEnemy)
-	{
 		m_pSchedules->add(new CBotGotoOriginSched(m_pEnemy));
-	}
 	else
 		CBot::getTasks();
 }

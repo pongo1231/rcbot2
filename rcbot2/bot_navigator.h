@@ -374,34 +374,31 @@ class AStarOpenList
 
 		if (m_Head == nullptr)
 			m_Head = newNode;
+		else if (data->precedes(m_Head->m_Data))
+		{
+			newNode->m_Next = m_Head;
+			m_Head          = newNode;
+		}
 		else
 		{
-			if (data->precedes(m_Head->m_Data))
-			{
-				newNode->m_Next = m_Head;
-				m_Head          = newNode;
-			}
-			else
-			{
-				p = m_Head;
-				t = m_Head->m_Next;
+			p = m_Head;
+			t = m_Head->m_Next;
 
-				while (t != nullptr)
+			while (t != nullptr)
+			{
+				if (data->precedes(t->m_Data))
 				{
-					if (data->precedes(t->m_Data))
-					{
-						p->m_Next       = newNode;
-						newNode->m_Next = t;
-						break;
-					}
-
-					p = t;
-					t = t->m_Next;
+					p->m_Next       = newNode;
+					newNode->m_Next = t;
+					break;
 				}
 
-				if (t == nullptr)
-					p->m_Next = newNode;
+				p = t;
+				t = t->m_Next;
 			}
+
+			if (t == nullptr)
+				p->m_Next = newNode;
 		}
 	}
 

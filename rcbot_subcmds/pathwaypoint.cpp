@@ -146,9 +146,7 @@ CBotCommandInline PathWaypointDeleteToCommand("deleteto", 0,
 	                                              pClient->updateCurrentWaypoint();
 
 	                                              if (CWaypoints::validWaypointIndex(pClient->currentWaypoint()))
-	                                              {
 		                                              CWaypoints::deletePathsTo(pClient->currentWaypoint());
-	                                              }
 
 	                                              return COMMAND_ACCESSED;
                                               });
@@ -159,9 +157,7 @@ CBotCommandInline PathWaypointDeleteFromCommand("deletefrom", 0,
 	                                                pClient->updateCurrentWaypoint();
 
 	                                                if (CWaypoints::validWaypointIndex(pClient->currentWaypoint()))
-	                                                {
 		                                                CWaypoints::deletePathsFrom(pClient->currentWaypoint());
-	                                                }
 
 	                                                return COMMAND_ACCESSED;
                                                 });

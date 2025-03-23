@@ -115,9 +115,7 @@ CBotVisibles ::~CBotVisibles()
 void CBotVisibles ::eachVisible(CVisibleFunc *pFunc)
 {
 	for (edict_t *pEnt : m_VisibleSet)
-	{
 		pFunc->execute(pEnt);
-	}
 }
 
 void CBotVisibles ::reset()
@@ -277,9 +275,7 @@ void CBotVisibles ::updateVisibles()
 	CProfileTimer *timer = CProfileTimers::getTimer(BOT_VISION_TIMER);
 
 	if (CClients::clientsDebugging(BOT_DEBUG_PROFILE))
-	{
 		timer->Start();
-	}
 #endif
 
 	iStartPlayerIndex = m_iCurPlayer;
@@ -368,9 +364,7 @@ void CBotVisibles ::updateVisibles()
 
 #ifdef _DEBUG
 	if (CClients::clientsDebugging(BOT_DEBUG_PROFILE))
-	{
 		timer->Stop();
-	}
 #endif
 }
 

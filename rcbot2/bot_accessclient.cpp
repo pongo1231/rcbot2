@@ -204,16 +204,10 @@ void CAccessClients ::save()
 	std::fstream fp = CBotGlobals::openFile(filename, std::fstream::out);
 
 	if (fp)
-	{
 		for (unsigned int i = 0; i < m_Clients.size(); i++)
-		{
 			m_Clients[i]->save(fp);
-		}
-	}
 	else
-	{
 		logger->Log(LogLevel::ERROR, "Failed to open file '%s' for writing", filename);
-	}
 }
 
 void CAccessClients ::checkClientAccess(CClient *pClient)

@@ -168,14 +168,10 @@ eBotCommandResult CBotSubcommands::execute(CClient *pClient, BotCommandArgs args
 	for (auto cmd : m_theCommands)
 	{
 		if (!cmd->isCommand(subcmd))
-		{
 			continue;
-		}
 
 		if (pClient && !cmd->hasAccess(pClient))
-		{
 			return COMMAND_REQUIRE_ACCESS;
-		}
 
 		if (!pClient && !cmd->canbeUsedDedicated())
 		{
@@ -186,9 +182,7 @@ eBotCommandResult CBotSubcommands::execute(CClient *pClient, BotCommandArgs args
 		// shift arguments and call
 		eBotCommandResult result = cmd->execute(pClient, args);
 		if (result == COMMAND_ERROR)
-		{
 			cmd->printHelp(pClient ? pClient->getPlayer() : nullptr);
-		}
 		return COMMAND_ACCESSED;
 	}
 
@@ -217,9 +211,7 @@ void CBotSubcommands::printCommand(edict_t *pPrintTo, int indent)
 		CBotGlobals::botMessage(pPrintTo, 0, "[%s]", m_szCommand);
 
 	for (unsigned int i = 0; i < m_theCommands.size(); i++)
-	{
 		m_theCommands[i]->printCommand(pPrintTo, indent + 1);
-	}
 }
 
 void CBotSubcommands::printHelp(edict_t *pPrintTo)

@@ -10,9 +10,7 @@ void CBotDefendTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	if (m_fTime == 0)
 	{
 		if (pBot->inSquad() && pBot->isSquadLeader())
-		{
 			m_fTime = engine->Time() + randomFloat(15.0f, 45.0f);
-		}
 		else if (m_fMaxTime > 0)
 			m_fTime = engine->Time() + m_fMaxTime;
 		else

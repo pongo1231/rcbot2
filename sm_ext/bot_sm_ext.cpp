@@ -12,9 +12,7 @@ bool RCBotSourceModExt::OnExtensionLoad(IExtension *me, IShareSys *sys, char *er
 
 	/* Get the default interfaces from our configured SDK header */
 	if (!SM_AcquireInterfaces(error, maxlength))
-	{
 		return false;
-	}
 
 	sharesys->RegisterLibrary(myself, "RCBot2");
 	sharesys->AddNatives(myself, g_RCBotNatives);
@@ -79,9 +77,7 @@ bool SM_LoadExtension(char *error, size_t maxlength)
 	    == nullptr)
 	{
 		if (error && maxlength)
-		{
 			snprintf(error, maxlength, SOURCEMOD_INTERFACE_EXTENSIONS " interface not found");
-		}
 		return false;
 	}
 

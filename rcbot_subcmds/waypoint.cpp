@@ -573,15 +573,11 @@ CBotCommandInline WaypointTeleportCommand("teleport", 0,
 		                                          }
 
 		                                          if (bTele)
-		                                          {
 			                                          CBotGlobals::botMessage(pClient->getPlayer(), 0,
 			                                                                  "Teleported to waypoint %d", id);
-		                                          }
 		                                          else
-		                                          {
 			                                          CBotGlobals::botMessage(pClient->getPlayer(), 0,
 			                                                                  "Invalid waypoint id %d", id);
-		                                          }
 
 		                                          return COMMAND_ACCESSED;
 	                                          }
@@ -621,16 +617,12 @@ CBotCommandInline WaypointAreaSetToNearest(
 		    }
 
 		    if (bOk)
-		    {
 			    if (setarea > 0)
 				    CBotGlobals::botMessage(pClient->getPlayer(), 0, "Changed waypoint %d area to %d", id, setarea);
 			    else
 				    CBotGlobals::botMessage(pClient->getPlayer(), 0, "No nearest area to wpt id %d", id);
-		    }
 		    else
-		    {
 			    CBotGlobals::botMessage(pClient->getPlayer(), 0, "Invalid waypoint id %d", id);
-		    }
 		    return COMMAND_ACCESSED;
 	    }
 
@@ -743,9 +735,7 @@ CBotCommandInline WaypointAutoFix("autofix", 0,
 	                                  bool bFixSentry_Sniper_Defend_TeleExtWpts = false;
 
 	                                  if (args[0] && *args[0])
-	                                  {
 		                                  bFixSentry_Sniper_Defend_TeleExtWpts = (atoi(args[0]) == 1);
-	                                  }
 
 	                                  CWaypoints::autoFix(bFixSentry_Sniper_Defend_TeleExtWpts);
 

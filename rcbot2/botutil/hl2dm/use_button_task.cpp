@@ -15,9 +15,7 @@ void CBotHL2DMUseButton ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	vOrigin = CBotGlobals::entityOrigin(m_pButton);
 
 	if (m_fTime == 0.0f)
-	{
 		m_fTime = engine->Time() + randomFloat(4.0f, 6.0f);
-	}
 
 	if (m_fTime < engine->Time())
 		complete();

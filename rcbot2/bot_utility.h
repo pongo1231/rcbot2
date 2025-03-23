@@ -224,9 +224,7 @@ class CBotUtilities
 	inline void addUtility(CBotUtility p)
 	{
 		if (p.canDo())
-		{
 			m_Utilities.push_back(p);
-		}
 	}
 
 	void execute();

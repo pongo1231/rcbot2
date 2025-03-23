@@ -611,9 +611,7 @@ class CBot
 		if (pEnemy == m_pEnemy)
 			updateCondition(CONDITION_ENEMY_DEAD);
 		if (pEnemy == m_pLastEnemy)
-		{
 			m_pLastEnemy = nullptr;
-		}
 	}
 	//////////////////////
 	virtual bool isCSS()
@@ -841,9 +839,7 @@ class CBot
 	inline void reduceTouchDistance()
 	{
 		if (m_fWaypointTouchDistance > MIN_WPT_TOUCH_DIST)
-		{
 			m_fWaypointTouchDistance *= 0.9;
-		}
 	}
 
 	inline void resetTouchDistance(float fDist)

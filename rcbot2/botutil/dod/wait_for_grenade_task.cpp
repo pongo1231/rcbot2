@@ -7,9 +7,7 @@ void CDODWaitForGrenadeTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 
 	if (m_pGrenade.get() == nullptr)
-	{
 		complete();
-	}
 	else if (!CBotGlobals::entityIsAlive(m_pGrenade))
 		complete();
 	else if (m_fTime == 0)

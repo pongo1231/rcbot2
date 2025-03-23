@@ -54,9 +54,7 @@ void CAttackEntityTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	pWeapon = pBot->getBestWeapon(m_pEdict);
 
 	if ((pWeapon != nullptr) && (pWeapon != pBot->getCurrentWeapon()) && pWeapon->getWeaponIndex())
-	{
 		pBot->selectWeapon(pWeapon->getWeaponIndex());
-	}
 
 	pBot->setEnemy(m_pEdict);
 

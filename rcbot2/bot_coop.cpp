@@ -20,9 +20,7 @@ bool CBotCoop ::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 
 	// no shooting players
 	if (ENTINDEX(pEdict) <= CBotGlobals::maxClients())
-	{
 		return false;
-	}
 
 	classname = pEdict->GetClassName();
 

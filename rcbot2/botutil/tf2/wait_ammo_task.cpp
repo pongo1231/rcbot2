@@ -14,19 +14,13 @@ void CBotTF2WaitAmmoTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 		m_fWaitTime = engine->Time() + randomFloat(5.0f, 10.0f);
 
 	if (!pBot->hasSomeConditions(CONDITION_NEED_AMMO))
-	{
 		complete();
-	}
 	else if (m_fWaitTime < engine->Time())
 		fail();
 	else if (pBot->distanceFrom(m_vOrigin) > 100)
-	{
 		pBot->setMoveTo(m_vOrigin);
-	}
 	else
-	{
 		pBot->stopMoving();
-	}
 }
 
 void CBotTF2WaitAmmoTask ::debugString(char *string)

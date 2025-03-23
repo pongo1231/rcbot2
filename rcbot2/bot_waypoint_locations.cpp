@@ -59,10 +59,8 @@ unsigned char *CWaypointLocations ::resetFailedWaypoints(WaypointList *iIgnoreWp
 
 		// while ( !ignoreWptStack.IsEmpty() )
 		for (size_t l = 0; l < iIgnoreWpts->size(); l++)
-		{
 			if ((iWpt = (*iIgnoreWpts)[l]) != -1) //(iWpt = ignoreWptStack.ChooseFromStack()) != -1 )
 				g_iFailedWaypoints[iWpt] = 1;
-		}
 	}
 
 	return g_iFailedWaypoints;
@@ -256,14 +254,10 @@ void CWaypointLocations ::AutoPathInBucket(edict_t *pPlayer, int i, int j, int k
 			if (CBotGlobals::isVisible(vWptOrigin, vOtherWptOrigin))
 			{
 				if (CBotGlobals::walkableFromTo(pPlayer, vWptOrigin, vOtherWptOrigin))
-				{
 					pWpt->addPathTo(iWpt);
-				}
 
 				if (CBotGlobals::walkableFromTo(pPlayer, vOtherWptOrigin, vWptOrigin))
-				{
 					pOtherWpt->addPathTo(iWptFrom);
-				}
 			}
 		}
 	}
@@ -328,10 +322,8 @@ int CWaypointLocations ::GetCoverWaypoint(Vector vPlayerOrigin, Vector vCoverFro
 
 		// while ( !ignoreWptStack.IsEmpty() )
 		for (size_t l = 0; l < iIgnoreWpts->size(); l++)
-		{
 			if ((iWpt = (*iIgnoreWpts)[l]) != -1)
 				g_iFailedWaypoints[iWpt] = 1;
-		}
 	}
 
 	for (i = iMinLoci; i <= iMaxLoci; i++)
@@ -384,18 +376,14 @@ void CWaypointLocations ::FindNearestCoverWaypointInBucket(int i, int j, int k, 
 		if (curr_wpt->hasFlag(CWaypointTypes::W_FL_UNREACHABLE))
 			continue;
 		if (!curr_wpt->forTeam(iTeam))
-		{
 			continue;
-		}
 		if (CWaypoints::getVisiblity()->GetVisibilityFromTo(iCoverFromWpt, iSelectedIndex))
 			continue;
 
 		(fDist = curr_wpt->distanceFrom(vOrigin));
 
 		if (vGoalOrigin != nullptr)
-		{
 			fDist += curr_wpt->distanceFrom(*vGoalOrigin);
-		}
 
 		if ((fDist > fMinDist) && (fDist < *pfMinDist))
 		{
@@ -489,9 +477,7 @@ void CWaypointLocations ::FindNearestBlastInBucket(int i, int j, int k, const Ve
 			continue;
 
 		if (!curr_wpt->forTeam(iTeam))
-		{
 			continue;
-		}
 		// DOD:S compatibility
 		if (bCheckArea && !curmod->isWaypointAreaValid(curr_wpt->getArea(), curr_wpt->getFlags()))
 			continue;
@@ -629,16 +615,13 @@ void CWaypointLocations ::FindNearestInBucket(int i, int j, int k, const Vector 
 			{
 				if (bGetVisibleFromOther)
 					bAdd = CBotGlobals::isVisible(vOther, curr_wpt->getOrigin());
-				else
+				else if (pPlayer != nullptr)
 				{
-					if (pPlayer != nullptr)
-					{
-						CBotGlobals::quickTraceline(pPlayer, vOrigin, curr_wpt->getOrigin());
-						bAdd = CBotGlobals::getTraceResult()->fraction >= 1.0f;
-					}
-					else
-						bAdd = CBotGlobals::isVisible(vOrigin, curr_wpt->getOrigin());
+					CBotGlobals::quickTraceline(pPlayer, vOrigin, curr_wpt->getOrigin());
+					bAdd = CBotGlobals::getTraceResult()->fraction >= 1.0f;
 				}
+				else
+					bAdd = CBotGlobals::isVisible(vOrigin, curr_wpt->getOrigin());
 			}
 
 			if (bAdd)
@@ -683,10 +666,8 @@ int CWaypointLocations ::NearestWaypoint(const Vector &vOrigin, float fNearestDi
 			int iWpt;
 
 			for (size_t l = 0; l < iFailedWpts->size(); l++)
-			{
 				if ((iWpt = (*iFailedWpts)[l]) != -1)
 					g_iFailedWaypoints[iWpt] = 1;
-			}
 		}
 	}
 
@@ -712,9 +693,7 @@ int CWaypointLocations ::NearestWaypoint(const Vector &vOrigin, float fNearestDi
 			if ((iWpt = (*iFailedWpts)[l]) != -1) //( (iWpt = tempStack.ChooseFromStack()) != -1 )
 			{
 				if (g_iFailedWaypoints[iWpt] == 2)
-				{
 					iFailedWpts->erase(std::remove(iFailedWpts->begin(), iFailedWpts->end(), iWpt), iFailedWpts->end());
-				}
 			}
 		}
 	}

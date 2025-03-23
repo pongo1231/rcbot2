@@ -72,9 +72,7 @@ ga_nn_value CPopulation ::totalFitness()
 	float fTotalFitness = 0.0f;
 
 	for (unsigned int i = 0; i < size(); i++)
-	{
 		fTotalFitness += m_theIndividuals[i]->getFitness();
-	}
 
 	return fTotalFitness;
 }

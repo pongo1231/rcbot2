@@ -41,15 +41,11 @@ cell_t sm_RCBotSetProfileInt(IPluginContext *pContext, const cell_t *params)
 	int client                 = params[1];
 	RCBotProfileVar profileVar = static_cast<RCBotProfileVar>(params[2]);
 	if (client < 1 || client > gpGlobals->maxClients)
-	{
 		pContext->ThrowNativeError("Invalid client index %d", client);
-	}
 
 	CBot *bot = CBots::getBot(client - 1);
 	if (!bot)
-	{
 		pContext->ThrowNativeError("Client index %d is not a RCBot", client);
-	}
 
 	CBotProfile *profile = bot->getProfile();
 	int *value           = GetIntProperty(profile, profileVar);
@@ -69,15 +65,11 @@ cell_t sm_RCBotSetProfileFloat(IPluginContext *pContext, const cell_t *params)
 	int client                 = params[1];
 	RCBotProfileVar profileVar = static_cast<RCBotProfileVar>(params[2]);
 	if (client < 1 || client > gpGlobals->maxClients)
-	{
 		pContext->ThrowNativeError("Invalid client index %d", client);
-	}
 
 	CBot *bot = CBots::getBot(client - 1);
 	if (!bot)
-	{
 		pContext->ThrowNativeError("Client index %d is not a RCBot", client);
-	}
 
 	CBotProfile *profile = bot->getProfile();
 	float *value         = GetFloatProperty(profile, profileVar);
@@ -97,15 +89,11 @@ cell_t sm_RCBotGetProfileInt(IPluginContext *pContext, const cell_t *params)
 	int client                 = params[1];
 	RCBotProfileVar profileVar = static_cast<RCBotProfileVar>(params[2]);
 	if (client < 1 || client > gpGlobals->maxClients)
-	{
 		pContext->ThrowNativeError("Invalid client index %d", client);
-	}
 
 	CBot *bot = CBots::getBot(client - 1);
 	if (!bot)
-	{
 		pContext->ThrowNativeError("Client index %d is not a RCBot", client);
-	}
 
 	CBotProfile *profile = bot->getProfile();
 	int *value           = GetIntProperty(profile, profileVar);
@@ -123,15 +111,11 @@ cell_t sm_RCBotGetProfileFloat(IPluginContext *pContext, const cell_t *params)
 	int client                 = params[1];
 	RCBotProfileVar profileVar = static_cast<RCBotProfileVar>(params[2]);
 	if (client < 1 || client > gpGlobals->maxClients)
-	{
 		pContext->ThrowNativeError("Invalid client index %d", client);
-	}
 
 	CBot *bot = CBots::getBot(client - 1);
 	if (!bot)
-	{
 		pContext->ThrowNativeError("Client index %d is not a RCBot", client);
-	}
 
 	CBotProfile *profile = bot->getProfile();
 	float *value         = GetFloatProperty(profile, profileVar);

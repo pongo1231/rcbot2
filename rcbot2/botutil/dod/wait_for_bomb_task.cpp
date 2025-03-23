@@ -36,12 +36,10 @@ void CDODWaitForBombTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	if (m_pRunTo)
 	{
 		if (m_pRunTo->touched(pBot->getOrigin(), Vector(0, 0, 0), 48.0f))
-		{
 			if (pBot->distanceFrom(m_pBombTarget) > (BLAST_RADIUS * 2))
 				pBot->stopMoving();
 			else
 				m_pRunTo = CWaypoints::getNextCoverPoint(pBot, m_pRunTo, m_pBlocking);
-		}
 		else
 			pBot->setMoveTo(m_pRunTo->getOrigin());
 	}

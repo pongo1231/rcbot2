@@ -339,10 +339,8 @@ class CBotNeuralNet
 		// if ( m_transferFunction )
 		//	delete m_transferFunction;
 		if (m_pHidden)
-		{
 			for (unsigned short int i = 0; i < m_numHiddenLayers; i++)
 				delete[] m_pHidden[i];
-		}
 
 		delete m_layerinput;
 		delete m_layeroutput;

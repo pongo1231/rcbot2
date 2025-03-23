@@ -19,16 +19,12 @@ void UTIL_FindServerClassnamePrint(const char *name_cmd)
 	{
 		current = engine->PEntityOfEntIndex(i);
 		if (current == nullptr)
-		{
 			continue;
-		}
 
 		IServerNetworkable *network = current->GetNetworkable();
 
 		if (network == nullptr)
-		{
 			continue;
-		}
 
 		ServerClass *sClass = network->GetServerClass();
 		const char *name    = sClass->GetName();
@@ -82,9 +78,7 @@ ServerClass *UTIL_FindServerClass(const char *name)
 	while (pClass)
 	{
 		if (strcmpi(pClass->m_pNetworkName, name) == 0)
-		{
 			return pClass;
-		}
 		pClass = pClass->m_pNext;
 	}
 
@@ -113,15 +107,11 @@ SendProp *UTIL_FindSendProp(SendTable *pTable, const char *name)
 			Msg("%s\n", pProp->GetName());
 
 		if (strcmp(pProp->GetName(), name) == 0)
-		{
 			return pProp;
-		}
 		if (pProp->GetDataTable())
 		{
 			if ((pProp = UTIL_FindSendProp(pProp->GetDataTable(), name)) != nullptr)
-			{
 				return pProp;
-			}
 		}
 	}
 
@@ -189,9 +179,7 @@ bool UTIL_FindInSendTable(SendTable *pTable, const char *name, sm_sendprop_info_
 		if (prop->GetDataTable())
 		{
 			if (UTIL_FindInSendTable(prop->GetDataTable(), name, info, offset + prop->GetOffset()))
-			{
 				return true;
-			}
 		}
 	}
 
@@ -201,16 +189,12 @@ bool UTIL_FindInSendTable(SendTable *pTable, const char *name, sm_sendprop_info_
 bool UTIL_FindSendPropInfo(ServerClass *pInfo, const char *szType, unsigned int *offset)
 {
 	if (!pInfo)
-	{
 		return false;
-	}
 
 	sm_sendprop_info_t temp_info;
 
 	if (!UTIL_FindInSendTable(pInfo->m_pTable, szType, &temp_info, 0))
-	{
 		return false;
-	}
 
 	*offset = temp_info.actual_offset;
 
@@ -304,9 +288,7 @@ void CClassInterfaceValue ::findOffset()
 		m_offset += m_preoffset;
 #ifdef _DEBUG
 	else
-	{
 		CBotGlobals::botMessage(nullptr, 1, "Warning: Couldn't find getprop %s for class %s", m_value, m_class);
-	}
 #endif
 }
 /* Find and save all offsets at load to save CPU */
@@ -617,9 +599,7 @@ edict_t *CClassInterface::FindEntityByNetClassNearest(Vector vstart, const char 
 	{
 		current = engine->PEntityOfEntIndex(i);
 		if (current == nullptr)
-		{
 			continue;
-		}
 		if (current->IsFree())
 			continue;
 		if (current->GetUnknown() == nullptr)
@@ -628,9 +608,7 @@ edict_t *CClassInterface::FindEntityByNetClassNearest(Vector vstart, const char 
 		IServerNetworkable *network = current->GetNetworkable();
 
 		if (network == nullptr)
-		{
 			continue;
-		}
 
 		ServerClass *sClass = network->GetServerClass();
 		const char *name    = sClass->GetName();
@@ -658,16 +636,12 @@ const char *CClassInterface::FindEntityNetClass(int start, const char *classname
 	{
 		current = engine->PEntityOfEntIndex(i);
 		if (current == nullptr)
-		{
 			continue;
-		}
 
 		IServerNetworkable *network = current->GetNetworkable();
 
 		if (network == nullptr)
-		{
 			continue;
-		}
 
 		if (strcmp(current->GetClassName(), classname) == 0)
 		{
@@ -688,24 +662,18 @@ edict_t *CClassInterface::FindEntityByNetClass(int start, const char *classname)
 	{
 		current = engine->PEntityOfEntIndex(i);
 		if (current == nullptr)
-		{
 			continue;
-		}
 
 		IServerNetworkable *network = current->GetNetworkable();
 
 		if (network == nullptr)
-		{
 			continue;
-		}
 
 		ServerClass *sClass = network->GetServerClass();
 		const char *name    = sClass->GetName();
 
 		if (strcmp(name, classname) == 0)
-		{
 			return current;
-		}
 	}
 
 	return nullptr;

@@ -82,9 +82,7 @@ void CWaypointNavigator ::init()
 	m_iGoalWaypoint    = -1;
 
 	while (!m_currentRoute.empty())
-	{
 		m_currentRoute.pop();
-	}
 
 	// TODO: queue doesn't implement .clear() -- maybe use deque instead?
 	while (!m_oldRoute.empty())
@@ -133,9 +131,7 @@ bool CWaypointNavigator ::beliefLoad()
 
 	// size not right, return false to re workout table
 	if (iSize != iDesiredSize)
-	{
 		return false;
-	}
 
 	bfp.seekg(0, std::fstream::beg); // seek at start
 
@@ -149,9 +145,7 @@ bool CWaypointNavigator ::beliefLoad()
 
 	// quick loop
 	for (i = 0; i < num; i++)
-	{
 		m_fBelief[i] = (((float)filebelief[i]) / 32767) * MAX_BELIEF;
-	}
 
 	return true;
 }
@@ -212,9 +206,7 @@ bool CWaypointNavigator ::beliefSave(bool bOverride)
 
 	// quick loop
 	for (i = 0; i < num; i++)
-	{
 		filebelief[i] = (filebelief[i] / 2) + ((unsigned short int)((m_fBelief[i] / MAX_BELIEF) * 16383));
-	}
 
 	bfp.seekg(0, std::fstream::beg); // seek at start
 
@@ -262,9 +254,7 @@ bool CWaypointNavigator ::randomDangerPath(Vector *vec)
 		static CWaypoint *pW;
 
 		if (head != -1)
-		{
 			pOnRouteTo = CWaypoints::getWaypoint(head);
-		}
 	}
 
 	pWpt = CWaypoints::getWaypoint(m_iCurrentWaypoint);
@@ -332,9 +322,7 @@ bool CWaypointNavigator::nextPointIsOnLadder()
 		CWaypoint *pWaypoint;
 
 		if ((pWaypoint = CWaypoints::getWaypoint(m_iCurrentWaypoint)) != nullptr)
-		{
 			return pWaypoint->hasFlag(CWaypointTypes::W_FL_LADDER);
-		}
 	}
 
 	return false;
@@ -374,12 +362,10 @@ CWaypoint *CWaypointNavigator ::chooseBestFromBeliefBetweenAreas(std::vector<ASt
 			node = goals[i];
 
 			if (bIgnoreBelief)
-			{
 				if (bHighDanger)
 					fBelief += node->getHeuristic();
 				else
 					fBelief += (131072.0f - node->getHeuristic());
-			}
 			else if (bHighDanger)
 				fBelief += m_fBelief[node->getWaypoint()] + node->getHeuristic();
 			else
@@ -395,12 +381,10 @@ CWaypoint *CWaypointNavigator ::chooseBestFromBeliefBetweenAreas(std::vector<ASt
 			node = goals[i];
 
 			if (bIgnoreBelief)
-			{
 				if (bHighDanger)
 					fBelief += node->getHeuristic();
 				else
 					fBelief += (131072.0f - node->getHeuristic());
-			}
 			else if (bHighDanger)
 				fBelief += m_fBelief[node->getWaypoint()] + node->getHeuristic();
 			else
@@ -454,9 +438,7 @@ CWaypoint *CWaypointNavigator ::chooseBestFromBelief(std::vector<CWaypoint *> &g
 					if (pSentry != nullptr)
 					{
 						if (goals[i]->distanceFrom(CBotGlobals::entityOrigin(pSentry)) < 200.0f)
-						{
 							bBeliefFactor *= 0.1f;
-						}
 					}
 				}
 			}
@@ -473,9 +455,7 @@ CWaypoint *CWaypointNavigator ::chooseBestFromBelief(std::vector<CWaypoint *> &g
 						if ((iTeam == 0) || (iTeam == CClassInterface::getTeam(pPlayer)))
 						{
 							if (goals[i]->distanceFrom(CBotGlobals::entityOrigin(pPlayer)) < 200.0f)
-							{
 								bBeliefFactor *= 0.1f;
-							}
 						}
 					}
 				}
@@ -492,22 +472,16 @@ CWaypoint *CWaypointNavigator ::chooseBestFromBelief(std::vector<CWaypoint *> &g
 						if ((iTeam == 0) || (iTeam == CClassInterface::getTeam(pPlayer)))
 						{
 							if (goals[i]->distanceFrom(CBotGlobals::entityOrigin(pPlayer)) < 200.0f)
-							{
 								bBeliefFactor *= 0.1f;
-							}
 						}
 					}
 				}
 			}
 
 			if (bHighDanger)
-			{
 				fBelief += bBeliefFactor * (1.0f + (m_fBelief[CWaypoints::getWaypointIndex(goals[i])]));
-			}
 			else
-			{
 				fBelief += bBeliefFactor * (1.0f + (MAX_BELIEF - (m_fBelief[CWaypoints::getWaypointIndex(goals[i])])));
-			}
 		}
 
 		fSelect = randomFloat(0, fBelief);
@@ -529,9 +503,7 @@ CWaypoint *CWaypointNavigator ::chooseBestFromBelief(std::vector<CWaypoint *> &g
 					if (pSentry != nullptr)
 					{
 						if (goals[i]->distanceFrom(CBotGlobals::entityOrigin(pSentry)) < 200.0f)
-						{
 							bBeliefFactor *= 0.1f;
-						}
 					}
 				}
 			}
@@ -546,9 +518,7 @@ CWaypoint *CWaypointNavigator ::chooseBestFromBelief(std::vector<CWaypoint *> &g
 					    && (CClassInterface::getTF2Class(pPlayer) == TF_CLASS_SNIPER))
 					{
 						if (goals[i]->distanceFrom(CBotGlobals::entityOrigin(pPlayer)) < 200.0f)
-						{
 							bBeliefFactor *= 0.1f;
-						}
 					}
 				}
 			}
@@ -562,21 +532,15 @@ CWaypoint *CWaypointNavigator ::chooseBestFromBelief(std::vector<CWaypoint *> &g
 					if ((pPlayer != nullptr) && !pPlayer->IsFree())
 					{
 						if (goals[i]->distanceFrom(CBotGlobals::entityOrigin(pPlayer)) < 200.0f)
-						{
 							bBeliefFactor *= 0.1f;
-						}
 					}
 				}
 			}
 
 			if (bHighDanger)
-			{
 				fBelief += bBeliefFactor * (1.0f + (m_fBelief[CWaypoints::getWaypointIndex(goals[i])]));
-			}
 			else
-			{
 				fBelief += bBeliefFactor * (1.0f + (MAX_BELIEF - (m_fBelief[CWaypoints::getWaypointIndex(goals[i])])));
-			}
 
 			if (fSelect <= fBelief)
 			{
@@ -759,9 +723,7 @@ int CWaypointNavigator ::getCurrentFlags()
 float CWaypointNavigator ::getCurrentBelief()
 {
 	if (m_iCurrentWaypoint >= 0)
-	{
 		return m_fBelief[m_iCurrentWaypoint];
-	}
 
 	return 0;
 }
@@ -1133,9 +1095,7 @@ bool CWaypointNavigator ::workRoute(Vector vFrom, Vector vTo, bool *bFail, bool 
 
 			// Fix: do this AFTER setting heuristic and cost!!!!
 			if (!succ->isOpen())
-			{
 				open(succ);
-			}
 		}
 
 		curr->close(); // close chosen node
@@ -1459,9 +1419,7 @@ void CWaypointNavigator ::updatePosition()
 void CWaypointNavigator ::clear()
 {
 	while (!m_currentRoute.empty())
-	{
 		m_currentRoute.pop();
-	}
 	m_iFailedGoals.clear();
 }
 // free up memory
@@ -1789,9 +1747,7 @@ bool CWaypoints ::save(bool bVisiblityMade, edict_t *pPlayer, const char *pszAut
 	std::fstream bfp = CBotGlobals::openFile(filename, std::fstream::out | std::fstream::binary);
 
 	if (!bfp)
-	{
 		return false; // give up
-	}
 
 	int iSize = numWaypoints();
 
@@ -1813,16 +1769,12 @@ bool CWaypoints ::save(bool bVisiblityMade, edict_t *pPlayer, const char *pszAut
 	if (pszAuthor != nullptr)
 		strncpy(authorinfo.szAuthor, pszAuthor, 31);
 	else
-	{
 		strncpy(authorinfo.szAuthor, CWaypoints::getAuthor(), 31);
-	}
 
 	if (pszModifier != nullptr)
 		strncpy(authorinfo.szModifiedBy, pszModifier, 31);
 	else
-	{
 		strncpy(authorinfo.szModifiedBy, CWaypoints::getModifier(), 31);
-	}
 
 	authorinfo.szAuthor[31]     = 0;
 	authorinfo.szModifiedBy[31] = 0;
@@ -1832,9 +1784,7 @@ bool CWaypoints ::save(bool bVisiblityMade, edict_t *pPlayer, const char *pszAut
 		strcpy(szAuthorName, "(unknown)");
 
 		if (pPlayer != nullptr)
-		{
 			strcpy(szAuthorName, CClients::get(pPlayer)->getName());
-		}
 
 		if (authorinfo.szAuthor[0] == 0) // no author
 		{
@@ -1892,9 +1842,7 @@ bool CWaypoints ::load(const char *szMapName)
 	std::fstream bfp = CBotGlobals::openFile(filename, std::fstream::in | std::fstream::binary);
 
 	if (!bfp)
-	{
 		return false; // give up
-	}
 
 	CWaypointHeader header;
 	CWaypointAuthorInfo authorinfo;
@@ -2031,14 +1979,10 @@ void CWaypoint ::save(std::fstream &bfp)
 	}
 
 	if (CWaypoints::WAYPOINT_VERSION >= 2)
-	{
 		bfp.write(reinterpret_cast<char *>(&m_iArea), sizeof(int));
-	}
 
 	if (CWaypoints::WAYPOINT_VERSION >= 3)
-	{
 		bfp.write(reinterpret_cast<char *>(&m_fRadius), sizeof(float));
-	}
 }
 
 void CWaypoint ::load(std::fstream &bfp, int iVersion)
@@ -2061,14 +2005,10 @@ void CWaypoint ::load(std::fstream &bfp, int iVersion)
 	}
 
 	if (iVersion >= 2)
-	{
 		bfp.read(reinterpret_cast<char *>(&m_iArea), sizeof(int));
-	}
 
 	if (iVersion >= 3)
-	{
 		bfp.read(reinterpret_cast<char *>(&m_fRadius), sizeof(float));
-	}
 }
 
 bool CWaypoint ::checkGround()
@@ -2220,9 +2160,7 @@ void CWaypoints ::shiftAreas(int val)
 		CWaypoint *pWpt = &m_theWaypoints[i];
 
 		if (pWpt->getFlags() > 0)
-		{
 			pWpt->setArea(pWpt->getArea() + val);
-		}
 	}
 }
 
@@ -2291,9 +2229,7 @@ void CWaypoints ::deletePathsTo(int iWpt)
 	// and use a temporary copy as a side effect of performing
 	// a remove will affect the original array
 	for (int i = 0; i < iNumPathsTo; i++)
-	{
 		pathsTo.push_back(pWaypoint->getPathToThisWaypoint(i));
-	}
 
 	iNumPathsTo = pathsTo.size();
 
@@ -2474,9 +2410,7 @@ int CWaypoints ::addWaypoint(edict_t *pPlayer, Vector vOrigin, int iFlags, bool 
 	m_pVisibilityTable->workVisibilityForWaypoint(iIndex, true);
 
 	if (bAutoPath && !(iFlags & CWaypointTypes::W_FL_UNREACHABLE))
-	{
 		CWaypointLocations::AutoPath(pPlayer, iIndex);
-	}
 
 	return iIndex;
 }
@@ -2584,9 +2518,7 @@ CWaypoint *CWaypoints ::randomRouteWaypoint(CBot *pBot, Vector vOrigin, Vector v
 	}
 
 	if (!goals.empty())
-	{
 		return pNav->chooseBestFromBelief(goals);
-	}
 	return nullptr;
 }
 
@@ -2794,13 +2726,9 @@ CWaypoint *CWaypoints ::randomWaypointGoalNearestArea(int iFlags, int iTeam, int
 				node = new AStarNode();
 
 				if (iWpt1 != -1)
-				{
 					fDist = CWaypointDistances::getDistance(iWpt1, i);
-				}
 				else
-				{
 					fDist = pWpt->distanceFrom(*origin);
-				}
 
 				if (fDist == 0.0f)
 					fDist = 0.1f;
@@ -2987,10 +2915,8 @@ int CWaypoints ::randomFlaggedWaypoint(int iTeam)
 int CWaypoints ::freeWaypointIndex()
 {
 	for (int i = 0; i < MAX_WAYPOINTS; i++)
-	{
 		if (!m_theWaypoints[i].isUsed())
 			return i;
-	}
 
 	return -1;
 }
@@ -3151,10 +3077,8 @@ bool CWaypoint ::isAiming()
 CWaypointType *CWaypointTypes ::getType(const char *szType)
 {
 	for (unsigned int i = 0; i < m_Types.size(); i++)
-	{
 		if (FStrEq(m_Types[i]->getName(), szType))
 			return m_Types[i];
-	}
 
 	return nullptr;
 }
@@ -3183,9 +3107,7 @@ void CWaypointTypes::addType(CWaypointType *type)
 CWaypointType *CWaypointTypes ::getTypeByIndex(unsigned int iIndex)
 {
 	if (iIndex < m_Types.size())
-	{
 		return m_Types[iIndex];
-	}
 	else
 		return nullptr;
 }

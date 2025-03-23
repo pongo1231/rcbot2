@@ -259,9 +259,7 @@ class CClassInterfaceValue
 		getData(edict);
 
 		if (m_data)
-		{
 			return (Vector *)m_data;
-		}
 
 		return nullptr;
 	}

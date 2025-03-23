@@ -41,25 +41,19 @@ void CBotTFRocketJump ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	else if (pWeapon->getID() != TF2_WEAPON_ROCKETLAUNCHER)
 	{
 		if (!pBot->select_CWeapon(CWeapons::getWeapon(TF2_WEAPON_ROCKETLAUNCHER)))
-		{
 			fail();
-		}
 	}
 	else
 	{
 		CBotTF2 *tf2Bot = ((CBotTF2 *)pBot);
 
 		if (!m_fTime)
-		{
 			m_fTime = engine->Time() + randomFloat(4.0f, 5.0f);
-		}
 
 		if (tf2Bot->rocketJump(&m_iState, &m_fJumpTime) == BOT_FUNC_COMPLETE)
 			complete();
 		else if (m_fTime < engine->Time())
-		{
 			fail();
-		}
 	}
 }
 

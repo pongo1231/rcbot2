@@ -102,9 +102,7 @@ class CBotSchedule
 	void freeMemory()
 	{
 		for (CBotTask *task : m_Tasks)
-		{
 			delete task;
-		}
 		m_Tasks.clear();
 	}
 
@@ -191,12 +189,8 @@ class CBotSchedules
 	bool hasSchedule(eBotSchedule iSchedule)
 	{
 		for (CBotSchedule *sched : m_Schedules)
-		{
 			if (sched->isID(iSchedule))
-			{
 				return true;
-			}
-		}
 		return false;
 	}
 
@@ -250,9 +244,7 @@ class CBotSchedules
 	void freeMemory()
 	{
 		for (CBotSchedule *sched : m_Schedules)
-		{
 			delete sched;
-		}
 		m_Schedules.clear();
 	}
 
@@ -282,9 +274,7 @@ class CBotSchedules
 			CBotSchedule *sched = m_Schedules.front();
 
 			if (sched != nullptr)
-			{
 				return sched->currentTask();
-			}
 		}
 
 		return nullptr;

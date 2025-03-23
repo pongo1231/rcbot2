@@ -208,26 +208,23 @@ int CTFObjectiveResource::getRandomValidPointForTeam(int team, ePointAttackDefen
 				else if ((getLastCaptureTime(i) + 10.0f) > gpGlobals->curtime)
 					arr[i].fProbMultiplier = 2.0f;
 			}
-			else
+			else if (GetCappingTeam(i) == iotherteam)
 			{
-				if (GetCappingTeam(i) == iotherteam)
+				int numplayers = GetNumPlayersInArea(i, iotherteam);
+
+				// IF this is not base point and a lot of players are here, reduce probability of defending
+				if ((i != GetBaseControlPointForTeam(team)) && (numplayers > 1))
 				{
-					int numplayers = GetNumPlayersInArea(i, iotherteam);
+					arr[i].fProbMultiplier = 1.0f - ((float)numplayers / (gpGlobals->maxClients / 4));
 
-					// IF this is not base point and a lot of players are here, reduce probability of defending
-					if ((i != GetBaseControlPointForTeam(team)) && (numplayers > 1))
-					{
-						arr[i].fProbMultiplier = 1.0f - ((float)numplayers / (gpGlobals->maxClients / 4));
-
-						if (arr[i].fProbMultiplier <= 0.0f)
-							arr[i].fProbMultiplier = 0.1f;
-					}
-					else // Otherwise there aren't any playres on or is base and has been attacked recently
-						arr[i].fProbMultiplier = 4.0f;
+					if (arr[i].fProbMultiplier <= 0.0f)
+						arr[i].fProbMultiplier = 0.1f;
 				}
-				else if ((getLastCaptureTime(i) + 10.0f) > gpGlobals->curtime)
-					arr[i].fProbMultiplier = 2.0f;
+				else // Otherwise there aren't any playres on or is base and has been attacked recently
+					arr[i].fProbMultiplier = 4.0f;
 			}
+			else if ((getLastCaptureTime(i) + 10.0f) > gpGlobals->curtime)
+				arr[i].fProbMultiplier = 2.0f;
 
 			fTotal += arr[i].fProb * arr[i].fProbMultiplier;
 		}
@@ -244,9 +241,7 @@ int CTFObjectiveResource::getRandomValidPointForTeam(int team, ePointAttackDefen
 		fTotal += arr[index].fProb * arr[index].fProbMultiplier;
 
 		if (fTotal > fRand)
-		{
 			return m_IndexToWaypointAreaTranslation[index];
-		}
 	}
 
 	// no points
@@ -259,9 +254,7 @@ void CTeamRoundTimer::reset()
 	m_Resource = CClassInterface::FindEntityByNetClass(gpGlobals->maxClients + 1, "CTeamRoundTimer");
 
 	if (m_Resource.get() != nullptr)
-	{
 		CClassInterface::setupCTeamRoundTimer(this);
-	}
 }
 bool CTeamControlPointRound ::isPointInRound(edict_t *point_pent)
 {
@@ -389,10 +382,8 @@ void CTFObjectiveResource::setup()
 int CTFObjectiveResource ::getControlPointArea(edict_t *pPoint)
 {
 	for (int j = 0; j < *m_iNumControlPoints; j++)
-	{
 		if (m_pControlPoints[j] == pPoint)
 			return (j + 1); // return waypoint area (+1)
-	}
 
 	return 0;
 }
@@ -678,13 +669,9 @@ bool CTFObjectiveResource ::updateDefendPoints(int team)
 			}
 
 			if (bfound)
-			{
 				arr[i].fProb = 1.0f;
-			}
 			else
-			{
 				arr[i].fProb = 0.1f;
-			}
 		}
 	}
 
@@ -999,13 +986,9 @@ bool CTFObjectiveResource ::updateAttackPoints(int team)
 			}
 
 			if (bfound)
-			{
 				arr[i].fProb = 1.0f;
-			}
 			else
-			{
 				arr[i].fProb = 0.1f;
-			}
 		}
 	}
 

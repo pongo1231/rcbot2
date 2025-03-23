@@ -80,22 +80,14 @@ MessageColorizationMode GetMessageColorizationMode()
 {
 #if defined _LINUX
 	if (!engine->IsDedicatedServer())
-	{
 		return Colorize_ClientConsole;
-	}
 	else
-	{
 		return Colorize_ANSI;
-	}
 #elif defined WIN32
 	if (!engine->IsDedicatedServer())
-	{
 		return Colorize_ClientConsole;
-	}
 	else if (CommandLine()->CheckParm("-console") != nullptr)
-	{
 		return Colorize_WinConsole;
-	}
 #endif
 	return Colorize_None;
 }
@@ -103,9 +95,7 @@ MessageColorizationMode GetMessageColorizationMode()
 void CBotLogger::Log(LogLevel level, const char *fmt, ...)
 {
 	if (level > static_cast<LogLevel>(rcbot_loglevel.GetInt()))
-	{
 		return;
-	}
 
 	char buf[1024];
 
@@ -118,13 +108,9 @@ void CBotLogger::Log(LogLevel level, const char *fmt, ...)
 	{
 	case Colorize_ANSI:
 		if (level <= LogLevel::WARN)
-		{
 			Warning("%s[RCBot] %s: %s\x1B[0m\n", LOGLEVEL_ANSI_COLORS[level], LOGLEVEL_STRINGS[level], buf);
-		}
 		else
-		{
 			Msg("%s[RCBot] %s: %s\x1B[0m\n", LOGLEVEL_ANSI_COLORS[level], LOGLEVEL_STRINGS[level], buf);
-		}
 		break;
 #if defined WIN32
 	case Colorize_WinConsole:
@@ -144,13 +130,9 @@ void CBotLogger::Log(LogLevel level, const char *fmt, ...)
 	case Colorize_None:
 	default:
 		if (level <= LogLevel::WARN)
-		{
 			Warning("[RCBot] %s: %s\n", LOGLEVEL_STRINGS[level], buf);
-		}
 		else
-		{
 			Msg("[RCBot] %s: %s\n", LOGLEVEL_STRINGS[level], buf);
-		}
 		break;
 	}
 }

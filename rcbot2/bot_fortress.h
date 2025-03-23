@@ -545,9 +545,7 @@ class CBotFortress : public CBot
 	inline edict_t *seeFlag(bool reset = false)
 	{
 		if (reset)
-		{
 			m_pFlag = nullptr;
-		}
 		return m_pFlag;
 	}
 

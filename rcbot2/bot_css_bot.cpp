@@ -58,9 +58,7 @@ bool CCSSBot ::startGame()
 	IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(m_pEdict);
 
 	if (pInfo->GetTeamIndex() == 0)
-	{
 		pInfo->ChangeTeam(randomInt(2, 3));
-	}
 
 	return (pInfo->GetTeamIndex() != 0);
 }

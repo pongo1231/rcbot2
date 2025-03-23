@@ -49,9 +49,7 @@ void CBotTF2DefendPoint ::execute(CBot *pBot, CBotSchedule *pSchedule)
 			else if (fdist > 400)
 				fail();
 			else
-			{
 				pBot->setMoveTo(m_vMoveTo);
-			}
 		}
 		else if (m_fTime < engine->Time())
 		{

@@ -135,13 +135,9 @@ void CBotSchedule ::execute(CBot *pBot)
 	}
 
 	if (pTask->hasFailed())
-	{
 		m_bFailed = true;
-	}
 	else if (pTask->isComplete())
-	{
 		removeTop();
-	}
 }
 
 void CBotSchedule ::addTask(CBotTask *pTask)

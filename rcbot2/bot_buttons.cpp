@@ -122,10 +122,8 @@ int CBotButtons ::getBitMask()
 bool CBotButtons ::canPressButton(int iButtonId)
 {
 	for (unsigned int i = 0; i < m_theButtons.size(); i++)
-	{
 		if (m_theButtons[i]->getID() == iButtonId)
 			return m_theButtons[i]->canPress(engine->Time());
-	}
 	return false;
 }
 
@@ -137,10 +135,8 @@ void CBotButtons ::add(CBotButton *theButton)
 bool CBotButtons ::holdingButton(int iButtonId)
 {
 	for (unsigned int i = 0; i < m_theButtons.size(); i++)
-	{
 		if (m_theButtons[i]->getID() == iButtonId)
 			return m_theButtons[i]->held(engine->Time());
-	}
 
 	return false;
 }

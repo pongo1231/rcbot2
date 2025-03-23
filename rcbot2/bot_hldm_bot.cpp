@@ -216,21 +216,13 @@ bool CHLDMBot ::executeAction(eBotAction iAction)
 			type                = szModel[23];
 
 			if (type == 'a') // ar2
-			{
 				pWeapon = m_pWeapons->getWeapon(CWeapons::getWeapon(HL2DM_WEAPON_AR2));
-			}
 			else if (type == 'g') // grenade
-			{
 				pWeapon = m_pWeapons->getWeapon(CWeapons::getWeapon(HL2DM_WEAPON_FRAG));
-			}
 			else if (type == 'r') // rocket
-			{
 				pWeapon = m_pWeapons->getWeapon(CWeapons::getWeapon(HL2DM_WEAPON_RPG));
-			}
 			else if (type == 's') // smg
-			{
 				pWeapon = m_pWeapons->getWeapon(CWeapons::getWeapon(HL2DM_WEAPON_SMG1));
-			}
 
 			if (pWeapon && (pWeapon->getAmmo(this) < 1))
 			{
@@ -520,9 +512,7 @@ void CHLDMBot ::getTasks(unsigned int iIgnore)
 		pWeapon = CWeapons::getWeapon(m_pNearbyWeapon.get()->GetClassName());
 
 		if (pWeapon && !m_pWeapons->hasWeapon(pWeapon->getID()))
-		{
 			ADD_UTILITY(BOT_UTIL_PICKUP_WEAPON, true, 0.6f + pWeapon->getPreference() * 0.1f);
-		}
 	}
 
 	utils.execute();
@@ -548,9 +538,7 @@ void CHLDMBot ::getTasks(unsigned int iIgnore)
 				    engine->Time() + randomFloat(0.1f, 2.0f); // saves problems with consistent failing
 
 			if (CClients::clientsDebugging(BOT_DEBUG_UTIL))
-			{
 				CClients::clientDebugMsg(BOT_DEBUG_UTIL, g_szUtils.at(next->getId()), this);
-			}
 			break;
 		}
 	}
@@ -802,9 +790,7 @@ bool CHLDMBot ::setVisible(edict_t *pEntity, bool bVisible)
 			{
 				// less juice than the current one I see
 				if (CClassInterface::getAnimCycle(m_pCharger) < CClassInterface::getAnimCycle(pEntity))
-				{
 					return bValid;
-				}
 			}
 
 			if (m_pPlayerInfo->GetArmorValue() < 50)
@@ -819,9 +805,7 @@ bool CHLDMBot ::setVisible(edict_t *pEntity, bool bVisible)
 			{
 				// less juice than the current one I see - forget it
 				if (CClassInterface::getAnimCycle(m_pHealthCharger) < CClassInterface::getAnimCycle(pEntity))
-				{
 					return bValid;
-				}
 			}
 
 			if (getHealthPercent() < 1.0f)

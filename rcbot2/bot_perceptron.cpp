@@ -206,12 +206,10 @@ CBotNeuralNet ::CBotNeuralNet(unsigned short int numinputs, unsigned short int n
 		m_pHidden[j] = new CLogisticalNeuron[neuronsperhiddenlayer];
 
 		for (i = 0; i < neuronsperhiddenlayer; i++)
-		{
 			if (j == 0)
 				m_pHidden[j][i].init(numinputs, learnrate);
 			else
 				m_pHidden[j][i].init(neuronsperhiddenlayer, learnrate);
-		}
 	}
 
 	for (i = 0; i < numoutputs; i++)
@@ -334,9 +332,7 @@ void CBotNeuralNet ::batch_train(CTrainingSet *tset, unsigned short int epochs)
 
 			// update weights for output layer
 			for (i = 0; i < m_numOutputs; i++)
-			{
 				m_pOutputs[i].train(); // update weights for this node
-			}
 		}
 	}
 

@@ -37,9 +37,7 @@ void CBotTF2WaitFlagTask ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	else
 	{
 		if (!((CBotFortress *)pBot)->waitForFlag(&m_vOrigin, &m_fWaitTime, m_bFind))
-		{
 			fail();
-		}
 	}
 }
 

@@ -102,9 +102,7 @@ class FailPlugin : public SourceMM::ISmmFailPlugin
 	bool Load(SourceMM::PluginId id, SourceMM::ISmmAPI *ismm, char *error, size_t maxlength, bool late)
 	{
 		if (error != nullptr && maxlength != 0)
-		{
 			UTIL_Format(error, maxlength, "%s", error_buffer);
-		}
 		return false;
 	}
 
@@ -157,15 +155,11 @@ METAMOD_PLUGIN *_GetPluginPtr(const char *path, int fail_api)
 	}
 
 	if (!(fn = (METAMOD_FN_ORIG_LOAD)findsym(g_hCore, "CreateInterface")))
-	{
 		goto error;
-	}
 
 	pl = (METAMOD_PLUGIN *)fn(METAMOD_PLAPI_NAME, &ret);
 	if (!pl)
-	{
 		goto error;
-	}
 
 	return pl;
 error:
@@ -181,9 +175,7 @@ DLL_EXPORT METAMOD_PLUGIN *CreateInterface_MMS(const MetamodVersionInfo *mvi, co
 	load_attempted = true;
 
 	if (mvi->api_major > METAMOD_API_MAJOR)
-	{
 		return nullptr;
-	}
 
 	switch (mvi->source_engine)
 	{
@@ -212,13 +204,9 @@ DLL_EXPORT METAMOD_PLUGIN *CreateInterface_MMS(const MetamodVersionInfo *mvi, co
 	{
 		const char *gamedir = mvi->GetGameDir();
 		if (strcmp(gamedir, "nucleardawn") == 0)
-		{
 			filename = FILENAME_1_6_ND;
-		}
 		else
-		{
 			filename = FILENAME_1_6_L4D2;
-		}
 		break;
 	}
 	case SOURCE_ENGINE_NUCLEARDAWN:
@@ -290,21 +278,13 @@ DLL_EXPORT METAMOD_PLUGIN *CreateInterface_MMS(const MetamodVersionInfo *mvi, co
 	{
 		const char *gamedir = mvi->GetGameDir();
 		if (strcmp(gamedir, "tf") == 0)
-		{
 			filename = FILENAME_1_6_TF2;
-		}
 		else if (strcmp(gamedir, "dod") == 0)
-		{
 			filename = FILENAME_1_6_DODS;
-		}
 		else if (strcmp(gamedir, "hl2mp") == 0)
-		{
 			filename = FILENAME_1_6_HL2DM;
-		}
 		else
-		{
 			return nullptr;
-		}
 		break;
 	}
 	case SOURCE_ENGINE_BLADE:
@@ -347,9 +327,7 @@ DLL_EXPORT void UnloadInterface_MMS()
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
 	if (fdwReason == DLL_PROCESS_DETACH)
-	{
 		UnloadInterface_MMS();
-	}
 	return TRUE;
 }
 #else

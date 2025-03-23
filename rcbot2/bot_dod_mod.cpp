@@ -216,9 +216,7 @@ int CDODMod::getHighestScore()
 			score = (short int)getScore(edict);
 
 			if (score > highest)
-			{
 				highest = score;
-			}
 		}
 	}
 
@@ -259,9 +257,7 @@ bool CDODFlags::isTeamMateDefusing(edict_t *pIgnore, int iTeam, Vector vOrigin)
 				continue;
 
 			if ((vOrigin - CBotGlobals::entityOrigin(pPlayer)).Length() < 128)
-			{
 				return true;
-			}
 		}
 	}
 
@@ -289,9 +285,7 @@ bool CDODFlags::isTeamMatePlanting(edict_t *pIgnore, int iTeam, Vector vOrigin)
 				continue;
 
 			if ((vOrigin - CBotGlobals::entityOrigin(pPlayer)).Length() < 128)
-			{
 				return true;
-			}
 		}
 	}
 
@@ -414,9 +408,7 @@ bool CDODFlags::getRandomBombToDefuse(Vector *position, int iTeam, edict_t **pBo
 	{
 		if ((m_iOwner[i] == iTeam) && isBombPlanted(i) && !isBombBeingDefused(i) && (m_pBombs[i][0] != nullptr))
 			for (j = 0; j < getNumBombsRequired(i); j++)
-			{
 				iPossible.push_back(i);
-			}
 	}
 
 	if (iPossible.size() > 0)
@@ -424,12 +416,10 @@ bool CDODFlags::getRandomBombToDefuse(Vector *position, int iTeam, edict_t **pBo
 		selection = iPossible[randomInt(0, iPossible.size() - 1)];
 
 		if (m_pBombs[selection][1] != nullptr)
-		{
 			if (CClassInterface::getDODBombState(m_pBombs[selection][1]) == DOD_BOMB_STATE_ACTIVE)
 				*pBombTarget = m_pBombs[selection][1];
 			else
 				*pBombTarget = m_pBombs[selection][0];
-		}
 		else
 			*pBombTarget = m_pBombs[selection][0];
 
@@ -457,9 +447,7 @@ bool CDODFlags::getRandomBombToDefend(CBot *pBot, Vector *position, int iTeam, e
 	{
 		if ((m_iOwner[i] != iTeam) && isBombPlanted(i) && (m_pBombs[i][0] != nullptr))
 			for (j = 0; j < getNumBombsRequired(i); j++)
-			{
 				iPossible.push_back(i);
-			}
 	}
 
 	if (iPossible.size() > 0)
@@ -467,12 +455,10 @@ bool CDODFlags::getRandomBombToDefend(CBot *pBot, Vector *position, int iTeam, e
 		selection = iPossible[randomInt(0, iPossible.size() - 1)];
 
 		if (m_pBombs[selection][1] != nullptr)
-		{
 			if (CClassInterface::getDODBombState(m_pBombs[selection][1]) != 0)
 				*pBombTarget = m_pBombs[selection][1];
 			else
 				*pBombTarget = m_pBombs[selection][0];
-		}
 		else
 			*pBombTarget = m_pBombs[selection][0];
 
@@ -542,12 +528,10 @@ bool CDODFlags::getRandomBombToPlant(CBot *pBot, Vector *position, int iTeam, ed
 			selection = i;
 
 			if (m_pBombs[selection][1] != nullptr)
-			{
 				if (CClassInterface::getDODBombState(m_pBombs[selection][1]) == DOD_BOMB_STATE_AVAILABLE)
 					*pBombTarget = m_pBombs[selection][1];
 				else
 					*pBombTarget = m_pBombs[selection][0];
-			}
 			else
 				*pBombTarget = m_pBombs[selection][0];
 
@@ -690,9 +674,7 @@ int CDODFlags::setup(edict_t *pResourceEntity)
 					{*/
 
 					if (m_iAlliesReqCappers[j] || m_iAxisReqCappers[j] || m_iBombsRequired[j])
-					{
 						m_pFlags[j] = pent;
-					}
 
 					break; // found it
 				}
@@ -724,9 +706,7 @@ int CDODFlags::setup(edict_t *pResourceEntity)
 				if ((vOrigin - m_vCPPositions[j]).Length() < 400.0f)
 				{
 					if (m_pBombs[j][0] == nullptr)
-					{
 						m_pBombs[j][0] = pent;
-					}
 					else
 						m_pBombs[j][1] = pent;
 				}
@@ -794,10 +774,8 @@ edict_t *CDODMod ::getBreakable(CWaypoint *pWpt)
 	register unsigned short int size = m_BreakableWaypoints.size();
 
 	for (register unsigned short int i = 0; i < size; i++)
-	{
 		if (m_BreakableWaypoints[i].pWaypoint == pWpt)
 			return m_BreakableWaypoints[i].pEdict;
-	}
 
 	return nullptr;
 }
@@ -807,10 +785,8 @@ edict_t *CDODMod ::getBombTarget(CWaypoint *pWpt)
 	register unsigned short int size = m_BombWaypoints.size();
 
 	for (register unsigned short int i = 0; i < size; i++)
-	{
 		if (m_BombWaypoints[i].pWaypoint == pWpt)
 			return m_BombWaypoints[i].pEdict;
-	}
 
 	return nullptr;
 }

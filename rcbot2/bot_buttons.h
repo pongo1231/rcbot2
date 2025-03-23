@@ -97,9 +97,7 @@ class CBotButtons
 	void freeMemory()
 	{
 		for (unsigned int i = 0; i < m_theButtons.size(); i++)
-		{
 			delete m_theButtons[i];
-		}
 
 		m_theButtons.clear();
 	}

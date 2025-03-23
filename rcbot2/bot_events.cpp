@@ -271,16 +271,12 @@ void CPlayerHurtEvent ::execute(IBotEventInterface *pEvent)
 				pAttacker = nullptr;
 
 			if (pBot)
-			{
 				pBot->hurt(pAttacker, pEvent->getInt("health"));
-			}
 
 			pBot = CBots::getBotPointer(pAttacker);
 
 			if (pBot)
-			{
 				pBot->shot(m_pActivator);
-			}
 
 			if (CBotGlobals::isPlayer(m_pActivator) && CBotGlobals::isPlayer(pAttacker))
 			{
@@ -334,9 +330,7 @@ void CPlayerDeathEvent ::execute(IBotEventInterface *pEvent)
 						CClassInterface::getPlayerInfoDOD(pAttacker, &bIsProne, &flStamina);
 
 						if (!bIsProne)
-						{
 							pClient->autoEventWaypoint(CWaypointTypes::W_FL_MACHINEGUN, 100.0f);
-						}
 					}
 #endif
 					// CClassInterface::isMachineGunDeployed(pWeapon->get)
@@ -386,9 +380,7 @@ void CPlayerDeathEvent ::execute(IBotEventInterface *pEvent)
 	}
 
 	if ((pPrevSquadLeadersSquad = CBotSquads::FindSquadByLeader(m_pActivator)) != nullptr)
-	{
 		CBotSquads::ChangeLeader(pPrevSquadLeadersSquad);
-	}
 }
 
 void CBombPickupEvent ::execute(IBotEventInterface *pEvent)
@@ -428,9 +420,7 @@ void CBulletImpactEvent ::execute(IBotEventInterface *pEvent)
 	CBot *pBot = CBots::getBotPointer(m_pActivator);
 
 	if (pBot)
-	{
 		pBot->shotmiss();
-	}
 }
 /////////////////////////////////////////
 
@@ -455,9 +445,7 @@ void CTF2ObjectSapped ::execute(IBotEventInterface *pEvent)
 		CBotTF2 *pBot    = (CBotTF2 *)CBots::getBotPointer(pOwner);
 
 		if (pBot)
-		{
 			pBot->buildingSapped((eEngiBuild)building, pSapper, pSpy);
-		}
 
 		CTeamFortress2Mod::sapperPlaced(pOwner, (eEngiBuild)building, pSapper);
 
@@ -503,9 +491,7 @@ void CPlayerTeleported ::execute(IBotEventInterface *pEvent)
 		CBot *pBot       = CBots::getBotPointer(pPlayer);
 
 		if (pBot)
-		{
 			((CBotTF2 *)pBot)->teleportedPlayer();
-		}
 
 		CTeamFortress2Mod::updateTeleportTime(pPlayer);
 	}
@@ -537,9 +523,7 @@ void CPlayerHealed ::execute(IBotEventInterface *pEvent)
 		CBot *pBot = CBots::getBotPointer(CBotGlobals::playerByUserId(healer));
 
 		if (pBot && pBot->isTF2())
-		{
 			((CBotTF2 *)pBot)->healedPlayer(m_pActivator, amount);
-		}
 	}
 }
 
@@ -606,9 +590,7 @@ void CPostInventoryApplicationTF2 ::execute(IBotEventInterface *pEvent)
 	CBot *pBot      = CBots::getBotPointer(pEdict);
 
 	if (pBot)
-	{
 		pBot->onInventoryApplication();
-	}
 }
 /*
 player_upgradedobject
@@ -634,9 +616,7 @@ void CTF2UpgradeObjectEvent ::execute(IBotEventInterface *pEvent)
 			CBotTF2 *pBot;
 
 			if ((pBot = (CBotTF2 *)CBots::getBotPointer(pOwner)) != nullptr)
-			{
 				pBot->addVoiceCommand(TF_VC_THANKS);
-			}
 		}
 	}
 }
@@ -683,20 +663,14 @@ void CTF2BuiltObjectEvent ::execute(IBotEventInterface *pEvent)
 		CTeamFortress2Mod::sentryBuilt(m_pActivator, type, pBuilding);
 
 		if (pClient && pClient->autoWaypointOn())
-		{
 			pClient->autoEventWaypoint(CWaypointTypes::W_FL_SENTRY, 400.0f);
-		}
 	}
 
 	if (type == ENGI_DISP)
-	{
 		CTeamFortress2Mod::dispenserBuilt(m_pActivator, type, pBuilding);
-	}
 
 	if (pBot && pBot->isTF())
-	{
 		((CBotFortress *)pBot)->engiBuildSuccess((eEngiBuild)pEvent->getInt("object"), pEvent->getInt("index"));
-	}
 }
 
 void CTF2ChangeClass ::execute(IBotEventInterface *pEvent)
@@ -909,9 +883,7 @@ void CFlagEvent ::execute(IBotEventInterface *pEvent)
 	{
 	case FLAG_PICKUP: // pickup
 		if (pBot && pBot->isTF())
-		{
 			((CBotTF2 *)pBot)->pickedUpFlag();
-		}
 
 		if (pPlayer)
 		{
@@ -1029,9 +1001,7 @@ void CDODPointCaptured ::execute(IBotEventInterface *pEvent)
 		CClient *pClient = CClients::get(pPlayer);
 
 		if (pClient && pClient->autoWaypointOn())
-		{
 			pClient->autoEventWaypoint(CWaypointTypes::W_FL_CAPPOINT, 150.0f, false, 0, Vector(0, 0, 0), true);
-		}
 	}
 
 	if (team)

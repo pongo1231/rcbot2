@@ -66,14 +66,10 @@ void CBotConfigFile ::load()
 		size_t len = strlen(line);
 
 		if (len && line[len - 1] == '\n')
-		{
 			line[--len] = '\0';
-		}
 
 		if (len && line[len - 1] == '\r')
-		{
 			line[--len] = '\0';
-		}
 
 		if (!len)
 			continue;
@@ -154,13 +150,9 @@ void CRCBotTF2UtilFile ::loadConfig()
 	for (iFile = BOT_ATT_UTIL; iFile < UTIL_TYPE_MAX; iFile = (eTF2UtilType)((int)iFile + 1))
 	{
 		if (iFile == BOT_ATT_UTIL)
-		{
 			sprintf(szFilename, "attack_util.csv");
-		}
 		else
-		{
 			sprintf(szFilename, "normal_util.csv");
-		}
 
 		CBotGlobals::buildFileName(szFullFilename, szFilename, BOT_CONFIG_FOLDER);
 		std::fstream fp = CBotGlobals::openFile(szFullFilename, std::fstream::in);

@@ -154,9 +154,7 @@ void CBotTF2DemomanPipeJump ::execute(CBot *pBot, CBotSchedule *pSchedule)
 		// run up and jump time
 
 		if (pBot->distanceFrom(v_endrunup) < 48.0f)
-		{
 			m_iState++;
-		}
 
 		pBot->setMoveTo(v_endrunup);
 	}

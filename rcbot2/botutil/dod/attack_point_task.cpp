@@ -49,47 +49,44 @@ void CBotDODAttackPoint ::execute(CBot *pBot, CBotSchedule *pSchedule)
 		complete();
 		return;
 	}
+	else if (m_fTime == 0)
+	{
+		m_fTime   = engine->Time() + randomFloat(2.0, 4.0);
+		m_vMoveTo = m_vOrigin + Vector(randomFloat(-m_fRadius, m_fRadius), randomFloat(-m_fRadius, m_fRadius), 0);
+		m_bProne  = (randomFloat(0, 1) * (1.0f - pBot->getHealthPercent())) > 0.75f;
+
+		if (CDODMod::m_Flags.numFriendliesAtCap(m_iFlagID, iTeam)
+		    < CDODMod::m_Flags.numCappersRequired(m_iFlagID, iTeam))
+		{
+			// count players I see
+			CDODBot *pDODBot = (CDODBot *)pBot;
+
+			pDODBot->addVoiceCommand(DOD_VC_NEED_BACKUP);
+		}
+	}
+	else if (m_fTime < engine->Time())
+	{
+		m_fTime = 0;
+	}
 	else
 	{
-		if (m_fTime == 0)
-		{
-			m_fTime   = engine->Time() + randomFloat(2.0, 4.0);
-			m_vMoveTo = m_vOrigin + Vector(randomFloat(-m_fRadius, m_fRadius), randomFloat(-m_fRadius, m_fRadius), 0);
-			m_bProne  = (randomFloat(0, 1) * (1.0f - pBot->getHealthPercent())) > 0.75f;
+		static float fdist;
 
-			if (CDODMod::m_Flags.numFriendliesAtCap(m_iFlagID, iTeam)
-			    < CDODMod::m_Flags.numCappersRequired(m_iFlagID, iTeam))
-			{
-				// count players I see
-				CDODBot *pDODBot = (CDODBot *)pBot;
+		fdist = pBot->distanceFrom(m_vMoveTo);
 
-				pDODBot->addVoiceCommand(DOD_VC_NEED_BACKUP);
-			}
-		}
-		else if (m_fTime < engine->Time())
+		if (m_bProne && !pBot->hasSomeConditions(CONDITION_RUN))
+			pBot->duck();
+
+		if (fdist < m_fRadius)
 		{
-			m_fTime = 0;
+			pBot->stopMoving();
+			pBot->setLookAtTask(LOOK_AROUND);
 		}
+		else if (fdist > 400)
+			fail();
 		else
 		{
-			static float fdist;
-
-			fdist = pBot->distanceFrom(m_vMoveTo);
-
-			if (m_bProne && !pBot->hasSomeConditions(CONDITION_RUN))
-				pBot->duck();
-
-			if (fdist < m_fRadius)
-			{
-				pBot->stopMoving();
-				pBot->setLookAtTask(LOOK_AROUND);
-			}
-			else if (fdist > 400)
-				fail();
-			else
-			{
-				pBot->setMoveTo(m_vMoveTo);
-			}
+			pBot->setMoveTo(m_vMoveTo);
 		}
 	}
 }

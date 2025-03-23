@@ -184,16 +184,12 @@ void CSpyCheckAir ::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 
 	if (m_pUnseenBefore)
-	{
 		pBot->setMoveTo(CBotGlobals::entityOrigin(m_pUnseenBefore));
-	}
 
 	if (pChooseWeapon && (pWeapon != pChooseWeapon))
 	{
 		if (!pBot->selectBotWeapon(pChooseWeapon))
-		{
 			fail();
-		}
 	}
 	else
 	{

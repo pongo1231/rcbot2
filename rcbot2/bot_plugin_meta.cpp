@@ -108,9 +108,7 @@ CON_COMMAND(rcbotd, "access the bot commands on a server")
 	// shift args and call subcommand
 	BotCommandArgs argList;
 	for (size_t i = 1; i <= static_cast<size_t>(args.ArgC()); i++)
-	{
 		argList.push_back(args.Arg(i));
-	}
 	eBotCommandResult iResult = CBotGlobals::m_pCommands->execute(nullptr, argList);
 
 	if (iResult == COMMAND_ACCESSED)
@@ -384,9 +382,7 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 	/* Load the VSP listener.  This is usually needed for IServerPluginHelpers. */
 	ismm->AddListener(this, this);
 	if ((vsp_callbacks = ismm->GetVSPInfo(nullptr)) == nullptr)
-	{
 		ismm->EnableVSPListener();
-	}
 
 	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, server, this, &RCBotPluginMeta::Hook_LevelInit, true);
 	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, server, this, &RCBotPluginMeta::Hook_ServerActivate, true);
@@ -525,9 +521,7 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 	int human_count = 0;
 
 	for (int i = 0; i < MAX_PLAYERS; ++i)
-	{
 		m_iTargetBots[i] = 0;
-	}
 
 	CBotGlobals::buildFileName(filename, "bot_quota", BOT_CONFIG_FOLDER, "ini");
 	fp = std::fstream(filename, std::fstream::in);
@@ -662,14 +656,10 @@ void RCBotPluginMeta::AllPluginsLoaded()
 void *RCBotPluginMeta::OnMetamodQuery(const char *iface, int *ret)
 {
 	if (strcmp(iface, SOURCEMOD_NOTICE_EXTENSIONS) == 0)
-	{
 		BindToSourcemod();
-	}
 
 	if (ret != nullptr)
-	{
 		*ret = IFACE_OK;
-	}
 
 	return nullptr;
 }
@@ -697,9 +687,7 @@ void RCBotPluginMeta::Hook_ClientCommand(edict_t *pEntity)
 	const char *pcmd = args.Arg(0);
 
 	if (!pEntity || pEntity->IsFree())
-	{
 		return;
-	}
 
 	CClient *pClient = CClients::get(pEntity);
 
@@ -709,9 +697,7 @@ void RCBotPluginMeta::Hook_ClientCommand(edict_t *pEntity)
 		// create shifted command list
 		BotCommandArgs argList;
 		for (size_t i = 1; i <= static_cast<size_t>(args.ArgC()); i++)
-		{
 			argList.push_back(args.Arg(i));
-		}
 		eBotCommandResult iResult = CBotGlobals::m_pCommands->execute(pClient, argList);
 
 		if (iResult == COMMAND_ACCESSED)
@@ -795,9 +781,7 @@ void RCBotPluginMeta::Hook_ClientPutInServer(edict_t *pEntity, char const *playe
 
 #ifdef OVERRIDE_RUNCMD
 	if (pEnt)
-	{
 		SH_ADD_MANUALHOOK_MEMFUNC(MHook_PlayerRunCmd, pEnt, this, &RCBotPluginMeta::Hook_PlayerRunCmd, false);
-	}
 #endif
 }
 
@@ -807,9 +791,7 @@ void RCBotPluginMeta::Hook_ClientDisconnect(edict_t *pEntity)
 
 #ifdef OVERRIDE_RUNCMD
 	if (pEnt)
-	{
 		SH_REMOVE_MANUALHOOK_MEMFUNC(MHook_PlayerRunCmd, pEnt, this, &RCBotPluginMeta::Hook_PlayerRunCmd, false);
-	}
 #endif
 
 	CClients::clientDisconnected(pEntity);
@@ -834,16 +816,12 @@ void RCBotPluginMeta::Hook_GameFrame(bool simulating)
 		CClients::clientThink();
 
 		if (CWaypoints::getVisiblity()->needToWorkVisibility())
-		{
 			CWaypoints::getVisiblity()->workVisibility();
-		}
 
 		// Profiling
 #ifdef _DEBUG
 		if (CClients::clientsDebugging(BOT_DEBUG_PROFILE))
-		{
 			CProfileTimers::updateAndDisplay();
-		}
 #endif
 
 		// Config Commands
@@ -854,9 +832,7 @@ void RCBotPluginMeta::Hook_GameFrame(bool simulating)
 
 		// Bot Quota
 		if (rcbot_bot_quota_interval.GetInt() > 0)
-		{
 			BotQuotaCheck();
-		}
 	}
 }
 
@@ -864,14 +840,10 @@ void RCBotPluginMeta::BotQuotaCheck()
 {
 	// this is configured with config/bot_quota.ini
 	if (rcbot_bot_quota_interval.GetInt() <= 0)
-	{
 		return;
-	}
 
 	if (m_fBotQuotaTimer < 1.0f)
-	{
 		m_fBotQuotaTimer = engine->Time() + 10.0f; // Sleep 10 seconds
-	}
 
 	if (m_fBotQuotaTimer < engine->Time() - rcbot_bot_quota_interval.GetInt())
 	{
@@ -898,9 +870,7 @@ void RCBotPluginMeta::BotQuotaCheck()
 				IPlayerInfo *p = playerinfomanager->GetPlayerInfo(bot->getEdict());
 
 				if (p->IsConnected() && p->IsFakeClient() && !p->IsHLTV())
-				{
 					bot_count++;
-				}
 			}
 
 			if (client != nullptr && client->getPlayer() != nullptr && client->isUsed())
@@ -908,16 +878,12 @@ void RCBotPluginMeta::BotQuotaCheck()
 				IPlayerInfo *p = playerinfomanager->GetPlayerInfo(client->getPlayer());
 
 				if (p->IsConnected() && !p->IsFakeClient() && !p->IsHLTV())
-				{
 					human_count++;
-				}
 			}
 		}
 
 		if (human_count >= MAX_PLAYERS)
-		{
 			human_count = 0;
-		}
 
 		// Get Bot Quota
 		bot_target = m_iTargetBots[human_count];
@@ -996,13 +962,9 @@ bool RCBotPluginMeta::Hook_LevelInit(const char *pMapName, char const *pMapEntit
 	extern void **g_pGameRules;
 
 	if (g_pGameRules_Obj && g_pGameRules_Obj->found())
-	{
 		g_pGameRules = g_pGameRules_Obj->getGameRules();
-	}
 	else if (g_pGameRules_Create_Obj && g_pGameRules_Create_Obj->found())
-	{
 		g_pGameRules = g_pGameRules_Create_Obj->getGameRules();
-	}
 
 	return true;
 }

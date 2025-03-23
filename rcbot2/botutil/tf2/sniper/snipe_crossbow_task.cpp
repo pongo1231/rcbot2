@@ -131,9 +131,7 @@ void CBotTF2SnipeCrossBow::execute(CBot *pBot, CBotSchedule *pSchedule)
 					CWaypoint *pHideWaypoint = CWaypoints::getWaypoint(m_iHideWaypoint);
 
 					if (pHideWaypoint != nullptr)
-					{
 						m_vHideOrigin = pHideWaypoint->getOrigin();
-					}
 					else
 						m_iHideWaypoint = -1;
 				}

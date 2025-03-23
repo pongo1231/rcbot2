@@ -592,9 +592,7 @@ CBotCommandInline
 						            int preoffs = 0;
 
 						            if ((args[2] && *args[2]))
-						            {
 							            preoffs = atoi(args[2]);
-						            }
 
 						            data = (void *)((char *)pEntity + m_offset);
 
@@ -636,9 +634,7 @@ CBotCommandInline FindClass("findclass", CMD_ACCESS_DEBUG,
 	                            {
 
 		                            if (args[0] && *args[0])
-		                            {
 			                            UTIL_FindServerClassPrint(args[0]);
-		                            }
 
 		                            return COMMAND_ACCESSED;
 	                            }
@@ -733,9 +729,7 @@ CBotCommandInline DebugMemoryScanCommand(
 		    m_size = 0;
 
 	    if ((m_prev_size != m_size) || ((m_size == 0) || !args[3] || !*args[3]) || (atoi(args[3]) == 0))
-	    {
 		    memset(stored_offsets, 0, sizeof(u_MEMSEARCH) * MAX_MEM_SEARCH);
-	    }
 
 	    // find edict
 	    edict_t *pEdict = CClassInterface::FindEntityByClassnameNearest(pClient->getOrigin(), args[0]);

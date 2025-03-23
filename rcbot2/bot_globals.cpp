@@ -211,9 +211,7 @@ void CBotGlobals::readRCBotFolder()
 				logger->Log(LogLevel::INFO, "RCBot Folder -> trying %s", szRCBotFolder);
 
 				if (!dirExists(szRCBotFolder))
-				{
 					logger->Log(LogLevel::ERROR, "RCBot Folder -> not found ...");
-				}
 			}
 
 			m_szRCBotFolder = CStrings::getString(szRCBotFolder);
@@ -298,9 +296,7 @@ edict_t *CBotGlobals ::findPlayerByTruncName(const char *name)
 			__strlow(pent_lwr);
 
 			if (strncmp(arg_lwr, pent_lwr, length) == 0)
-			{
 				return pent;
-			}
 		}
 	}
 
@@ -500,9 +496,7 @@ bool CBotGlobals::initModFolder()
 	int pos     = iLength - 1;
 
 	while ((pos > 0) && (szGameFolder[pos] != '\\') && (szGameFolder[pos] != '/'))
-	{
 		pos--;
-	}
 	pos++;
 
 	m_szModFolder = CStrings::getString(&szGameFolder[pos]);
@@ -525,9 +519,7 @@ bool CBotGlobals ::gameStart()
 	size_t pos     = iLength - 1;
 
 	while ((pos > 0) && (szGameFolder[pos] != '\\') && (szGameFolder[pos] != '/'))
-	{
 		pos--;
-	}
 	pos++;
 
 	m_szModFolder = CStrings::getString(&szGameFolder[pos]);
@@ -905,18 +897,11 @@ void CBotGlobals ::botMessage(edict_t *pEntity, int iErr, const char *fmt, ...)
 	strcat(string, "\n");
 
 	if (pEntity)
-	{
 		engine->ClientPrintf(pEntity, string);
-	}
+	else if (iErr)
+		Warning(string);
 	else
-	{
-		if (iErr)
-		{
-			Warning(string);
-		}
-		else
-			Msg(string);
-	}
+		Msg(string);
 }
 
 bool CBotGlobals ::makeFolders(const char *szFile)
@@ -954,20 +939,11 @@ bool CBotGlobals ::makeFolders(const char *szFile)
 		mkdir(szFolderName);
 #else
 		if (mkdir(szFolderName, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == 0)
-		{
 			logger->Log(LogLevel::INFO, "Trying to create folder '%s' successful", szFolderName);
-		}
+		else if (dirExists(szFolderName))
+			logger->Log(LogLevel::DEBUG, "Folder '%s' already exists", szFolderName);
 		else
-		{
-			if (dirExists(szFolderName))
-			{
-				logger->Log(LogLevel::DEBUG, "Folder '%s' already exists", szFolderName);
-			}
-			else
-			{
-				logger->Log(LogLevel::ERROR, "Trying to create folder '%s' failed", szFolderName);
-			}
-		}
+			logger->Log(LogLevel::ERROR, "Trying to create folder '%s' failed", szFolderName);
 #endif
 	}
 
@@ -1106,13 +1082,9 @@ QAngle CBotGlobals ::entityEyeAngles(edict_t *pEntity)
 void CBotGlobals ::fixFloatAngle(float *fAngle)
 {
 	if (*fAngle > 180)
-	{
 		*fAngle = *fAngle - 360;
-	}
 	else if (*fAngle < -180)
-	{
 		*fAngle = *fAngle + 360;
-	}
 }
 
 void CBotGlobals ::fixFloatDegrees360(float *pFloat)

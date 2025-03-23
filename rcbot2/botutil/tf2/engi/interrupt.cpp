@@ -8,9 +8,7 @@ CBotTF2EngineerInterrupt ::CBotTF2EngineerInterrupt(CBot *pBot)
 	m_pSentryGun = CTeamFortress2Mod::getMySentryGun(pBot->getEdict());
 
 	if (m_pSentryGun.get() != nullptr)
-	{
 		m_fPrevSentryHealth = CClassInterface::getSentryHealth(m_pSentryGun);
-	}
 	else
 		m_fPrevSentryHealth = 0;
 }

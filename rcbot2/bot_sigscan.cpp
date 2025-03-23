@@ -91,9 +91,7 @@ bool CSignatureFunction::getLibraryInfo(const void *libPtr, DynLibInfo &lib)
 	uintptr_t baseAddr;
 
 	if (libPtr == nullptr)
-	{
 		return false;
-	}
 
 #ifdef _WIN32
 
@@ -104,9 +102,7 @@ bool CSignatureFunction::getLibraryInfo(const void *libPtr, DynLibInfo &lib)
 	IMAGE_OPTIONAL_HEADER *opt;
 
 	if (!VirtualQuery(libPtr, &info, sizeof(MEMORY_BASIC_INFORMATION)))
-	{
 		return false;
-	}
 
 	baseAddr = reinterpret_cast<uintptr_t>(info.AllocationBase);
 
@@ -127,15 +123,11 @@ bool CSignatureFunction::getLibraryInfo(const void *libPtr, DynLibInfo &lib)
 	// Should change this for 64-bit if Valve gets their act together
 
 	if (file->Machine != IMAGE_FILE_MACHINE_I386)
-	{
 		return false;
-	}
 
 	// For our purposes, this must be a dynamic library
 	if ((file->Characteristics & IMAGE_FILE_DLL) == 0)
-	{
 		return false;
-	}
 
 	// Finally, we can do this
 	lib.memorySize = opt->SizeOfImage;
@@ -147,14 +139,10 @@ bool CSignatureFunction::getLibraryInfo(const void *libPtr, DynLibInfo &lib)
 	uint16_t phdrCount;
 
 	if (!dladdr(libPtr, &info))
-	{
 		return false;
-	}
 
 	if (!info.dli_fbase || !info.dli_fname)
-	{
 		return false;
-	}
 
 	// This is for our insane sanity checks :o
 	baseAddr = reinterpret_cast<uintptr_t>(info.dli_fbase);
@@ -162,29 +150,21 @@ bool CSignatureFunction::getLibraryInfo(const void *libPtr, DynLibInfo &lib)
 
 	// Check ELF magic
 	if (memcmp(ELFMAG, file->e_ident, SELFMAG) != 0)
-	{
 		return false;
-	}
 
 	// Check ELF version
 	if (file->e_ident[EI_VERSION] != EV_CURRENT)
-	{
 		return false;
-	}
 
 	// Check ELF architecture, which is 32-bit/x86 right now
 	// Should change this for 64-bit if Valve gets their act together
 
 	if (file->e_ident[EI_CLASS] != ELFCLASS32 || file->e_machine != EM_386 || file->e_ident[EI_DATA] != ELFDATA2LSB)
-	{
 		return false;
-	}
 
 	// For our purposes, this must be a dynamic library/shared object
 	if (file->e_type != ET_DYN)
-	{
 		return false;
-	}
 
 	phdrCount = file->e_phnum;
 	phdr      = reinterpret_cast<Elf32_Phdr *>(baseAddr + file->e_phoff);
@@ -223,9 +203,7 @@ void *CSignatureFunction::findPattern(const void *libPtr, const char *pattern, s
 	memset(&lib, 0, sizeof(DynLibInfo));
 
 	if (!getLibraryInfo(libPtr, lib))
-	{
 		return nullptr;
-	}
 
 	ptr = reinterpret_cast<char *>(lib.baseAddress);
 	end = ptr + lib.memorySize - len;
@@ -261,9 +239,7 @@ void *CSignatureFunction::findSignature(void *addrInBase, const char *signature)
 	real_bytes = decodeHexString(real_sig, sizeof(real_sig), signature);
 
 	if (real_bytes >= 1)
-	{
 		return findPattern(addrInBase, (char *)real_sig, real_bytes);
-	}
 
 	return nullptr;
 }

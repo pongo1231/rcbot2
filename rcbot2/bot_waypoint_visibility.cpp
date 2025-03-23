@@ -148,9 +148,7 @@ void CWaypointVisibilityTable ::WorkOutVisibilityTable()
 
 	// loop through all waypoint possibilities.
 	for (i = 0; i < iNumWaypoints; i++)
-	{
 		workVisibilityForWaypoint(i, iNumWaypoints, false);
-	}
 }
 
 bool CWaypointVisibilityTable ::SaveToFile(void)

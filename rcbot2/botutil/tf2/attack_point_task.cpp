@@ -38,61 +38,54 @@ void CBotTF2AttackPoint ::execute(CBot *pBot, CBotSchedule *pSchedule)
 		m_fAttackTime = engine->Time() + randomFloat(30.0, 60.0);
 	else if (m_fAttackTime < engine->Time())
 		complete();
+	else if (m_fTime == 0)
+	{
+
+		m_fTime   = engine->Time() + randomFloat(5.0, 10.0);
+		m_vMoveTo = m_vOrigin + Vector(randomFloat(-m_iRadius, m_iRadius), randomFloat(-m_iRadius, m_iRadius), 0);
+	}
+	else if (m_fTime < engine->Time())
+	{
+		m_fTime = 0;
+	}
 	else
 	{
-		if (m_fTime == 0)
-		{
+		static float fdist;
 
-			m_fTime   = engine->Time() + randomFloat(5.0, 10.0);
-			m_vMoveTo = m_vOrigin + Vector(randomFloat(-m_iRadius, m_iRadius), randomFloat(-m_iRadius, m_iRadius), 0);
-		}
-		else if (m_fTime < engine->Time())
-		{
-			m_fTime = 0;
-		}
-		else
-		{
-			static float fdist;
+		fdist = pBot->distanceFrom(m_vMoveTo);
 
-			fdist = pBot->distanceFrom(m_vMoveTo);
+		if (pTF2Bot->getClass() == TF_CLASS_SPY)
+		{
+			if (pTF2Bot->isDisguised())
+				pBot->primaryAttack(); // remove disguise to capture
 
-			if (pTF2Bot->getClass() == TF_CLASS_SPY)
+			pTF2Bot->wantToDisguise(false);
+
+			// block cloaking
+			if (pTF2Bot->isCloaked())
 			{
-				if (pTF2Bot->isDisguised())
-					pBot->primaryAttack(); // remove disguise to capture
-
-				pTF2Bot->wantToDisguise(false);
-
-				// block cloaking
-				if (pTF2Bot->isCloaked())
-				{
-					// uncloak
-					pTF2Bot->spyUnCloak();
-				}
-				else
-				{
-					pBot->letGoOfButton(IN_ATTACK2);
-				}
-
-				pTF2Bot->waitCloak();
+				// uncloak
+				pTF2Bot->spyUnCloak();
 			}
-
-			if (fdist < 52)
-			{
-				pBot->stopMoving();
-			}
-			else if (fdist > 400)
-				fail();
 			else
 			{
-				pBot->setMoveTo((m_vMoveTo));
+				pBot->letGoOfButton(IN_ATTACK2);
 			}
 
-			pBot->setLookAtTask(LOOK_AROUND);
-
-			if (((CBotTF2 *)pBot)->checkAttackPoint())
-				complete();
+			pTF2Bot->waitCloak();
 		}
+
+		if (fdist < 52)
+			pBot->stopMoving();
+		else if (fdist > 400)
+			fail();
+		else
+			pBot->setMoveTo((m_vMoveTo));
+
+		pBot->setLookAtTask(LOOK_AROUND);
+
+		if (((CBotTF2 *)pBot)->checkAttackPoint())
+			complete();
 	}
 }
 

@@ -425,9 +425,7 @@ class CTeamControlPoint
 			iPlayersRequired = 0;
 			iTimedPoints     = 0;
 			for (int i = 0; i < MAX_PREVIOUS_POINTS; i++)
-			{
 				iszPreviousPoint[i] = NULL_STRING;
-			}
 			iTeamPoseParam = 0;
 		}
 

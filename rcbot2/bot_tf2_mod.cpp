@@ -303,10 +303,8 @@ int CTeamFortress2Mod ::getTeleporterWaypoint(edict_t *pTele)
 	int i;
 
 	for (i = 0; i < MAX_PLAYERS; i++)
-	{
 		if (m_Teleporters[i].exit.get() == pTele)
 			return m_Teleporters[i].m_iWaypoint;
-	}
 
 	return -1;
 }
@@ -659,9 +657,7 @@ edict_t *CTeamFortress2Mod ::getTeleporterExit(edict_t *pTele)
 		if (m_Teleporters[i].entrance.get() == pTele)
 		{
 			if ((pExit = m_Teleporters[i].exit.get()) != nullptr)
-			{
 				return pExit;
-			}
 
 			return nullptr;
 		}
@@ -725,13 +721,9 @@ void CTeamFortress2Mod::flagReturned(int iTeam)
 	bFlagStateDefault  = true;
 
 	if (iTeam == TF2_TEAM_BLUE)
-	{
 		m_bFlagLocationValidBlue = false;
-	}
 	else if (iTeam == TF2_TEAM_RED)
-	{
 		m_bFlagLocationValidRed = false;
-	}
 }
 
 void CTeamFortress2Mod::flagPickedUp(int iTeam, edict_t *pPlayer)
@@ -939,9 +931,7 @@ int CTeamFortress2Mod ::getHighestScore()
 			score = (short int)CClassInterface::getTF2Score(edict);
 
 			if (score > highest)
-			{
 				highest = score;
-			}
 		}
 	}
 
@@ -1040,18 +1030,14 @@ edict_t *CTeamFortress2Mod ::getBuildingOwner(eEngiBuild object, short index)
 	{
 	case ENGI_DISP:
 		for (i = 0; i < MAX_PLAYERS; i++)
-		{
 			if (m_Dispensers[i].disp.get() && (ENTINDEX(m_Dispensers[i].disp.get()) == index))
 				return INDEXENT(i + 1);
-		}
 		// m_SentryGuns[i].
 		break;
 	case ENGI_SENTRY:
 		for (i = 0; i < MAX_PLAYERS; i++)
-		{
 			if (m_SentryGuns[i].sentry.get() && (ENTINDEX(m_SentryGuns[i].sentry.get()) == index))
 				return INDEXENT(i + 1);
-		}
 		break;
 	case ENGI_TELE:
 		tele = m_Teleporters;
@@ -1257,9 +1243,7 @@ void CTeamFortress2Mod::updatePointMaster()
 	}
 
 	if (m_PointMaster != nullptr)
-	{
 		m_pCurrentRound = m_PointMaster->getCurrentRound();
-	}
 }
 
 edict_t *CTeamFortress2Mod ::getPayloadBomb(int team)
@@ -1302,10 +1286,8 @@ void CTeamFortress2Mod ::roundReset()
 		int i;
 
 		for (i = 0; i < numpoints; i++)
-		{
 			if (m_ObjectiveResource.GetOwningTeam(i) != TF2_TEAM_RED)
 				break;
-		}
 
 		// if all points are owned by RED at start up then its an attack defend map
 		setAttackDefendMap(i == numpoints);

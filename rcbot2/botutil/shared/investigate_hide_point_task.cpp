@@ -94,9 +94,7 @@ void CBotInvestigateHidePoint::execute(CBot *pBot, CBotSchedule *pSchedule)
 			if (pBot->distanceFrom(m_vOrigin) > 70)
 				pBot->setMoveTo(m_vOrigin);
 			else
-			{
 				complete();
-			}
 
 			pBot->setLookVector(m_vOrigin);
 			pBot->setLookAtTask(LOOK_VECTOR);

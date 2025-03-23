@@ -47,10 +47,7 @@ float CProfileTimers::m_fNextUpdate = 0;
 
 // if windows USE THE QUERYPERFORMANCECOUNTER
 #ifdef _WIN32
-inline unsigned __int64 RDTSC(void)
-{
-	_asm _emit 0x0F _asm _emit 0x31
-}
+inline unsigned __int64 RDTSC(void) { _asm _emit 0x0F _asm _emit 0x31 }
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
@@ -162,10 +159,8 @@ void CProfileTimers::updateAndDisplay()
 			double highest = 1.0;
 
 			for (i = 0; i < PROFILING_TIMERS; i++)
-			{
 				if (m_Timers[i].getOverall() > highest)
 					highest = m_Timers[i].getOverall();
-			}
 
 			// next update in 1 second
 			m_fNextUpdate = engine->Time() + 1.0f;
@@ -176,9 +171,7 @@ void CProfileTimers::updateAndDisplay()
 			                         "|------name------|---overall---|---min----|---max----|----avg---|-prct-|");
 
 			for (i = 0; i < PROFILING_TIMERS; i++)
-			{
 				m_Timers[i].print(&highest);
-			}
 		}
 	}
 }

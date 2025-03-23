@@ -66,9 +66,7 @@ void CBotSquads::FreeMemory(void)
 {
 	// TODO inline squad or use unique pointers or something so they're freed automatically
 	for (CBotSquad *squad : m_theSquads)
-	{
 		delete squad;
-	}
 	m_theSquads.clear();
 }
 
@@ -77,18 +75,14 @@ void CBotSquads::removeSquadMember(CBotSquad *pSquad, edict_t *pMember)
 	pSquad->removeMember(pMember);
 
 	if (pSquad->numMembers() <= 1)
-	{
 		RemoveSquad(pSquad);
-	}
 }
 
 edict_t *CBotSquad::getMember(size_t iMember)
 {
 	// TODO: this is only used in CBotSquads::SquadJoin() -- inline the logic
 	if (iMember < 0 || iMember >= m_SquadMembers.size())
-	{
 		return nullptr;
-	}
 
 	return m_SquadMembers[iMember];
 }
@@ -174,9 +168,7 @@ CBotSquad *CBotSquads::SquadJoin(edict_t *pLeader, edict_t *pMember)
 		{
 			// TODO make this a friend class so we could just join the squads directly?
 			for (size_t i = 0; i < joinSquad->numMembers(); i++)
-			{
 				theSquad->AddMember(joinSquad->getMember(i));
-			}
 
 			RemoveSquad(joinSquad);
 		}
@@ -196,12 +188,8 @@ CBotSquad *CBotSquads::SquadJoin(edict_t *pLeader, edict_t *pMember)
 CBotSquad *CBotSquads::FindSquadByLeader(edict_t *pLeader)
 {
 	for (CBotSquad *squad : m_theSquads)
-	{
 		if (squad->IsLeader(pLeader))
-		{
 			return squad;
-		}
-	}
 	return nullptr;
 }
 
@@ -221,9 +209,7 @@ void CBotSquads::RemoveSquad(CBotSquad *pSquad)
 void CBotSquads::UpdateAngles(void)
 {
 	for (CBotSquad *squad : m_theSquads)
-	{
 		squad->UpdateAngles();
-	}
 }
 
 //-------------
@@ -237,9 +223,7 @@ void CBotSquad::UpdateAngles(void)
 	CClassInterface::getVelocity(pLeader, &velocity);
 
 	if (velocity.Length2D() > 1.0f)
-	{
 		VectorAngles(velocity, m_vLeaderAngle);
-	}
 }
 
 void CBotSquad::Init()
@@ -295,9 +279,7 @@ void CBotSquad::ChangeLeader(void)
 		if (m_SquadMembers.empty())
 			SetLeader(nullptr);
 		else
-		{
 			Init(); // new squad init
-		}
 	}
 }
 
@@ -380,9 +362,7 @@ Vector CBotSquad ::GetFormationVector(edict_t *pEdict)
 	CBotGlobals::quickTraceline(pLeader, vLeaderOrigin, vLeaderOrigin + vBase);
 
 	if (tr->fraction < 1.0)
-	{
 		return vLeaderOrigin + (vBase * tr->fraction * 0.5f);
-	}
 
 	return vLeaderOrigin + vBase;
 }
@@ -400,9 +380,7 @@ void CBotSquad::removeMember(edict_t *pMember)
 {
 	auto it = std::find(m_SquadMembers.begin(), m_SquadMembers.end(), pMember);
 	if (it != m_SquadMembers.end())
-	{
 		m_SquadMembers.erase(it);
-	}
 }
 
 void CBotSquad::AddMember(edict_t *pEdict)
