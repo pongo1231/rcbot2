@@ -4757,20 +4757,21 @@ bool CBotTF2::healPlayer()
 
 	if (!CBotGlobals::isPlayer(m_pHeal))
 	{
-		if (CBotGlobals::entityIsAlive(m_pHeal) && CBotGlobals::entityIsValid(m_pHeal))
-		{
-			if (strcmp(m_pHeal.get()->GetClassName(), "entity_revive_marker") == 0)
-				return true;
-		}
+		if (!CBotGlobals::entityIsAlive(m_pHeal) || !CBotGlobals::entityIsValid(m_pHeal))
+			return false;
 
-		return false;
+		if (strcmp(m_pHeal.get()->GetClassName(), "entity_revive_marker") != 0)
+			return false;
+
+		// Continue to positioning and attack logic below for revive markers
 	}
-	// if ( (distanceFrom(vOrigin) > 250) && !isVisible(m_pHeal) )
-	//	return false;
-	p = playerinfomanager->GetPlayerInfo(m_pHeal);
-
-	if (!p || p->IsDead() || !p->IsConnected() || p->IsObserver())
-		return false;
+	else
+	{
+		// Player-specific validity checks
+		p = playerinfomanager->GetPlayerInfo(m_pHeal);
+		if (!p || p->IsDead() || !p->IsConnected() || p->IsObserver())
+			return false;
+	}
 
 	if (m_fMedicUpdatePosTime < engine->Time())
 	{
