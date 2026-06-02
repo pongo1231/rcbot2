@@ -1434,6 +1434,7 @@ void CBot::spawnInit()
 	m_iSelectWeapon           = 0;
 
 	m_fAvoidSideSwitch        = 0.0f;
+	m_fStickyDetTime          = 0.0f;
 
 	m_bAvoidRight             = (randomInt(0, 1) == 0);
 

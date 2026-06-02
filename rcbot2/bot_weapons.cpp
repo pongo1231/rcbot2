@@ -220,6 +220,7 @@ WeaponsData_t TF2Weaps[] = {
 	{ TF2_SLOT_MELEE, TF2_WEAPON_BAT_GIFTWRAP, "tf_weapon_bat_giftwrap",
 	  WEAP_FL_PRIM_ATTACK | WEAP_FL_MELEE | WEAP_FL_UNDERWATER, 0, 150, 0, 1, 0 },
 	{ TF2_SLOT_SCNDR, TF2_WEAPON_RAYGUN, "tf_weapon_raygun", WEAP_FL_PRIM_ATTACK, 100, 2000, 2, 2, 0 },
+	{ TF2_SLOT_SCNDR, TF2_WEAPON_WRANGLER, "tf_weapon_mechanical_arm", WEAP_FL_NONE, 0, 2000, 2, 2, 0 },
 	{ 0, 0, "\0", 0, 0, 0, 0, 0, 0 } // signal last weapon
 };
 

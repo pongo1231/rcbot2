@@ -1155,6 +1155,7 @@ class CBotTF2 : public CBotFortress
 	void *m_pVTable;
 
 	float m_fUseBuffItemTime;
+	float m_fBonkStartTime;
 
 	int m_iDesiredResistType;
 };

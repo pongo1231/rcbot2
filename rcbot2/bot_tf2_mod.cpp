@@ -537,7 +537,7 @@ bool CTeamFortress2Mod::isBoss(edict_t *pEntity, float *fFactor)
 		else if (isTankBoss(pEntity))
 		{
 			if (fFactor != nullptr)
-				*fFactor = 200.0f;
+				*fFactor = -600.0f;
 
 			m_pBoss = pEntity;
 			return true;
