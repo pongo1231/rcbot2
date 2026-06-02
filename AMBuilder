@@ -164,7 +164,9 @@ sourceFiles = [
   "rcbot2/botutil/tf2/spy/backstap_sched.cpp",
   "rcbot2/botutil/tf2/spy/disguise_task.cpp",
   "rcbot2/botutil/tf2/spy/sap_sched.cpp",
-  "rcbot2/botutil/tf2/spy/sap_task.cpp"
+  "rcbot2/botutil/tf2/spy/sap_task.cpp",
+
+  "rcbot2/botutil/tf2/mvm/collect_cash_task.cpp"
 ]
 
 include_paths = [

@@ -75,3 +75,5 @@
 #include "botutil/tf2/spy/disguise_task.h"
 #include "botutil/tf2/spy/sap_sched.h"
 #include "botutil/tf2/spy/sap_task.h"
+
+#include "botutil/tf2/mvm/collect_cash_task.h"
