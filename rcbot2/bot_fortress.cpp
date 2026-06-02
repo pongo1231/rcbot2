@@ -5882,6 +5882,8 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		fDefendFlagUtility = fGetFlagUtility;
 	else if (m_iClass == TF_CLASS_SPY)
 		fDefendFlagUtility = 0.0f;
+	else if (m_iClass == TF_CLASS_ENGINEER)
+		fDefendFlagUtility = m_pSentryGun ? 0.05f : 0.15f; // build instead of camp
 
 	if (hasSomeConditions(CONDITION_PUSH) || CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
 	{
