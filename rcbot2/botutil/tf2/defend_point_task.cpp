@@ -1,5 +1,6 @@
 #include "defend_point_task.h"
 
+#include "bot_const.h"
 #include "bot_globals.h"
 #include "bot_mods.h"
 
@@ -11,6 +12,9 @@ CBotTF2DefendPoint::CBotTF2DefendPoint(int iArea, Vector vOrigin, int iRadius)
 	m_iArea       = iArea;
 	m_iRadius     = iRadius;
 	m_iPointCount = 0;
+
+	setFailInterrupt(CONDITION_SEE_CUR_ENEMY);
+	setCompleteInterrupt(CONDITION_CHANGED);
 }
 
 void CBotTF2DefendPoint::execute(CBot *pBot, CBotSchedule *pSchedule)
@@ -30,7 +34,7 @@ void CBotTF2DefendPoint::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 	else if (m_fDefendTime == 0)
 	{
-		m_fDefendTime = engine->Time() + randomFloat(30.0, 60.0);
+		m_fDefendTime = engine->Time() + randomFloat(15.0, 30.0);
 
 		// Generate 3-5 patrol points around the origin
 		m_iPointCount = randomInt(3, 6);
@@ -84,6 +88,10 @@ void CBotTF2DefendPoint::execute(CBot *pBot, CBotSchedule *pSchedule)
 			}
 			if (iNearbyCount > 0)
 				m_vMoveTo = m_vMoveTo + vOffset;
+
+			// If too clustered, skip this point and try the next one
+			if (iNearbyCount >= 3)
+				m_fTime = 0; // immediately pick next point
 
 			m_iCurrentPoint = (m_iCurrentPoint + 1) % m_iPointCount;
 		}

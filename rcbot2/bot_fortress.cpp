@@ -1750,6 +1750,7 @@ void CBotTF2::spawnInit()
 	m_pCloakedSpy         = nullptr;
 
 	m_fRemoveSapTime      = 0.0f;
+	m_fExtinguishTime     = 0.0f;
 
 	// stickies destroyed now
 	m_iTrapType           = TF_TRAP_TYPE_NONE;
@@ -2627,6 +2628,114 @@ void CBotTF2::spyCloak()
 	}
 }
 
+bool CBotTF2::tryExtinguishTeammates()
+{
+	if (m_iClass != TF_CLASS_PYRO)
+		return false;
+
+	// Cooldown to prevent spam
+	if (m_fExtinguishTime > engine->Time())
+		return false;
+
+	// Check for manmelter (secondary slot, item 595) -- preferred: no ammo cost, stores crit
+	CBotWeapon *pManmelter = nullptr;
+	bool bHasFlame          = false;
+	int iFItem              = 0;
+	int iNeedAmmo           = 0;
+	CBotWeapon *pFlame      = nullptr;
+
+	CBotWeapon *pSec = m_pWeapons->getCurrentWeaponInSlot(TF2_SLOT_SCNDR);
+	if (pSec)
+	{
+		edict_t *pSecEnt = pSec->getWeaponEntity();
+		if (pSecEnt && CClassInterface::TF2_getItemDefinitionIndex(pSecEnt) == 595)
+			pManmelter = pSec;
+	}
+
+	pFlame = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
+	if (pFlame && pFlame->hasWeapon())
+	{
+		edict_t *pFEnt = pFlame->getWeaponEntity();
+		iFItem          = pFEnt ? CClassInterface::TF2_getItemDefinitionIndex(pFEnt) : 0;
+		if (iFItem != 594) // phlog can't airblast
+		{
+			iNeedAmmo = (iFItem == 40) ? 50 : (iFItem == 215) ? 25
+			          : (iFItem == 1178 || iFItem == 1099) ? 5 : 20;
+			if (pFlame->getAmmo(this) >= iNeedAmmo)
+				bHasFlame = true;
+		}
+	}
+
+	if (!pManmelter && !bHasFlame)
+		return false;
+
+	// Find the closest burning teammate
+	edict_t *pBest   = nullptr;
+	float fBestDist  = 1024.0f;
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		edict_t *pT = INDEXENT(i);
+		if (!pT || pT == m_pEdict) continue;
+		if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+		if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+		if (!CTeamFortress2Mod::TF2_IsPlayerOnFire(pT)) continue;
+
+		float fDist = distanceFrom(pT);
+		if (fDist < fBestDist && isVisible(pT))
+		{
+			fBestDist = fDist;
+			pBest     = pT;
+		}
+	}
+
+	if (!pBest)
+		return false;
+
+	// Coordinate: if another pyro is significantly closer, let them handle it
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		edict_t *pT = INDEXENT(i);
+		if (!pT || pT == m_pEdict || !CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+		if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+		if (CClassInterface::getTF2Class(pT) != TF_CLASS_PYRO) continue;
+
+		float fOtherDist = (CBotGlobals::entityOrigin(pT)
+		                    - CBotGlobals::entityOrigin(pBest)).Length();
+		if (fOtherDist < fBestDist - 80.0f)
+			return false;
+	}
+
+	// In airblast range: extinguish now
+	if (fBestDist < 250.0f)
+	{
+		if (pManmelter)
+		{
+			select_CWeapon(pManmelter->getWeaponInfo());
+			secondaryAttack();
+		}
+		else
+		{
+			CBotWeapon *pCurrent = getCurrentWeapon();
+			if (!pCurrent || !pCurrent->canDeflectRockets())
+				select_CWeapon(pFlame->getWeaponInfo());
+			secondaryAttack();
+		}
+
+		m_fDegreaserSwapBack = 0;
+		m_iDegreaserPrevSlot = 0;
+		m_fExtinguishTime    = engine->Time() + 0.5f;
+		return true;
+	}
+
+	// In pursuit range: move toward them
+	setMoveLookPriority(MOVELOOK_ATTACK);
+	setMoveTo(CBotGlobals::entityOrigin(pBest));
+	setMoveLookPriority(MOVELOOK_MODTHINK);
+	setLookVector(CBotGlobals::entityOrigin(pBest));
+	setLookAtTask(LOOK_VECTOR);
+	return false;
+}
+
 void CBotFortress::chooseClass()
 {
 	const int _forcedClass = rcbot_force_class.GetInt();
@@ -3333,45 +3442,10 @@ void CBotTF2::modThink()
 		}
 		break;
 	case TF_CLASS_PYRO:
-	{
 		// Extinguish burning teammates when not in active combat
 		if (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY) || !wantToShoot())
-		{
-			CBotWeapon *pFlame = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
-			if (pFlame && pFlame->hasWeapon())
-			{
-				edict_t *pFEnt = pFlame->getWeaponEntity();
-				int iFItem = pFEnt ? CClassInterface::TF2_getItemDefinitionIndex(pFEnt) : 0;
-				if (iFItem != 594) // phlog can't airblast
-				{
-					int iNeedAmmo = (iFItem == 40) ? 50 : (iFItem == 215) ? 25
-					              : (iFItem == 1178 || iFItem == 1099) ? 5 : 20;
-					if (pFlame->getAmmo(this) >= iNeedAmmo)
-					{
-						for (int i = 1; i <= gpGlobals->maxClients; i++)
-						{
-							edict_t *pT = INDEXENT(i);
-							if (!pT || pT == m_pEdict) continue;
-							if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
-							if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
-							if (!CTeamFortress2Mod::TF2_IsPlayerOnFire(pT)) continue;
-							if (distanceFrom(pT) < 250.0f && isVisible(pT))
-							{
-								CBotWeapon *pCurrent = getCurrentWeapon();
-								if (!pCurrent || !pCurrent->canDeflectRockets())
-									select_CWeapon(pFlame->getWeaponInfo());
-								m_fDegreaserSwapBack = 0;
-								m_iDegreaserPrevSlot = 0;
-								secondaryAttack();
-								break;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	break;
+			tryExtinguishTeammates();
+		break;
 	default:
 		break;
 	}
@@ -8481,38 +8555,54 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 		// Extinguish burning teammates — works regardless of current weapon
 		if (!bSecAttack && m_iClass == TF_CLASS_PYRO)
 		{
+			// Prefer manmelter (secondary, item 595) -- no ammo cost, stores crit
+			CBotWeapon *pManmelter = nullptr;
+			CBotWeapon *pManmelterSec = m_pWeapons->getCurrentWeaponInSlot(TF2_SLOT_SCNDR);
+			if (pManmelterSec)
+			{
+				edict_t *pSecEnt = pManmelterSec->getWeaponEntity();
+				if (pSecEnt && CClassInterface::TF2_getItemDefinitionIndex(pSecEnt) == 595)
+					pManmelter = pManmelterSec;
+			}
+
 			CBotWeapon *pFlame = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
+			bool bHasFlame = false;
+			int iFItem = 0;
+			int iNeedAmmo = 0;
+
 			if (pFlame && pFlame->hasWeapon())
 			{
 				edict_t *pFEnt = pFlame->getWeaponEntity();
-				int iFItem = pFEnt ? CClassInterface::TF2_getItemDefinitionIndex(pFEnt) : 0;
+				iFItem = pFEnt ? CClassInterface::TF2_getItemDefinitionIndex(pFEnt) : 0;
 				if (iFItem != 594) // phlog can't airblast
 				{
-					int iNeedAmmo = (iFItem == 40) ? 50 : (iFItem == 215) ? 25
-					              : (iFItem == 1178 || iFItem == 1099) ? 5 : 20;
+					iNeedAmmo = (iFItem == 40) ? 50 : (iFItem == 215) ? 25
+					          : (iFItem == 1178 || iFItem == 1099) ? 5 : 20;
 					if (pFlame->getAmmo(this) >= iNeedAmmo)
+						bHasFlame = true;
+				}
+			}
+
+			if (pManmelter || bHasFlame)
+			{
+				for (int i = 1; i <= gpGlobals->maxClients; i++)
+				{
+					edict_t *pT = INDEXENT(i);
+					if (!pT || pT == m_pEdict) continue;
+					if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+					if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+					if (!CTeamFortress2Mod::TF2_IsPlayerOnFire(pT)) continue;
+					if (distanceFrom(pT) < 250.0f && isVisible(pT))
 					{
-						for (int i = 1; i <= gpGlobals->maxClients; i++)
-						{
-							edict_t *pT = INDEXENT(i);
-							if (!pT || pT == m_pEdict) continue;
-							if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
-							if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
-							if (!CTeamFortress2Mod::TF2_IsPlayerOnFire(pT)) continue;
-							if (distanceFrom(pT) < 250.0f && isVisible(pT))
-							{
-								if (!pWeapon->canDeflectRockets())
-								{
-									select_CWeapon(pFlame->getWeaponInfo());
-								}
-								// Cancel any Degreaser swap-back so we don't
-								// immediately switch back before the airblast fires
-								m_fDegreaserSwapBack = 0;
-								m_iDegreaserPrevSlot = 0;
-								bSecAttack = true;
-								break;
-							}
-						}
+						if (pManmelter)
+							select_CWeapon(pManmelter->getWeaponInfo());
+						else if (!pWeapon->canDeflectRockets())
+							select_CWeapon(pFlame->getWeaponInfo());
+
+						m_fDegreaserSwapBack = 0;
+						m_iDegreaserPrevSlot = 0;
+						bSecAttack = true;
+						break;
 					}
 				}
 			}

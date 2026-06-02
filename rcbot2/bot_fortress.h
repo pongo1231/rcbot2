@@ -1126,6 +1126,8 @@ class CBotTF2 : public CBotFortress
 
 	void spyUnCloak();
 
+	bool tryExtinguishTeammates();
+
 	void healedPlayer(edict_t *pPlayer, float fAmount);
 
 	void teleportedPlayer(void);
@@ -1217,6 +1219,7 @@ class CBotTF2 : public CBotFortress
 
 	int m_iDegreaserPrevSlot;
 	float m_fDegreaserSwapBack;
+	float m_fExtinguishTime;
 
 	int m_iDesiredResistType;
 
