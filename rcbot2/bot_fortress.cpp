@@ -149,7 +149,7 @@ void CBotTF2::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 		medicCalled(pPlayer);
 		break;
 	case TF_VC_SENTRYHERE: // hear 'put sentry here'
-		// if I'm carrying a sentry just drop it here
+		// Also handles non-carrying case via handleBuildRequest
 		if (getClass() == TF_CLASS_ENGINEER)
 		{
 			if (m_bIsCarryingObj && m_bIsCarryingSentry)
@@ -158,15 +158,31 @@ void CBotTF2::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 				{
 					if (randomInt(0, 100) > 75)
 						addVoiceCommand(TF_VC_YES);
-
 					primaryAttack();
-
 					m_pSchedules->removeSchedule(SCHED_TF2_ENGI_MOVE_BUILDING);
 				}
 				else if (randomInt(0, 100) > 75)
 					addVoiceCommand(TF_VC_NO);
 			}
+			else
+				handleBuildRequest(ENGI_SENTRY, CWaypointTypes::W_FL_SENTRY, pPlayer);
 		}
+		break;
+	case TF_VC_DISPENSERHERE:
+		handleBuildRequest(ENGI_DISP, CWaypointTypes::W_FL_SENTRY, pPlayer);
+		break;
+	case TF_VC_TELEPORTERHERE:
+		// Only place teleporter exit if not near spawn
+	{
+		int iSpawnWpt = CWaypointLocations::NearestWaypoint(
+			CBotGlobals::entityOrigin(pPlayer), 800, -1, false, false, false,
+			nullptr, false, 0, true, false, Vector(0, 0, 0), CWaypointTypes::W_FL_TELE_EXIT);
+		if (iSpawnWpt == -1 || (CBotGlobals::entityOrigin(pPlayer)
+			- CWaypoints::getWaypoint(iSpawnWpt)->getOrigin()).Length() > 512.0f)
+		{
+			handleBuildRequest(ENGI_EXIT, CWaypointTypes::W_FL_TELE_EXIT, pPlayer);
+		}
+	}
 		break;
 	case TF_VC_HELP:
 		// add utility can find player
@@ -1748,6 +1764,7 @@ void CBotTF2::spawnInit()
 	m_fRemoveSapTime      = 0.0f;
 	m_fExtinguishTime     = 0.0f;
 	m_fBaitCallTime       = 0.0f;
+	m_fVoiceBuildTime     = 0.0f;
 
 	// stickies destroyed now
 	m_iTrapType           = TF_TRAP_TYPE_NONE;
@@ -2735,6 +2752,86 @@ bool CBotTF2::tryExtinguishTeammates()
 
 float CBotFortress::m_fAFKIdleSince[MAX_PLAYERS + 1];
 bool CBotFortress::m_bAFKStarted[MAX_PLAYERS + 1];
+
+void CBotTF2::handleBuildRequest(eEngiBuild iBuilding, int iWaypointFlag, edict_t *pCaller)
+{
+	if (getClass() != TF_CLASS_ENGINEER)
+		return;
+
+	// Cooldown to prevent spam
+	if (m_fVoiceBuildTime > engine->Time())
+		return;
+
+	Vector vCallerOrigin = CBotGlobals::entityOrigin(pCaller);
+
+	// Already carrying this building — drop it immediately
+	bool bCarrying = false;
+	if (iBuilding == ENGI_SENTRY && m_bIsCarryingObj && m_bIsCarryingSentry) bCarrying = true;
+	if (iBuilding == ENGI_DISP && m_bIsCarryingObj && m_bIsCarryingDisp) bCarrying = true;
+	if (iBuilding == ENGI_EXIT && m_bIsCarryingObj && m_bIsCarryingTeleExit) bCarrying = true;
+
+	if (bCarrying)
+	{
+		if (isVisible(pCaller) && (distanceFrom(pCaller) < 512))
+		{
+			setMoveTo(vCallerOrigin);
+			primaryAttack();
+			m_pSchedules->removeSchedule(SCHED_TF2_ENGI_MOVE_BUILDING);
+			if (randomInt(0, 100) > 75)
+				addVoiceCommand(TF_VC_YES);
+			m_fVoiceBuildTime = engine->Time() + 15.0f;
+		}
+		else if (randomInt(0, 100) > 75)
+			addVoiceCommand(TF_VC_NO);
+		return;
+	}
+
+	// Find a suitable waypoint near the caller
+	int iWpt = CWaypointLocations::NearestWaypoint(vCallerOrigin, 800, -1, true, false, true,
+		nullptr, false, getTeam(), true, false, Vector(0, 0, 0), iWaypointFlag);
+
+	if (iWpt == -1)
+	{
+		if (randomInt(0, 100) > 75)
+			addVoiceCommand(TF_VC_NO);
+		return;
+	}
+
+	CWaypoint *pWaypoint = CWaypoints::getWaypoint(iWpt);
+
+	// Check if we already have this building built near enough
+	bool bAlreadyBuilt = false;
+	edict_t *pExisting = nullptr;
+	if (iBuilding == ENGI_SENTRY)
+		pExisting = m_pSentryGun.get();
+	else if (iBuilding == ENGI_DISP)
+		pExisting = m_pDispenser.get();
+	else if (iBuilding == ENGI_EXIT)
+		pExisting = m_pTeleExit.get();
+
+	if (pExisting && CBotGlobals::entityIsValid(pExisting))
+	{
+		float fExistingDist = (CBotGlobals::entityOrigin(pExisting) - vCallerOrigin).Length();
+		if (fExistingDist < 400.0f)
+			bAlreadyBuilt = true;
+	}
+
+	if (bAlreadyBuilt)
+	{
+		if (randomInt(0, 100) > 75)
+			addVoiceCommand(TF_VC_YES);
+		m_fVoiceBuildTime = engine->Time() + 5.0f;
+		return;
+	}
+
+	// Destroy existing if present and rebuild at new location
+	CBotTFEngiBuild *pSchedule = new CBotTFEngiBuild(this, iBuilding, pWaypoint);
+	m_pSchedules->addFront(pSchedule);
+
+	if (randomInt(0, 100) > 75)
+		addVoiceCommand(TF_VC_YES);
+	m_fVoiceBuildTime = engine->Time() + 15.0f;
+}
 
 void CBotFortress::notePlayerEngaged(edict_t *pPlayer)
 {

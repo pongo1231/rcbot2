@@ -1134,6 +1134,8 @@ class CBotTF2 : public CBotFortress
 
 	bool tryExtinguishTeammates();
 
+	void handleBuildRequest(eEngiBuild iBuilding, int iWaypointFlag, edict_t *pCaller);
+
 	void healedPlayer(edict_t *pPlayer, float fAmount);
 
 	void teleportedPlayer(void);
@@ -1227,6 +1229,7 @@ class CBotTF2 : public CBotFortress
 	float m_fDegreaserSwapBack;
 	float m_fExtinguishTime;
 	float m_fBaitCallTime;
+	float m_fVoiceBuildTime;
 
 
 	int m_iDesiredResistType;
