@@ -1134,6 +1134,8 @@ class CBotTF2 : public CBotFortress
 
 	bool tryExtinguishTeammates();
 
+	void handleSpecialAbilities();
+
 	void handleBuildRequest(eEngiBuild iBuilding, int iWaypointFlag, edict_t *pCaller);
 
 	void healedPlayer(edict_t *pPlayer, float fAmount);
