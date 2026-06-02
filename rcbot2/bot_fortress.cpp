@@ -2971,6 +2971,28 @@ void CBotTF2::handleSpecialAbilities()
 	// --- Scout: random double-jump in combat ---
 	if (m_iClass == TF_CLASS_SCOUT && bInDanger && randomInt(1, 25) == 1)
 		tapButton(IN_JUMP);
+
+	// --- Engineer Short Circuit (528): destroy incoming projectiles ---
+	if (m_iClass == TF_CLASS_ENGINEER && bInDanger)
+	{
+		CBotWeapon *pShortCircuit = m_pWeapons->getCurrentWeaponInSlot(TF2_SLOT_SCNDR);
+		if (pShortCircuit)
+		{
+			edict_t *pSCEnt = pShortCircuit->getWeaponEntity();
+			if (pSCEnt && CClassInterface::TF2_getItemDefinitionIndex(pSCEnt) == 528
+			    && pShortCircuit->getAmmo(this) >= 65)
+			{
+				edict_t *pProj = m_NearestEnemyRocket.get();
+				if (!pProj) pProj = m_NearestEnemyGrenade.get();
+				if (pProj && CBotGlobals::entityIsAlive(pProj)
+				    && incomingRocket(300.0f))
+				{
+					select_CWeapon(pShortCircuit->getWeaponInfo());
+					secondaryAttack();
+				}
+			}
+		}
+	}
 }
 
 void CBotFortress::notePlayerEngaged(edict_t *pPlayer)
