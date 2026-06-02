@@ -1770,7 +1770,6 @@ void CBotTF2::spawnInit()
 	m_fBaitCallTime       = 0.0f;
 	m_fVoiceBuildTime     = 0.0f;
 	m_fStuckSpyTime       = 0.0f;
-	m_fPlayerScanTime     = 0.0f; // will be set when entity index is known
 
 	// stickies destroyed now
 	m_iTrapType           = TF_TRAP_TYPE_NONE;
@@ -3387,15 +3386,8 @@ void CBotTF2::modThink()
 	if (hasFlag())
 		removeCondition(CONDITION_COVERT);
 
-	// Combined player scan for fire help + medic seeking, throttled to ~10Hz per bot
-	// staggered by entindex to spread load across frames
-	if (m_fPlayerScanTime == 0.0f)
-		m_fPlayerScanTime = engine->Time() + (float)(ENTINDEX(m_pEdict) % 3) * 0.03f;
-
-	if (m_fPlayerScanTime < engine->Time())
+	// Combined single-pass player scan for fire help + medic seeking
 	{
-		m_fPlayerScanTime = engine->Time() + 0.1f;
-
 		bool bOnFire      = CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict) && m_iClass != TF_CLASS_PYRO;
 		bool bSeekHeals   = (bNeedHealth && !m_bIsBeingHealed && m_iClass != TF_CLASS_MEDIC
 		                   && (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY) || !wantToShoot())
@@ -3419,7 +3411,6 @@ void CBotTF2::modThink()
 				bool bIsPyro    = (iClass == TF_CLASS_PYRO);
 				bool bIsMedic   = (iClass == TF_CLASS_MEDIC);
 
-				// When on fire: look for pyro or medic. When just hurt: only medic
 				if (bOnFire ? (!bIsPyro && !bIsMedic) : !bIsMedic) continue;
 
 				if (isPlayerAFK(pT)) continue;
