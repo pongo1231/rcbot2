@@ -14,7 +14,72 @@ general RCBot2 support.
 [bots-united.com discord]: https://discord.gg/BbxR5wY
 [bots-united forums]: http://rcbot.bots-united.com/forums/index.php?showforum=18
 
-## Changes from upstream
+## Features / Changes in this version
+
+**Combat**
+- MvM tank priority and combat behavior rewritten
+- Projectile dodging and melee combat strafing
+- Statistical projectile prediction with zigzag detection and overshoot/undershoot learning
+- Demoman sticky launcher charge curve and combat usage
+- Demoman forced to melee at close range when holding sticky launcher
+- Sniper bow: no zoom while strafing, frame-wide zigzag against scoped snipers
+- Wrangler: only used when enemy in sentry range with clear line-of-sight and ammo
+- Special weapon abilities (charge shots, shield charge, Phlog taunt, etc.) only in combat
+
+**Spy**
+- Backstab with flank approach positioning
+- Sap task verifies placement with retry, prevents cloak/uncloak oscillation and double-toggle loop
+- Split sap targets between multiple spies by entindex
+- Medic bait: injured disguised spies call medic to lure enemy medics, then backstab
+- Redisguise to show medigun when disguised as medic
+- Avoids bumping into enemy bots while cloaked or disguised
+
+**Engineer**
+- Sentry engagement and awareness: overheal aggression, team broadcast of sentry positions
+- Visible-only sentry avoidance (non-visible sentries behind walls are ignored)
+- Ally building help: upgrade and repair teammate teleporter entrances
+- Responds to player voice commands for dispenser, teleporter, and sentry placement
+- Thanks nearby engineers who help with buildings
+- Sapper removal handles all building types reactively, reduced cooldown
+
+**Pyro**
+- Active extinguish: moves toward burning allies up to 1024 units, uses manmelter as preference
+- Coordination so only the closest pyro goes to extinguish
+- Airblast ammo per flamethrower variant (Phlog excluded)
+- Burning bots seek out pyros or medics to get extinguished
+
+**Medic**
+- Smart positioning: far side of patient from enemies, wall cover, crouching
+- Projectile dodging while healing
+- Heals consistently with held attack instead of tapping
+- MvM revive marker detection, single-medic coordination, standoff distance
+- Skip AFK patients when deciding who to heal
+
+**Teamplay**
+- Injured bots actively seek medics (FVisible trace, not FOV-limited), skip when health packs nearby
+- Defend patrol spread: perimeter ring distribution, cap of 3 defenders per area, 15-30s cycles
+- Mess around behaviors expanded to 11 types, setup gate timing for pre-round
+- AFK medic detection with shared 10-second timer, only starts on engagement
+- Bot quota reacts immediately on player connect and disconnect
+- No spawn delay between bots at map start
+
+**Hijack**
+- Takes control of AFK human players after configurable seconds (cvar `rcbot_hijack_afk_time`, default 0 = disabled)
+- Preserves player class, does not mark as fake client, keeps current weapons
+- Press any movement key to break free, "Welcome back" on release
+- Persistent on-screen hint while hijacked, skips dead and spectator players
+
+**Optimizations**
+- Combined fire-seeking and medic-seeking into single player pass
+- Removed duplicate extinguish scan from combat path
+- Hot-path throttle reduced, healing/fire scans run every frame for responsiveness
+
+**Fixes**
+- Smart pointers for schedule/task ownership, memory leak in removeSchedule fixed
+- Null bot pointer crash fixed in getBotPointer and getBot
+- Scheduling reactivity: re-evaluation on stuck or condition change, not blind periodic polling
+
+## Changes included from nosoop's fork
 
 - Build process uses [AMBuild][] instead of `make` or Visual Studio.  This removes the need for
 Valve's cross platform make conversion tool, and is what AlliedModders uses to build
