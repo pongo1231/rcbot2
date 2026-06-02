@@ -4729,7 +4729,9 @@ bool CBotTF2::setVisible(edict_t *pEntity, bool bVisible)
 					if (iClass != TF_CLASS_SPY) // spies cloaking is normal / non spies cloaking is not!
 					{
 						if (!m_pCloakedSpy
-						    || ((m_pCloakedSpy != pEntity) && (distanceFrom(pEntity) < distanceFrom(m_pCloakedSpy))))
+						    || ((m_pCloakedSpy != pEntity)
+						        && CBotGlobals::entityIsValid(m_pCloakedSpy)
+						        && (distanceFrom(pEntity) < distanceFrom(m_pCloakedSpy))))
 							m_pCloakedSpy = pEntity;
 					}
 				}
