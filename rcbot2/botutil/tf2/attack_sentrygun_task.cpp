@@ -1,5 +1,6 @@
 #include "attack_sentrygun_task.h"
 
+#include "bot_fortress.h"
 #include "bot_getprop.h"
 #include "bot_globals.h"
 #include "bot_mods.h"
@@ -86,7 +87,15 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 	pBot->lookAtEdict(m_pSentryGun);
 	pBot->setLookAtTask(LOOK_EDICT);
 
-	if (m_pWeapon->needToReload(pBot) || (CClassInterface::getSentryEnemy(m_pSentryGun) == pBot->getEdict()))
+	bool bTakingFire  = (CClassInterface::getSentryEnemy(m_pSentryGun) == pBot->getEdict());
+	bool bOutOfRange  = pBot->distanceFrom(m_pSentryGun) > TF2_MAX_SENTRYGUN_RANGE;
+	bool bOverhealed  = pBot->getHealthPercent() > 1.3f;
+	bool bHurtBySentry = pBot->recentlyHurt(1.0f) && bTakingFire;
+
+	// Hide when reloading, taking fire (unless overhealed or out of range), or recently hurt by sentry
+	if (m_pWeapon->needToReload(pBot)
+	    || (bTakingFire && !bOverhealed && !bOutOfRange)
+	    || bHurtBySentry)
 	{
 		if (pBot->distanceFrom(m_vHide) > 80.0f)
 			pBot->setMoveTo(m_vHide);

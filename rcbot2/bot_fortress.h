@@ -36,6 +36,8 @@
 #include "bot.h"
 #include "bot_utility.h"
 
+#include <vector>
+
 // #include <stack>
 
 #define TF2_ROCKETSPEED 1100
@@ -862,6 +864,7 @@ class CBotFortress : public CBot
 	float m_fHealingMoveTime;
 
 	MyEHandle m_pLastEnemySentry;
+	std::vector<MyEHandle> m_KnownSentries;
 	MyEHandle m_NearestEnemyRocket;
 	MyEHandle m_NearestEnemyGrenade;
 
@@ -1046,6 +1049,7 @@ class CBotTF2 : public CBotFortress
 	bool thinkSpyIsEnemy(edict_t *pEdict, TF_Class iDisguise);
 
 	void seeFriendlyDie(edict_t *pDied, edict_t *pKiller, CWeapon *pWeapon);
+	void addKnownSentry(edict_t *pSentry);
 	void seeFriendlyKill(edict_t *pTeamMate, edict_t *pDied, CWeapon *pWeapon);
 
 	void voiceCommand(int cmd);

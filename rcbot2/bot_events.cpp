@@ -178,8 +178,14 @@ class CBotSeeFriendlyDie : public IBotFunction
 
 		if (pBot->getEdict() != m_pDied)
 		{
-			if (pBot->isVisible(m_pDied))
+			// Always share sentry deaths with the whole team, even bots that can't see the victim.
+			// This gives all bots awareness of sentry positions so they can avoid running into them.
+			if (m_pWeapon && m_pWeapon->getID() == TF2_WEAPON_SENTRYGUN)
 				pBot->seeFriendlyDie(m_pDied, m_pKiller, m_pWeapon);
+			else if (pBot->isVisible(m_pDied) && m_pWeapon)
+				pBot->seeFriendlyDie(m_pDied, m_pKiller, m_pWeapon);
+			else if (pBot->isVisible(m_pDied))
+				pBot->seeFriendlyDie(m_pDied, m_pKiller, nullptr);
 		}
 	}
 
