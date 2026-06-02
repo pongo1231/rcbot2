@@ -900,6 +900,15 @@ void CBotFortress::detectedAsSpy(edict_t *pDetector, bool bDisguiseComprimised)
 			m_pSchedules->addFront(new CGotoHideSpotSched(this, m_pAvoidEntity));
 		}
 	}
+
+	// Cloak and escape if revealed
+	if (isTF() && m_iClass == TF_CLASS_SPY && !((CBotTF2 *)this)->isCloaked()
+	    && !m_pSchedules->hasSchedule(SCHED_GOOD_HIDE_SPOT))
+	{
+		((CBotTF2 *)this)->spyCloak();
+		m_pSchedules->freeMemory();
+		m_pSchedules->addFront(new CGotoHideSpotSched(this, pDetector));
+	}
 }
 
 void CBotFortress::spawnInit()
@@ -2828,64 +2837,19 @@ void CBotTF2::modThink()
 		}
 	}
 
-	// Pre-emptively avoid known sentry positions to prevent bots running blindly into them.
-	// Back away if within sentry range, even when fighting other enemies.
-	// Disguised/cloaked spies ignore this since sentries don't target them.
-	if (!m_KnownSentries.empty()
-	    && !(m_iClass == TF_CLASS_SPY && (isDisguised() || isCloaked()))
-	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
+	// Keep known sentries pruned of dead entries
+	if (!m_KnownSentries.empty())
 	{
-		if (m_pSchedules && !m_pSchedules->hasSchedule(SCHED_ATTACK_SENTRY_GUN)
-		    && !m_pSchedules->isCurrentSchedule(SCHED_ATTACK_SENTRY_GUN))
+		for (size_t i = 0; i < m_KnownSentries.size();)
 		{
-			// Prune dead entries and check each known sentry
-			edict_t *pClosest    = nullptr;
-			float fClosestDist   = 99999.0f;
-			Vector vClosestPos;
-
-			for (size_t i = 0; i < m_KnownSentries.size();)
+			edict_t *pSentry = m_KnownSentries[i].get();
+			if (!pSentry || !CBotGlobals::entityIsValid(pSentry)
+			    || !CBotGlobals::entityIsAlive(pSentry))
 			{
-				edict_t *pSentry = m_KnownSentries[i].get();
-				if (!pSentry || !CBotGlobals::entityIsValid(pSentry)
-				    || !CBotGlobals::entityIsAlive(pSentry))
-				{
-					m_KnownSentries.erase(m_KnownSentries.begin() + i);
-					continue;
-				}
-
-				Vector vSentryPos = CBotGlobals::entityOrigin(pSentry);
-				float fDist       = (getOrigin() - vSentryPos).Length();
-
-				if (fDist < (TF2_MAX_SENTRYGUN_RANGE + 256.0f))
-				{
-					if (fDist < fClosestDist)
-					{
-						fClosestDist  = fDist;
-						pClosest      = pSentry;
-						vClosestPos   = vSentryPos;
-					}
-				}
-				i++;
+				m_KnownSentries.erase(m_KnownSentries.begin() + i);
+				continue;
 			}
-
-			if (pClosest)
-			{
-				// Look toward the threat
-				if (!isVisible(pClosest))
-					setLookAt(vClosestPos);
-
-				// Back away from the closest known sentry
-				if (fClosestDist < (TF2_MAX_SENTRYGUN_RANGE + 128.0f))
-				{
-					Vector vAway = getOrigin() - vClosestPos;
-					vAway.z      = 0;
-					if (vAway.Length() > 0.1f)
-					{
-						vAway = vAway / vAway.Length();
-						setMoveTo(getOrigin() + (vAway * 384.0f));
-					}
-				}
-			}
+			i++;
 		}
 	}
 
@@ -7559,29 +7523,34 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 	    && (DotProductFromOrigin(m_vAimVector) < rcbot_enemyshootfov.GetFloat()))
 		return true; // keep enemy / don't shoot : until angle between enemy is less than 45 degrees
 
-	// Always avoid entering sentry range unless bonked or disguised/cloaked spy
+	// Only avoid visible sentries that can actually shoot us.
+	// If behind a wall, no need to avoid. If we have no ranged weapon, rush or path around.
 	if (!(m_iClass == TF_CLASS_SPY && (isDisguised() || isCloaked()))
 	    && !((CClassInterface::getTF2Conditions(m_pEdict) & TF2_PLAYER_BONKED) == TF2_PLAYER_BONKED)
 	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
 	{
 		edict_t *pDangerSentry = m_pNearestEnemySentry.get();
 		if (pDangerSentry && CBotGlobals::entityIsValid(pDangerSentry)
-		    && CBotGlobals::entityIsAlive(pDangerSentry))
+		    && CBotGlobals::entityIsAlive(pDangerSentry) && isVisible(pDangerSentry))
 		{
 			float fSentryDist = distanceFrom(pDangerSentry);
 			if (fSentryDist < TF2_MAX_SENTRYGUN_RANGE && !m_pSchedules->hasSchedule(SCHED_ATTACK_SENTRY_GUN)
 			    && !m_pSchedules->isCurrentSchedule(SCHED_ATTACK_SENTRY_GUN))
 			{
-				Vector vSentryPos = CBotGlobals::entityOrigin(pDangerSentry);
-				Vector vAway      = getOrigin() - vSentryPos;
-				vAway.z           = 0;
-				if (vAway.Length() > 0.1f)
+				CBotWeapon *pCheckRanged = m_pWeapons->getBestWeapon(pDangerSentry, false, false);
+				if (pCheckRanged && !pCheckRanged->isMelee() && !pCheckRanged->outOfAmmo(this))
+				{
+					Vector vSentryPos = CBotGlobals::entityOrigin(pDangerSentry);
+					Vector vAway      = getOrigin() - vSentryPos;
+					vAway.z           = 0;
+					if (vAway.Length() > 0.1f)
 				{
 					vAway = vAway / vAway.Length();
 					setMoveTo(getOrigin() + (vAway * 384.0f));
 				}
 			}
 		}
+	}
 	}
 
 	// Zigzag against scoped snipers to avoid headshots -- check all players, not just current enemy

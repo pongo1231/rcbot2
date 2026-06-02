@@ -64,10 +64,9 @@ void CBotBackstab::execute(CBot *pBot, CBotSchedule *pSchedule)
 		else
 		{
 			fail();
+			pTF2Bot->waitBackstab();
+			return;
 		}
-
-		pTF2Bot->waitBackstab();
-		return;
 	}
 	else if (!pBot->isVisible(pEnemy))
 	{
@@ -80,10 +79,9 @@ void CBotBackstab::execute(CBot *pBot, CBotSchedule *pSchedule)
 		else
 		{
 			fail();
+			pTF2Bot->waitBackstab();
+			return;
 		}
-
-		pTF2Bot->waitBackstab();
-		return;
 	}
 	else if (pWeapon->getID() != TF2_WEAPON_KNIFE)
 	{
@@ -93,14 +91,40 @@ void CBotBackstab::execute(CBot *pBot, CBotSchedule *pSchedule)
 			pTF2Bot->waitBackstab();
 			return;
 		}
+		pBotWeapon = pBot->getCurrentWeapon();
 	}
 
 	AngleVectors(CBotGlobals::entityEyeAngles(pEnemy), &vangles);
 	vrear = CBotGlobals::entityOrigin(pEnemy) - (vangles * 45) + Vector(0, 0, 32);
 
+	// Approach from alternating sides instead of walking straight at the enemy's back
+	// This makes it harder for the enemy to detect and shoot the spy
+	float fDistToRear = pBot->distanceFrom(vrear);
+	Vector vRight     = vangles.Cross(Vector(0, 0, 1));
+
+	if (vRight.Length() > 0.1f)
+	{
+		vRight = vRight / vRight.Length();
+
+		// Alternate approach side every ~1.5 seconds based on time
+		int iSide      = ((int)(engine->Time() * 0.7f)) % 2;
+		float fSideDir = iSide ? 1.0f : -1.0f;
+
+		if (fDistToRear > 100.0f)
+		{
+			// Far away: wide flank approach to avoid enemy's sight cone
+			vrear = vrear + (vRight * fSideDir * 80.0f);
+		}
+		else if (fDistToRear > 50.0f)
+		{
+			// Medium range: narrower side approach
+			vrear = vrear + (vRight * fSideDir * 35.0f);
+		}
+	}
+
 	pTF2Bot->resetAttackingEnemy();
 
-	if (pBot->distanceFrom(vrear) > 40)
+	if (fDistToRear > 40.0f)
 	{
 		pBot->setMoveTo(vrear);
 	}
