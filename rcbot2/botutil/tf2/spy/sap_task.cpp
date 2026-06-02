@@ -17,6 +17,7 @@ CBotTF2SpySap::CBotTF2SpySap(edict_t *pBuilding, eEngiBuild id)
 	m_id              = id;
 	m_iState          = SAP_APPROACH;
 	m_bEvadeRight     = false;
+	m_bSapperPlaced   = false;
 	m_vBuildingOrigin = CBotGlobals::entityOrigin(pBuilding);
 }
 
@@ -157,12 +158,15 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 
 	// SAP_APPROACH state
-	if (buildingIsSapped(pBuilding) && (m_fStateChangeTime + 0.3f) < engine->Time())
+	// Transition to EVADE if building is confirmed sapped, OR if we just placed
+	// the sapper (optimistic — avoids waiting for the game event to fire)
+	if ((buildingIsSapped(pBuilding) || m_bSapperPlaced)
+	    && (m_fStateChangeTime + 0.3f) < engine->Time())
 	{
-		// Successfully sapped! Switch to evade state
 		m_iState           = SAP_EVADE;
 		m_fEvadeTime       = 0.0f;
 		m_fStateChangeTime = engine->Time();
+		m_bSapperPlaced    = false;
 		return;
 	}
 
@@ -186,7 +190,10 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 		if (CTeamFortress2Mod::TF2_IsPlayerCloaked(pBot->getEdict()))
 			tf2Bot->spyUnCloak();
 		else if (randomInt(0, 1))
+		{
 			pBot->tapButton(IN_ATTACK);
+			m_bSapperPlaced = true;
+		}
 	}
 }
 

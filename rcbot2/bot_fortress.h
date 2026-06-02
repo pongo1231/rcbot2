@@ -1210,6 +1210,7 @@ class CBotTF2 : public CBotFortress
 	float m_fUseBuffItemTime;
 	float m_fBonkStartTime;
 	float m_fReEvalTime;
+	Vector m_vLastReEvalPos;
 
 	int m_iDegreaserPrevSlot;
 	float m_fDegreaserSwapBack;

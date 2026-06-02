@@ -10,6 +10,7 @@ CBotTF2DefendPoint::CBotTF2DefendPoint(int iArea, Vector vOrigin, int iRadius)
 	m_fTime       = 0;
 	m_iArea       = iArea;
 	m_iRadius     = iRadius;
+	m_iPointCount = 0;
 }
 
 void CBotTF2DefendPoint::execute(CBot *pBot, CBotSchedule *pSchedule)
@@ -19,35 +20,43 @@ void CBotTF2DefendPoint::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 	if (m_iArea && (CTeamFortress2Mod::m_ObjectiveResource.GetOwningTeam(iCpIndex) != iTeam))
 	{
-		// doesn't belong to us/can't defend anymore
 		((CBotTF2 *)pBot)->updateAttackDefendPoints();
-		complete(); // done
+		complete();
 	}
 	else if (m_iArea && !CTeamFortress2Mod::m_ObjectiveResource.isCPValid(iCpIndex, iTeam, TF2_POINT_DEFEND))
 	{
 		((CBotTF2 *)pBot)->updateAttackDefendPoints();
-		fail(); // too slow
+		fail();
 	}
 	else if (m_fDefendTime == 0)
 	{
 		m_fDefendTime = engine->Time() + randomFloat(30.0, 60.0);
+
+		// Generate 3-5 patrol points around the origin
+		m_iPointCount = randomInt(3, 6);
+		for (int i = 0; i < m_iPointCount; i++)
+		{
+			m_PatrolPoints[i] = m_vOrigin + Vector(
+				randomFloat(-m_iRadius, m_iRadius),
+				randomFloat(-m_iRadius, m_iRadius), 0);
+		}
+		m_iCurrentPoint = 0;
+		m_fTime         = 0;
 		pBot->resetLookAroundTime();
 	}
 	else if (m_fDefendTime < engine->Time())
 		complete();
 	else
 	{
+		// Active patrol: cycle through patrol points every ~2-4 seconds
 		if (m_fTime == 0)
 		{
-			float fdist;
+			m_fTime          = engine->Time() + randomFloat(2.0f, 4.0f);
+			m_vMoveTo        = m_PatrolPoints[m_iCurrentPoint];
 
-			m_fTime   = engine->Time() + randomFloat(5.0, 10.0);
-			m_vMoveTo = m_vOrigin + Vector(randomFloat(-m_iRadius, m_iRadius), randomFloat(-m_iRadius, m_iRadius), 0);
-
-			// Avoid clustering with teammates at the exact same spot
+			// Avoid clustering with teammates
 			Vector vOffset(0, 0, 0);
 			int iNearbyCount = 0;
-
 			for (int i = 1; i <= gpGlobals->maxClients; i++)
 			{
 				edict_t *pPlayer = INDEXENT(i);
@@ -73,24 +82,27 @@ void CBotTF2DefendPoint::execute(CBot *pBot, CBotSchedule *pSchedule)
 					}
 				}
 			}
-
 			if (iNearbyCount > 0)
 				m_vMoveTo = m_vMoveTo + vOffset;
 
-			fdist = pBot->distanceFrom(m_vMoveTo);
-
-			if (fdist < 32)
-				pBot->stopMoving();
-			else if (fdist > 400)
-				fail();
-			else
-				pBot->setMoveTo(m_vMoveTo);
+			m_iCurrentPoint = (m_iCurrentPoint + 1) % m_iPointCount;
 		}
 		else if (m_fTime < engine->Time())
-		{
 			m_fTime = 0;
+
+		float fdist = pBot->distanceFrom(m_vMoveTo);
+		if (fdist < 32)
+		{
+			pBot->stopMoving();
+			m_fTime = 0; // immediately pick next point
 		}
-		pBot->setLookAtTask(LOOK_SNIPE);
+		else if (fdist > 400)
+			fail();
+		else
+			pBot->setMoveTo(m_vMoveTo);
+
+		// Actively look around while patrolling, not just stand and snipe
+		pBot->setLookAtTask(LOOK_AROUND);
 	}
 }
 

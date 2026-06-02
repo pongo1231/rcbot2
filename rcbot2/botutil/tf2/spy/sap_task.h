@@ -22,6 +22,7 @@ class CBotTF2SpySap : public CBotTask
 	int m_iState;
 	Vector m_vBuildingOrigin;
 	bool m_bEvadeRight;
+	bool m_bSapperPlaced;
 
 	bool buildingIsSapped(edict_t *pBuilding);
 };

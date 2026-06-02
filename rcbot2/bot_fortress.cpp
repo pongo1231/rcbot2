@@ -391,6 +391,17 @@ float CBotFortress::getHealFactor(edict_t *pPlayer)
 	if (!CBotGlobals::entityIsAlive(pPlayer) || !p || p->IsDead() || p->IsObserver() || !p->IsConnected())
 		return 0.0f;
 
+	// Ignore AFK players at spawn so medics don't stand around healing idle players
+	{
+		const CBotCmd &cmd = p->GetLastUserCommand();
+		if ((cmd.buttons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT | IN_ATTACK)) == 0)
+		{
+			CClient *pClient = CClients::get(pPlayer);
+			if (pClient && pClient->getSpeed() < 5.0f && distanceFrom(pPlayer) > 128.0f)
+				return 0.0f;
+		}
+	}
+
 	if (CClassInterface::getTF2NumHealers(pPlayer) > 1)
 		return 0.0f;
 
@@ -692,7 +703,9 @@ bool CBotFortress::setVisible(edict_t *pEntity, bool bVisible)
 
 			fDistance = distanceFrom(pEntity);
 
-			if (fDistance <= 200)
+			// Track ammo packs within 512 units (not just 200) so bots notice
+			// dropped ammo from dead players and go collect it
+			if (fDistance <= 512)
 			{
 				if (!m_pAmmo || (fDistance < distanceFrom(m_pAmmo)))
 					m_pAmmo = pEntity;
@@ -3231,46 +3244,47 @@ void CBotTF2::modThink()
 			if ( CClassInterface::getTF2SpyCloakMeter(m_pEdict) <
 			}*/
 
-			if (m_pNearestEnemySentry && (m_fSpySapTime < engine->Time())
-			    && !CTeamFortress2Mod::isSentrySapped(m_pNearestEnemySentry)
-			    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
-			{
-				m_fSpySapTime = engine->Time() + randomFloat(0.5f, 1.5f);
-				m_pSchedules->freeMemory();
-				m_pSchedules->add(new CBotSpySapBuildingSched(m_pNearestEnemySentry, ENGI_SENTRY));
-			}
+			// Split sap tasks between multiple spies: each spy prefers a different
+			// building type based on its entindex to avoid overlapping
+			int iEntIdx   = ENTINDEX(m_pEdict);
+			int iSapOrder = iEntIdx % 3;
+			// Order 0: sentry → tele → disp, Order 1: tele → disp → sentry, Order 2: disp → sentry → tele
+			static const int sapTypes[3][3] = {
+				{ 1, 2, 3 }, // SENTRY, TELE, DISP priority
+				{ 2, 3, 1 }, // TELE, DISP, SENTRY
+				{ 3, 1, 2 }  // DISP, SENTRY, TELE
+			};
 
-			if (m_pNearestEnemyTeleporter && (m_fSpySapTime < engine->Time())
-			    && !CTeamFortress2Mod::isTeleporterSapped(m_pNearestEnemyTeleporter)
-			    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
+			for (int iOrder = 0; iOrder < 3; iOrder++)
 			{
-				m_fSpySapTime = engine->Time() + randomFloat(0.5f, 1.5f);
-				m_pSchedules->freeMemory();
-				m_pSchedules->add(new CBotSpySapBuildingSched(m_pNearestEnemyTeleporter, ENGI_TELE));
-			}
-
-			if (m_pNearestEnemyDisp && (m_fSpySapTime < engine->Time())
-			    && !CTeamFortress2Mod::isDispenserSapped(m_pNearestEnemyDisp)
-			    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
-			{
-				m_fSpySapTime = engine->Time() + randomFloat(0.5f, 1.5f);
-				m_pSchedules->freeMemory();
-				m_pSchedules->add(new CBotSpySapBuildingSched(m_pNearestEnemyDisp, ENGI_DISP));
-			}
-
-			// Chain-sap fast-track: if a sap just completed and there are other
-			// unsapped buildings nearby, bypass the cooldown
-			if (!m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
-			{
-				if (m_pNearestEnemySentry
-				    && !CTeamFortress2Mod::isSentrySapped(m_pNearestEnemySentry))
-					m_fSpySapTime = 0.0f;
-				else if (m_pNearestEnemyTeleporter
-				         && !CTeamFortress2Mod::isTeleporterSapped(m_pNearestEnemyTeleporter))
-					m_fSpySapTime = 0.0f;
-				else if (m_pNearestEnemyDisp
-				         && !CTeamFortress2Mod::isDispenserSapped(m_pNearestEnemyDisp))
-					m_fSpySapTime = 0.0f;
+				int iType = sapTypes[iSapOrder][iOrder];
+				if (iType == 1 && m_pNearestEnemySentry && (m_fSpySapTime < engine->Time())
+				    && !CTeamFortress2Mod::isSentrySapped(m_pNearestEnemySentry)
+				    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
+				{
+					m_fSpySapTime = engine->Time() + randomFloat(0.5f, 1.5f);
+					m_pSchedules->freeMemory();
+					m_pSchedules->add(new CBotSpySapBuildingSched(m_pNearestEnemySentry, ENGI_SENTRY));
+					break;
+				}
+				if (iType == 2 && m_pNearestEnemyTeleporter && (m_fSpySapTime < engine->Time())
+				    && !CTeamFortress2Mod::isTeleporterSapped(m_pNearestEnemyTeleporter)
+				    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
+				{
+					m_fSpySapTime = engine->Time() + randomFloat(0.5f, 1.5f);
+					m_pSchedules->freeMemory();
+					m_pSchedules->add(new CBotSpySapBuildingSched(m_pNearestEnemyTeleporter, ENGI_TELE));
+					break;
+				}
+				if (iType == 3 && m_pNearestEnemyDisp && (m_fSpySapTime < engine->Time())
+				    && !CTeamFortress2Mod::isDispenserSapped(m_pNearestEnemyDisp)
+				    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
+				{
+					m_fSpySapTime = engine->Time() + randomFloat(0.5f, 1.5f);
+					m_pSchedules->freeMemory();
+					m_pSchedules->add(new CBotSpySapBuildingSched(m_pNearestEnemyDisp, ENGI_DISP));
+					break;
+				}
 			}
 		}
 		break;
@@ -4536,16 +4550,17 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		}
 	}
 
-	// Re-evaluate every ~0.4s even without CONDITION_CHANGED, so bots
-	// don't get stuck doing the wrong thing for too long
+	// Force re-evaluation if bot hasn't moved recently (stuck detection)
 	if (!hasSomeConditions(CONDITION_CHANGED) && !m_pSchedules->isEmpty())
 	{
-		if (engine->Time() < m_fReEvalTime)
+		Vector vDelta = getOrigin() - m_vLastReEvalPos;
+		if (vDelta.Length2D() > 32.0f || engine->Time() < (m_fReEvalTime + 0.5f))
 			return;
-		m_fReEvalTime = engine->Time() + 0.4f;
 	}
 
 	removeCondition(CONDITION_CHANGED);
+	m_vLastReEvalPos = getOrigin();
+	m_fReEvalTime    = engine->Time();
 
 	bIsUbered = CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict);
 
@@ -4782,7 +4797,23 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			                && (m_pNearestDisp != m_pDispenser)
 			                && (iMetal >= (200 - CClassInterface::getTF2SentryUpgradeMetal(m_pNearestDisp)))
 			                && ((iAllyDispLevel < 3) || (fAllyDispenserHealthPercent < 1.0f)),
-			            0.7 + ((1.0f - fAllyDispenserHealthPercent) * 0.3));
+			            0.88 + ((1.0f - fAllyDispenserHealthPercent) * 0.12));
+
+			// Help build / repair / speed up ally teleporter construction
+			int iAllyTeleLevel = 0;
+			float fAllyTeleHealthPercent = 1.0f;
+			if (m_pNearestEnemyTeleporter.get() == nullptr && m_pNearestTeleEntrance
+			    && m_pNearestTeleEntrance != m_pTeleEntrance)
+			{
+				iAllyTeleLevel = CClassInterface::getTF2UpgradeLevel(m_pNearestTeleEntrance);
+				fAllyTeleHealthPercent = CClassInterface::getTeleporterHealth(m_pNearestTeleEntrance)
+				    / CClassInterface::getTF2GetBuildingMaxHealth(m_pNearestTeleEntrance);
+				ADD_UTILITY(BOT_UTIL_UPGTMTELENT,
+				            !m_bIsCarryingObj && (m_fRemoveSapTime < engine->Time()) && m_pNearestTeleEntrance
+				                && (iMetal >= (200 - CClassInterface::getTF2SentryUpgradeMetal(m_pNearestTeleEntrance)))
+				                && ((iAllyTeleLevel < 3) || (fAllyTeleHealthPercent < 0.99f)),
+				            0.85 + ((1.0f - fAllyTeleHealthPercent) * 0.15));
+			}
 		}
 
 		if (m_pNearestAllySentry && (m_pNearestAllySentry.get() != m_pSentryGun.get())
@@ -4801,8 +4832,8 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			            (fAllySentryHealthPercent > 0.0f) && !m_bIsCarryingObj && (m_fRemoveSapTime < engine->Time())
 			                && !bHasFlag && m_pNearestAllySentry && (m_pNearestAllySentry != m_pSentryGun)
 			                && (iMetal >= (200 - CClassInterface::getTF2SentryUpgradeMetal(m_pNearestAllySentry)))
-			                && ((iAllySentryLevel < 3) || (fAllySentryHealthPercent < 1.0f)),
-			            0.8 + ((1.0f - fAllySentryHealthPercent) * 0.2));
+			                && ((iAllySentryLevel < 3) || (fAllySentryHealthPercent < 0.99f)),
+			            0.88 + ((1.0f - fAllySentryHealthPercent) * 0.12));
 		}
 
 		fSentryUtil = 0.8 + (((float)((int)bNeedAmmo)) * 0.1) + (((float)(int)bNeedHealth) * 0.1);
@@ -5054,8 +5085,36 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	                 !bIsUbered && !m_bIsCarryingObj && !bHasFlag && pWaypointResupply && bNeedHealth && !m_pHealthkit,
 	                 1000.0f / fResupplyDist, CWaypoints::getWaypointIndex(pWaypointResupply));
 
+	// Only grab ammo if no teammate closer to it needs it more
+	bool bYieldsAmmo = false;
+	if (bNeedAmmo && m_pAmmo)
+	{
+		Vector vAmmo = CBotGlobals::entityOrigin(m_pAmmo);
+		float fMyDist = (getOrigin() - vAmmo).Length();
+
+		for (int i = 1; i <= gpGlobals->maxClients; i++)
+		{
+			edict_t *pT = INDEXENT(i);
+			if (!pT || pT == m_pEdict) continue;
+			if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+			if (CTeamFortress2Mod::getTeam(pT) != iTeam) continue;
+
+			float fTheirDist = (CBotGlobals::entityOrigin(pT) - vAmmo).Length();
+			if (fTheirDist > 300.0f) continue;
+
+			// Yield to engineers not at max metal who are closer
+			if (CClassInterface::getTF2Class(pT) == TF_CLASS_ENGINEER
+			    && fTheirDist < fMyDist)
+			{
+				CBot *pB = CBots::getBotPointer(pT);
+				if (pB && pB->isTF2() && ((CBotTF2 *)pB)->getMetal() < 200)
+					{ bYieldsAmmo = true; break; }
+			}
+		}
+	}
+
 	ADD_UTILITY(
-	    BOT_UTIL_GETAMMOKIT, bNeedAmmo && m_pAmmo,
+	    BOT_UTIL_GETAMMOKIT, bNeedAmmo && m_pAmmo && !bYieldsAmmo,
 	    1.0 + ((!CTeamFortress2Mod::hasRoundStarted() && CTeamFortress2Mod::isMapType(TF_MAP_MVM)) ? 0.5f : 0.0f));
 	ADD_UTILITY(
 	    BOT_UTIL_GETHEALTHKIT, bNeedHealth && m_pHealthkit,
@@ -5195,8 +5254,29 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 
 	// only defend if defend area is > 0
 	// (!CTeamFortress2Mod::isAttackDefendMap()||(m_iTeam==TF2_TEAM_RED))
+	// Only a handful of bots should defend a point at once
+	bool bAlreadyDefended = false;
+	if (m_iCurrentDefendArea > 0)
+	{
+		int iDefenders = 0;
+		for (int i = 1; i <= gpGlobals->maxClients; i++)
+		{
+			edict_t *pP = INDEXENT(i);
+			if (!pP || pP == m_pEdict) continue;
+			if (!CBotGlobals::entityIsValid(pP)) continue;
+			if (CTeamFortress2Mod::getTeam(pP) != iTeam) continue;
+			if (!CBotGlobals::isPlayer(pP)) continue;
+			float fD = distanceFrom(pP);
+			if (fD < 256.0f) // another defender nearby
+			{
+				iDefenders++;
+				if (iDefenders >= 3) { bAlreadyDefended = true; break; }
+			}
+		}
+	}
+
 	ADD_UTILITY(BOT_UTIL_DEFEND_POINT,
-	            (m_iCurrentDefendArea > 0)
+	            (m_iCurrentDefendArea > 0) && !bAlreadyDefended
 	                && (CTeamFortress2Mod::isMapType(TF_MAP_MVM) || CTeamFortress2Mod::isMapType(TF_MAP_SD)
 	                    || CTeamFortress2Mod::isMapType(TF_MAP_CART) || CTeamFortress2Mod::isMapType(TF_MAP_CARTRACE)
 	                    || CTeamFortress2Mod::isMapType(TF_MAP_ARENA) || CTeamFortress2Mod::isMapType(TF_MAP_KOTH)
@@ -6410,6 +6490,12 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		if (m_pNearestDisp)
 		{
 			m_pSchedules->add(new CBotTFEngiUpgrade(this, m_pNearestDisp));
+			return true;
+		}
+	case BOT_UTIL_UPGTMTELENT:
+		if (m_pNearestTeleEntrance)
+		{
+			m_pSchedules->add(new CBotTFEngiUpgrade(this, m_pNearestTeleEntrance));
 			return true;
 		}
 	case BOT_UTIL_UPGSENTRY:
@@ -8335,9 +8421,12 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 							{
 								if (!pWeapon->canDeflectRockets())
 								{
-									// Switch to flamethrower to extinguish
 									select_CWeapon(pFlame->getWeaponInfo());
 								}
+								// Cancel any Degreaser swap-back so we don't
+								// immediately switch back before the airblast fires
+								m_fDegreaserSwapBack = 0;
+								m_iDegreaserPrevSlot = 0;
 								bSecAttack = true;
 								break;
 							}

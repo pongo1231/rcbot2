@@ -13,8 +13,11 @@ class CBotTF2DefendPoint : public CBotTask
   private:
 	Vector m_vOrigin;
 	Vector m_vMoveTo;
+	Vector m_PatrolPoints[6];
 	float m_fDefendTime;
 	float m_fTime;
 	int m_iArea;
 	int m_iRadius;
+	int m_iPointCount;
+	int m_iCurrentPoint;
 };

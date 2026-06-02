@@ -3343,6 +3343,9 @@ CBot *CBots::getBotPointer(edict_t *pEdict)
 
 	CBot *pBot = m_Bots[slot];
 
+	if (!pBot)
+		return nullptr;
+
 	if (pBot->inUse())
 		return pBot;
 
@@ -3352,8 +3355,11 @@ CBot *CBots::getBotPointer(edict_t *pEdict)
 CBot *CBots::getBot(int slot)
 {
 	CBot *pBot = m_Bots[slot];
+	if (!pBot) return nullptr;
 	if (pBot->inUse())
 		return pBot;
+
+	return nullptr;
 	return nullptr;
 }
 
