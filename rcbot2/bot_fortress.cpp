@@ -3500,10 +3500,11 @@ void CBotTF2::modThink()
 			}
 		}
 
-		// Medic-bait: lure enemy medics with medic calls, then backstab
+		// Medic-bait: lure enemy medics by calling medic when actually injured
 		if (!m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING)
 		    && !m_pSchedules->isCurrentSchedule(SCHED_BACKSTAB)
-		    && isDisguised() && !bIsCloaked && (m_fBaitCallTime < engine->Time()))
+		    && isDisguised() && !bIsCloaked && (m_fBaitCallTime < engine->Time())
+		    && bNeedHealth)
 		{
 			edict_t *pBaitTarget = nullptr;
 			float fBaitDist      = 1024.0f;
