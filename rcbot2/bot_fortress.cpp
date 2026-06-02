@@ -561,11 +561,18 @@ bool CBotFortress::setVisible(edict_t *pEntity, bool bVisible)
 							{
 								if (m_pHeal != pEntity)
 								{
+									// Don't abandon a revive marker for a player unless under threat
+									bool bHealingMarker = (m_pHeal.get() != nullptr
+									    && !CBotGlobals::isPlayer(m_pHeal));
+									bool bUnderThreat   = (m_pEnemy
+									    && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot());
+									if (bHealingMarker && !bUnderThreat)
+										return true; // stick with the revive
+
 									if (fFactor > m_fHealFactor)
 									{
-								m_pHeal       = pEntity;
-								notePlayerEngaged(pEntity);
 										m_fHealFactor = fFactor;
+										m_pHeal       = pEntity;
 										updateCondition(CONDITION_SEE_HEAL);
 										notePlayerEngaged(pEntity);
 									}
