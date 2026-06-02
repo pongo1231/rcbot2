@@ -607,7 +607,7 @@ bool CBotFortress::setVisible(edict_t *pEntity, bool bVisible)
 				{
 					float fFactor = getHealFactor(pEntity);
 					// add extra factor and ensure this guys actually being healed
-					if (!m_pHeal || (m_pHeal == pEntity) || (fFactor < m_fHealFactor))
+					if (!m_pHeal || (m_pHeal == pEntity) || (fFactor > m_fHealFactor))
 					{
 						m_fHealFactor = fFactor;
 						m_pHeal       = pEntity;
@@ -6035,6 +6035,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			if (bIAmClosest)
 			{
 				m_pHeal = pReviveMarker;
+				setVisible(pReviveMarker, true);
 				updateCondition(CONDITION_SEE_HEAL);
 				ADD_UTILITY(BOT_UTIL_MVM_MEDIC_REVIVE,
 				            (getHealFactor(m_pHeal) > 0) && (pMedigun != nullptr) && pBWMediGun
