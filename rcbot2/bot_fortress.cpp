@@ -3097,6 +3097,61 @@ void CBotTF2::modThink()
 	if (hasFlag())
 		removeCondition(CONDITION_COVERT);
 
+	// Actively seek out medics when needing health
+	if (bNeedHealth && !m_bIsBeingHealed && m_iClass != TF_CLASS_MEDIC
+	    && (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY) || !wantToShoot()))
+	{
+		edict_t *pBestMedic  = nullptr;
+		float fBestMedicDist = 2048.0f;
+
+		for (int i = 1; i <= gpGlobals->maxClients; i++)
+		{
+			edict_t *pT = INDEXENT(i);
+			if (!pT || pT == m_pEdict) continue;
+			if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+			if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+			if (CClassInterface::getTF2Class(pT) != TF_CLASS_MEDIC) continue;
+
+			float fDist = distanceFrom(pT);
+			if (fDist < fBestMedicDist && FVisible(pT))
+			{
+				fBestMedicDist = fDist;
+				pBestMedic     = pT;
+			}
+		}
+
+		if (pBestMedic)
+		{
+			Vector vMedicOrigin = CBotGlobals::entityOrigin(pBestMedic);
+
+			if (fBestMedicDist < 450.0f) // in medigun range
+			{
+				// Face the medic, stop moving, and wait to be healed
+				setMoveLookPriority(MOVELOOK_ATTACK);
+				stopMoving();
+				setLookVector(vMedicOrigin);
+				setLookAtTask(LOOK_VECTOR);
+				setMoveLookPriority(MOVELOOK_MODTHINK);
+
+				// Call medic if we've been waiting and not being healed
+				if (m_fCallMedic < engine->Time() && getHealthPercent() < 0.7f)
+				{
+					callMedic();
+					m_fCallMedic = engine->Time() + randomFloat(3.0f, 5.0f);
+				}
+			}
+			else
+			{
+				// Move toward the medic
+				setMoveLookPriority(MOVELOOK_ATTACK);
+				setMoveTo(vMedicOrigin);
+				setLookVector(vMedicOrigin);
+				setLookAtTask(LOOK_VECTOR);
+				setMoveLookPriority(MOVELOOK_MODTHINK);
+			}
+		}
+	}
+
 	switch (m_iClass)
 	{
 	case TF_CLASS_SCOUT:
@@ -5389,7 +5444,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	    CWaypoints::getWaypointIndex(pWaypointHealth));
 
 	ADD_UTILITY(BOT_UTIL_FIND_MEDIC_FOR_HEALTH,
-	            (m_iClass != TF_CLASS_MEDIC) && !bHasFlag && bNeedHealth && m_pLastSeeMedic.hasSeen(10.0f), 1.0f);
+	            (m_iClass != TF_CLASS_MEDIC) && !bHasFlag && bNeedHealth && m_pLastSeeMedic.hasSeen(30.0f), 1.0f);
 
 	if ((m_pNearestEnemySentry.get() != nullptr) && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
 	{
@@ -6907,27 +6962,23 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 	case BOT_UTIL_FIND_MEDIC_FOR_HEALTH:
 	{
 		Vector vLoc = m_pLastSeeMedic.getLocation();
-		int iWpt    = CWaypointLocations::NearestWaypoint(vLoc, 400, -1, true, false, true, 0, false, getTeam(), true);
-		if (iWpt != -1)
-		{
-			CFindPathTask *findpath       = new CFindPathTask(iWpt, LOOK_WAYPOINT);
-			CTaskVoiceCommand *shoutMedic = new CTaskVoiceCommand(TF_VC_MEDIC);
-			CBotTF2WaitHealthTask *wait   = new CBotTF2WaitHealthTask(vLoc);
-			CBotSchedule *newSched        = new CBotSchedule();
+		CFindPathTask *findpath       = new CFindPathTask(vLoc, LOOK_WAYPOINT);
+		findpath->setFailInterrupt(CONDITION_SEE_CUR_ENEMY);
 
-			findpath->setCompleteInterrupt(0, CONDITION_NEED_HEALTH);
-			shoutMedic->setCompleteInterrupt(0, CONDITION_NEED_HEALTH);
-			wait->setCompleteInterrupt(0, CONDITION_NEED_HEALTH);
+		CTaskVoiceCommand *shoutMedic = new CTaskVoiceCommand(TF_VC_MEDIC);
+		CBotTF2WaitHealthTask *wait   = new CBotTF2WaitHealthTask(vLoc);
+		CBotSchedule *newSched        = new CBotSchedule();
 
-			newSched->addTask(findpath);
-			newSched->addTask(shoutMedic);
-			newSched->addTask(wait);
-			m_pSchedules->addFront(newSched);
+		findpath->setCompleteInterrupt(0, CONDITION_NEED_HEALTH);
+		shoutMedic->setCompleteInterrupt(0, CONDITION_NEED_HEALTH);
+		wait->setCompleteInterrupt(0, CONDITION_NEED_HEALTH);
 
-			return true;
-		}
+		newSched->addTask(findpath);
+		newSched->addTask(shoutMedic);
+		newSched->addTask(wait);
+		m_pSchedules->addFront(newSched);
 
-		return false;
+		return true;
 	}
 	case BOT_UTIL_GETHEALTHKIT:
 		m_pSchedules->removeSchedule(SCHED_PICKUP);
