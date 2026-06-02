@@ -879,7 +879,15 @@ void RCBotPluginMeta::BotQuotaCheck()
 		int bot_count    = 0;
 		int human_count  = 0;
 
-		// Count bots and humans directly from connected entities
+		// Count RCbot bots from our own managed list
+		for (int i = 0; i < MAX_PLAYERS; ++i)
+		{
+			CBot *bot = CBots::get(i);
+			if (bot != nullptr && bot->getEdict() != nullptr && bot->inUse())
+				bot_count++;
+		}
+
+		// Count humans from connected entities (catches connecting players)
 		for (int i = 1; i <= gpGlobals->maxClients; i++)
 		{
 			edict_t *pEdict = INDEXENT(i);
@@ -887,12 +895,9 @@ void RCBotPluginMeta::BotQuotaCheck()
 			if (!CBotGlobals::entityIsValid(pEdict)) continue;
 
 			IPlayerInfo *p = playerinfomanager->GetPlayerInfo(pEdict);
-			if (!p || !p->IsConnected() || p->IsHLTV()) continue;
+			if (!p || !p->IsConnected() || p->IsFakeClient() || p->IsHLTV()) continue;
 
-			if (p->IsFakeClient())
-				bot_count++;
-			else
-				human_count++;
+			human_count++;
 		}
 		human_count += m_iConnectingPlayers;
 
