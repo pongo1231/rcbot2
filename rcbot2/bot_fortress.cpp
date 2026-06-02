@@ -3301,6 +3301,8 @@ void CBotTF2::modThink()
 	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
 	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
 	{
+		edict_t *pBuster   = nullptr;
+		float fBusterDist  = 9999.0f;
 		for (int i = gpGlobals->maxClients + 1; i < gpGlobals->maxEntities; i++)
 		{
 			edict_t *pEnt = INDEXENT(i);
@@ -3313,15 +3315,34 @@ void CBotTF2::modThink()
 			if (!szModel || strstr(szModel, "sentry_buster") == nullptr) continue;
 
 			float fDist = distanceFrom(pEnt);
-			if (fDist < 350.0f)
+			if (fDist < fBusterDist)
 			{
-				// Engineer: rescue sentry
+				fBusterDist = fDist;
+				pBuster     = pEnt;
+			}
+		}
+
+		if (pBuster)
+		{
+			// Engineer: if far from sentry and buster is incoming, rush to sentry first
+			if (m_iClass == TF_CLASS_ENGINEER && m_pSentryGun.get()
+			    && CBotGlobals::entityIsValid(m_pSentryGun)
+			    && !m_bIsCarryingObj
+			    && distanceFrom(m_pSentryGun) > 200.0f
+			    && fBusterDist > 200.0f)
+			{
+				setMoveLookPriority(MOVELOOK_ATTACK);
+				setMoveTo(CBotGlobals::entityOrigin(m_pSentryGun));
+				setMoveLookPriority(MOVELOOK_MODTHINK);
+			}
+			// Close range: rescue and/or run
+			else if (fBusterDist < 350.0f)
+			{
 				if (m_iClass == TF_CLASS_ENGINEER && m_pSentryGun.get()
 				    && CBotGlobals::entityIsValid(m_pSentryGun)
 				    && !m_bIsCarryingObj
 				    && distanceFrom(m_pSentryGun) < 250.0f)
 				{
-					// Try Rescue Ranger remote pickup first
 					CBotWeapon *pRescue = m_pWeapons->getWeapon(
 					    CWeapons::getWeapon(TF2_WEAPON_SHOTGUN_PRIMARY));
 					edict_t *pRescueEnt = pRescue ? pRescue->getWeaponEntity() : nullptr;
@@ -3335,7 +3356,6 @@ void CBotTF2::modThink()
 					}
 					else
 					{
-						// Fallback: pick up with wrench
 						CBotWeapon *pWrench = m_pWeapons->getWeapon(
 						    CWeapons::getWeapon(TF2_WEAPON_WRENCH));
 						if (pWrench && pWrench->hasWeapon())
@@ -3347,8 +3367,7 @@ void CBotTF2::modThink()
 					}
 				}
 
-				// Everyone: run away
-				Vector vAway = getOrigin() - CBotGlobals::entityOrigin(pEnt);
+				Vector vAway = getOrigin() - CBotGlobals::entityOrigin(pBuster);
 				vAway.z      = 0;
 				if (vAway.Length() > 0.1f)
 				{
@@ -3357,7 +3376,6 @@ void CBotTF2::modThink()
 					setMoveTo(getOrigin() + (vAway * 512.0f));
 					setMoveLookPriority(MOVELOOK_MODTHINK);
 				}
-				break;
 			}
 		}
 	}
