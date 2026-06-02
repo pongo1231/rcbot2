@@ -4938,17 +4938,17 @@ bool CBotTF2::healPlayer()
 		// is the person I want to heal different from the player I am healing now?
 		if (m_pHeal != pPlayer)
 		{
-			// yes -- press fire to disconnect from player
+			// yes -- release attack to disconnect from wrong player
 			if (m_fHealClickTime < engine->Time())
 				m_fHealClickTime = engine->Time() + rcbot_tf2_medic_letgotime.GetFloat();
 
-			// m_pButtons->letGo(IN_ATTACK);
+			m_pButtons->letGo(IN_ATTACK);
 		}
 		else if (m_fHealClickTime < engine->Time())
-			primaryAttack();
+			primaryAttack(true); // hold continuously for consistent healing
 	}
 	else if ((m_fHealClickTime < engine->Time()) && (DotProductFromOrigin(vOrigin) > 0.98f))
-		primaryAttack(); // bug fix for now
+		primaryAttack(true); // hold continuously for consistent healing
 	//}
 	// else
 	//	m_pHeal = CClassInterface::getMedigunTarget(INDEXENT(pWeap->getWeaponIndex()));
