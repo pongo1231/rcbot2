@@ -939,6 +939,7 @@ void CBotFortress::spawnInit()
 	m_fTaunting                = 0.0f; // bots not moving FIX
 
 	m_fMedicUpdatePosTime      = 0.0f;
+	m_bShouldCrouchCover       = false;
 
 	m_pLastHeal                = nullptr;
 
@@ -4203,6 +4204,26 @@ bool CBotTF2::healPlayer()
 	else
 		setMoveTo(m_vMedicPosition);
 
+	// Crouch behind low cover while healing
+	if (m_bShouldCrouchCover && distanceFrom(m_vMedicPosition) < 100)
+		duck();
+	else
+		m_bShouldCrouchCover = false;
+
+	// Dodge incoming projectiles while healing
+	if (m_fStrafeTime < engine->Time())
+	{
+		edict_t *pIncoming = m_NearestEnemyRocket.get();
+		if (pIncoming && incomingRocket(512.0f))
+		{
+			Vector vFromProj = getOrigin() - CBotGlobals::entityOrigin(pIncoming);
+			Vector vPerp     = vFromProj.Cross(Vector(0, 0, 1));
+			float fDodgeDir  = (vPerp.y > 0) ? 1.0f : -1.0f;
+			m_fStrafeTime    = engine->Time() + 0.4f;
+			m_fSideSpeed     = fDodgeDir * m_fIdealMoveSpeed * 0.8f;
+		}
+	}
+
 	pWeapon = INDEXENT(pWeap->getWeaponIndex());
 
 	if (pWeapon == nullptr)
@@ -6243,18 +6264,32 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			m_iLastFailSentryWpt = -1;
 		break;
 	case BOT_UTIL_BACKSTAB:
+	{
+		edict_t *pTarget = nullptr;
 		if (m_pEnemy && CBotGlobals::isAlivePlayer(m_pEnemy))
-		{
-			m_pSchedules->add(new CBotBackstabSched(m_pEnemy));
-			return true;
-		}
+			pTarget = m_pEnemy;
 		else if (m_pLastEnemy && CBotGlobals::isAlivePlayer(m_pLastEnemy))
+			pTarget = m_pLastEnemy;
+
+		if (pTarget)
 		{
-			m_pSchedules->add(new CBotBackstabSched(m_pLastEnemy));
+			// If target is very low HP, just shoot them with revolver instead
+			int iHealth = CClassInterface::getPlayerHealth(pTarget);
+			if (iHealth > 0 && iHealth <= 40)
+			{
+				CBotWeapon *pRevolver = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_REVOLVER));
+				if (pRevolver && pRevolver->hasWeapon() && !pRevolver->outOfAmmo(this)
+				    && distanceFrom(pTarget) < 800.0f)
+				{
+					select_CWeapon(pRevolver->getWeaponInfo());
+					m_pSchedules->add(new CBotAttackSched(pTarget));
+					return true;
+				}
+			}
+			m_pSchedules->add(new CBotBackstabSched(pTarget));
 			return true;
 		}
-
-		break;
+	}
 	case BOT_UTIL_REMOVE_TMTELE_SAPPER:
 		updateCondition(CONDITION_PARANOID);
 		m_pSchedules->add(new CBotRemoveSapperSched(m_pNearestTeleEntrance, ENGI_TELE));

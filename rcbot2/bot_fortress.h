@@ -829,6 +829,7 @@ class CBotFortress : public CBot
 	bool m_bIsBeingHealed;
 	float m_fMedicUpdatePosTime;
 	Vector m_vMedicPosition;
+	bool m_bShouldCrouchCover;
 
 	bool m_bCanBeUbered;
 	float m_fCheckHealTime;
