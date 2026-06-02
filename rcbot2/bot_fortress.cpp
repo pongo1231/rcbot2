@@ -3628,6 +3628,20 @@ void CBotTF2::modThink()
 		}
 	}
 
+	// MvM: grab nearby cash even while fighting
+	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && !hasFlag()
+	    && m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
+	{
+		edict_t *pNearbyCash = CClassInterface::FindEntityByClassnameNearest(
+		    getOrigin(), "item_currencypack_custom", 120.0f);
+		if (pNearbyCash && CBotGlobals::entityIsAlive(pNearbyCash))
+		{
+			setMoveLookPriority(MOVELOOK_ATTACK);
+			setMoveTo(CBotGlobals::entityOrigin(pNearbyCash));
+			setMoveLookPriority(MOVELOOK_MODTHINK);
+		}
+	}
+
 	switch (m_iClass)
 	{
 	case TF_CLASS_SCOUT:
@@ -8161,12 +8175,30 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		break;
 	case BOT_UTIL_MVM_COLLECT_CASH:
 	{
-		edict_t *pNearestCash = CClassInterface::FindEntityByClassnameNearest(
-		    getOrigin(), "item_currencypack_custom", 1024.0f);
-
-		if (pNearestCash && CBotGlobals::entityIsAlive(pNearestCash))
+		// Find the center of all nearby cash packs for group collection
+		Vector vGroupCenter(0, 0, 0);
+		int iCashCount = 0;
+		for (int i = (gpGlobals->maxClients + 1); i < gpGlobals->maxClients + 512; i++)
 		{
-			m_pSchedules->add(new CBotMVMCollectCashSched(pNearestCash));
+			edict_t *pEnt = INDEXENT(i);
+			if (!pEnt || pEnt->IsFree()) continue;
+			if (!CBotGlobals::entityIsValid(pEnt) || !CBotGlobals::entityIsAlive(pEnt)) continue;
+			if (strcmp(pEnt->GetClassName(), "item_currencypack_custom") != 0) continue;
+			if (distanceFrom(pEnt) > 400.0f) continue;
+			vGroupCenter = vGroupCenter + CBotGlobals::entityOrigin(pEnt);
+			iCashCount++;
+		}
+
+		if (iCashCount > 0)
+		{
+			vGroupCenter = vGroupCenter / (float)iCashCount;
+			CFindPathTask *path = new CFindPathTask(vGroupCenter);
+			path->setCompleteInterrupt(0, CONDITION_SEE_CUR_ENEMY);
+			CBotSchedule *sched = new CBotSchedule();
+			sched->addTask(path);
+			sched->addTask(new CMoveToTask(vGroupCenter));
+			sched->setID(SCHED_MVM_COLLECT_CASH);
+			m_pSchedules->add(sched);
 			return true;
 		}
 	}
