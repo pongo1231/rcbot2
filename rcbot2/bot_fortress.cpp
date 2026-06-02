@@ -2859,7 +2859,7 @@ void CBotTF2::handleSpecialAbilities()
 
 	// --- Charge-based weapons: use secondary fire when meter is full ---
 	// Soda Popper (448): use hype charge
-	if (iActiveItem == 448 && iActiveSlot == TF2_SLOT_PRMRY)
+	if (iActiveItem == 448 && iActiveSlot == TF2_SLOT_PRMRY && bInDanger)
 	{
 		if (CClassInterface::getHypeMeter(m_pEdict) > 99.9f)
 		{
@@ -2868,7 +2868,7 @@ void CBotTF2::handleSpecialAbilities()
 		}
 	}
 	// Cow Mangler (441): use energy charged shot
-	if (iActiveItem == 441 && iActiveSlot == TF2_SLOT_PRMRY)
+	if (iActiveItem == 441 && iActiveSlot == TF2_SLOT_PRMRY && bInDanger)
 	{
 		edict_t *pWep = CClassInterface::getCurrentWeapon(m_pEdict);
 		if (pWep && CClassInterface::getWeaponEnergy(pWep) > 19.9f && randomInt(0, 1) == 0)
@@ -2879,7 +2879,7 @@ void CBotTF2::handleSpecialAbilities()
 	}
 
 	// --- Phlogistinator (594): auto-taunt when rage is full ---
-	if (iActiveItem == 594)
+	if (iActiveItem == 594 && bInDanger)
 	{
 		if (CClassInterface::getRageMeter(m_pEdict) > 99.9f)
 			helpers->ClientCommand(m_pEdict, "taunt");
@@ -2895,7 +2895,7 @@ void CBotTF2::handleSpecialAbilities()
 	// --- Wrangler variants (140/1086/30668): hold secondary fire for shield ---
 	if (iActiveItem == 140 || iActiveItem == 1086 || iActiveItem == 30668)
 	{
-		if (iActiveSlot == TF2_SLOT_SCNDR)
+		if (iActiveSlot == TF2_SLOT_SCNDR && bInDanger)
 			secondaryAttack();
 	}
 
@@ -2913,11 +2913,11 @@ void CBotTF2::handleSpecialAbilities()
 	}
 
 	// --- Cleaner's Carbine (751): random secondary fire ---
-	if (iActiveItem == 751 && iActiveSlot == TF2_SLOT_SCNDR && randomInt(0, 1) == 0)
+	if (iActiveItem == 751 && iActiveSlot == TF2_SLOT_SCNDR && bInDanger && randomInt(0, 1) == 0)
 		secondaryAttack();
 
 	// --- Ball weapons (Sandman 44, Wrap Assassin 648): fire secondary ---
-	if ((iActiveItem == 44 || iActiveItem == 648) && iActiveSlot == TF2_SLOT_MELEE)
+	if ((iActiveItem == 44 || iActiveItem == 648) && iActiveSlot == TF2_SLOT_MELEE && bInDanger)
 		secondaryAttack();
 
 	// --- Heavy food items: eat when low HP, throw otherwise ---
@@ -2931,7 +2931,7 @@ void CBotTF2::handleSpecialAbilities()
 			// Eat it
 			primaryAttack();
 		}
-		else if (randomInt(0, 1) == 0)
+		else if (bInDanger && randomInt(0, 1) == 0)
 		{
 			// Throw it for teammates
 			secondaryAttack();
@@ -2939,7 +2939,7 @@ void CBotTF2::handleSpecialAbilities()
 	}
 
 	// --- Buffalo Steak (311): eat when low ammo or randomly ---
-	if (iActiveItem == 311 && iActiveSlot == TF2_SLOT_SCNDR && randomInt(0, 1) == 0)
+	if (iActiveItem == 311 && iActiveSlot == TF2_SLOT_SCNDR && bInDanger && randomInt(0, 1) == 0)
 		primaryAttack();
 
 	// --- Eureka Effect (589): teleport home when low HP and not in danger ---
@@ -2950,7 +2950,7 @@ void CBotTF2::handleSpecialAbilities()
 	}
 
 	// --- Demoman: shield charge when no secondary weapon (shield in that slot) ---
-	if (m_iClass == TF_CLASS_DEMOMAN && iActiveSlot == TF2_SLOT_MELEE)
+	if (m_iClass == TF_CLASS_DEMOMAN && iActiveSlot == TF2_SLOT_MELEE && bInDanger)
 	{
 		CBotWeapon *pSec = m_pWeapons->getCurrentWeaponInSlot(TF2_SLOT_SCNDR);
 		if (!pSec && randomInt(0, 1) == 0)
@@ -2965,7 +2965,7 @@ void CBotTF2::handleSpecialAbilities()
 	}
 
 	// --- Medic crossbow: randomly fire ---
-	if (m_iClass == TF_CLASS_MEDIC && iActiveSlot == TF2_SLOT_PRMRY && randomInt(0, 1) == 0)
+	if (m_iClass == TF_CLASS_MEDIC && iActiveSlot == TF2_SLOT_PRMRY && bInDanger && randomInt(0, 1) == 0)
 		primaryAttack();
 
 	// --- Scout: random double-jump in combat ---
