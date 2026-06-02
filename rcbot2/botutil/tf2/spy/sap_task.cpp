@@ -18,6 +18,7 @@ CBotTF2SpySap::CBotTF2SpySap(edict_t *pBuilding, eEngiBuild id)
 	m_iState          = SAP_APPROACH;
 	m_bEvadeRight     = false;
 	m_bSapperPlaced   = false;
+	m_fDecloakTime    = 0.0f;
 	m_vBuildingOrigin = CBotGlobals::entityOrigin(pBuilding);
 }
 
@@ -65,11 +66,13 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 	if (m_iState == SAP_EVADE)
 	{
-		// Cloak after placing sapper
-		if (!CTeamFortress2Mod::TF2_IsPlayerCloaked(pBot->getEdict()))
+		// Cloak after placing sapper — only once per 0.5s to avoid toggle oscillation
+		if (!CTeamFortress2Mod::TF2_IsPlayerCloaked(pBot->getEdict())
+		    && m_fDecloakTime < engine->Time())
 		{
 			tf2Bot->resetCloakTime();
 			tf2Bot->spyCloak();
+			m_fDecloakTime = engine->Time() + 0.5f;
 		}
 
 		// Switch to knife so spy isn't stuck holding the sapper
@@ -183,16 +186,26 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 	else if (pBot->distanceFrom(pBuilding) > 100)
 	{
-		if (!CTeamFortress2Mod::TF2_IsPlayerCloaked(pBot->getEdict()))
+		if (!CTeamFortress2Mod::TF2_IsPlayerCloaked(pBot->getEdict())
+		    && m_fDecloakTime < engine->Time())
+		{
 			tf2Bot->spyCloak();
+			m_fDecloakTime = engine->Time() + 0.5f;
+		}
 		pBot->setMoveTo(m_vBuildingOrigin);
 	}
 	else
 	{
 		if (CTeamFortress2Mod::TF2_IsPlayerCloaked(pBot->getEdict()))
 		{
-			tf2Bot->resetCloakTime();
-			tf2Bot->spyUnCloak();
+			// Only issue one decloak — a second toggle before the engine
+			// processes the first would re-cloak the spy forever
+			if (m_fDecloakTime < engine->Time())
+			{
+				tf2Bot->resetCloakTime();
+				tf2Bot->spyUnCloak();
+				m_fDecloakTime = engine->Time() + 0.5f;
+			}
 		}
 		else if (randomInt(0, 1))
 		{
