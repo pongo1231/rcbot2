@@ -3273,12 +3273,16 @@ void CBotTF2::modThink()
 
 			bIsCloaked = CTeamFortress2Mod::TF2_IsPlayerCloaked(m_pEdict);
 
-			if (bIsCloaked && wantToUnCloak())
-				spyUnCloak();
-			else if (!bIsCloaked && wantToCloak())
-				spyCloak();
-			else if (bIsCloaked || isDisguised() && !hasEnemy())
-				updateCondition(CONDITION_COVERT);
+			// Let sap schedule manage its own cloak/uncloak to avoid oscillation
+			if (!m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
+			{
+				if (bIsCloaked && wantToUnCloak())
+					spyUnCloak();
+				else if (!bIsCloaked && wantToCloak())
+					spyCloak();
+				else if (bIsCloaked || isDisguised() && !hasEnemy())
+					updateCondition(CONDITION_COVERT);
+			}
 			/*else if ( bIsCloaked && m_pEnemy && )
 			{
 			if ( CClassInterface::getTF2SpyCloakMeter(m_pEdict) <

@@ -183,6 +183,8 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 	else if (pBot->distanceFrom(pBuilding) > 100)
 	{
+		if (!CTeamFortress2Mod::TF2_IsPlayerCloaked(pBot->getEdict()))
+			tf2Bot->spyCloak();
 		pBot->setMoveTo(m_vBuildingOrigin);
 	}
 	else
