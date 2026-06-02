@@ -1123,6 +1123,8 @@ class CBot
 	CBotProfile *m_pProfile;
 
 	float m_fPercentMoved;
+	float m_fFastStuckTime;
+	Vector m_vFastStuckPos;
 
 	/////////////////////////////////
 

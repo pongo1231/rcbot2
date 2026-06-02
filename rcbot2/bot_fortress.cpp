@@ -1769,6 +1769,7 @@ void CBotTF2::spawnInit()
 	m_fExtinguishTime     = 0.0f;
 	m_fBaitCallTime       = 0.0f;
 	m_fVoiceBuildTime     = 0.0f;
+	m_fStuckSpyTime       = 0.0f;
 
 	// stickies destroyed now
 	m_iTrapType           = TF_TRAP_TYPE_NONE;
@@ -3837,6 +3838,40 @@ void CBotTF2::modThink()
 
 			bIsCloaked = CTeamFortress2Mod::TF2_IsPlayerCloaked(m_pEdict);
 
+			// When disguised or cloaked, avoid bumping into enemy bots
+			if ((isDisguised() || bIsCloaked) && !hasEnemy())
+			{
+				for (int i = 1; i <= gpGlobals->maxClients; i++)
+				{
+					edict_t *pT = INDEXENT(i);
+					if (!pT || pT == m_pEdict) continue;
+					if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+					if (CTeamFortress2Mod::getTeam(pT) == m_iTeam) continue;
+
+					float fDist = distanceFrom(pT);
+					if (fDist < 80.0f)
+					{
+						// Sidestep away: move perpendicular to the direction to them
+						Vector vTo = getOrigin() - CBotGlobals::entityOrigin(pT);
+						vTo.z      = 0;
+						if (vTo.Length() > 0.1f)
+						{
+							vTo = vTo / vTo.Length();
+							Vector vPerp = vTo.Cross(Vector(0, 0, 1));
+							if (vPerp.Length() > 0.1f)
+							{
+								vPerp = vPerp / vPerp.Length();
+								if (randomInt(0, 1))
+									vPerp = -vPerp;
+								setMoveTo(getOrigin() + vPerp * 160.0f);
+								updateCondition(CONDITION_COVERT);
+							}
+						}
+						break;
+					}
+				}
+			}
+
 			// Let sap schedule manage its own cloak/uncloak to avoid oscillation
 			if (!m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
 			{
@@ -4297,8 +4332,20 @@ void CBotTF2::checkStuckonSpy(void)
 
 	if (pStuck)
 	{
+		// Only recognize the spy after ~1 second of being stuck on them
+		// (0.5s initial stuck detection + 0.5s extra)
 		if (CClassInterface::getTF2Class(pStuck) == TF_CLASS_SPY)
-			foundSpy(pStuck, CTeamFortress2Mod::getSpyDisguise(pStuck));
+		{
+			if (m_fStuckSpyTime == 0.0f)
+				m_fStuckSpyTime = engine->Time();
+			else if ((m_fStuckSpyTime + 0.5f) < engine->Time())
+			{
+				foundSpy(pStuck, CTeamFortress2Mod::getSpyDisguise(pStuck));
+				m_fStuckSpyTime = 0.0f;
+			}
+		}
+		else
+			m_fStuckSpyTime = 0.0f;
 
 		if ((m_iClass == TF_CLASS_SPY) && isDisguised())
 		{
@@ -4310,6 +4357,8 @@ void CBotTF2::checkStuckonSpy(void)
 			return;
 		}
 	}
+	else
+		m_fStuckSpyTime = 0.0f;
 }
 
 bool CBotFortress::isClassOnTeam(int iClass, int iTeam)

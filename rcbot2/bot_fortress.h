@@ -1232,6 +1232,7 @@ class CBotTF2 : public CBotFortress
 	float m_fExtinguishTime;
 	float m_fBaitCallTime;
 	float m_fVoiceBuildTime;
+	float m_fStuckSpyTime;
 
 
 	int m_iDesiredResistType;

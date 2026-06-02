@@ -470,6 +470,28 @@ bool CBot::checkStuck()
 
 	fTime = engine->Time();
 
+	// Fast stuck check: if barely moved in 0.5s, look at what's blocking
+	if (m_fFastStuckTime == 0.0f)
+	{
+		m_fFastStuckTime = fTime + 0.5f;
+		m_vFastStuckPos  = getOrigin();
+	}
+	else if (m_fFastStuckTime < fTime)
+	{
+		if ((getOrigin() - m_vFastStuckPos).Length() < 16.0f)
+		{
+			// Try to look at the obstacle
+			Vector vForward;
+			AngleVectors(eyeAngles(), &vForward);
+			setLookVector(getEyePosition() + vForward * 80.0f);
+			setLookAtTask(LOOK_VECTOR, 1.0f);
+			m_fFastStuckTime = 0.0f;
+			return true;
+		}
+		m_fFastStuckTime = fTime + 0.5f;
+		m_vFastStuckPos  = getOrigin();
+	}
+
 	if (m_fLastWaypointVisible == 0)
 	{
 		m_bFailNextMove = false;
@@ -1356,6 +1378,8 @@ void CBot::spawnInit()
 
 	m_fLastUpdateLastSeeEnemy = 0;
 	m_fPercentMoved           = 1.0f;
+	m_fFastStuckTime          = 0.0f;
+	m_vFastStuckPos           = Vector(0, 0, 0);
 
 	for (register short int i = 0; i < BOT_UTIL_MAX; i++)
 		m_fUtilTimes[i] = 0;
