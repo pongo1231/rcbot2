@@ -3930,7 +3930,10 @@ void CBotTF2::modThink()
 					if (CTeamFortress2Mod::getTeam(pT) == m_iTeam) continue;
 
 					float fDist = distanceFrom(pT);
-					if (fDist < 80.0f)
+					float fAvoidDist = 80.0f;
+					if (pT->GetCollideable() && pT->GetCollideable()->OBBMaxs().Length() > 80.0f)
+						fAvoidDist = 200.0f; // giant enemies have larger hitboxes
+					if (fDist < fAvoidDist)
 					{
 						// Sidestep away: move perpendicular to the direction to them
 						Vector vTo = getOrigin() - CBotGlobals::entityOrigin(pT);

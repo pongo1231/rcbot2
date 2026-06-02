@@ -95,7 +95,28 @@ void CBotBackstab::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 
 	AngleVectors(CBotGlobals::entityEyeAngles(pEnemy), &vangles);
-	vrear = CBotGlobals::entityOrigin(pEnemy) - (vangles * 45) + Vector(0, 0, 32);
+
+	// Giant robots have much larger collision boxes — increase standoff
+	float fRearOffset = 45.0f;
+	float fCloseDist  = 40.0f;
+	float fFarDist    = 100.0f;
+	float fMedDist    = 50.0f;
+	float fWideFlank  = 80.0f;
+	float fNarrowFlank = 35.0f;
+
+	if (pEnemy.get() && pEnemy.get()->GetCollideable()
+	    && pEnemy.get()->GetCollideable()->OBBMaxs().Length() > 80.0f)
+	{
+		// Giant enemy: scale distances to avoid getting stuck inside their hitbox
+		fRearOffset = 120.0f;
+		fCloseDist  = 90.0f;
+		fFarDist    = 200.0f;
+		fMedDist    = 120.0f;
+		fWideFlank  = 150.0f;
+		fNarrowFlank = 70.0f;
+	}
+
+	vrear = CBotGlobals::entityOrigin(pEnemy) - (vangles * fRearOffset) + Vector(0, 0, 32);
 
 	// Approach from alternating sides instead of walking straight at the enemy's back
 	// This makes it harder for the enemy to detect and shoot the spy
@@ -110,21 +131,21 @@ void CBotBackstab::execute(CBot *pBot, CBotSchedule *pSchedule)
 		int iSide      = ((int)(engine->Time() * 0.7f)) % 2;
 		float fSideDir = iSide ? 1.0f : -1.0f;
 
-		if (fDistToRear > 100.0f)
+		if (fDistToRear > fFarDist)
 		{
 			// Far away: wide flank approach to avoid enemy's sight cone
-			vrear = vrear + (vRight * fSideDir * 80.0f);
+			vrear = vrear + (vRight * fSideDir * fWideFlank);
 		}
-		else if (fDistToRear > 50.0f)
+		else if (fDistToRear > fMedDist)
 		{
 			// Medium range: narrower side approach
-			vrear = vrear + (vRight * fSideDir * 35.0f);
+			vrear = vrear + (vRight * fSideDir * fNarrowFlank);
 		}
 	}
 
 	pTF2Bot->resetAttackingEnemy();
 
-	if (fDistToRear > 40.0f)
+	if (fDistToRear > fCloseDist)
 	{
 		pBot->setMoveTo(vrear);
 	}
