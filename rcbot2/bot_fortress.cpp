@@ -3279,7 +3279,7 @@ void CBotTF2::modThink()
 	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
 	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
 	{
-		for (int i = gpGlobals->maxClients + 1; i < gpGlobals->maxClients + 64; i++)
+		for (int i = gpGlobals->maxClients + 1; i < gpGlobals->maxEntities; i++)
 		{
 			edict_t *pEnt = INDEXENT(i);
 			if (!pEnt || pEnt->IsFree()) continue;
