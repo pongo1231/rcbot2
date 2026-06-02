@@ -4114,11 +4114,53 @@ bool CBotTF2::healPlayer()
 
 		if (p && (p->GetLastUserCommand().buttons & IN_ATTACK))
 		{
-			// keep out of cross fire
-			eyes = CBotGlobals::playerAngles(m_pHeal);
-			AngleVectors(eyes, &vForward);
-			vForward           = vForward / vForward.Length();
-			vOrigin            = vOrigin - (vForward * 150);
+			// Smart positioning: stay on the far side of the patient from enemies
+			if (!CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
+			{
+				edict_t *pEnemy = m_pEnemy.get();
+				if (pEnemy && CBotGlobals::entityIsValid(pEnemy) && CBotGlobals::entityIsAlive(pEnemy)
+				    && isVisible(pEnemy))
+				{
+					Vector vEnemyPos  = CBotGlobals::entityOrigin(pEnemy);
+					Vector vFromEnemy = vOrigin - vEnemyPos;
+					vFromEnemy.z      = 0;
+					float fLen         = vFromEnemy.Length();
+					if (fLen > 0.1f)
+					{
+						vFromEnemy           = vFromEnemy / fLen;
+						Vector vCandidate    = vOrigin + (vFromEnemy * 180.0f);
+						CTraceFilterWorldAndPropsOnly filter;
+						CBotGlobals::traceLine(vEnemyPos, vCandidate, MASK_SOLID_BRUSHONLY, &filter);
+						if (CBotGlobals::getTraceResult()->fraction < 1.0f)
+						{
+							vOrigin = CBotGlobals::getTraceResult()->endpos;
+							Vector vToCover = vOrigin - vEnemyPos;
+							vToCover.z      = 0;
+							if (vToCover.Length() > 0.1f)
+							{
+								vToCover = vToCover / vToCover.Length();
+								vOrigin  = vOrigin + (vToCover * 32.0f);
+							}
+							// Crouch if the cover is a low obstacle we can hide behind
+							if (fabs(vOrigin.z - getOrigin().z) < 48.0f)
+								m_bShouldCrouchCover = true;
+						}
+						else
+						{
+							vOrigin = vOrigin + (vFromEnemy * 150.0f);
+							m_bShouldCrouchCover = false;
+						}
+					}
+				}
+				else
+				{
+					// No visible enemy -- default behind patient
+					eyes = CBotGlobals::playerAngles(m_pHeal);
+					AngleVectors(eyes, &vForward);
+					vForward = vForward / vForward.Length();
+					vOrigin  = vOrigin - (vForward * 150);
+				}
+			}
 			m_fHealingMoveTime = engine->Time();
 		}
 		else if (fSpeed > 100.0f)
