@@ -1770,6 +1770,7 @@ void CBotTF2::spawnInit()
 	m_fBaitCallTime       = 0.0f;
 	m_fVoiceBuildTime     = 0.0f;
 	m_fStuckSpyTime       = 0.0f;
+	m_fPlayerScanTime     = 0.0f; // will be set when entity index is known
 
 	// stickies destroyed now
 	m_iTrapType           = TF_TRAP_TYPE_NONE;
@@ -3386,147 +3387,97 @@ void CBotTF2::modThink()
 	if (hasFlag())
 		removeCondition(CONDITION_COVERT);
 
-	// When on fire and no immediate threat, seek out a pyro or medic to get extinguished
-	if (CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict) && m_iClass != TF_CLASS_PYRO
-	    && (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY) || !wantToShoot()))
+	// Combined player scan for fire help + medic seeking, throttled to ~10Hz per bot
+	// staggered by entindex to spread load across frames
+	if (m_fPlayerScanTime == 0.0f)
+		m_fPlayerScanTime = engine->Time() + (float)(ENTINDEX(m_pEdict) % 3) * 0.03f;
+
+	if (m_fPlayerScanTime < engine->Time())
 	{
-		edict_t *pBestSavior  = nullptr;
-		float fBestSaviorDist = 1536.0f;
-		bool bBestIsPyro      = false;
+		m_fPlayerScanTime = engine->Time() + 0.1f;
 
-		for (int i = 1; i <= gpGlobals->maxClients; i++)
+		bool bOnFire      = CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict) && m_iClass != TF_CLASS_PYRO;
+		bool bSeekHeals   = (bNeedHealth && !m_bIsBeingHealed && m_iClass != TF_CLASS_MEDIC
+		                   && (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY) || !wantToShoot())
+		                   && (!m_pHealthkit || distanceFrom(m_pHealthkit) > 512.0f)
+		                   && (!m_pNearestDisp || distanceFrom(m_pNearestDisp) > 512.0f));
+
+		if (bOnFire || bSeekHeals)
 		{
-			edict_t *pT = INDEXENT(i);
-			if (!pT || pT == m_pEdict) continue;
-			if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
-			if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+			edict_t *pBestSavior   = nullptr;
+			float fBestSaviorDist  = bOnFire ? 1536.0f : 2048.0f;
+			bool bSaviorIsPyro     = false;
 
-			TF_Class iClass = (TF_Class)CClassInterface::getTF2Class(pT);
-			bool bIsPyro    = (iClass == TF_CLASS_PYRO);
-			bool bIsMedic   = (iClass == TF_CLASS_MEDIC);
-
-			if (!bIsPyro && !bIsMedic) continue;
-
-			// Skip AFK
-			if (isPlayerAFK(pT)) continue;
-
-			// For pyros: must have a flamethrower that can airblast (no phlog)
-			if (bIsPyro)
+			for (int i = 1; i <= gpGlobals->maxClients; i++)
 			{
-				CBot *pOther = CBots::getBotPointer(pT);
-				if (!pOther) continue;
-				CBotTF2 *pOtherTF = (CBotTF2 *)pOther;
-				CBotWeapon *pFlame = pOtherTF->getWeapons()->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
-				if (!pFlame || !pFlame->hasWeapon()) continue;
-				edict_t *pFEnt = pFlame->getWeaponEntity();
-				int iItem      = pFEnt ? CClassInterface::TF2_getItemDefinitionIndex(pFEnt) : 0;
-				if (iItem == 594) continue; // phlog can't airblast
-				int iNeedAmmo  = (iItem == 40) ? 50 : (iItem == 215) ? 25
-				               : (iItem == 1178 || iItem == 1099) ? 5 : 20;
-				if (pFlame->getAmmo(pOther) < iNeedAmmo) continue;
-			}
+				edict_t *pT = INDEXENT(i);
+				if (!pT || pT == m_pEdict) continue;
+				if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+				if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
 
-			float fDist = distanceFrom(pT);
-			// Pyros get a 1.5x bias so they're preferred over medics for extinguishing
-			float fWeightedDist = bIsPyro ? fDist / 1.5f : fDist;
-			if (fWeightedDist < fBestSaviorDist && FVisible(pT))
-			{
-				fBestSaviorDist = fWeightedDist;
-				pBestSavior     = pT;
-				bBestIsPyro     = bIsPyro;
-			}
-		}
+				TF_Class iClass = (TF_Class)CClassInterface::getTF2Class(pT);
+				bool bIsPyro    = (iClass == TF_CLASS_PYRO);
+				bool bIsMedic   = (iClass == TF_CLASS_MEDIC);
 
-		if (pBestSavior)
-		{
-			notePlayerEngaged(pBestSavior);
-			Vector vOrigin = CBotGlobals::entityOrigin(pBestSavior);
+				// When on fire: look for pyro or medic. When just hurt: only medic
+				if (bOnFire ? (!bIsPyro && !bIsMedic) : !bIsMedic) continue;
 
-			if (fBestSaviorDist * (bBestIsPyro ? 1.5f : 1.0f) < 200.0f)
-			{
-				// Close enough — stop and face them so they can help
-				setMoveLookPriority(MOVELOOK_ATTACK);
-				stopMoving();
-				setLookVector(vOrigin);
-				setLookAtTask(LOOK_VECTOR);
-				setMoveLookPriority(MOVELOOK_MODTHINK);
+				if (isPlayerAFK(pT)) continue;
 
-				if (m_fCallMedic < engine->Time())
+				if (bIsPyro)
 				{
-					callMedic();
-					m_fCallMedic = engine->Time() + randomFloat(3.0f, 5.0f);
+					CBot *pOther = CBots::getBotPointer(pT);
+					if (!pOther) continue;
+					CBotTF2 *pOtherTF = (CBotTF2 *)pOther;
+					CBotWeapon *pFlame = pOtherTF->getWeapons()->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
+					if (!pFlame || !pFlame->hasWeapon()) continue;
+					edict_t *pFEnt = pFlame->getWeaponEntity();
+					int iItem      = pFEnt ? CClassInterface::TF2_getItemDefinitionIndex(pFEnt) : 0;
+					if (iItem == 594) continue;
+					int iNeedAmmo  = (iItem == 40) ? 50 : (iItem == 215) ? 25
+					               : (iItem == 1178 || iItem == 1099) ? 5 : 20;
+					if (pFlame->getAmmo(pOther) < iNeedAmmo) continue;
+				}
+
+				float fDist = distanceFrom(pT);
+				float fWeightedDist = (bOnFire && bIsPyro) ? fDist / 1.5f : fDist;
+				if (fWeightedDist < fBestSaviorDist && FVisible(pT))
+				{
+					fBestSaviorDist  = fWeightedDist;
+					pBestSavior      = pT;
+					bSaviorIsPyro    = bIsPyro;
 				}
 			}
-			else
+
+			if (pBestSavior)
 			{
-				setMoveLookPriority(MOVELOOK_ATTACK);
-				setMoveTo(vOrigin);
-				setLookVector(vOrigin);
-				setLookAtTask(LOOK_VECTOR);
-				setMoveLookPriority(MOVELOOK_MODTHINK);
-			}
-		}
-	}
+				notePlayerEngaged(pBestSavior);
+				Vector vOrigin = CBotGlobals::entityOrigin(pBestSavior);
+				float fCloseRange = bOnFire ? 200.0f : 450.0f;
+				float fRealDist   = bOnFire ? (fBestSaviorDist * (bSaviorIsPyro ? 1.5f : 1.0f)) : fBestSaviorDist;
 
-	// Actively seek out medics when needing health — but only if no health
-	// pack, dispenser, or resupply is nearby (don't bother the medic unnecessarily)
-	if (bNeedHealth && !m_bIsBeingHealed && m_iClass != TF_CLASS_MEDIC
-	    && (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY) || !wantToShoot())
-	    && (!m_pHealthkit || distanceFrom(m_pHealthkit) > 512.0f)
-	    && (!m_pNearestDisp || distanceFrom(m_pNearestDisp) > 512.0f))
-	{
-		edict_t *pBestMedic  = nullptr;
-		float fBestMedicDist = 2048.0f;
-
-		for (int i = 1; i <= gpGlobals->maxClients; i++)
-		{
-			edict_t *pT = INDEXENT(i);
-			if (!pT || pT == m_pEdict) continue;
-			if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
-			if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
-			if (CClassInterface::getTF2Class(pT) != TF_CLASS_MEDIC) continue;
-
-			// Skip AFK medics
-			if (isPlayerAFK(pT))
-				continue;
-
-			float fDist = distanceFrom(pT);
-			if (fDist < fBestMedicDist && FVisible(pT))
-			{
-				fBestMedicDist = fDist;
-				pBestMedic     = pT;
-			}
-		}
-
-		if (pBestMedic)
-		{
-			notePlayerEngaged(pBestMedic);
-			Vector vMedicOrigin = CBotGlobals::entityOrigin(pBestMedic);
-
-			if (fBestMedicDist < 450.0f) // in medigun range
-			{
-				// Face the medic, stop moving, and wait to be healed
-				setMoveLookPriority(MOVELOOK_ATTACK);
-				stopMoving();
-				setLookVector(vMedicOrigin);
-				setLookAtTask(LOOK_VECTOR);
-				setMoveLookPriority(MOVELOOK_MODTHINK);
-
-				// Call medic if we've been waiting and not being healed
-				if (m_fCallMedic < engine->Time() && getHealthPercent() < 0.7f)
+				if (fRealDist < fCloseRange)
 				{
-					callMedic();
-					m_fCallMedic = engine->Time() + randomFloat(3.0f, 5.0f);
+					setMoveLookPriority(MOVELOOK_ATTACK);
+					stopMoving();
+					setLookVector(vOrigin);
+					setLookAtTask(LOOK_VECTOR);
+					setMoveLookPriority(MOVELOOK_MODTHINK);
+
+					if (m_fCallMedic < engine->Time() && getHealthPercent() < 0.7f)
+					{
+						callMedic();
+						m_fCallMedic = engine->Time() + randomFloat(3.0f, 5.0f);
+					}
 				}
-			}
-			else
-			{
-				// Move toward the medic
-				setMoveLookPriority(MOVELOOK_ATTACK);
-				setMoveTo(vMedicOrigin);
-				setLookVector(vMedicOrigin);
-				setLookAtTask(LOOK_VECTOR);
-				setMoveLookPriority(MOVELOOK_MODTHINK);
+				else
+				{
+					setMoveLookPriority(MOVELOOK_ATTACK);
+					setMoveTo(vOrigin);
+					setLookVector(vOrigin);
+					setLookAtTask(LOOK_VECTOR);
+					setMoveLookPriority(MOVELOOK_MODTHINK);
+				}
 			}
 		}
 	}
@@ -9111,60 +9062,11 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			}
 		}
 
-		// Extinguish burning teammates — works regardless of current weapon
+		// Extinguish burning teammates — reuse shared logic
 		if (!bSecAttack && m_iClass == TF_CLASS_PYRO)
 		{
-			// Prefer manmelter (secondary, item 595) -- no ammo cost, stores crit
-			CBotWeapon *pManmelter = nullptr;
-			CBotWeapon *pManmelterSec = m_pWeapons->getCurrentWeaponInSlot(TF2_SLOT_SCNDR);
-			if (pManmelterSec)
-			{
-				edict_t *pSecEnt = pManmelterSec->getWeaponEntity();
-				if (pSecEnt && CClassInterface::TF2_getItemDefinitionIndex(pSecEnt) == 595)
-					pManmelter = pManmelterSec;
-			}
-
-			CBotWeapon *pFlame = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
-			bool bHasFlame = false;
-			int iFItem = 0;
-			int iNeedAmmo = 0;
-
-			if (pFlame && pFlame->hasWeapon())
-			{
-				edict_t *pFEnt = pFlame->getWeaponEntity();
-				iFItem = pFEnt ? CClassInterface::TF2_getItemDefinitionIndex(pFEnt) : 0;
-				if (iFItem != 594) // phlog can't airblast
-				{
-					iNeedAmmo = (iFItem == 40) ? 50 : (iFItem == 215) ? 25
-					          : (iFItem == 1178 || iFItem == 1099) ? 5 : 20;
-					if (pFlame->getAmmo(this) >= iNeedAmmo)
-						bHasFlame = true;
-				}
-			}
-
-			if (pManmelter || bHasFlame)
-			{
-				for (int i = 1; i <= gpGlobals->maxClients; i++)
-				{
-					edict_t *pT = INDEXENT(i);
-					if (!pT || pT == m_pEdict) continue;
-					if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
-					if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
-					if (!CTeamFortress2Mod::TF2_IsPlayerOnFire(pT)) continue;
-					if (distanceFrom(pT) < 250.0f && isVisible(pT))
-					{
-						if (pManmelter)
-							select_CWeapon(pManmelter->getWeaponInfo());
-						else if (!pWeapon->canDeflectRockets())
-							select_CWeapon(pFlame->getWeaponInfo());
-
-						m_fDegreaserSwapBack = 0;
-						m_iDegreaserPrevSlot = 0;
-						bSecAttack = true;
-						break;
-					}
-				}
-			}
+			if (tryExtinguishTeammates())
+				bSecAttack = true;
 		}
 
 		// Airblast: reflect incoming projectiles even when targeting someone else
