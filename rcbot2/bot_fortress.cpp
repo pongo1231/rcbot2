@@ -5644,7 +5644,8 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			            (fAllySentryHealthPercent > 0.0f) && !m_bIsCarryingObj && (m_fRemoveSapTime < engine->Time())
 			                && !bHasFlag && m_pNearestAllySentry && (m_pNearestAllySentry != m_pSentryGun)
 			                && (iMetal >= (200 - CClassInterface::getTF2SentryUpgradeMetal(m_pNearestAllySentry)))
-			                && ((iAllySentryLevel < 3) || (fAllySentryHealthPercent < 0.99f)),
+			                && ((iAllySentryLevel < 3) || (fAllySentryHealthPercent < 0.99f)
+			                    || (CClassInterface::getTF2SentryShells(m_pNearestAllySentry) < 50)),
 			            0.88 + ((1.0f - fAllySentryHealthPercent) * 0.12));
 		}
 
@@ -5741,6 +5742,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		        && !CClassInterface::getTF2BuildingIsMini(m_pSentryGun)
 		        && (((iSentryLevel < 3) && (iMetal >= (200 - CClassInterface::getTF2SentryUpgradeMetal(m_pSentryGun))))
 		            || ((fSentryHealthPercent < 1.0f) && (iMetal > 75))
+		            || (CClassInterface::getTF2SentryShells(m_pSentryGun) < 50)
 		            || (CClassInterface::getSentryEnemy(m_pSentryGun) != nullptr)),
 		    0.8 + ((1.0f - fSentryHealthPercent) * 0.2));
 
