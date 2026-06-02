@@ -3116,6 +3116,20 @@ void CBotTF2::modThink()
 			if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
 			if (CClassInterface::getTF2Class(pT) != TF_CLASS_MEDIC) continue;
 
+			// Skip AFK medics
+			IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pT);
+			if (pInfo)
+			{
+				const CBotCmd &cmd = pInfo->GetLastUserCommand();
+				if ((cmd.buttons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT | IN_ATTACK)) == 0)
+				{
+					Vector vVel;
+					CClassInterface::getVelocity(pT, &vVel);
+					if (vVel.Length() < 5.0f)
+						continue;
+				}
+			}
+
 			float fDist = distanceFrom(pT);
 			if (fDist < fBestMedicDist && FVisible(pT))
 			{
