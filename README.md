@@ -14,7 +14,41 @@ general RCBot2 support.
 [bots-united.com discord]: https://discord.gg/BbxR5wY
 [bots-united forums]: http://rcbot.bots-united.com/forums/index.php?showforum=18
 
-## Changes from upstream
+## Features / Changes in this version
+
+**Combat**
+- MvM tank priority and combat behavior rewritten
+- Projectile dodging and melee combat strafing
+- Statistical projectile prediction with zigzag detection and overshoot/undershoot learning
+
+**Spy**
+- Backstab with flank approach positioning
+- Medic bait: injured disguised spies call medic to lure enemy medics, then backstab
+
+**Engineer**
+- Sentry engagement and awareness: overheal aggression, team broadcast of sentry positions
+- Responds to player voice commands for dispenser, teleporter, and sentry placement
+
+**Pyro**
+- Active extinguish: moves toward burning allies up to 1024 units, uses manmelter as preference
+- Burning bots seek out pyros or medics to get extinguished
+
+**Medic**
+- Smart positioning: far side of patient from enemies, wall cover, crouching
+- Projectile dodging while healing
+
+**Teamplay**
+- Injured bots actively seek medics (FVisible trace, not FOV-limited), skip when health packs nearby
+- Defend patrol spread: perimeter ring distribution, cap of 3 defenders per area, 15-30s cycles
+- Mess around behaviors expanded to 11 types, setup gate timing for pre-round
+
+**Hijack**
+- Takes control of AFK human players after configurable seconds (cvar `rcbot_hijack_afk_time`, default 0 = disabled), press any movement key to break free
+
+**MvM**
+- Collect cash
+
+## Changes included from nosoop's fork
 
 - Build process uses [AMBuild][] instead of `make` or Visual Studio.  This removes the need for
 Valve's cross platform make conversion tool, and is what AlliedModders uses to build
