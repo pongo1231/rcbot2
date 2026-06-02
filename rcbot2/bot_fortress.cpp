@@ -4872,7 +4872,22 @@ bool CBotTF2::healPlayer()
 		}
 	}
 
-	if (distanceFrom(m_vMedicPosition) < 100)
+	// For revive markers, keep a standoff distance so the medigun can track
+	if (!CBotGlobals::isPlayer(m_pHeal))
+	{
+		Vector vToMe = getOrigin() - vOrigin;
+		vToMe.z      = 0;
+		float fDist  = vToMe.Length();
+		if (fDist > 0.1f)
+		{
+			vToMe = vToMe / fDist;
+			m_vMedicPosition = vOrigin + vToMe * 150.0f;
+		}
+		else
+			m_vMedicPosition = vOrigin;
+	}
+
+	if (distanceFrom(m_vMedicPosition) < 40)
 		stopMoving();
 	else
 		setMoveTo(m_vMedicPosition);
