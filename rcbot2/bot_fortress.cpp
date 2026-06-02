@@ -3291,23 +3291,41 @@ void CBotTF2::modThink()
 			if (!szModel || strstr(szModel, "sentry_buster") == nullptr) continue;
 
 			float fDist = distanceFrom(pEnt);
-			if (fDist < 300.0f)
+			if (fDist < 350.0f)
 			{
+				// Engineer: rescue sentry
 				if (m_iClass == TF_CLASS_ENGINEER && m_pSentryGun.get()
 				    && CBotGlobals::entityIsValid(m_pSentryGun)
 				    && !m_bIsCarryingObj
-				    && distanceFrom(m_pSentryGun) < 150.0f)
+				    && distanceFrom(m_pSentryGun) < 250.0f)
 				{
-					CBotWeapon *pWrench = m_pWeapons->getWeapon(
-					    CWeapons::getWeapon(TF2_WEAPON_WRENCH));
-					if (pWrench && pWrench->hasWeapon())
+					// Try Rescue Ranger remote pickup first
+					CBotWeapon *pRescue = m_pWeapons->getWeapon(
+					    CWeapons::getWeapon(TF2_WEAPON_SHOTGUN_PRIMARY));
+					edict_t *pRescueEnt = pRescue ? pRescue->getWeaponEntity() : nullptr;
+					if (pRescueEnt && CClassInterface::TF2_getItemDefinitionIndex(pRescueEnt) == 997
+					    && pRescue->getAmmo(this) >= 130)
 					{
-						select_CWeapon(pWrench->getWeaponInfo());
+						lookAtEdict(m_pSentryGun);
+						select_CWeapon(pRescue->getWeaponInfo());
 						secondaryAttack();
 						resetCarryTime();
 					}
+					else
+					{
+						// Fallback: pick up with wrench
+						CBotWeapon *pWrench = m_pWeapons->getWeapon(
+						    CWeapons::getWeapon(TF2_WEAPON_WRENCH));
+						if (pWrench && pWrench->hasWeapon())
+						{
+							select_CWeapon(pWrench->getWeaponInfo());
+							secondaryAttack();
+							resetCarryTime();
+						}
+					}
 				}
 
+				// Everyone: run away
 				Vector vAway = getOrigin() - CBotGlobals::entityOrigin(pEnt);
 				vAway.z      = 0;
 				if (vAway.Length() > 0.1f)
@@ -3318,6 +3336,33 @@ void CBotTF2::modThink()
 					setMoveLookPriority(MOVELOOK_MODTHINK);
 				}
 				break;
+			}
+		}
+	}
+
+	// Engineer: remote repair buildings with Rescue Ranger (item 997)
+	if (m_iClass == TF_CLASS_ENGINEER && !m_bIsCarryingObj)
+	{
+		CBotWeapon *pRescue = m_pWeapons->getWeapon(
+		    CWeapons::getWeapon(TF2_WEAPON_SHOTGUN_PRIMARY));
+		edict_t *pRescueEnt = pRescue ? pRescue->getWeaponEntity() : nullptr;
+		if (pRescueEnt && CClassInterface::TF2_getItemDefinitionIndex(pRescueEnt) == 997
+		    && pRescue->getAmmo(this) >= 60)
+		{
+			edict_t *pTarget = nullptr;
+			if (m_pSentryGun.get() && CBotGlobals::entityIsValid(m_pSentryGun)
+			    && CClassInterface::getSentryHealth(m_pSentryGun) < 150.0f)
+				pTarget = m_pSentryGun;
+			else if (m_pDispenser.get() && CBotGlobals::entityIsValid(m_pDispenser)
+			    && CClassInterface::getDispenserHealth(m_pDispenser) < 100.0f)
+				pTarget = m_pDispenser;
+
+			if (pTarget && FVisible(pTarget) && distanceFrom(pTarget) > 180.0f)
+			{
+				lookAtEdict(pTarget);
+				setLookAtTask(LOOK_EDICT);
+				select_CWeapon(pRescue->getWeaponInfo());
+				secondaryAttack();
 			}
 		}
 	}
