@@ -19,6 +19,8 @@ CBotTF2SpySap::CBotTF2SpySap(edict_t *pBuilding, eEngiBuild id)
 	m_bEvadeRight     = false;
 	m_bSapperPlaced   = false;
 	m_fDecloakTime    = 0.0f;
+	m_fSapRetryTime   = 0.0f;
+	m_iSapAttempts    = 0;
 	m_vBuildingOrigin = CBotGlobals::entityOrigin(pBuilding);
 }
 
@@ -161,10 +163,8 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 
 	// SAP_APPROACH state
-	// Transition to EVADE if building is confirmed sapped, OR if we just placed
-	// the sapper (optimistic — avoids waiting for the game event to fire)
-	if ((buildingIsSapped(pBuilding) || m_bSapperPlaced)
-	    && (m_fStateChangeTime + 0.3f) < engine->Time())
+	// Transition to EVADE only when the building is confirmed sapped
+	if (buildingIsSapped(pBuilding))
 	{
 		m_iState           = SAP_EVADE;
 		m_fEvadeTime       = 0.0f;
@@ -173,14 +173,18 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 		return;
 	}
 
+	// Give up after too many failed sap attempts
+	if (m_iSapAttempts >= 5 || m_fTime < engine->Time())
+	{
+		fail();
+		return;
+	}
+
 	pBot->lookAtEdict(pBuilding);
 	pBot->setLookAtTask(LOOK_EDICT, 0.2f);
 	weapon = tf2Bot->getCurrentWeapon();
 
-	// time out
-	if (m_fTime < engine->Time())
-		fail();
-	else if (!weapon || (weapon->getID() != TF2_WEAPON_BUILDER))
+	if (!weapon || (weapon->getID() != TF2_WEAPON_BUILDER))
 	{
 		helpers->ClientCommand(pBot->getEdict(), "build 3 0");
 	}
@@ -198,8 +202,6 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 	{
 		if (CTeamFortress2Mod::TF2_IsPlayerCloaked(pBot->getEdict()))
 		{
-			// Only issue one decloak — a second toggle before the engine
-			// processes the first would re-cloak the spy forever
 			if (m_fDecloakTime < engine->Time())
 			{
 				tf2Bot->resetCloakTime();
@@ -207,10 +209,11 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 				m_fDecloakTime = engine->Time() + 0.5f;
 			}
 		}
-		else if (randomInt(0, 1))
+		else if (m_fSapRetryTime < engine->Time())
 		{
 			pBot->tapButton(IN_ATTACK);
-			m_bSapperPlaced = true;
+			m_fSapRetryTime = engine->Time() + 0.5f;
+			m_iSapAttempts++;
 		}
 	}
 }

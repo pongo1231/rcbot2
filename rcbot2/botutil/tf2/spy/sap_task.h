@@ -24,6 +24,8 @@ class CBotTF2SpySap : public CBotTask
 	bool m_bEvadeRight;
 	bool m_bSapperPlaced;
 	float m_fDecloakTime;
+	float m_fSapRetryTime;
+	int m_iSapAttempts;
 
 	bool buildingIsSapped(edict_t *pBuilding);
 };
