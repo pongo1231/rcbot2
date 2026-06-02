@@ -3605,23 +3605,45 @@ void CBotTF2::modThink()
 
 		if (!m_pSchedules->hasSchedule(SCHED_REMOVESAPPER))
 		{
-			if ((m_fRemoveSapTime < engine->Time()) && m_pNearestAllySentry
+			// Own buildings — highest priority, no range limit if not in combat
+			bool bInCombat = (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot());
+			float fMaxDist = bInCombat ? 512.0f : 2048.0f;
+
+			if ((m_fRemoveSapTime < engine->Time()) && m_pSentryGun
+			    && CBotGlobals::entityIsValid(m_pSentryGun)
+			    && CTeamFortress2Mod::isSentrySapped(m_pSentryGun)
+			    && distanceFrom(m_pSentryGun) < fMaxDist)
+			{
+				m_pSchedules->freeMemory();
+				m_pSchedules->add(new CBotRemoveSapperSched(m_pSentryGun, ENGI_SENTRY));
+				updateCondition(CONDITION_PARANOID);
+			}
+			else if ((m_fRemoveSapTime < engine->Time()) && m_pDispenser
+			         && CBotGlobals::entityIsValid(m_pDispenser)
+			         && CTeamFortress2Mod::isDispenserSapped(m_pDispenser)
+			         && distanceFrom(m_pDispenser) < fMaxDist)
+			{
+				m_pSchedules->freeMemory();
+				m_pSchedules->add(new CBotRemoveSapperSched(m_pDispenser, ENGI_DISP));
+				updateCondition(CONDITION_PARANOID);
+			}
+			else if ((m_fRemoveSapTime < engine->Time()) && m_pTeleExit
+			         && CBotGlobals::entityIsValid(m_pTeleExit)
+			         && CTeamFortress2Mod::isTeleporterSapped(m_pTeleExit)
+			         && distanceFrom(m_pTeleExit) < fMaxDist)
+			{
+				m_pSchedules->freeMemory();
+				m_pSchedules->add(new CBotRemoveSapperSched(m_pTeleExit, ENGI_EXIT));
+				updateCondition(CONDITION_PARANOID);
+			}
+			// Ally buildings — helpful but lower priority
+			else if ((m_fRemoveSapTime < engine->Time()) && m_pNearestAllySentry
 			    && CBotGlobals::entityIsValid(m_pNearestAllySentry)
 			    && CTeamFortress2Mod::isSentrySapped(m_pNearestAllySentry))
 			{
 				m_pSchedules->freeMemory();
 				m_pSchedules->add(new CBotRemoveSapperSched(m_pNearestAllySentry, ENGI_SENTRY));
 				updateCondition(CONDITION_PARANOID);
-			}
-			else if ((m_fRemoveSapTime < engine->Time()) && m_pSentryGun && CBotGlobals::entityIsValid(m_pSentryGun)
-			         && CTeamFortress2Mod::isSentrySapped(m_pSentryGun))
-			{
-				if (distanceFrom(m_pSentryGun) < 1024.0f) // only go back if I can remove the sapper
-				{
-					m_pSchedules->freeMemory();
-					m_pSchedules->add(new CBotRemoveSapperSched(m_pSentryGun, ENGI_SENTRY));
-					updateCondition(CONDITION_PARANOID);
-				}
 			}
 		}
 
@@ -8394,20 +8416,28 @@ BOTUTIL_SmoothAim(m_vPrevAimVector,m_vAimVector,m_fStartUpdateAimVector,engine->
                         vAim = vAim + Vector(0,0,sqrt(fDist));
 		}
 
-		// Wrangler: hold it when sentry has MG ammo and is actively shooting
+		// Wrangler: only hold it when the sentry can actually hit the target
 		if (m_pSentryGun.get() != nullptr)
 		{
 			edict_t *pSentry = m_pSentryGun.get();
 			if (CBotGlobals::entityIsValid(pSentry) && CBotGlobals::entityIsAlive(pSentry)
-			    && CClassInterface::getTF2SentryShells(pSentry) > 0
-			    && CClassInterface::getSentryEnemy(pSentry) != nullptr
 			    && distanceFrom(pSentry) < 256.0f)
 			{
-				CBotWeapon *pWrangler = m_pWeapons->getWeapon(
-				    CWeapons::getWeapon(TF2_WEAPON_WRANGLER));
-				if (pWrangler && pWrangler->hasWeapon()
-				    && getCurrentWeapon() != pWrangler)
-					select_CWeapon(pWrangler->getWeaponInfo());
+				edict_t *pSentryEnemy = CClassInterface::getSentryEnemy(pSentry);
+				if (pSentryEnemy
+				    && CBotGlobals::isAlivePlayer(pSentryEnemy)
+				    && (CBotGlobals::entityOrigin(pSentry) - CBotGlobals::entityOrigin(pSentryEnemy)).Length()
+				        < (float)TF2_MAX_SENTRYGUN_RANGE
+				    && CBotGlobals::isVisible(pSentry, CBotGlobals::entityOrigin(pSentry), pSentryEnemy)
+				    && (CClassInterface::getTF2SentryShells(pSentry) > 0
+				        || CClassInterface::getTF2SentryRockets(pSentry) > 0))
+				{
+					CBotWeapon *pWrangler = m_pWeapons->getWeapon(
+					    CWeapons::getWeapon(TF2_WEAPON_WRANGLER));
+					if (pWrangler && pWrangler->hasWeapon()
+					    && getCurrentWeapon() != pWrangler)
+						select_CWeapon(pWrangler->getWeaponInfo());
+				}
 			}
 		}
 
@@ -9182,9 +9212,8 @@ void CBotTF2::roundWon(int iTeam, bool bFullRound)
 
 void CBotTF2::waitRemoveSap()
 {
-	// this gives engi bot some time to attack spy that has been sapping a sentry
-	m_fRemoveSapTime = engine->Time() + randomFloat(2.5f, 4.0f);
-	// TO DO::add spy check task
+	// brief cooldown after removing a sapper before reacting to a re-sap
+	m_fRemoveSapTime = engine->Time() + randomFloat(1.0f, 2.0f);
 }
 
 void CBotTF2::roundReset(bool bFullReset)
