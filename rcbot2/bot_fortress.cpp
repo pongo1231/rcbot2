@@ -6005,48 +6005,73 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		}
 	}
 
-	// MvM: medic revive marker coordination
-	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && (m_iClass == TF_CLASS_MEDIC) && !hasFlag() && !m_pHeal)
+	// MvM: medic revive marker prioritization
+	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && (m_iClass == TF_CLASS_MEDIC) && !hasFlag())
 	{
-		edict_t *pReviveMarker = CClassInterface::FindEntityByClassnameNearest(
-		    getOrigin(), "entity_revive_marker", 2048.0f);
+		bool bNoThreat = (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY) || !wantToShoot());
 
-		if (pReviveMarker && CBotGlobals::entityIsAlive(pReviveMarker))
+		// Only pursue markers if no threat, or if no alive players are nearby to heal
+		bool bShouldRevive = bNoThreat;
+		if (!bNoThreat)
 		{
-			float fMyDist = distanceFrom(pReviveMarker);
-			bool bIAmClosest = true;
-
-			for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+			bShouldRevive = true;
+			for (int i = 1; i <= gpGlobals->maxClients; i++)
 			{
-				edict_t *pOther = INDEXENT(i);
-				if (pOther && pOther != m_pEdict && CBotGlobals::entityIsValid(pOther)
-				    && CClassInterface::getTeam(pOther) == iTeam
-				    && CClassInterface::getTF2Class(pOther) == TF_CLASS_MEDIC
-				    && CBotGlobals::entityIsAlive(pOther))
+				edict_t *pT = INDEXENT(i);
+				if (!pT || pT == m_pEdict) continue;
+				if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+				if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+				if (CClassInterface::getTF2Class(pT) == TF_CLASS_MEDIC) continue;
+				if (distanceFrom(pT) < 800.0f)
 				{
-					// Skip medics already busy with a heal target
-					CBot *pOtherBot = CBots::getBotPointer(pOther);
-					if (pOtherBot && ((CBotTF2 *)pOtherBot)->getHealingEntity())
-						continue;
-
-					if ((CBotGlobals::entityOrigin(pOther) - CBotGlobals::entityOrigin(pReviveMarker)).Length()
-					    < fMyDist)
-					{
-						bIAmClosest = false;
-						break;
-					}
+					bShouldRevive = false;
+					break;
 				}
 			}
+		}
 
-			if (bIAmClosest)
+		if (bShouldRevive)
+		{
+			edict_t *pReviveMarker = CClassInterface::FindEntityByClassnameNearest(
+			    getOrigin(), "entity_revive_marker", 2048.0f);
+
+			if (pReviveMarker && CBotGlobals::entityIsAlive(pReviveMarker))
 			{
-				m_pHeal = pReviveMarker;
-				setVisible(pReviveMarker, true);
-				updateCondition(CONDITION_SEE_HEAL);
-				ADD_UTILITY(BOT_UTIL_MVM_MEDIC_REVIVE,
-				            (getHealFactor(m_pHeal) > 0) && (pMedigun != nullptr) && pBWMediGun
-				                && pBWMediGun->hasWeapon(),
-				            0.985f);
+				float fMyDist = distanceFrom(pReviveMarker);
+				bool bIAmClosest = true;
+
+				for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+				{
+					edict_t *pOther = INDEXENT(i);
+					if (pOther && pOther != m_pEdict && CBotGlobals::entityIsValid(pOther)
+					    && CClassInterface::getTeam(pOther) == iTeam
+					    && CClassInterface::getTF2Class(pOther) == TF_CLASS_MEDIC
+					    && CBotGlobals::entityIsAlive(pOther))
+					{
+						CBot *pOtherBot = CBots::getBotPointer(pOther);
+						if (pOtherBot && ((CBotTF2 *)pOtherBot)->getHealingEntity())
+							continue;
+
+						if ((CBotGlobals::entityOrigin(pOther) - CBotGlobals::entityOrigin(pReviveMarker)).Length()
+						    < fMyDist)
+						{
+							bIAmClosest = false;
+							break;
+						}
+					}
+				}
+
+				if (bIAmClosest)
+				{
+					m_pHeal = pReviveMarker;
+					setVisible(pReviveMarker, true);
+					updateCondition(CONDITION_SEE_HEAL);
+					float fUtil = bNoThreat ? 0.985f : 0.7f;
+					ADD_UTILITY(BOT_UTIL_MVM_MEDIC_REVIVE,
+					            (getHealFactor(m_pHeal) > 0) && (pMedigun != nullptr) && pBWMediGun
+					                && pBWMediGun->hasWeapon(),
+					            fUtil);
+				}
 			}
 		}
 	}
