@@ -3275,6 +3275,53 @@ void CBotTF2::modThink()
 		}
 	}
 
+	// MvM sentry buster avoidance
+	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
+	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
+	{
+		for (int i = gpGlobals->maxClients + 1; i < gpGlobals->maxEntities; i++)
+		{
+			edict_t *pEnt = INDEXENT(i);
+			if (!pEnt || pEnt->IsFree()) continue;
+			if (!CBotGlobals::entityIsValid(pEnt) || !CBotGlobals::entityIsAlive(pEnt)) continue;
+
+			IServerEntity *pServerEnt = pEnt->GetIServerEntity();
+			if (!pServerEnt) continue;
+			const char *szModel = pServerEnt->GetModelName().ToCStr();
+			if (!szModel || strstr(szModel, "sentry_buster") == nullptr) continue;
+
+			float fDist = distanceFrom(pEnt);
+			if (fDist < 300.0f)
+			{
+				if (m_iClass == TF_CLASS_ENGINEER && m_pSentryGun.get()
+				    && CBotGlobals::entityIsValid(m_pSentryGun)
+				    && !m_bIsCarryingObj
+				    && distanceFrom(m_pSentryGun) < 150.0f)
+				{
+					CBotWeapon *pWrench = m_pWeapons->getWeapon(
+					    CWeapons::getWeapon(TF2_WEAPON_WRENCH));
+					if (pWrench && pWrench->hasWeapon())
+					{
+						select_CWeapon(pWrench->getWeaponInfo());
+						secondaryAttack();
+						resetCarryTime();
+					}
+				}
+
+				Vector vAway = getOrigin() - CBotGlobals::entityOrigin(pEnt);
+				vAway.z      = 0;
+				if (vAway.Length() > 0.1f)
+				{
+					vAway = vAway / vAway.Length();
+					setMoveLookPriority(MOVELOOK_ATTACK);
+					setMoveTo(getOrigin() + (vAway * 512.0f));
+					setMoveLookPriority(MOVELOOK_MODTHINK);
+				}
+				break;
+			}
+		}
+	}
+
 	// Also avoid visible sentries we're not actively engaging
 	if (m_pNearestEnemySentry.get() != nullptr
 	    && !(m_iClass == TF_CLASS_SPY && (isDisguised() || isCloaked()))
