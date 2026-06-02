@@ -2681,7 +2681,7 @@ bool CBotTF2::tryExtinguishTeammates()
 		if (!CTeamFortress2Mod::TF2_IsPlayerOnFire(pT)) continue;
 
 		float fDist = distanceFrom(pT);
-		if (fDist < fBestDist && isVisible(pT))
+		if (fDist < fBestDist && FVisible(pT))
 		{
 			fBestDist = fDist;
 			pBest     = pT;
@@ -2727,12 +2727,12 @@ bool CBotTF2::tryExtinguishTeammates()
 		return true;
 	}
 
-	// In pursuit range: move toward them
+	// In pursuit range: move toward them, override any schedule
 	setMoveLookPriority(MOVELOOK_ATTACK);
 	setMoveTo(CBotGlobals::entityOrigin(pBest));
-	setMoveLookPriority(MOVELOOK_MODTHINK);
 	setLookVector(CBotGlobals::entityOrigin(pBest));
 	setLookAtTask(LOOK_VECTOR);
+	setMoveLookPriority(MOVELOOK_MODTHINK);
 	return false;
 }
 
