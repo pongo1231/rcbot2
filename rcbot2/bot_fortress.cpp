@@ -3332,6 +3332,46 @@ void CBotTF2::modThink()
 			}
 		}
 		break;
+	case TF_CLASS_PYRO:
+	{
+		// Extinguish burning teammates when not in active combat
+		if (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY) || !wantToShoot())
+		{
+			CBotWeapon *pFlame = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
+			if (pFlame && pFlame->hasWeapon())
+			{
+				edict_t *pFEnt = pFlame->getWeaponEntity();
+				int iFItem = pFEnt ? CClassInterface::TF2_getItemDefinitionIndex(pFEnt) : 0;
+				if (iFItem != 594) // phlog can't airblast
+				{
+					int iNeedAmmo = (iFItem == 40) ? 50 : (iFItem == 215) ? 25
+					              : (iFItem == 1178 || iFItem == 1099) ? 5 : 20;
+					if (pFlame->getAmmo(this) >= iNeedAmmo)
+					{
+						for (int i = 1; i <= gpGlobals->maxClients; i++)
+						{
+							edict_t *pT = INDEXENT(i);
+							if (!pT || pT == m_pEdict) continue;
+							if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+							if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+							if (!CTeamFortress2Mod::TF2_IsPlayerOnFire(pT)) continue;
+							if (distanceFrom(pT) < 250.0f && isVisible(pT))
+							{
+								CBotWeapon *pCurrent = getCurrentWeapon();
+								if (!pCurrent || !pCurrent->canDeflectRockets())
+									select_CWeapon(pFlame->getWeaponInfo());
+								m_fDegreaserSwapBack = 0;
+								m_iDegreaserPrevSlot = 0;
+								secondaryAttack();
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	break;
 	default:
 		break;
 	}
