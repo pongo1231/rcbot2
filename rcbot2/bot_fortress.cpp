@@ -1599,6 +1599,9 @@ bool CBotTF2::hurt(edict_t *pAttacker, int iHealthNow, bool bDontHide)
 	if (!pAttacker)
 		return false;
 
+	// Taking damage forces a re-evaluation of current task
+	updateCondition(CONDITION_CHANGED);
+
 	if ((m_iClass != TF_CLASS_MEDIC) || (!m_pHeal))
 	{
 		if (CBot::hurt(pAttacker, iHealthNow, true))
@@ -4533,8 +4536,14 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		}
 	}
 
+	// Re-evaluate every ~0.4s even without CONDITION_CHANGED, so bots
+	// don't get stuck doing the wrong thing for too long
 	if (!hasSomeConditions(CONDITION_CHANGED) && !m_pSchedules->isEmpty())
-		return;
+	{
+		if (engine->Time() < m_fReEvalTime)
+			return;
+		m_fReEvalTime = engine->Time() + 0.4f;
+	}
 
 	removeCondition(CONDITION_CHANGED);
 
@@ -7414,12 +7423,12 @@ Vector EnemyMoveHistory::predict(float fTime, float fConfidence) const
 	float fTimeSinceChange = (fLastSample > 0 && fLastChange > 0) ? (fLastSample - fLastChange) : 0.0f;
 
 	bool bZigZag = false;
-	float fSwitchTime = 0.5f; // default half second pattern
+	float fSwitchTime = 0.5f;
 
 	if (iDirChanges >= 2)
 	{
 		float fInterval = (iCount > 1) ? (fTimes[iLast] - fTimes[0]) / (float)iCount : 0.05f;
-		fSwitchTime = fInterval * 4.0f; // estimate switch interval
+		fSwitchTime = fInterval * 4.0f;
 		if (fSwitchTime > 0.2f && fSwitchTime < 1.2f)
 			bZigZag = true;
 	}
@@ -7429,7 +7438,6 @@ Vector EnemyMoveHistory::predict(float fTime, float fConfidence) const
 		float fTimeToSwitch = fSwitchTime - fTimeSinceChange;
 		if (fTimeToSwitch > 0 && fTimeToSwitch < fTime)
 		{
-			// Will switch direction during prediction window
 			Vector vDir2D = vCurrVel;
 			vDir2D.z = 0;
 			float fLen = vDir2D.Length();
@@ -7437,38 +7445,23 @@ Vector EnemyMoveHistory::predict(float fTime, float fConfidence) const
 				vDir2D = vDir2D / fLen;
 			Vector vNewDir = vDir2D * -1.0f;
 			Vector vPred = (vDir2D * fSpeed * fTimeToSwitch) + (vNewDir * fSpeed * (fTime - fTimeToSwitch));
-			return vPred * fConfidence;
+			return vPred;
 		}
 	}
 
-	// Adjust for confidence (hit/miss ratio)
-	float fAdj = fConfidence;
-	if (iHits + iMisses > 5)
-	{
-		float fRatio = (float)iHits / (float)(iHits + iMisses);
-		if (fRatio < 0.3f)
-			fAdj *= 0.5f + fRatio; // aim less aggressively if missing
-		else
-			fAdj *= 1.0f + (fRatio - 0.5f); // lead more if hitting
-	}
-
-	return vCurrVel * fTime * fAdj * fAdjSmooth;
+	// Apply overshoot/undershoot learning. Default 1.0 = no adjustment,
+	// >1.0 = we've been underpredicting, lead more. <1.0 = overpredicting.
+	return vCurrVel * fTime * fAdjSmooth;
 }
 
 void EnemyMoveHistory::adjustFromError(const Vector &vPredOffset, float fPredDuration, float fTime)
 {
-	// Compare predicted position with where the enemy actually is now
-	// to determine if we overpredicted or underpredicted
 	if (iCount < 2 || fPredDuration < 0.02f)
 		return;
 
 	int iLast   = (iCount - 1) % MOVEMENT_HISTORY_MAX;
 	Vector vActualVel = vVelSamples[iLast];
-	Vector vCurrPos   = vSamples[iLast];
 
-	// Where did we predict they'd be?
-	// predictedOffset = velocity * duration * adjustment
-	// actual displacement = currentPos - position at prediction time
 	float fActualDist = vActualVel.Length2D() * fPredDuration;
 	float fPredDist   = vPredOffset.Length2D();
 
@@ -7481,17 +7474,13 @@ void EnemyMoveHistory::adjustFromError(const Vector &vPredOffset, float fPredDur
 	if (fErrorRatio < 0.1f) fErrorRatio = 0.1f;
 	if (fErrorRatio > 3.0f) fErrorRatio = 3.0f;
 
-	// Exponential smoothing: blend new observation with existing adjustment
-	float fAlpha   = 0.15f;
-	fAdjSmooth     = fAdjSmooth * (1.0f - fAlpha) + fErrorRatio * fAlpha;
+	// Faster convergence for consistent error patterns
+	float fAlpha = (fErrorRatio < 0.5f || fErrorRatio > 1.5f) ? 0.25f : 0.15f;
+	fAdjSmooth   = fAdjSmooth * (1.0f - fAlpha) + fErrorRatio * fAlpha;
 	iAdjustCount++;
 
-	// Clamp adjustment to reasonable range
 	if (fAdjSmooth < 0.3f) fAdjSmooth = 0.3f;
-	if (fAdjSmooth > 2.5f) fAdjSmooth = 2.5f;
-
-	// Store for next comparison
-	iMisses++;
+	if (fAdjSmooth > 3.0f) fAdjSmooth = 3.0f;
 }
 
 void CBotTF2::recordEnemyMovement(edict_t *pEnemy)
@@ -8101,19 +8090,28 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 					CBotWeapon *pStickyLauncher = m_pWeapons->getWeapon(
 					    CWeapons::getWeapon(TF2_WEAPON_PIPEBOMBS));
 
-					if (pGrenadeLauncher && pGrenadeLauncher->outOfAmmo(this)
+					bool bNoPrimary = !pGrenadeLauncher || !pGrenadeLauncher->hasWeapon()
+					                  || pGrenadeLauncher->outOfAmmo(this);
+
+					if (bNoPrimary
 					    && pStickyLauncher && pStickyLauncher->hasWeapon()
 					    && !pStickyLauncher->outOfAmmo(this) && pStickyLauncher->getClip1(this) > 0
 					    && fDistance > 128.0f
-					    && fDistance < pGrenadeLauncher->getPrimaryMaxRange())
+					    && fDistance < pStickyLauncher->getPrimaryMaxRange())
 					{
 						if (getCurrentWeapon() != pStickyLauncher)
 							select_CWeapon(pStickyLauncher->getWeaponInfo());
 						else if (m_fStickyDetTime == 0.0f)
 						{
-							float fCharge = (fDistance / pStickyLauncher->getPrimaryMaxRange()) * 1.5f;
+							// Charge just enough to reach the target, not full charge
+							float fCharge = fDistance / pStickyLauncher->getPrimaryMaxRange();
+							fCharge       = fCharge * fCharge * 2.0f; // non-linear: short charge at close range
+							if (fCharge < 0.03f) fCharge = 0.03f;
+							if (fCharge > 1.5f) fCharge  = 1.5f;
 							primaryAttack(true, fCharge);
-							m_fStickyDetTime = engine->Time() + fCharge + 0.1f;
+							// Wait for charge + estimated flight time before detonating
+							float fFlyTime = fDistance / 700.0f;
+							m_fStickyDetTime = engine->Time() + fCharge + fFlyTime + 0.05f;
 						}
 						else if (m_fStickyDetTime < engine->Time())
 						{
@@ -8225,7 +8223,7 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 		}
 
 		// Demoman: use sticky launcher as combat weapon when grenade launcher is dry
-		// Only outside melee range and inside grenade launcher range
+		// Only outside melee range and inside sticky launcher range
 		// Skip if already handled by the tank section above
 		if (m_iClass == TF_CLASS_DEMOMAN
 		    && !(CTeamFortress2Mod::isMapType(TF_MAP_MVM) && CTeamFortress2Mod::isTankBoss(pEnemy)))
@@ -8235,24 +8233,116 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			CBotWeapon *pStickyLauncher = m_pWeapons->getWeapon(
 			    CWeapons::getWeapon(TF2_WEAPON_PIPEBOMBS));
 
-			if (pGrenadeLauncher && pGrenadeLauncher->outOfAmmo(this)
+			bool bNoPrimary = !pGrenadeLauncher || !pGrenadeLauncher->hasWeapon()
+			                  || pGrenadeLauncher->outOfAmmo(this);
+
+			if (bNoPrimary
 			    && pStickyLauncher && pStickyLauncher->hasWeapon()
 			    && !pStickyLauncher->outOfAmmo(this) && pStickyLauncher->getClip1(this) > 0
 			    && fDistance > 128.0f
-			    && fDistance < pGrenadeLauncher->getPrimaryMaxRange())
+			    && fDistance < pStickyLauncher->getPrimaryMaxRange())
 			{
 				if (getCurrentWeapon() != pStickyLauncher)
 					select_CWeapon(pStickyLauncher->getWeaponInfo());
 				else if (m_fStickyDetTime == 0.0f)
 				{
-					float fCharge = (fDistance / pStickyLauncher->getPrimaryMaxRange()) * 1.5f;
+					float fCharge = fDistance / pStickyLauncher->getPrimaryMaxRange();
+					fCharge       = fCharge * fCharge * 2.0f;
+					if (fCharge < 0.03f) fCharge = 0.03f;
+					if (fCharge > 1.5f) fCharge  = 1.5f;
 					primaryAttack(true, fCharge);
-					m_fStickyDetTime = engine->Time() + fCharge + 0.1f;
+					float fFlyTime = fDistance / 700.0f;
+					m_fStickyDetTime = engine->Time() + fCharge + fFlyTime + 0.05f;
 				}
 				else if (m_fStickyDetTime < engine->Time())
 				{
 					tapButton(IN_ATTACK2);
 					m_fStickyDetTime = 0.0f;
+				}
+			}
+		}
+
+		// Degreaser quick-switch: if holding secondary and projectile incoming,
+		// quickly swap to Degreaser to reflect it, then swap back
+		if (m_iClass == TF_CLASS_PYRO && !pWeapon->canDeflectRockets())
+		{
+			CBotWeapon *pDegreaser = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
+			edict_t *pFlameEnt     = pDegreaser ? pDegreaser->getWeaponEntity() : nullptr;
+			int iDegItem   = pFlameEnt ? CClassInterface::TF2_getItemDefinitionIndex(pFlameEnt) : 0;
+
+			if (iDegItem == 215 && pDegreaser->hasWeapon() && pDegreaser->getAmmo(this) >= 25)
+			{
+				edict_t *pProj = m_NearestEnemyRocket.get();
+				float fProjDist = pProj ? distanceFrom(pProj) : 9999.0f;
+				if (!pProj || fProjDist > 400.0f)
+				{
+					pProj = m_pNearestPipeGren.get();
+					if (pProj) fProjDist = distanceFrom(pProj);
+				}
+
+				if (pProj && fProjDist > 80.0f && fProjDist < 400.0f)
+				{
+					// Save current weapon and switch to Degreaser
+					if (m_iDegreaserPrevSlot == 0)
+					{
+						CBotWeapon *pCur = getCurrentWeapon();
+						if (pCur && pCur->getWeaponInfo())
+							m_iDegreaserPrevSlot = pCur->getWeaponInfo()->getSlot();
+						else
+							m_iDegreaserPrevSlot = 1;
+						m_fDegreaserSwapBack = engine->Time() + 1.2f;
+					}
+					select_CWeapon(pDegreaser->getWeaponInfo());
+				}
+			}
+		}
+
+		// Swap back from Degreaser to previous weapon
+		if (m_fDegreaserSwapBack > 0 && m_fDegreaserSwapBack < engine->Time())
+		{
+			m_fDegreaserSwapBack = 0;
+			if (m_iDegreaserPrevSlot > 0)
+			{
+				CBotWeapon *pPrev = m_pWeapons->getCurrentWeaponInSlot(m_iDegreaserPrevSlot);
+				if (pPrev && pPrev->hasWeapon() && pPrev != getCurrentWeapon())
+					select_CWeapon(pPrev->getWeaponInfo());
+				m_iDegreaserPrevSlot = 0;
+			}
+		}
+
+		// Extinguish burning teammates — works regardless of current weapon
+		if (!bSecAttack && m_iClass == TF_CLASS_PYRO)
+		{
+			CBotWeapon *pFlame = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
+			if (pFlame && pFlame->hasWeapon())
+			{
+				edict_t *pFEnt = pFlame->getWeaponEntity();
+				int iFItem = pFEnt ? CClassInterface::TF2_getItemDefinitionIndex(pFEnt) : 0;
+				if (iFItem != 594) // phlog can't airblast
+				{
+					int iNeedAmmo = (iFItem == 40) ? 50 : (iFItem == 215) ? 25
+					              : (iFItem == 1178 || iFItem == 1099) ? 5 : 20;
+					if (pFlame->getAmmo(this) >= iNeedAmmo)
+					{
+						for (int i = 1; i <= gpGlobals->maxClients; i++)
+						{
+							edict_t *pT = INDEXENT(i);
+							if (!pT || pT == m_pEdict) continue;
+							if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+							if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+							if (!CTeamFortress2Mod::TF2_IsPlayerOnFire(pT)) continue;
+							if (distanceFrom(pT) < 250.0f && isVisible(pT))
+							{
+								if (!pWeapon->canDeflectRockets())
+								{
+									// Switch to flamethrower to extinguish
+									select_CWeapon(pFlame->getWeaponInfo());
+								}
+								bSecAttack = true;
+								break;
+							}
+						}
+					}
 				}
 			}
 		}

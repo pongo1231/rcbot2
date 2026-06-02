@@ -1132,6 +1132,7 @@ void CBot::updateConditions()
 		if (!CBotGlobals::entityIsAlive(m_pEnemy))
 		{
 			updateCondition(CONDITION_ENEMY_DEAD);
+			updateCondition(CONDITION_CHANGED);
 			m_pEnemy = nullptr;
 		}
 		else

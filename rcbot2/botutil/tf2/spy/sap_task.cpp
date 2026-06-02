@@ -86,11 +86,19 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 		// Init evade timer on first entry
 		if (m_fEvadeTime == 0.0f)
-			m_fEvadeTime = engine->Time() + randomFloat(0.2f, 0.5f);
+			m_fEvadeTime = engine->Time() + randomFloat(0.5f, 1.0f);
 
 		// Complete after evade period -- let utility evaluation pick next action
 		if (m_fEvadeTime < engine->Time())
 		{
+			// Continue moving away briefly after completing
+			Vector vAway = pBot->getOrigin() - m_vBuildingOrigin;
+			vAway.z      = 0;
+			if (vAway.Length() < 200.0f)
+			{
+				vAway = vAway.Length() > 0.1f ? vAway / vAway.Length() : Vector(1, 0, 0);
+				pBot->setMoveTo(pBot->getOrigin() + (vAway * 400.0f));
+			}
 			complete();
 			return;
 		}
