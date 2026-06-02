@@ -3833,6 +3833,19 @@ void CBotTF2::modThink()
 
 		checkBuildingsValid(false);
 
+		// MvM: stop defending and go build a sentry if missing one
+		if (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
+		    && !m_pSentryGun && !m_bIsCarryingObj && !m_pEnemy)
+		{
+			CBotWeapon *pWrench = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_WRENCH));
+			if (pWrench && pWrench->getAmmo(this) >= 130
+			    && m_pSchedules->hasSchedule(SCHED_DEFENDPOINT))
+			{
+				m_pSchedules->freeMemory();
+				updateCondition(CONDITION_CHANGED);
+			}
+		}
+
 		if (!m_pSchedules->hasSchedule(SCHED_REMOVESAPPER))
 		{
 			// Own buildings — highest priority, no range limit if not in combat
