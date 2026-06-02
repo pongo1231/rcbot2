@@ -8967,7 +8967,6 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 
 		// Demoman: use sticky launcher as combat weapon when grenade launcher is dry
 		// Only outside melee range and inside sticky launcher range
-		// Skip if already handled by the tank section above
 		if (m_iClass == TF_CLASS_DEMOMAN
 		    && !(CTeamFortress2Mod::isMapType(TF_MAP_MVM) && CTeamFortress2Mod::isTankBoss(pEnemy)))
 		{
@@ -8979,7 +8978,15 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			bool bNoPrimary = !pGrenadeLauncher || !pGrenadeLauncher->hasWeapon()
 			                  || pGrenadeLauncher->outOfAmmo(this);
 
-			if (bNoPrimary
+			// If enemy is too close for sticky, force melee instead of staying stuck
+			if (getCurrentWeapon() == pStickyLauncher && fDistance <= 128.0f)
+			{
+				CBotWeapon *pMelee = getBestWeapon(m_pEnemy, true, true, true);
+				if (pMelee && pMelee->isMelee())
+					select_CWeapon(pMelee->getWeaponInfo());
+			}
+			// Don't override if getBestWeapon already chose melee
+			else if (bNoPrimary && !pWeapon->isMelee()
 			    && pStickyLauncher && pStickyLauncher->hasWeapon()
 			    && !pStickyLauncher->outOfAmmo(this) && pStickyLauncher->getClip1(this) > 0
 			    && fDistance > 128.0f
