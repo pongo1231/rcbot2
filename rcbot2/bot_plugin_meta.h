@@ -92,6 +92,8 @@ class RCBotPluginMeta : public ISmmPlugin, public IMetamodListener
 	                        int maxrejectlen);
 
 	static void HudTextMessage(edict_t *pEntity, const char *szMessage);
+	static void HintTextOnly(edict_t *pEntity, const char *szMessage);
+	static void HudHintPersistent(edict_t *pEntity, const char *szMessage);
 	static void BroadcastTextMessage(const char *szMessage);
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
@@ -126,8 +128,11 @@ class RCBotPluginMeta : public ISmmPlugin, public IMetamodListener
 	float m_fBotQuotaTimer;
 	int m_iTargetBots[MAX_PLAYERS];
 	int m_iConnectingPlayers;
+	float m_fHijackIdleSince[MAX_PLAYERS + 1];
 
 	void BotQuotaCheck(void);
+	void HijackAFKPlayers(void);
+	void HijackPlayerDisconnected(int iIndex);
 };
 
 extern RCBotPluginMeta g_RCBotPluginMeta;

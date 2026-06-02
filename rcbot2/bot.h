@@ -348,22 +348,27 @@ class CBot
 
 	inline Vector getOrigin()
 	{
-		return m_pController->GetLocalOrigin();
+		if (m_pController)
+			return m_pController->GetLocalOrigin();
+		return m_pEdict ? m_pEdict->GetCollideable()->GetCollisionOrigin() : Vector(0, 0, 0);
 	}
 	// linux fix 2
 	inline float distanceFrom(Vector vOrigin)
 	{
-		return (vOrigin - m_pController->GetLocalOrigin()).Length();
+		Vector vMe = getOrigin();
+		return (vOrigin - vMe).Length();
 	}
 	inline float distanceFrom(edict_t *pEntity)
 	{
-		return (pEntity->GetCollideable()->GetCollisionOrigin() - m_pController->GetLocalOrigin()).Length();
+		Vector vMe = getOrigin();
+		return (pEntity->GetCollideable()->GetCollisionOrigin() - vMe).Length();
 		// return distanceFrom(CBotGlobals::entityOrigin(pEntity));
 	}
 
 	inline float distanceFrom2D(edict_t *pEntity)
 	{
-		return (pEntity->GetCollideable()->GetCollisionOrigin() - m_pController->GetLocalOrigin()).Length2D();
+		Vector vMe = getOrigin();
+		return (pEntity->GetCollideable()->GetCollisionOrigin() - vMe).Length2D();
 		// return distanceFrom(CBotGlobals::entityOrigin(pEntity));
 	}
 
@@ -470,6 +475,10 @@ class CBot
 	{
 		return (m_bUsed && (m_pEdict != nullptr));
 	}
+
+	inline void setHijacked(bool bHijacked) { m_bHijacked = bHijacked; }
+	inline bool isHijacked() { return m_bHijacked; }
+	inline int lastSentButtons() { return m_iLastSentButtons; }
 
 	edict_t *getEdict();
 
@@ -705,6 +714,11 @@ class CBot
 	inline CBotProfile *getProfile()
 	{
 		return m_pProfile;
+	}
+
+	inline void setProfile(CBotProfile *pProfile)
+	{
+		m_pProfile = pProfile;
 	}
 
 	virtual bool canGotoWaypoint(Vector vPrevWaypoint, CWaypoint *pWaypoint, CWaypoint *pPrev = nullptr);
@@ -996,6 +1010,8 @@ class CBot
 	// float m_fLastPrintDebugInfo;
 	//  is bot used in the game?
 	bool m_bUsed;
+	bool m_bHijacked;
+	int m_iLastSentButtons;
 	// time the bot was made in the server
 	float m_fTimeCreated;
 	// next think time
@@ -1213,6 +1229,10 @@ class CBots
 	static bool controlBot(const char *szOldName, const char *szName, const char *szTeam, const char *szClass);
 
 	static bool createBot(const char *szClass, const char *szTeam, const char *szName);
+
+	static bool hijackPlayer(edict_t *pPlayer);
+	static void releasePlayer(edict_t *pPlayer);
+	static void releasePlayer(int slot);
 
 	static int createDefaultBot(const char *szName);
 

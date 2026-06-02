@@ -8476,7 +8476,7 @@ void CBotTF2::modAim(edict_t *pEntity, Vector &v_origin, Vector *v_desired_offse
 				Vector vRight;
 				Vector vUp;
 
-				QAngle eyes = m_pController->GetLocalAngles();
+				QAngle eyes = m_pController ? m_pController->GetLocalAngles() : CBotGlobals::playerAngles(m_pEdict);
 
 				// in fov? Check angle to edict
 				AngleVectors(eyes, &vForward, &vRight, &vUp);

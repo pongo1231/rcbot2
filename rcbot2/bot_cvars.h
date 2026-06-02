@@ -86,6 +86,7 @@ extern ConVar rcbot_tf2_payload_dist_retreat;
 extern ConVar rcbot_spy_runaway_health;
 extern ConVar rcbot_supermode;
 extern ConVar rcbot_addbottime;
+extern ConVar rcbot_hijack_afk_time;
 extern ConVar rcbot_gamerules_offset;
 extern ConVar rcbot_bot_quota_interval;
 extern ConVar rcbot_const_point_master_offset;

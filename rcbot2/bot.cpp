@@ -42,6 +42,7 @@
 #include "bot_coop.h"
 #include "bot_css_bot.h"
 #include "bot_cvars.h"
+#include "bot_plugin_meta.h"
 #include "bot_dod_bot.h"
 #include "bot_fortress.h"
 #include "bot_getprop.h"
@@ -235,6 +236,7 @@ void CBot::runPlayerMove()
 		state->fixangle = FIXANGLE_ABSOLUTE;
 	}
 #endif
+	m_iLastSentButtons = cmd.buttons;
 }
 
 bool CBot::startGame()
@@ -707,7 +709,8 @@ CBotWeapon *CBot::getCurrentWeapon()
 
 void CBot::selectWeaponName(const char *szWeapon)
 {
-	m_pController->SetActiveWeapon(szWeapon);
+	if (m_pController)
+		m_pController->SetActiveWeapon(szWeapon);
 }
 
 CBotWeapon *CBot::getBestWeapon(edict_t *pEnemy, bool bAllowMelee, bool bAllowMeleeFallback, bool bMeleeOnly,
@@ -1119,6 +1122,7 @@ void CBot::init(bool bVarInit)
 	//	m_pBaseEdict = nullptr;
 	m_pFindEnemyFunc   = nullptr;
 	m_bUsed            = false;
+	m_bHijacked        = false;
 	m_pController      = nullptr;
 	m_pPlayerInfo      = nullptr;
 
@@ -3165,6 +3169,46 @@ bool CBots::createBot(const char *szClass, const char *szTeam, const char *szNam
 	return (m_Bots[slotOfEdict(pEdict)]->createBotFromEdict(pEdict, pBotProfile));
 }
 
+bool CBots::hijackPlayer(edict_t *pPlayer)
+{
+	if (!pPlayer) return false;
+
+	int slot = slotOfEdict(pPlayer);
+	if (slot < 0 || slot >= MAX_PLAYERS) return false;
+
+	CBot *pBot = m_Bots[slot];
+	if (!pBot || pBot->inUse()) return false;
+
+	CBotProfile *pProfile = CBotProfiles::getRandomFreeProfile();
+	if (!pProfile)
+		pProfile = CBotProfiles::getDefaultProfile();
+	if (!pProfile) return false;
+
+	// Minimal setup: don't call createBotFromEdict which does spawnInit,
+	// class switching, and bot controller registration (crashes on humans)
+	pBot->init();
+	pBot->setEdict(pPlayer);
+	pBot->setup();
+	pBot->setProfile(pProfile);
+	pBot->setHijacked(true);
+	return true;
+}
+
+void CBots::releasePlayer(edict_t *pPlayer)
+{
+	if (!pPlayer) return;
+	releasePlayer(slotOfEdict(pPlayer));
+}
+
+void CBots::releasePlayer(int slot)
+{
+	if (slot < 0 || slot >= MAX_PLAYERS) return;
+	CBot *pBot = m_Bots[slot];
+	if (!pBot) return;
+
+	pBot->init();
+}
+
 int CBots::createDefaultBot(const char *name)
 {
 	edict_t *pEdict = g_pBotManager->CreateBot(name);
@@ -3311,6 +3355,18 @@ void CBots::botThink()
 		{
 			if (!bBotStop)
 			{
+				// Hijacked player: release if human pressed a new key
+				if (pBot->isHijacked())
+				{
+					IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pBot->getEdict());
+					if (pInfo && (pInfo->GetLastUserCommand().buttons & ~pBot->lastSentButtons()) != 0)
+					{
+						RCBotPluginMeta::HintTextOnly(pBot->getEdict(), "Welcome back!");
+						releasePlayer(i);
+						continue;
+					}
+				}
+
 #ifdef _DEBUG
 
 				if (CClients::clientsDebugging(BOT_DEBUG_PROFILE))

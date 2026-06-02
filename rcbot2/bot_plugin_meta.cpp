@@ -48,6 +48,8 @@
 #include <time.h>
 #endif
 
+#include <in_buttons.h>
+
 SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, 0, bool, char const *, char const *, char const *, char const *,
               bool, bool);
 SH_DECL_HOOK3_void(IServerGameDLL, ServerActivate, SH_NOATTRIB, 0, edict_t *, int, int);
@@ -256,6 +258,82 @@ void RCBotPluginMeta::HudTextMessage(edict_t *pEntity, const char *szMessage)
 		engine->MessageEnd();
 	}
 
+	delete filter;
+}
+
+void RCBotPluginMeta::HintTextOnly(edict_t *pEntity, const char *szMessage)
+{
+	if (!pEntity) return;
+	CBotRecipientFilter *filter = new CBotRecipientFilter(pEntity);
+
+	int hintid = -1;
+	char msgbuf[64];
+	int sz;
+	int id = 0;
+
+	while (servergamedll->GetUserMessageInfo(id, msgbuf, 63, sz))
+	{
+		if (strcmp(msgbuf, "HintText") == 0) { hintid = id; break; }
+		id++;
+	}
+
+	if (hintid > 0)
+	{
+		bf_write *buf = engine->UserMessageBegin(filter, hintid);
+		buf->WriteString(szMessage);
+		engine->MessageEnd();
+	}
+
+	delete filter;
+}
+
+void RCBotPluginMeta::HudHintPersistent(edict_t *pEntity, const char *szMessage)
+{
+	if (!pEntity) return;
+
+	static int iHudMsgId = -1;
+	if (iHudMsgId < 0)
+	{
+		char msgbuf[64];
+		int sz;
+		int id = 0;
+		while (servergamedll->GetUserMessageInfo(id, msgbuf, 63, sz))
+		{
+			if (strcmp(msgbuf, "HudMsg") == 0) { iHudMsgId = id; break; }
+			id++;
+		}
+		if (iHudMsgId < 0) return;
+	}
+
+	CBotRecipientFilter *filter = new CBotRecipientFilter(pEntity);
+	bf_write *buf = engine->UserMessageBegin(filter, iHudMsgId);
+
+	// channel
+	buf->WriteByte(2);
+	// x=0.35, y=0.88 — middle-bottom
+	buf->WriteFloat(0.35f);
+	buf->WriteFloat(0.88f);
+	// Color1: bright yellow
+	buf->WriteByte(255); // r1
+	buf->WriteByte(220); // g1
+	buf->WriteByte(50);  // b1
+	buf->WriteByte(200); // a1
+	// Color2: darker shadow
+	buf->WriteByte(150); // r2
+	buf->WriteByte(130); // g2
+	buf->WriteByte(0);   // b2
+	buf->WriteByte(100); // a2
+	// Effect: 0 = fade in/out
+	buf->WriteByte(0);
+	// fadeInTime, fadeOutTime, holdTime, fxTime
+	buf->WriteFloat(0.0f);
+	buf->WriteFloat(0.0f);
+	buf->WriteFloat(9999.0f); // essentially permanent
+	buf->WriteFloat(0.0f);
+	// message
+	buf->WriteString(szMessage);
+
+	engine->MessageEnd();
 	delete filter;
 }
 
@@ -812,6 +890,8 @@ void RCBotPluginMeta::Hook_ClientDisconnect(edict_t *pEntity)
 
 	CClients::clientDisconnected(pEntity);
 
+	HijackPlayerDisconnected(engine->IndexOfEdict(pEntity));
+
 	// Immediately re-evaluate bot quota when a player disconnects
 	if (rcbot_bot_quota_interval.GetInt() > 0)
 		BotQuotaCheck();
@@ -835,6 +915,9 @@ void RCBotPluginMeta::Hook_GameFrame(bool simulating)
 		CBots::botThink();
 		CClients::clientThink();
 
+		if (rcbot_hijack_afk_time.GetInt() > 0)
+			HijackAFKPlayers();
+
 		if (CWaypoints::getVisiblity()->needToWorkVisibility())
 			CWaypoints::getVisiblity()->workVisibility();
 
@@ -854,6 +937,71 @@ void RCBotPluginMeta::Hook_GameFrame(bool simulating)
 		if (rcbot_bot_quota_interval.GetInt() > 0)
 			BotQuotaCheck();
 	}
+}
+
+void RCBotPluginMeta::HijackAFKPlayers()
+{
+	int iHijackTime = rcbot_hijack_afk_time.GetInt();
+	if (iHijackTime <= 0) return;
+
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		edict_t *pEdict = INDEXENT(i);
+		if (!pEdict || pEdict->IsFree()) continue;
+		if (!CBotGlobals::entityIsValid(pEdict)) continue;
+
+		IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pEdict);
+		if (!pInfo || !pInfo->IsConnected() || pInfo->IsFakeClient() || pInfo->IsHLTV())
+			continue;
+
+		// Don't hijack spectators or unassigned players
+		int iTeam = pInfo->GetTeamIndex();
+		if (iTeam < 2) continue; // only RED(2) or BLU(3)
+
+		// Don't hijack dead players
+		if (!CBotGlobals::entityIsAlive(pEdict) || pInfo->IsDead())
+			continue;
+
+		// Already being controlled — refresh hint text
+		CBot *pExisting = CBots::getBotPointer(pEdict);
+		if (pExisting && pExisting->isHijacked())
+		{
+			static float fHintRefresh[MAX_PLAYERS + 1];
+			if (fHintRefresh[i] < engine->Time())
+			{
+				fHintRefresh[i] = engine->Time() + 10.0f;
+				HintTextOnly(pEdict,
+				    "You are in AFK mode. Press any movement key to take back control.");
+			}
+			continue;
+		}
+
+		// Check if AFK long enough (any movement key or mouse click)
+		const CBotCmd &cmd = pInfo->GetLastUserCommand();
+		bool bActive = (cmd.buttons != 0);
+		if (!bActive)
+		{
+			Vector vVel;
+			CClassInterface::getVelocity(pEdict, &vVel);
+			if (vVel.Length() > 10.0f) bActive = true;
+		}
+
+		if (bActive)
+			m_fHijackIdleSince[i] = 0.0f;
+		else if (m_fHijackIdleSince[i] == 0.0f)
+			m_fHijackIdleSince[i] = engine->Time();
+		else if ((engine->Time() - m_fHijackIdleSince[i]) > (float)iHijackTime)
+		{
+			if (CBots::hijackPlayer(pEdict))
+				m_fHijackIdleSince[i] = 0.0f;
+		}
+	}
+}
+
+void RCBotPluginMeta::HijackPlayerDisconnected(int iIndex)
+{
+	if (iIndex > 0 && iIndex <= MAX_PLAYERS)
+		m_fHijackIdleSince[iIndex] = 0.0f;
 }
 
 void RCBotPluginMeta::BotQuotaCheck()
@@ -883,7 +1031,7 @@ void RCBotPluginMeta::BotQuotaCheck()
 		for (int i = 0; i < MAX_PLAYERS; ++i)
 		{
 			CBot *bot = CBots::get(i);
-			if (bot != nullptr && bot->getEdict() != nullptr && bot->inUse())
+			if (bot != nullptr && bot->getEdict() != nullptr && bot->inUse() && !bot->isHijacked())
 				bot_count++;
 		}
 
