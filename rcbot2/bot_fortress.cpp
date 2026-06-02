@@ -5672,7 +5672,8 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 
 		if (bCanBuild)
 		{
-			ADD_UTILITY(BOT_UTIL_BUILDSENTRY, !m_bIsCarryingObj && !bHasFlag && !m_pSentryGun && (iMetal >= 130), 0.9);
+			ADD_UTILITY(BOT_UTIL_BUILDSENTRY, !m_bIsCarryingObj && !bHasFlag && !m_pSentryGun && (iMetal >= 130),
+			            CTeamFortress2Mod::isMapType(TF_MAP_MVM) ? 0.95f : 0.9f);
 			ADD_UTILITY(BOT_UTIL_BUILDDISP,
 			            !m_bIsCarryingObj && !bHasFlag && m_pSentryGun
 			                && (CClassInterface::getSentryHealth(m_pSentryGun) > 125) && !m_pDispenser
