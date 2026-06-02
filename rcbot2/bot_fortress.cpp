@@ -5221,7 +5221,8 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 					CBot *pOtherBot = CBots::getBotPointer(pOther);
 					if (pOtherBot && (CBotGlobals::entityOrigin(pOther) - vBombArea).Length() < fCheckDist)
 					{
-						if (pOtherBot->getSchedule()->isCurrentSchedule(SCHED_DEFEND))
+						if (pOtherBot->getSchedule()->isCurrentSchedule(SCHED_DEFEND)
+						    || pOtherBot->getSchedule()->isCurrentSchedule(SCHED_DEFENDPOINT))
 							iNearbyDefenders++;
 						else if (pOtherBot->getSchedule()->hasSchedule(SCHED_RETURN_TO_INTEL))
 							iNearbyDefenders++;
@@ -6173,10 +6174,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 					}
 				}
 
-				m_pSchedules->add(new CBotDefendSched(
-				    pWaypoint->getOrigin(), (hasSomeConditions(CONDITION_DEFENSIVE) || (m_iClass == TF_CLASS_MEDIC))
-				                                ? randomFloat(5.0f, 10.0f)
-				                                : 0.0f));
+				m_pSchedules->add(new CBotDefendPointSched(pWaypoint->getOrigin(), pWaypoint->getRadius(), pWaypoint->getArea()));
 				removeCondition(CONDITION_PUSH);
 
 				removeCondition(CONDITION_DEFENSIVE);
