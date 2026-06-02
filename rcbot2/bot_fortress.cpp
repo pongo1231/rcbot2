@@ -269,6 +269,7 @@ CBotFortress::CBotFortress()
 	m_fLastCalledMedicTime    = 0.0f;
 	m_bIsBeingHealed          = false;
 	m_bCanBeUbered            = false;
+	memset(m_fPlayerIdleSince, 0, sizeof(m_fPlayerIdleSince));
 }
 
 void CBotFortress::checkDependantEntities()
@@ -392,15 +393,8 @@ float CBotFortress::getHealFactor(edict_t *pPlayer)
 		return 0.0f;
 
 	// Ignore AFK players at spawn so medics don't stand around healing idle players
-	{
-		const CBotCmd &cmd = p->GetLastUserCommand();
-		if ((cmd.buttons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT | IN_ATTACK)) == 0)
-		{
-			CClient *pClient = CClients::get(pPlayer);
-			if (pClient && pClient->getSpeed() < 5.0f && distanceFrom(pPlayer) > 128.0f)
-				return 0.0f;
-		}
-	}
+	if (isPlayerAFK(pPlayer))
+		return 0.0f;
 
 	if (CClassInterface::getTF2NumHealers(pPlayer) > 1)
 		return 0.0f;
@@ -2737,6 +2731,47 @@ bool CBotTF2::tryExtinguishTeammates()
 	return false;
 }
 
+bool CBotFortress::isPlayerAFK(edict_t *pPlayer)
+{
+	if (!pPlayer || !CBotGlobals::entityIsValid(pPlayer))
+		return false;
+
+	IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pPlayer);
+	if (!pInfo)
+		return false;
+
+	const CBotCmd &cmd = pInfo->GetLastUserCommand();
+	bool bActive = (cmd.buttons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT | IN_ATTACK)) != 0;
+
+	if (!bActive)
+	{
+		Vector vVel;
+		CClassInterface::getVelocity(pPlayer, &vVel);
+		if (vVel.Length() > 10.0f)
+			bActive = true;
+	}
+
+	// Also check if bot — bots that are thinking are not AFK
+	if (!bActive)
+	{
+		CBot *pOtherBot = CBots::getBotPointer(pPlayer);
+		if (pOtherBot && pOtherBot->hasEnemy())
+			bActive = true;
+	}
+
+	int idx = ENTINDEX(pPlayer);
+	if (bActive)
+	{
+		m_fPlayerIdleSince[idx] = 0.0f;
+		return false;
+	}
+
+	if (m_fPlayerIdleSince[idx] == 0.0f)
+		m_fPlayerIdleSince[idx] = engine->Time();
+
+	return (engine->Time() - m_fPlayerIdleSince[idx]) > 10.0f;
+}
+
 void CBotFortress::chooseClass()
 {
 	const int _forcedClass = rcbot_force_class.GetInt();
@@ -3117,18 +3152,8 @@ void CBotTF2::modThink()
 			if (CClassInterface::getTF2Class(pT) != TF_CLASS_MEDIC) continue;
 
 			// Skip AFK medics
-			IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pT);
-			if (pInfo)
-			{
-				const CBotCmd &cmd = pInfo->GetLastUserCommand();
-				if ((cmd.buttons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT | IN_ATTACK)) == 0)
-				{
-					Vector vVel;
-					CClassInterface::getVelocity(pT, &vVel);
-					if (vVel.Length() < 5.0f)
-						continue;
-				}
-			}
+			if (isPlayerAFK(pT))
+				continue;
 
 			float fDist = distanceFrom(pT);
 			if (fDist < fBestMedicDist && FVisible(pT))

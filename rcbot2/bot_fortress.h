@@ -870,6 +870,9 @@ class CBotFortress : public CBot
 	MyEHandle m_NearestEnemyGrenade;
 
 	float m_fLastSentryEnemyTime;
+	float m_fPlayerIdleSince[MAX_PLAYERS + 1];
+
+	bool isPlayerAFK(edict_t *pPlayer);
 	// bool m_bWantToZoom;
 };
 //
@@ -1221,6 +1224,7 @@ class CBotTF2 : public CBotFortress
 	float m_fDegreaserSwapBack;
 	float m_fExtinguishTime;
 	float m_fBaitCallTime;
+
 
 	int m_iDesiredResistType;
 
