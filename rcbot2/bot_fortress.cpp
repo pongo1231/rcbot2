@@ -4986,7 +4986,7 @@ bool CBotTF2::healPlayer()
 			m_vMedicPosition = vOrigin;
 	}
 
-	if (distanceFrom(m_vMedicPosition) < 40)
+	if (distanceFrom(m_vMedicPosition) < 160)
 		stopMoving();
 	else
 		setMoveTo(m_vMedicPosition);
