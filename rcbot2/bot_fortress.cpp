@@ -3098,9 +3098,12 @@ void CBotTF2::modThink()
 	if (hasFlag())
 		removeCondition(CONDITION_COVERT);
 
-	// Actively seek out medics when needing health
+	// Actively seek out medics when needing health — but only if no health
+	// pack, dispenser, or resupply is nearby (don't bother the medic unnecessarily)
 	if (bNeedHealth && !m_bIsBeingHealed && m_iClass != TF_CLASS_MEDIC
-	    && (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY) || !wantToShoot()))
+	    && (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY) || !wantToShoot())
+	    && (!m_pHealthkit || distanceFrom(m_pHealthkit) > 512.0f)
+	    && (!m_pNearestDisp || distanceFrom(m_pNearestDisp) > 512.0f))
 	{
 		edict_t *pBestMedic  = nullptr;
 		float fBestMedicDist = 2048.0f;

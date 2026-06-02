@@ -190,7 +190,10 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 	else
 	{
 		if (CTeamFortress2Mod::TF2_IsPlayerCloaked(pBot->getEdict()))
+		{
+			tf2Bot->resetCloakTime();
 			tf2Bot->spyUnCloak();
+		}
 		else if (randomInt(0, 1))
 		{
 			pBot->tapButton(IN_ATTACK);
