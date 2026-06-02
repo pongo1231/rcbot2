@@ -6023,6 +6023,11 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 				    && CClassInterface::getTF2Class(pOther) == TF_CLASS_MEDIC
 				    && CBotGlobals::entityIsAlive(pOther))
 				{
+					// Skip medics already busy with a heal target
+					CBot *pOtherBot = CBots::getBotPointer(pOther);
+					if (pOtherBot && ((CBotTF2 *)pOtherBot)->getHealingEntity())
+						continue;
+
 					if ((CBotGlobals::entityOrigin(pOther) - CBotGlobals::entityOrigin(pReviveMarker)).Length()
 					    < fMyDist)
 					{
