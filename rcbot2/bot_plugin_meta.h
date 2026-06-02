@@ -125,6 +125,7 @@ class RCBotPluginMeta : public ISmmPlugin, public IMetamodListener
 	// Bot Quota
 	float m_fBotQuotaTimer;
 	int m_iTargetBots[MAX_PLAYERS];
+	int m_iConnectingPlayers;
 
 	void BotQuotaCheck(void);
 };

@@ -132,7 +132,7 @@ ConVar
                                    "Distance for payload bomb to be greater than at cap before defend team retreats");
 ConVar rcbot_spy_runaway_health("rcbot_spy_runaway_health", "70", 0, "health which spies run away after attacking");
 ConVar rcbot_supermode("rcbot_supermode", "0", 0, "If 1 will make every bot skill and reaction much higher");
-ConVar rcbot_addbottime("rcbot_addbottime", "3", 0, "The time in seconds for bots to be added after another");
+ConVar rcbot_addbottime("rcbot_addbottime", "0", 0, "The time in seconds for bots to be added after another");
 ConVar rcbot_gamerules_offset("rcbot_gamerules_offset", "5", 0, "offset for gamerules object");
 ConVar rcbot_bot_quota_interval("rcbot_bot_quota_interval", "10", 0,
                                 "Interval between bot quota checks, 0 or lower to disable");

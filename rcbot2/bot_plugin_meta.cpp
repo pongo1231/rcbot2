@@ -745,17 +745,27 @@ void RCBotPluginMeta::Hook_ClientCommand(edict_t *pEntity)
 }
 
 bool RCBotPluginMeta::Hook_ClientConnect(edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject,
-                                         int maxrejectlen)
+                                          int maxrejectlen)
 {
 	META_LOG(g_PLAPI, "Hook_ClientConnect(%d, \"%s\", \"%s\")", IndexOfEdict(pEntity), pszName, pszAddress);
 
 	CClients::init(pEntity);
+
+	m_iConnectingPlayers++;
+
+	// Immediately re-evaluate bot quota when a player connects
+	if (rcbot_bot_quota_interval.GetInt() > 0)
+		BotQuotaCheck();
 
 	return true;
 }
 
 void RCBotPluginMeta::Hook_ClientPutInServer(edict_t *pEntity, char const *playername)
 {
+	IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pEntity);
+	if (m_iConnectingPlayers > 0 && pInfo && !pInfo->IsFakeClient())
+		m_iConnectingPlayers--;
+
 	CBaseEntity *pEnt = servergameents->EdictToBaseEntity(pEntity);
 	bool is_Rcbot     = false;
 
@@ -787,6 +797,12 @@ void RCBotPluginMeta::Hook_ClientPutInServer(edict_t *pEntity, char const *playe
 
 void RCBotPluginMeta::Hook_ClientDisconnect(edict_t *pEntity)
 {
+	IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pEntity);
+	// If player info is unavailable, assume human (bots are own managed);
+	// Only decrement connecting counter for non-bot players
+	if (m_iConnectingPlayers > 0 && (!pInfo || !pInfo->IsFakeClient()))
+		m_iConnectingPlayers--;
+
 	CBaseEntity *pEnt = servergameents->EdictToBaseEntity(pEntity);
 
 #ifdef OVERRIDE_RUNCMD
@@ -795,6 +811,10 @@ void RCBotPluginMeta::Hook_ClientDisconnect(edict_t *pEntity)
 #endif
 
 	CClients::clientDisconnected(pEntity);
+
+	// Immediately re-evaluate bot quota when a player disconnects
+	if (rcbot_bot_quota_interval.GetInt() > 0)
+		BotQuotaCheck();
 
 	META_LOG(g_PLAPI, "Hook_ClientDisconnect(%d)", IndexOfEdict(pEntity));
 }
@@ -859,28 +879,22 @@ void RCBotPluginMeta::BotQuotaCheck()
 		int bot_count    = 0;
 		int human_count  = 0;
 
-		// Count Players
-		for (int i = 0; i < MAX_PLAYERS; ++i)
+		// Count bots and humans directly from connected entities
+		for (int i = 1; i <= gpGlobals->maxClients; i++)
 		{
-			CClient *client = CClients::get(i);
-			CBot *bot       = CBots::get(i);
+			edict_t *pEdict = INDEXENT(i);
+			if (!pEdict || pEdict->IsFree()) continue;
+			if (!CBotGlobals::entityIsValid(pEdict)) continue;
 
-			if (bot != nullptr && bot->getEdict() != nullptr && bot->inUse())
-			{
-				IPlayerInfo *p = playerinfomanager->GetPlayerInfo(bot->getEdict());
+			IPlayerInfo *p = playerinfomanager->GetPlayerInfo(pEdict);
+			if (!p || !p->IsConnected() || p->IsHLTV()) continue;
 
-				if (p->IsConnected() && p->IsFakeClient() && !p->IsHLTV())
-					bot_count++;
-			}
-
-			if (client != nullptr && client->getPlayer() != nullptr && client->isUsed())
-			{
-				IPlayerInfo *p = playerinfomanager->GetPlayerInfo(client->getPlayer());
-
-				if (p->IsConnected() && !p->IsFakeClient() && !p->IsHLTV())
-					human_count++;
-			}
+			if (p->IsFakeClient())
+				bot_count++;
+			else
+				human_count++;
 		}
+		human_count += m_iConnectingPlayers;
 
 		if (human_count >= MAX_PLAYERS)
 			human_count = 0;
@@ -899,10 +913,7 @@ void RCBotPluginMeta::BotQuotaCheck()
 			int bot_diff = bot_target - bot_count;
 
 			for (int i = 0; i < bot_diff; ++i)
-			{
 				CBots::createBot("", "", "");
-				break; // Bug-Fix, only add one bot at a time
-			}
 
 			notify = true;
 		}
