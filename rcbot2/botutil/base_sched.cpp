@@ -100,7 +100,7 @@ void CBotSchedule::execute(CBot *pBot)
 	}
 
 	// why would task ever be null??
-	pTask = m_Tasks.front();
+	pTask = m_Tasks.front().get();
 
 	if (pTask == nullptr)
 	{
@@ -145,14 +145,12 @@ void CBotSchedule::addTask(CBotTask *pTask)
 	// initialize
 	pTask->init();
 	// add
-	m_Tasks.push_back(pTask);
+	m_Tasks.emplace_back(pTask);
 }
 
 void CBotSchedule::removeTop()
 {
-	CBotTask *pTask = m_Tasks.front();
 	m_Tasks.pop_front();
-	delete pTask;
 }
 
 const char *CBotSchedule::getIDString()

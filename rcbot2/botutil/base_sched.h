@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "bot.h"
 #include "botutil/base_task.h"
 
@@ -56,6 +58,7 @@ typedef enum
 	SCHED_RETURN_TO_INTEL,
 	SCHED_INVESTIGATE_HIDE,
 	SCHED_TAUNT,
+	SCHED_MVM_COLLECT_CASH,
 	SCHED_MAX
 	// SCHED_HIDE_FROM_ENEMY
 } eBotSchedule;
@@ -71,6 +74,10 @@ class CBotSchedule
 	}
 
 	CBotSchedule();
+	~CBotSchedule()
+	{
+		freeMemory();
+	}
 
 	void _init();
 	virtual void init()
@@ -86,7 +93,7 @@ class CBotSchedule
 
 	CBotTask *currentTask()
 	{
-		return m_Tasks.empty() ? nullptr : m_Tasks.front();
+		return m_Tasks.empty() ? nullptr : m_Tasks.front().get();
 	}
 
 	bool hasFailed()
@@ -101,8 +108,6 @@ class CBotSchedule
 
 	void freeMemory()
 	{
-		for (CBotTask *task : m_Tasks)
-			delete task;
 		m_Tasks.clear();
 	}
 
@@ -170,7 +175,7 @@ class CBotSchedule
 	}
 
   private:
-	std::deque<CBotTask *> m_Tasks;
+	std::deque<std::unique_ptr<CBotTask> > m_Tasks;
 	bool m_bFailed;
 	eBotSchedule m_iSchedId;
 
@@ -188,7 +193,7 @@ class CBotSchedules
   public:
 	bool hasSchedule(eBotSchedule iSchedule)
 	{
-		for (CBotSchedule *sched : m_Schedules)
+		for (auto &sched : m_Schedules)
 			if (sched->isID(iSchedule))
 				return true;
 		return false;
@@ -201,7 +206,6 @@ class CBotSchedules
 		return m_Schedules.front()->isID(iSchedule);
 	}
 
-	// remove the first schedule in the queue matching this schedule identifier
 	void removeSchedule(eBotSchedule iSchedule)
 	{
 		for (auto it = m_Schedules.begin(); it != m_Schedules.end();)
@@ -223,7 +227,7 @@ class CBotSchedules
 		if (isEmpty())
 			return;
 
-		CBotSchedule *pSched = m_Schedules.front();
+		CBotSchedule *pSched = m_Schedules.front().get();
 		pSched->execute(pBot);
 
 		if (pSched->isComplete() || pSched->hasFailed())
@@ -232,34 +236,24 @@ class CBotSchedules
 
 	void removeTop()
 	{
-		CBotSchedule *pSched = m_Schedules.front();
 		m_Schedules.pop_front();
-
-		// TODO: eradicate freeMemory from the codebase
-		pSched->freeMemory();
-
-		delete pSched;
 	}
 
 	void freeMemory()
 	{
-		for (CBotSchedule *sched : m_Schedules)
-			delete sched;
 		m_Schedules.clear();
 	}
 
 	void add(CBotSchedule *pSchedule)
 	{
-		// initialize
 		pSchedule->init();
-		// add
-		m_Schedules.push_back(pSchedule);
+		m_Schedules.emplace_back(pSchedule);
 	}
 
 	void addFront(CBotSchedule *pSchedule)
 	{
 		pSchedule->init();
-		m_Schedules.push_front(pSchedule);
+		m_Schedules.emplace_front(pSchedule);
 	}
 
 	inline bool isEmpty()
@@ -270,12 +264,7 @@ class CBotSchedules
 	CBotTask *getCurrentTask()
 	{
 		if (!m_Schedules.empty())
-		{
-			CBotSchedule *sched = m_Schedules.front();
-
-			if (sched != nullptr)
-				return sched->currentTask();
-		}
+			return m_Schedules.front()->currentTask();
 
 		return nullptr;
 	}
@@ -285,9 +274,9 @@ class CBotSchedules
 		if (isEmpty())
 			return nullptr;
 
-		return m_Schedules.front();
+		return m_Schedules.front().get();
 	}
 
   private:
-	std::deque<CBotSchedule *> m_Schedules;
+	std::deque<std::unique_ptr<CBotSchedule> > m_Schedules;
 };
