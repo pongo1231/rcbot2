@@ -877,6 +877,54 @@ class CBotFortress : public CBot
 //
 //
 
+#define MOVEMENT_HISTORY_MAX 96
+
+struct EnemyMoveHistory
+{
+	int iEntIndex;
+	int iCount;
+	float fLastSample;
+	Vector vSamples[MOVEMENT_HISTORY_MAX];
+	Vector vVelSamples[MOVEMENT_HISTORY_MAX];
+	float fTimes[MOVEMENT_HISTORY_MAX];
+	Vector vLastDir2D;
+	float fLastDirChange;
+	int iDirChanges;
+	int iHits;
+	int iMisses;
+	bool bActive;
+
+	// Overshoot/undershoot adjustment
+	float fOverShootAdj;       // 1.0 = perfect, <1 = overpredicted, >1 = underpredicted
+	float fAdjSmooth;          // smoothed adjustment
+	Vector vLastPred;          // last predicted offset
+	float fLastPredTime;       // when we predicted
+	float fLastPredDuration;   // how far ahead we predicted
+	int iAdjustCount;          // number of adjustments made
+
+	EnemyMoveHistory()
+	{
+		iEntIndex         = 0;
+		iCount            = 0;
+		fLastSample       = 0;
+		vLastDir2D        = Vector(0, 0, 0);
+		fLastDirChange    = 0;
+		iDirChanges       = 0;
+		iHits             = 0;
+		iMisses           = 0;
+		bActive           = false;
+		fOverShootAdj     = 1.0f;
+		fAdjSmooth        = 1.0f;
+		iAdjustCount      = 0;
+		fLastPredTime     = 0;
+		fLastPredDuration = 0;
+	}
+
+	void record(const Vector &vPos, const Vector &vVel, float fTime);
+	Vector predict(float fTime, float fConfidence) const;
+	void adjustFromError(const Vector &vPredOffset, float fPredDuration, float fTime);
+};
+
 class CBotTF2 : public CBotFortress
 {
   public:
@@ -1163,6 +1211,11 @@ class CBotTF2 : public CBotFortress
 	float m_fBonkStartTime;
 
 	int m_iDesiredResistType;
+
+	EnemyMoveHistory m_EnemyMovement[64];
+
+	void recordEnemyMovement(edict_t *pEnemy);
+	Vector predictEnemyOffset(edict_t *pEnemy, float fTime, float fConfidence);
 };
 
 class CBotFF : public CBotFortress

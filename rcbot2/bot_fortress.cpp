@@ -7305,6 +7305,259 @@ void CBotTF2::touchedWpt(CWaypoint *pWaypoint, int iNextWaypoint, int iPrevWaypo
 	}
 }
 
+void EnemyMoveHistory::record(const Vector &vPos, const Vector &vVel, float fTime)
+{
+	// Drop samples that are too close together (< 40ms)
+	if (iCount > 0 && fTime - fTimes[(iCount - 1) % MOVEMENT_HISTORY_MAX] < 0.04f)
+		return;
+
+	int i = iCount % MOVEMENT_HISTORY_MAX;
+	vSamples[i]   = vPos;
+	vVelSamples[i] = vVel;
+	fTimes[i]     = fTime;
+	fLastSample   = fTime;
+	iCount++;
+
+	// Detect direction changes (2D)
+	Vector vDir2D = vVel;
+	vDir2D.z      = 0;
+	float fLen     = vDir2D.Length();
+	if (fLen > 10.0f)
+	{
+		vDir2D = vDir2D / fLen;
+		if (vLastDir2D.Length() > 0.01f && vDir2D.Dot(vLastDir2D) < 0.3f)
+		{
+			float fInterval = fTime - fLastDirChange;
+			if (fLastDirChange > 0 && fInterval > 0.15f)
+			{
+				iDirChanges++;
+				float fAvg = (iDirChanges <= 1) ? fInterval
+				            : (fLastDirChange > 0 ? (fInterval + fLastDirChange) * 0.5f : fInterval);
+				fLastDirChange = fTime; // track last change for next interval calc
+				(void)fAvg; // stored implicitly via sampling
+			}
+			else if (fLastDirChange == 0)
+				fLastDirChange = fTime;
+		}
+		vLastDir2D = vDir2D;
+	}
+
+	// Prune old entries (> 6 seconds)
+	int iPrune = 0;
+	while (iPrune < iCount && fTime - fTimes[iPrune % MOVEMENT_HISTORY_MAX] > 6.0f)
+		iPrune++;
+	if (iPrune > 0 && iPrune < iCount)
+	{
+		// Shift remaining entries to front (approximate: just adjust count)
+		int iKeep = iCount - iPrune;
+		for (int j = 0; j < iKeep; j++)
+		{
+			int iSrc = (iPrune + j) % MOVEMENT_HISTORY_MAX;
+			vSamples[j] = vSamples[iSrc];
+			vVelSamples[j] = vVelSamples[iSrc];
+			fTimes[j] = fTimes[iSrc];
+		}
+		iCount = iKeep;
+		iDirChanges = 0;
+		vLastDir2D = Vector(0,0,0);
+		fLastDirChange = 0;
+		// Recompute direction changes
+		for (int j = 1; j < iCount; j++)
+		{
+			Vector vD = vVelSamples[j];
+			vD.z = 0;
+			float l = vD.Length();
+			if (l > 10.0f)
+			{
+				vD = vD / l;
+				Vector vPrev = vVelSamples[j-1];
+				vPrev.z = 0;
+				float lp = vPrev.Length();
+				if (lp > 10.0f)
+				{
+					vPrev = vPrev / lp;
+					if (vD.Dot(vPrev) < 0.3f)
+					{
+						iDirChanges++;
+						fLastDirChange = fTimes[j];
+					}
+				}
+			}
+		}
+		if (iCount > 0)
+			vLastDir2D = vVelSamples[iCount-1];
+		vLastDir2D.z = 0;
+		float fl = vLastDir2D.Length();
+		if (fl > 10.0f)
+			vLastDir2D = vLastDir2D / fl;
+	}
+
+	// Cap at MOVEMENT_HISTORY_MAX
+	if (iCount > MOVEMENT_HISTORY_MAX)
+		iCount = MOVEMENT_HISTORY_MAX;
+}
+
+Vector EnemyMoveHistory::predict(float fTime, float fConfidence) const
+{
+	if (iCount < 2)
+		return Vector(0, 0, 0);
+
+	int iLast       = (iCount - 1) % MOVEMENT_HISTORY_MAX;
+	Vector vCurrVel  = vVelSamples[iLast];
+	float fSpeed     = vCurrVel.Length2D();
+
+	if (fSpeed < 5.0f)
+		return Vector(0, 0, 0);
+
+	// Check for zigzag pattern: direction changes every 0.2-0.9s
+	float fLastChange = fLastDirChange;
+	float fTimeSinceChange = (fLastSample > 0 && fLastChange > 0) ? (fLastSample - fLastChange) : 0.0f;
+
+	bool bZigZag = false;
+	float fSwitchTime = 0.5f; // default half second pattern
+
+	if (iDirChanges >= 2)
+	{
+		float fInterval = (iCount > 1) ? (fTimes[iLast] - fTimes[0]) / (float)iCount : 0.05f;
+		fSwitchTime = fInterval * 4.0f; // estimate switch interval
+		if (fSwitchTime > 0.2f && fSwitchTime < 1.2f)
+			bZigZag = true;
+	}
+
+	if (bZigZag && fTimeSinceChange > 0)
+	{
+		float fTimeToSwitch = fSwitchTime - fTimeSinceChange;
+		if (fTimeToSwitch > 0 && fTimeToSwitch < fTime)
+		{
+			// Will switch direction during prediction window
+			Vector vDir2D = vCurrVel;
+			vDir2D.z = 0;
+			float fLen = vDir2D.Length();
+			if (fLen > 0.1f)
+				vDir2D = vDir2D / fLen;
+			Vector vNewDir = vDir2D * -1.0f;
+			Vector vPred = (vDir2D * fSpeed * fTimeToSwitch) + (vNewDir * fSpeed * (fTime - fTimeToSwitch));
+			return vPred * fConfidence;
+		}
+	}
+
+	// Adjust for confidence (hit/miss ratio)
+	float fAdj = fConfidence;
+	if (iHits + iMisses > 5)
+	{
+		float fRatio = (float)iHits / (float)(iHits + iMisses);
+		if (fRatio < 0.3f)
+			fAdj *= 0.5f + fRatio; // aim less aggressively if missing
+		else
+			fAdj *= 1.0f + (fRatio - 0.5f); // lead more if hitting
+	}
+
+	return vCurrVel * fTime * fAdj * fAdjSmooth;
+}
+
+void EnemyMoveHistory::adjustFromError(const Vector &vPredOffset, float fPredDuration, float fTime)
+{
+	// Compare predicted position with where the enemy actually is now
+	// to determine if we overpredicted or underpredicted
+	if (iCount < 2 || fPredDuration < 0.02f)
+		return;
+
+	int iLast   = (iCount - 1) % MOVEMENT_HISTORY_MAX;
+	Vector vActualVel = vVelSamples[iLast];
+	Vector vCurrPos   = vSamples[iLast];
+
+	// Where did we predict they'd be?
+	// predictedOffset = velocity * duration * adjustment
+	// actual displacement = currentPos - position at prediction time
+	float fActualDist = vActualVel.Length2D() * fPredDuration;
+	float fPredDist   = vPredOffset.Length2D();
+
+	if (fActualDist < 1.0f || fPredDist < 1.0f)
+		return;
+
+	// If predicted distance > actual distance: we overpredicted (adjust < 1.0)
+	// If predicted distance < actual distance: we underpredicted (adjust > 1.0)
+	float fErrorRatio = fActualDist / fPredDist;
+	if (fErrorRatio < 0.1f) fErrorRatio = 0.1f;
+	if (fErrorRatio > 3.0f) fErrorRatio = 3.0f;
+
+	// Exponential smoothing: blend new observation with existing adjustment
+	float fAlpha   = 0.15f;
+	fAdjSmooth     = fAdjSmooth * (1.0f - fAlpha) + fErrorRatio * fAlpha;
+	iAdjustCount++;
+
+	// Clamp adjustment to reasonable range
+	if (fAdjSmooth < 0.3f) fAdjSmooth = 0.3f;
+	if (fAdjSmooth > 2.5f) fAdjSmooth = 2.5f;
+
+	// Store for next comparison
+	iMisses++;
+}
+
+void CBotTF2::recordEnemyMovement(edict_t *pEnemy)
+{
+	if (!pEnemy || !CBotGlobals::entityIsValid(pEnemy))
+		return;
+
+	int i = ENTINDEX(pEnemy) - 1;
+	if (i < 0 || i >= 64)
+		return;
+
+	EnemyMoveHistory *hist = &m_EnemyMovement[i];
+	if (!hist->bActive)
+	{
+		// Initialize
+		*hist = EnemyMoveHistory();
+		hist->iEntIndex = i + 1;
+		hist->bActive   = true;
+	}
+
+	Vector vPos = CBotGlobals::entityOrigin(pEnemy);
+	Vector vVel;
+	if (!CClassInterface::getVelocity(pEnemy, &vVel))
+	{
+		CClient *pClient = CClients::get(pEnemy);
+		if (pClient)
+			vVel = pClient->getVelocity();
+		else
+			vVel = Vector(0, 0, 0);
+	}
+
+	hist->record(vPos, vVel, engine->Time());
+}
+
+Vector CBotTF2::predictEnemyOffset(edict_t *pEnemy, float fTime, float fConfidence)
+{
+	if (!pEnemy)
+		return Vector(0, 0, 0);
+
+	int i = ENTINDEX(pEnemy) - 1;
+	if (i < 0 || i >= 64)
+		return Vector(0, 0, 0);
+
+	EnemyMoveHistory *hist = &m_EnemyMovement[i];
+	if (!hist->bActive || hist->iEntIndex != ENTINDEX(pEnemy))
+		return Vector(0, 0, 0);
+
+	// Check if we have a previous prediction to compare against
+	float fNow = engine->Time();
+	if (hist->fLastPredTime > 0 && hist->fLastPredDuration > 0.02f)
+	{
+		float fElapsed = fNow - hist->fLastPredTime;
+		if (fElapsed > 0 && fElapsed < 3.0f)
+			hist->adjustFromError(hist->vLastPred, hist->fLastPredDuration, fNow);
+	}
+
+	Vector vPred = hist->predict(fTime, fConfidence);
+
+	// Store this prediction for error comparison next time
+	hist->vLastPred         = vPred;
+	hist->fLastPredTime     = fNow;
+	hist->fLastPredDuration = fTime;
+
+	return vPred;
+}
+
 void CBotTF2::modAim(edict_t *pEntity, Vector &v_origin, Vector *v_desired_offset, Vector &v_size, float fDist,
                      float fDist2D)
 {
@@ -7401,19 +7654,25 @@ void CBotTF2::modAim(edict_t *pEntity, Vector &v_origin, Vector *v_desired_offse
 				else
 					fTime = fDist / fProjectileSpeed;
 
-				// if (rcbot_supermode.GetBool())
-				*v_desired_offset = *v_desired_offset + ((vVelocity * fTime));
-				/*else
-				 *v_desired_offset = *v_desired_offset + ((vVelocity * fTime) * m_pProfile->m_fAimSkill);*/
+				// Record enemy movement for statistical prediction
+				recordEnemyMovement(pEntity);
+
+				// Statistical prediction: analyze movement patterns instead of naive velocity projection
+				Vector vStatPred = predictEnemyOffset(pEntity, fTime, m_pProfile->m_fAimSkill);
+				if (vStatPred.Length2D() > 0.1f)
+					*v_desired_offset = *v_desired_offset + vStatPred;
+				else
+					*v_desired_offset = *v_desired_offset + ((vVelocity * fTime));
 
 				// Don't overpredict into a wall if the target will be stopped by it
-				Vector vPredPos = v_origin + (vVelocity * fTime);
+				Vector vPredPos = v_origin + (vStatPred.Length2D() > 0.1f ? vStatPred : (vVelocity * fTime));
 				CTraceFilterWorldAndPropsOnly filter;
 				CBotGlobals::traceLine(v_origin, vPredPos, MASK_SOLID_BRUSHONLY, &filter);
 				if (CBotGlobals::getTraceResult()->fraction < 1.0f)
 				{
-					Vector vHit = CBotGlobals::getTraceResult()->endpos;
-					*v_desired_offset = *v_desired_offset - (vVelocity * fTime) + (vHit - v_origin);
+					Vector vHit  = CBotGlobals::getTraceResult()->endpos;
+					Vector vUsed = (vStatPred.Length2D() > 0.1f) ? vStatPred : (vVelocity * fTime);
+					*v_desired_offset = *v_desired_offset - vUsed + (vHit - v_origin);
 				}
 
 				if ((sv_gravity.IsValid()) && bIsGrenade)
@@ -8258,6 +8517,11 @@ void CBotTF2::roundReset(bool bFullReset)
 	m_pFlag                    = nullptr;
 	m_pPrevSpy                 = nullptr;
 	m_KnownSentries.clear();
+
+	// Clear movement prediction history
+	for (int i = 0; i < 64; i++)
+		m_EnemyMovement[i] = EnemyMoveHistory();
+
 	m_iSentryKills             = 0;
 	m_fSentryPlaceTime         = 0.0;
 	m_fDispenserPlaceTime      = 0.0f;
