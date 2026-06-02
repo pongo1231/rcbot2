@@ -1183,6 +1183,9 @@ class CBotTF2 : public CBotFortress
 	float m_prevSentryHealth;
 	float m_prevDispHealth;
 	float m_prevTeleExtHealth;
+	float m_prevSentryShells;
+	float m_prevSentryRockets;
+	float m_fThanksTime;
 	float m_prevTeleEntHealth;
 
 	float m_fDispenserHealAmount;

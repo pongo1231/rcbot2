@@ -3214,6 +3214,46 @@ void CBotTF2::modThink()
 				}
 			}
 		}
+
+		// Thank nearby engineers who are helping with our buildings
+		if (m_fThanksTime < engine->Time())
+		{
+			auto thankHelper = [&](edict_t *pBuilding, float &fPrevHp, float fHp, float &fPrevShells,
+			                       float fShells, float &fPrevRockets, float fRockets) {
+				bool bImproved = (fHp > fPrevHp || fShells > fPrevShells || fRockets > fPrevRockets);
+				if (bImproved)
+				{
+					for (int i = 1; i <= gpGlobals->maxClients; i++)
+					{
+						edict_t *pT = INDEXENT(i);
+						if (!pT || pT == m_pEdict) continue;
+						if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+						if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+						if (CClassInterface::getTF2Class(pT) != TF_CLASS_ENGINEER) continue;
+						if (distanceFrom(pT) < 256.0f && isVisible(pT))
+						{
+							setLookAt(CBotGlobals::entityOrigin(pT));
+							m_fLookSetTime = engine->Time() + 1.0f;
+							addVoiceCommand(TF_VC_THANKS);
+							m_fThanksTime = engine->Time() + randomFloat(20.0f, 40.0f);
+							break;
+						}
+					}
+				}
+				fPrevHp      = fHp;
+				fPrevShells  = fShells;
+				fPrevRockets = fRockets;
+			};
+
+			if (m_pSentryGun.get())
+			{
+				edict_t *pS = m_pSentryGun.get();
+				thankHelper(pS, m_prevSentryHealth, CClassInterface::getSentryHealth(pS),
+				            m_prevSentryShells, (float)CClassInterface::getTF2SentryShells(pS),
+				            m_prevSentryRockets, (float)CClassInterface::getTF2SentryRockets(pS));
+			}
+		}
+
 		break;
 	case TF_CLASS_SPY:
 		if (!hasFlag())
@@ -9342,6 +9382,9 @@ CBotTF2::CBotTF2()
 	m_prevDispHealth           = 0;
 	m_prevTeleExtHealth        = 0;
 	m_prevTeleEntHealth        = 0;
+	m_prevSentryShells         = 0;
+	m_prevSentryRockets        = 0;
+	m_fThanksTime              = 0;
 
 	m_iSentryArea              = 0;
 	m_iDispenserArea           = 0;
