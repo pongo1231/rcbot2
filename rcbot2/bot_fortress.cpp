@@ -4455,6 +4455,21 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	wantToShoot(CTeamFortress2Mod::hasRoundStarted());
 	wantToListen(CTeamFortress2Mod::hasRoundStarted());
 
+	// Refill ammo before setup ends if we used any during messing around
+	if (!CTeamFortress2Mod::hasRoundStarted() && m_iClass != TF_CLASS_MEDIC)
+	{
+		float fRemaining = CTeamFortress2Mod::getRoundTime() - engine->Time();
+		if (fRemaining > 0.1f && fRemaining < 5.0f)
+		{
+			CBotWeapon *pPrimary = m_pWeapons->getPrimaryWeapon();
+			if (pPrimary && pPrimary->hasWeapon() && pPrimary->outOfAmmo(this)
+			    && !m_pSchedules->hasSchedule(SCHED_MESSAROUND))
+			{
+				updateCondition(CONDITION_NEED_AMMO);
+			}
+		}
+	}
+
 	if (!hasSomeConditions(CONDITION_CHANGED) && !m_pSchedules->isEmpty())
 		return;
 
@@ -5388,15 +5403,29 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	//{
 	if (bot_messaround.GetBool())
 	{
-		float fMessUtil = fGetFlagUtility + 0.2f;
+		float fMessUtil = 0.98f;
 
+		// Medics: only mess around once fully ubered
+		bool bMedicOk = true;
 		if (getClass() == TF_CLASS_MEDIC)
-			fMessUtil -= randomFloat(0.0f, 0.3f);
+		{
+			edict_t *pMg = CTeamFortress2Mod::getMediGun(m_pEdict);
+			bMedicOk    = (pMg && CClassInterface::getUberChargeLevel(pMg) > 99);
+			fMessUtil   = 0.95f;
+		}
+
+		// Mess around during setup or whenever bots can't shoot (setup phase, round end, etc.)
+		bool bInSetup = !CTeamFortress2Mod::hasRoundStarted() || !wantToShoot();
+
+		// In the last 8 seconds of setup, only ~70% of bots keep messing around.
+		// The remaining ~30% head toward the gate so they're ready when the round starts.
+		float fRemaining = CTeamFortress2Mod::getRoundTime() - engine->Time();
+		if (fRemaining > 0.1f && fRemaining < 8.0f && randomFloat(0.0f, 1.0f) > 0.7f)
+			bInSetup = false;
 
 		ADD_UTILITY(BOT_UTIL_MESSAROUND,
-		            (getHealthPercent() > 0.75f)
-		                && ((iTeam == TF2_TEAM_BLUE) || (!CTeamFortress2Mod::isAttackDefendMap()))
-		                && !CTeamFortress2Mod::hasRoundStarted(),
+		            bMedicOk && bInSetup
+		                && ((iTeam == TF2_TEAM_BLUE) || (!CTeamFortress2Mod::isAttackDefendMap())),
 		            fMessUtil);
 	}
 	//}
@@ -6976,32 +7005,43 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		int i = 0;
 		edict_t *pEdict;
 		edict_t *pNearby   = nullptr;
-		float fMaxDistance = 500;
+		edict_t *pFallback = nullptr;
+		float fMaxDistance = 800;
+		float fFallbackDist = 800;
 		float fDistance;
 
 		for (i = 1; i <= CBotGlobals::maxClients(); i++)
 		{
 			pEdict = INDEXENT(i);
 
+			if (pEdict == m_pEdict)
+				continue;
+
 			if (CBotGlobals::entityIsValid(pEdict))
 			{
 				if (CClassInterface::getTeam(pEdict) == getTeam())
 				{
-					if ((fDistance = distanceFrom(pEdict)) < fMaxDistance)
+					fDistance = distanceFrom(pEdict);
+
+					if (isVisible(pEdict) && fDistance < fMaxDistance)
 					{
-						if (isVisible(pEdict))
+						if (!pNearby || randomInt(0, 1))
 						{
-							// add a little bit of randomness
-							if (!pNearby || randomInt(0, 1))
-							{
-								pNearby      = pEdict;
-								fMaxDistance = fDistance;
-							}
+							pNearby      = pEdict;
+							fMaxDistance = fDistance;
 						}
+					}
+					else if (fDistance < fFallbackDist)
+					{
+						pFallback     = pEdict;
+						fFallbackDist = fDistance;
 					}
 				}
 			}
 		}
+
+		if (!pNearby)
+			pNearby = pFallback;
 
 		if (pNearby)
 		{
@@ -7850,7 +7890,9 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 
 		// Demoman: use sticky launcher as combat weapon when grenade launcher is dry
 		// Only outside melee range and inside grenade launcher range
-		if (m_iClass == TF_CLASS_DEMOMAN)
+		// Skip if already handled by the tank section above
+		if (m_iClass == TF_CLASS_DEMOMAN
+		    && !(CTeamFortress2Mod::isMapType(TF_MAP_MVM) && CTeamFortress2Mod::isTankBoss(pEnemy)))
 		{
 			CBotWeapon *pGrenadeLauncher = m_pWeapons->getWeapon(
 			    CWeapons::getWeapon(TF2_WEAPON_GRENADELAUNCHER));

@@ -16,7 +16,11 @@ class CMessAround : public CBotTask
 
   private:
 	float m_fTime;
+	float m_fSubTime;
 	MyEHandle m_pFriendly;
 	int m_iMaxVoiceCmd;
-	int m_iType; // 0 = attack friendly , 1 = taunt, 2 = random voice command
+	int m_iType;
+	int m_iVoiceCmd;
+	int m_iSubState;
+	bool m_bTagIsRunner;
 };

@@ -86,7 +86,7 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 		// Init evade timer on first entry
 		if (m_fEvadeTime == 0.0f)
-			m_fEvadeTime = engine->Time() + randomFloat(1.0f, 2.0f);
+			m_fEvadeTime = engine->Time() + randomFloat(0.2f, 0.5f);
 
 		// Complete after evade period -- let utility evaluation pick next action
 		if (m_fEvadeTime < engine->Time())

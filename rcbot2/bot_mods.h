@@ -896,6 +896,11 @@ class CTeamFortress2Mod : public CBotMod
 
 	static bool hasRoundStarted();
 
+	static float getRoundTime()
+	{
+		return m_fRoundTime;
+	}
+
 	static int getHighestScore();
 
 	static edict_t *nearestDispenser(Vector vOrigin, int team);
