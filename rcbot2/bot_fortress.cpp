@@ -269,7 +269,6 @@ CBotFortress::CBotFortress()
 	m_fLastCalledMedicTime    = 0.0f;
 	m_bIsBeingHealed          = false;
 	m_bCanBeUbered            = false;
-	memset(m_fPlayerIdleSince, 0, sizeof(m_fPlayerIdleSince));
 }
 
 void CBotFortress::checkDependantEntities()
@@ -544,9 +543,11 @@ bool CBotFortress::setVisible(edict_t *pEntity, bool bVisible)
 								{
 									if (fFactor > m_fHealFactor)
 									{
-										m_pHeal       = pEntity;
+								m_pHeal       = pEntity;
+								notePlayerEngaged(pEntity);
 										m_fHealFactor = fFactor;
 										updateCondition(CONDITION_SEE_HEAL);
+										notePlayerEngaged(pEntity);
 									}
 								}
 								else
@@ -565,6 +566,7 @@ bool CBotFortress::setVisible(edict_t *pEntity, bool bVisible)
 								m_fHealFactor = fFactor;
 								m_pHeal       = pEntity;
 								updateCondition(CONDITION_SEE_HEAL);
+								notePlayerEngaged(pEntity);
 
 								if (!m_pSchedules->hasSchedule(SCHED_HEAL))
 								{
@@ -2731,9 +2733,28 @@ bool CBotTF2::tryExtinguishTeammates()
 	return false;
 }
 
+float CBotFortress::m_fAFKIdleSince[MAX_PLAYERS + 1];
+bool CBotFortress::m_bAFKStarted[MAX_PLAYERS + 1];
+
+void CBotFortress::notePlayerEngaged(edict_t *pPlayer)
+{
+	if (!pPlayer) return;
+	int idx = ENTINDEX(pPlayer);
+	if (idx > 0 && idx <= MAX_PLAYERS)
+		m_bAFKStarted[idx] = true;
+}
+
 bool CBotFortress::isPlayerAFK(edict_t *pPlayer)
 {
 	if (!pPlayer || !CBotGlobals::entityIsValid(pPlayer))
+		return false;
+
+	int idx = ENTINDEX(pPlayer);
+	if (idx <= 0 || idx > MAX_PLAYERS)
+		return false;
+
+	// Only track players that a medic engaged with or a bot sought out
+	if (!m_bAFKStarted[idx])
 		return false;
 
 	IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pPlayer);
@@ -2751,7 +2772,7 @@ bool CBotFortress::isPlayerAFK(edict_t *pPlayer)
 			bActive = true;
 	}
 
-	// Also check if bot — bots that are thinking are not AFK
+	// Bots that have an enemy are never AFK
 	if (!bActive)
 	{
 		CBot *pOtherBot = CBots::getBotPointer(pPlayer);
@@ -2759,17 +2780,19 @@ bool CBotFortress::isPlayerAFK(edict_t *pPlayer)
 			bActive = true;
 	}
 
-	int idx = ENTINDEX(pPlayer);
+	// Player moved — reset everything
 	if (bActive)
 	{
-		m_fPlayerIdleSince[idx] = 0.0f;
+		m_fAFKIdleSince[idx] = 0.0f;
+		m_bAFKStarted[idx]   = false;
 		return false;
 	}
 
-	if (m_fPlayerIdleSince[idx] == 0.0f)
-		m_fPlayerIdleSince[idx] = engine->Time();
+	// Track idle time
+	if (m_fAFKIdleSince[idx] == 0.0f)
+		m_fAFKIdleSince[idx] = engine->Time();
 
-	return (engine->Time() - m_fPlayerIdleSince[idx]) > 10.0f;
+	return (engine->Time() - m_fAFKIdleSince[idx]) > 10.0f;
 }
 
 void CBotFortress::chooseClass()
@@ -3165,6 +3188,7 @@ void CBotTF2::modThink()
 
 		if (pBestMedic)
 		{
+			notePlayerEngaged(pBestMedic);
 			Vector vMedicOrigin = CBotGlobals::entityOrigin(pBestMedic);
 
 			if (fBestMedicDist < 450.0f) // in medigun range

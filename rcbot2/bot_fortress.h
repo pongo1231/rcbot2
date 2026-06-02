@@ -870,9 +870,12 @@ class CBotFortress : public CBot
 	MyEHandle m_NearestEnemyGrenade;
 
 	float m_fLastSentryEnemyTime;
-	float m_fPlayerIdleSince[MAX_PLAYERS + 1];
+
+	static float m_fAFKIdleSince[MAX_PLAYERS + 1];
+	static bool m_bAFKStarted[MAX_PLAYERS + 1];
 
 	bool isPlayerAFK(edict_t *pPlayer);
+	static void notePlayerEngaged(edict_t *pPlayer);
 	// bool m_bWantToZoom;
 };
 //
