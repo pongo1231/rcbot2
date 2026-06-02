@@ -1,5 +1,6 @@
 #include "defend_point_task.h"
 
+#include "bot_globals.h"
 #include "bot_mods.h"
 
 CBotTF2DefendPoint::CBotTF2DefendPoint(int iArea, Vector vOrigin, int iRadius)
@@ -42,7 +43,41 @@ void CBotTF2DefendPoint::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 			m_fTime   = engine->Time() + randomFloat(5.0, 10.0);
 			m_vMoveTo = m_vOrigin + Vector(randomFloat(-m_iRadius, m_iRadius), randomFloat(-m_iRadius, m_iRadius), 0);
-			fdist     = pBot->distanceFrom(m_vMoveTo);
+
+			// Avoid clustering with teammates at the exact same spot
+			Vector vOffset(0, 0, 0);
+			int iNearbyCount = 0;
+
+			for (int i = 1; i <= gpGlobals->maxClients; i++)
+			{
+				edict_t *pPlayer = INDEXENT(i);
+				if (!pPlayer || pPlayer == pBot->getEdict())
+					continue;
+				if (!CBotGlobals::entityIsValid(pPlayer) || !CBotGlobals::entityIsAlive(pPlayer))
+					continue;
+				if (CTeamFortress2Mod::getTeam(pPlayer) != iTeam)
+					continue;
+
+				Vector vTeammatePos = CBotGlobals::entityOrigin(pPlayer);
+				float fTeammateDist = (m_vMoveTo - vTeammatePos).Length();
+
+				if (fTeammateDist < 80.0f)
+				{
+					Vector vAway = m_vMoveTo - vTeammatePos;
+					vAway.z      = 0;
+					if (vAway.Length() > 0.1f)
+					{
+						vAway  = vAway / vAway.Length();
+						vOffset = vOffset + (vAway * (80.0f - fTeammateDist));
+						iNearbyCount++;
+					}
+				}
+			}
+
+			if (iNearbyCount > 0)
+				m_vMoveTo = m_vMoveTo + vOffset;
+
+			fdist = pBot->distanceFrom(m_vMoveTo);
 
 			if (fdist < 32)
 				pBot->stopMoving();
