@@ -1220,6 +1220,7 @@ class CBotTF2 : public CBotFortress
 	int m_iDegreaserPrevSlot;
 	float m_fDegreaserSwapBack;
 	float m_fExtinguishTime;
+	float m_fBaitCallTime;
 
 	int m_iDesiredResistType;
 

@@ -1751,6 +1751,7 @@ void CBotTF2::spawnInit()
 
 	m_fRemoveSapTime      = 0.0f;
 	m_fExtinguishTime     = 0.0f;
+	m_fBaitCallTime       = 0.0f;
 
 	// stickies destroyed now
 	m_iTrapType           = TF_TRAP_TYPE_NONE;
@@ -3495,6 +3496,53 @@ void CBotTF2::modThink()
 				}
 			}
 		}
+
+		// Medic-bait: lure enemy medics with medic calls, then backstab
+		if (!m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING)
+		    && !m_pSchedules->isCurrentSchedule(SCHED_BACKSTAB)
+		    && isDisguised() && !bIsCloaked && (m_fBaitCallTime < engine->Time()))
+		{
+			edict_t *pBaitTarget = nullptr;
+			float fBaitDist      = 1024.0f;
+
+			for (int i = 1; i <= gpGlobals->maxClients; i++)
+			{
+				edict_t *pT = INDEXENT(i);
+				if (!pT || pT == m_pEdict) continue;
+				if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+				if (CTeamFortress2Mod::getTeam(pT) == m_iTeam) continue;
+				if (CClassInterface::getTF2Class(pT) != TF_CLASS_MEDIC) continue;
+				if (thinkSpyIsEnemy(pT, (TF_Class)CClassInterface::getTF2Class(pT))) continue;
+
+				float fDist = distanceFrom(pT);
+				if (fDist < fBaitDist && FVisible(pT))
+				{
+					fBaitDist    = fDist;
+					pBaitTarget  = pT;
+				}
+			}
+
+			if (pBaitTarget)
+			{
+				if (fBaitDist < 200.0f)
+				{
+					CBotWeapon *pKnife = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_KNIFE));
+					if (pKnife && pKnife->hasWeapon())
+						select_CWeapon(pKnife->getWeaponInfo());
+				}
+				else
+				{
+					addVoiceCommand(TF_VC_MEDIC);
+					m_fBaitCallTime = engine->Time() + randomFloat(2.0f, 4.0f);
+
+					int iDClass, iDTeam, iDIndex, iDHealth;
+					CClassInterface::getTF2SpyDisguised(m_pEdict, &iDClass, &iDTeam, &iDIndex, &iDHealth);
+					if (iDClass == TF_CLASS_MEDIC)
+						spyDisguise(iDTeam, TF_CLASS_MEDIC);
+				}
+			}
+		}
+
 		break;
 	case TF_CLASS_PYRO:
 		// Extinguish burning teammates when not in active combat
