@@ -3625,10 +3625,11 @@ void CBotTF2::modThink()
 	{
 		edict_t *pBuster   = nullptr;
 		float fBusterDist  = 9999.0f;
-		for (int i = gpGlobals->maxClients + 1; i < gpGlobals->maxEntities; i++)
+		bool bTaunting     = false;
+		for (int i = 1; i <= gpGlobals->maxClients; i++)
 		{
 			edict_t *pEnt = INDEXENT(i);
-			if (!pEnt || pEnt->IsFree()) continue;
+			if (!pEnt || pEnt->IsFree() || !pEnt->GetUnknown()) continue;
 			if (!CBotGlobals::entityIsValid(pEnt) || !CBotGlobals::entityIsAlive(pEnt)) continue;
 
 			IServerEntity *pServerEnt = pEnt->GetIServerEntity();
@@ -3641,64 +3642,51 @@ void CBotTF2::modThink()
 			{
 				fBusterDist = fDist;
 				pBuster     = pEnt;
+				int iConds  = CClassInterface::getTF2Conditions(pEnt);
+				bTaunting   = (iConds & (1 << 7)) != 0; // TFCond_Taunting
 			}
 		}
 
-		if (pBuster)
+		const float fBlastRadius = 600.0f;
+
+		if (pBuster && bTaunting && fBusterDist < fBlastRadius)
 		{
-			// Engineer: if far from sentry and buster is incoming, rush to sentry first
+			// Engineer: try to rescue sentry before fleeing
 			if (m_iClass == TF_CLASS_ENGINEER && m_pSentryGun.get()
 			    && CBotGlobals::entityIsValid(m_pSentryGun)
 			    && !m_bIsCarryingObj
-			    && distanceFrom(m_pSentryGun) > 200.0f
-			    && fBusterDist > 200.0f)
+			    && distanceFrom(m_pSentryGun) < 250.0f
+			    && FVisible(m_pSentryGun))
 			{
-				setMoveLookPriority(MOVELOOK_ATTACK);
-				setMoveTo(CBotGlobals::entityOrigin(m_pSentryGun));
-				setMoveLookPriority(MOVELOOK_MODTHINK);
-			}
-			// Close range: rescue and/or run
-			else if (fBusterDist < 350.0f)
-			{
-				if (m_iClass == TF_CLASS_ENGINEER && m_pSentryGun.get()
-				    && CBotGlobals::entityIsValid(m_pSentryGun)
-				    && !m_bIsCarryingObj
-				    && distanceFrom(m_pSentryGun) < 250.0f)
+				CBotWeapon *pRescue = m_pWeapons->getWeapon(
+				    CWeapons::getWeapon(TF2_WEAPON_SHOTGUN_PRIMARY));
+				edict_t *pRescueEnt = pRescue ? pRescue->getWeaponEntity() : nullptr;
+				if (pRescueEnt && CClassInterface::TF2_getItemDefinitionIndex(pRescueEnt) == 997
+				    && pRescue->getAmmo(this) >= 60)
 				{
-					CBotWeapon *pRescue = m_pWeapons->getWeapon(
-					    CWeapons::getWeapon(TF2_WEAPON_SHOTGUN_PRIMARY));
-					edict_t *pRescueEnt = pRescue ? pRescue->getWeaponEntity() : nullptr;
-					if (pRescueEnt && CClassInterface::TF2_getItemDefinitionIndex(pRescueEnt) == 997
-					    && pRescue->getAmmo(this) >= 130)
+					lookAtEdict(m_pSentryGun);
+					select_CWeapon(pRescue->getWeaponInfo());
+					secondaryAttack();
+					doButtons();
+					resetCarryTime();
+				}
+				else
+				{
+					CBotWeapon *pWrench = m_pWeapons->getWeapon(
+					    CWeapons::getWeapon(TF2_WEAPON_WRENCH));
+					if (pWrench && pWrench->hasWeapon())
 					{
-						lookAtEdict(m_pSentryGun);
-						select_CWeapon(pRescue->getWeaponInfo());
+						select_CWeapon(pWrench->getWeaponInfo());
 						secondaryAttack();
+						doButtons();
 						resetCarryTime();
 					}
-					else
-					{
-						CBotWeapon *pWrench = m_pWeapons->getWeapon(
-						    CWeapons::getWeapon(TF2_WEAPON_WRENCH));
-						if (pWrench && pWrench->hasWeapon())
-						{
-							select_CWeapon(pWrench->getWeaponInfo());
-							secondaryAttack();
-							resetCarryTime();
-						}
-					}
-				}
-
-				Vector vAway = getOrigin() - CBotGlobals::entityOrigin(pBuster);
-				vAway.z      = 0;
-				if (vAway.Length() > 0.1f)
-				{
-					vAway = vAway / vAway.Length();
-					setMoveLookPriority(MOVELOOK_ATTACK);
-					setMoveTo(getOrigin() + (vAway * 512.0f));
-					setMoveLookPriority(MOVELOOK_MODTHINK);
 				}
 			}
+
+			// All classes: flee using proper hide-spot navigation
+			m_pSchedules->freeMemory();
+			m_pSchedules->addFront(new CGotoHideSpotSched(this, pBuster));
 		}
 	}
 
@@ -3718,6 +3706,12 @@ void CBotTF2::modThink()
 			else if (m_pDispenser.get() && CBotGlobals::entityIsValid(m_pDispenser)
 			    && CClassInterface::getDispenserHealth(m_pDispenser) < 100.0f)
 				pTarget = m_pDispenser;
+			else if (m_pTeleEntrance.get() && CBotGlobals::entityIsValid(m_pTeleEntrance)
+			    && CClassInterface::getTeleporterHealth(m_pTeleEntrance) < 100.0f)
+				pTarget = m_pTeleEntrance;
+			else if (m_pTeleExit.get() && CBotGlobals::entityIsValid(m_pTeleExit)
+			    && CClassInterface::getTeleporterHealth(m_pTeleExit) < 100.0f)
+				pTarget = m_pTeleExit;
 
 			if (pTarget && FVisible(pTarget) && distanceFrom(pTarget) > 180.0f)
 			{
@@ -3725,6 +3719,7 @@ void CBotTF2::modThink()
 				setLookAtTask(LOOK_EDICT);
 				select_CWeapon(pRescue->getWeaponInfo());
 				secondaryAttack();
+				doButtons();
 			}
 		}
 	}
