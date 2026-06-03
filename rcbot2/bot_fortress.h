@@ -275,6 +275,7 @@ typedef enum
 	ENGI_SAPPER,
 	ENGI_EXIT,
 	ENGI_ENTRANCE,
+	ENGI_ROBOT,
 } eEngiBuild;
 
 typedef enum
@@ -400,6 +401,8 @@ class CBotFortress : public CBot
 {
   public:
 	CBotFortress();
+
+	void addSappedRobot(edict_t *pRobot);
 
 	// virtual bool wantToZoom () { return m_bWantToZoom; }
 
@@ -866,6 +869,7 @@ class CBotFortress : public CBot
 
 	MyEHandle m_pLastEnemySentry;
 	std::vector<MyEHandle> m_KnownSentries;
+	static std::vector<MyEHandle> m_SappedRobots;
 	MyEHandle m_NearestEnemyRocket;
 	MyEHandle m_NearestEnemyGrenade;
 

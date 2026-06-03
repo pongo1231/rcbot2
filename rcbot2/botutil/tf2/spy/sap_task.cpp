@@ -32,6 +32,12 @@ bool CBotTF2SpySap::buildingIsSapped(edict_t *pBuilding)
 		return CTeamFortress2Mod::isDispenserSapped(pBuilding);
 	else if (m_id == ENGI_TELE)
 		return CTeamFortress2Mod::isTeleporterSapped(pBuilding);
+	else if (m_id == ENGI_ROBOT)
+	{
+		// Check if this robot is in our victim's sapped list
+		CBotTF2 *tf2Bot = (CBotTF2 *)nullptr; // filled in execute()
+		return false; // tracked via completion logic below
+	}
 	return false;
 }
 
@@ -166,6 +172,18 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 	// Transition to EVADE only when the building is confirmed sapped
 	if (buildingIsSapped(pBuilding))
 	{
+		m_iState           = SAP_EVADE;
+		m_fEvadeTime       = 0.0f;
+		m_fStateChangeTime = engine->Time();
+		m_bSapperPlaced    = false;
+		return;
+	}
+
+	// For robots: transition after placing sapper (game doesn't report sap state)
+	if (m_id == ENGI_ROBOT && m_bSapperPlaced)
+	{
+		// Add to victim's sapped robot list so other spies don't target it
+		((CBotTF2 *)pBot)->addSappedRobot(pBuilding);
 		m_iState           = SAP_EVADE;
 		m_fEvadeTime       = 0.0f;
 		m_fStateChangeTime = engine->Time();

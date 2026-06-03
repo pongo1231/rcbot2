@@ -147,6 +147,7 @@ const std::unordered_map<int, const char *> g_szUtils = {
 	UTIL(BOT_UTIL_SNIPE_CROSSBOW),
 	UTIL(BOT_UTIL_MVM_COLLECT_CASH),
 	UTIL(BOT_UTIL_MVM_MEDIC_REVIVE),
+	UTIL(BOT_UTIL_SAP_MVM_ROBOT),
 	UTIL(BOT_UTIL_MAX),
 };
 #undef UTIL

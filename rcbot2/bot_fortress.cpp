@@ -2604,6 +2604,11 @@ void CBotFortress::waitCloak()
 
 bool CBotFortress::wantToCloak()
 {
+	// MvM: when on fire, go kamikaze instead of cloaking
+	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
+	    && CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict))
+		return false;
+
 	if (rcbot_tf2_debug_spies_cloakdisguise.GetBool())
 	{
 		if ((m_fFrenzyTime < engine->Time()) && (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY)))
@@ -2764,6 +2769,7 @@ bool CBotTF2::tryExtinguishTeammates()
 
 float CBotFortress::m_fAFKIdleSince[MAX_PLAYERS + 1];
 bool CBotFortress::m_bAFKStarted[MAX_PLAYERS + 1];
+std::vector<MyEHandle> CBotFortress::m_SappedRobots;
 
 void CBotTF2::handleBuildRequest(eEngiBuild iBuilding, int iWaypointFlag, edict_t *pCaller)
 {
@@ -3017,6 +3023,12 @@ void CBotFortress::notePlayerEngaged(edict_t *pPlayer)
 	int idx = ENTINDEX(pPlayer);
 	if (idx > 0 && idx <= MAX_PLAYERS)
 		m_bAFKStarted[idx] = true;
+}
+
+void CBotFortress::addSappedRobot(edict_t *pRobot)
+{
+	if (!pRobot) return;
+	m_SappedRobots.push_back(MyEHandle(pRobot));
 }
 
 bool CBotFortress::isPlayerAFK(edict_t *pPlayer)
@@ -6318,11 +6330,15 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	if (m_iClass == TF_CLASS_SPY)
 	{
 		ADD_UTILITY(BOT_UTIL_BACKSTAB,
-		            !hasFlag() && (!m_pNearestEnemySentry || (CTeamFortress2Mod::isSentrySapped(m_pNearestEnemySentry)))
+		            !hasFlag() && (!m_pNearestEnemySentry || (CTeamFortress2Mod::isSentrySapped(m_pNearestEnemySentry))
+		                || (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
+		                    && CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict)))
 		                && (m_fBackstabTime < engine->Time()) && (m_iClass == TF_CLASS_SPY)
 		                && ((m_pEnemy && CBotGlobals::isAlivePlayer(m_pEnemy))
 		                    || (m_pLastEnemy && CBotGlobals::isAlivePlayer(m_pLastEnemy))),
-		            fGetFlagUtility + (getHealthPercent() / 10));
+		            fGetFlagUtility + (getHealthPercent() / 10)
+		                + (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
+		                    && CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict) ? 2.0f : 0.0f));
 
 		ADD_UTILITY(BOT_UTIL_SAP_ENEMY_SENTRY,
 		            m_pEnemy && CTeamFortress2Mod::isSentry(m_pEnemy, CTeamFortress2Mod::getEnemyTeam(iTeam))
@@ -6371,6 +6387,52 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		            m_pLastEnemy && CTeamFortress2Mod::isDispenser(m_pLastEnemy, CTeamFortress2Mod::getEnemyTeam(iTeam))
 		                && !CTeamFortress2Mod::isDispenserSapped(m_pLastEnemy),
 		            fGetFlagUtility + (getHealthPercent() / 7));
+	}
+
+	// MvM: sap robots (one spy per target via entindex stagger)
+	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && m_iClass == TF_CLASS_SPY
+	    && m_fSpySapTime < engine->Time() && !hasFlag()
+	    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
+	{
+		// Prune dead entries from sapped robot list
+		for (size_t i = 0; i < m_SappedRobots.size();)
+		{
+			edict_t *pRob = m_SappedRobots[i].get();
+			if (!pRob || !CBotGlobals::entityIsValid(pRob) || !CBotGlobals::entityIsAlive(pRob))
+				m_SappedRobots.erase(m_SappedRobots.begin() + i);
+			else
+				i++;
+		}
+
+		// Collect all valid unsapped robots within range
+		edict_t *pRobots[64];
+		int iRobotCount = 0;
+		for (int i = 1; i <= gpGlobals->maxClients && iRobotCount < 64; i++)
+		{
+			edict_t *pEnt = INDEXENT(i);
+			if (!pEnt || pEnt->IsFree()) continue;
+			if (!CBotGlobals::entityIsValid(pEnt) || !CBotGlobals::entityIsAlive(pEnt)) continue;
+			// MvM robots are fake clients on BLU team
+			IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pEnt);
+			if (!pInfo || !pInfo->IsFakeClient()) continue;
+			if (CTeamFortress2Mod::getTeam(pEnt) != TF2_TEAM_BLUE) continue;
+			if (distanceFrom(pEnt) > 1024.0f) continue;
+
+			bool bSapped = false;
+			for (auto &h : m_SappedRobots)
+				if (h.get() == pEnt) { bSapped = true; break; }
+			if (bSapped) continue;
+
+			pRobots[iRobotCount++] = pEnt;
+		}
+
+		if (iRobotCount > 0)
+		{
+			int iMyPick = ENTINDEX(m_pEdict) % iRobotCount;
+			ADD_UTILITY_DATA(BOT_UTIL_SAP_MVM_ROBOT, true,
+			                 0.6f + (getHealthPercent() / 10),
+			                 ENTINDEX(pRobots[iMyPick]));
+		}
 	}
 
 	// fGetFlagUtility = 0.2+randomFloat(0.0f,0.2f);
@@ -8208,6 +8270,18 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		if (m_pHeal && CBotGlobals::entityIsAlive(m_pHeal) && (getHealFactor(m_pHeal) > 0))
 		{
 			m_pSchedules->add(new CBotTF2HealSched(m_pHeal));
+			return true;
+		}
+	}
+	break;
+	case BOT_UTIL_SAP_MVM_ROBOT:
+	{
+		int iEntIdx = util->getIntData();
+		edict_t *pRobot = INDEXENT(iEntIdx);
+		if (pRobot && CBotGlobals::entityIsAlive(pRobot))
+		{
+			m_pSchedules->add(new CBotSpySapBuildingSched(pRobot, ENGI_ROBOT));
+			m_fSpySapTime = engine->Time() + randomFloat(5.0f, 10.0f);
 			return true;
 		}
 	}
