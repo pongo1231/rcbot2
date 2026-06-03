@@ -1415,6 +1415,13 @@ bool CBotTF2::needAmmo()
 		if (pWeapon)
 			return (pWeapon->getAmmo(this) < 1);
 	}
+	else if (getClass() == TF_CLASS_SCOUT)
+	{
+		CBotWeapon *pWeapon = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_SCATTERGUN));
+
+		if (pWeapon)
+			return (pWeapon->getAmmo(this) < 1);
+	}
 
 	return false;
 }
@@ -2983,7 +2990,7 @@ void CBotTF2::handleSpecialAbilities()
 			{
 				edict_t *pActive = CClassInterface::getCurrentWeapon(m_pEdict);
 				if (pActive && CClassInterface::TF2_getItemDefinitionIndex(pActive) == 1179)
-					helpers->ClientCommand(m_pEdict, "slot1");
+					selectWeapon(engine->IndexOfEdict(CWeapons::findWeapon(m_pEdict, "tf_weapon_flamethrower")));
 				if (m_bThrusterSwitchPending)
 					m_bThrusterSwitchPending = false;
 				m_fThermalThrustTime = engine->Time() + 0.5f;
@@ -3027,7 +3034,7 @@ void CBotTF2::handleSpecialAbilities()
 							doButtons();
 							float *pMeterPost = CClassInterface::getItemChargeMeter(m_pEdict);
 							if (!pMeterPost || pMeterPost[1] < 50.0f)
-								helpers->ClientCommand(m_pEdict, "slot1");
+								selectWeapon(engine->IndexOfEdict(CWeapons::findWeapon(m_pEdict, "tf_weapon_flamethrower")));
 						}
 						m_fThermalThrustTime = engine->Time() + 2.5f;
 						m_bThrusterSwitchPending = false;
@@ -3071,7 +3078,7 @@ void CBotTF2::handleSpecialAbilities()
 				{
 					edict_t *pActive = CClassInterface::getCurrentWeapon(m_pEdict);
 					if (pActive && CClassInterface::TF2_getItemDefinitionIndex(pActive) == 1179)
-						helpers->ClientCommand(m_pEdict, "slot1");
+						selectWeapon(engine->IndexOfEdict(CWeapons::findWeapon(m_pEdict, "tf_weapon_flamethrower")));
 					if (m_bThrusterSwitchPending)
 						m_bThrusterSwitchPending = false;
 					m_fThermalThrustTime = engine->Time() + 0.5f;
@@ -3089,7 +3096,7 @@ void CBotTF2::handleSpecialAbilities()
 				{
 					if (distanceFrom(m_pEnemy) < 400.0f)
 					{
-						helpers->ClientCommand(m_pEdict, "slot1");
+						selectWeapon(engine->IndexOfEdict(CWeapons::findWeapon(m_pEdict, "tf_weapon_flamethrower")));
 						m_bThrusterSwitchPending = false;
 						m_fThermalThrustTime = engine->Time() + 1.0f;
 					}
@@ -3113,7 +3120,7 @@ void CBotTF2::handleSpecialAbilities()
 						doButtons();
 						float *pMeterPost = CClassInterface::getItemChargeMeter(m_pEdict);
 						if (!pMeterPost || pMeterPost[1] < 50.0f)
-							helpers->ClientCommand(m_pEdict, "slot1");
+							selectWeapon(engine->IndexOfEdict(CWeapons::findWeapon(m_pEdict, "tf_weapon_flamethrower")));
 					}
 					m_fThermalThrustTime = engine->Time() + 4.0f;
 					m_bThrusterSwitchPending = false;
@@ -6336,6 +6343,36 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		}
 
 		ADD_UTILITY(BOT_UTIL_DEFEND_FLAG, true, fMvmDefendUtil);
+
+		// Tank attack utility — tank-effective classes prioritize tanks
+		edict_t *pTank = CTeamFortress2Mod::getNearestTank();
+		if (pTank && CBotGlobals::entityIsAlive(pTank))
+		{
+			float fTankUtil = 0.0f;
+			bool bTankClass  = (m_iClass == TF_CLASS_PYRO || m_iClass == TF_CLASS_SOLDIER
+					 || m_iClass == TF_CLASS_DEMOMAN || m_iClass == TF_CLASS_SCOUT
+					 || m_iClass == TF_CLASS_HWGUY);
+
+			if (bTankClass)
+			{
+				float fTankDist = (CBotGlobals::entityOrigin(pTank) - getOrigin()).Length();
+				fTankUtil = 3.0f + (400.0f / (fTankDist + 1.0f));
+			}
+			else
+			{
+				// Other classes only help if tank is close to hatch
+				Vector vHatch;
+				if (CTeamFortress2Mod::getMVMCapturePoint(&vHatch))
+				{
+					float fDistToHatch = (CBotGlobals::entityOrigin(pTank) - vHatch).Length();
+					if (fDistToHatch < 1024.0f)
+						fTankUtil = 1.0f + (1.0f - (fDistToHatch / 1024.0f));
+				}
+			}
+
+			if (fTankUtil > 0.0f)
+				ADD_UTILITY(BOT_UTIL_ATTACK_TANK, true, fTankUtil);
+		}
 	}
 	else
 	{
@@ -8526,6 +8563,16 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			return true;
 		}
 		break;
+	case BOT_UTIL_ATTACK_TANK:
+	{
+		edict_t *pTank = CTeamFortress2Mod::getNearestTank();
+		if (pTank && CBotGlobals::entityIsAlive(pTank))
+		{
+			m_pSchedules->add(new CBotAttackSched(pTank));
+			return true;
+		}
+	}
+	break;
 	case BOT_UTIL_MVM_COLLECT_CASH:
 	{
 		// Find the center of all nearby cash packs for group collection
@@ -9426,13 +9473,37 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			m_fAvoidTime = engine->Time() + 1.0f;
 		}
 
-		// MvM: tank boss -- bots should focus the tank with primary weapon
+		// MvM: tank boss -- bots should focus the tank with optimal weapon
 		if (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && CTeamFortress2Mod::isTankBoss(pEnemy))
 		{
 			Vector vEnemyOrigin = CBotGlobals::entityOrigin(pEnemy);
 
-			// Always use primary weapon against tank, avoid melee unless out of ammo
-			if (pWeapon->isMelee() && !pWeapon->isSpecial())
+			// Force class-optimal anti-tank weapon before any distance checks
+			if (m_iClass == TF_CLASS_PYRO)
+			{
+				CBotWeapon *pFlame = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
+				if (pFlame && pFlame->hasWeapon() && !pFlame->outOfAmmo(this) && getCurrentWeapon() != pFlame)
+					select_CWeapon(pFlame->getWeaponInfo());
+			}
+			else if (m_iClass == TF_CLASS_SOLDIER)
+			{
+				CBotWeapon *pRocket = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_ROCKETLAUNCHER));
+				if (pRocket && pRocket->hasWeapon() && !pRocket->outOfAmmo(this) && getCurrentWeapon() != pRocket)
+					select_CWeapon(pRocket->getWeaponInfo());
+			}
+			else if (m_iClass == TF_CLASS_DEMOMAN)
+			{
+				CBotWeapon *pGren = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_GRENADELAUNCHER));
+				if (pGren && pGren->hasWeapon() && !pGren->outOfAmmo(this) && getCurrentWeapon() != pGren)
+					select_CWeapon(pGren->getWeaponInfo());
+			}
+			else if (m_iClass == TF_CLASS_HWGUY)
+			{
+				CBotWeapon *pMini = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_MINIGUN));
+				if (pMini && pMini->hasWeapon() && !pMini->outOfAmmo(this) && getCurrentWeapon() != pMini)
+					select_CWeapon(pMini->getWeaponInfo());
+			}
+			else if (pWeapon->isMelee() && !pWeapon->isSpecial())
 			{
 				CBotWeapon *pPrimary = m_pWeapons->getPrimaryWeapon();
 				if (pPrimary && pPrimary->hasWeapon() && !pPrimary->outOfAmmo(this) && pPrimary != pWeapon)
@@ -9441,7 +9512,6 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 
 			if (m_iClass == TF_CLASS_SOLDIER || m_iClass == TF_CLASS_DEMOMAN)
 			{
-				// Explosive classes: keep safe distance, consistently fire primary
 				const float fMinDist = 300.0f;
 				if (fDistance < fMinDist)
 				{
@@ -9460,8 +9530,6 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 					setMoveTo(vEnemyOrigin);
 				}
 
-				// Demoman: use sticky launcher for tank when grenade launcher is dry
-				// Only outside melee range and inside grenade launcher range
 				if (m_iClass == TF_CLASS_DEMOMAN)
 				{
 					CBotWeapon *pGrenadeLauncher = m_pWeapons->getWeapon(
@@ -9482,13 +9550,11 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 							select_CWeapon(pStickyLauncher->getWeaponInfo());
 						else if (m_fStickyDetTime == 0.0f)
 						{
-							// Charge just enough to reach the target, not full charge
 							float fCharge = fDistance / pStickyLauncher->getPrimaryMaxRange();
-							fCharge       = fCharge * fCharge * 2.0f; // non-linear: short charge at close range
+							fCharge       = fCharge * fCharge * 2.0f;
 							if (fCharge < 0.03f) fCharge = 0.03f;
 							if (fCharge > 1.5f) fCharge  = 1.5f;
 							primaryAttack(true, fCharge);
-							// Wait for charge + estimated flight time before detonating
 							float fFlyTime = fDistance / 700.0f;
 							m_fStickyDetTime = engine->Time() + fCharge + fFlyTime + 0.05f;
 						}
@@ -9502,7 +9568,6 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			}
 			else if (m_iClass == TF_CLASS_PYRO)
 			{
-				// Pyro: close in and strafe around tank with flamethrower
 				const float fIdealDist = 180.0f;
 				if (fDistance > fIdealDist + 60.0f)
 				{
@@ -9520,7 +9585,6 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 				}
 				else
 				{
-					// Strafe around the tank at optimal flamethrower range
 					if (m_fAvoidSideSwitch < engine->Time())
 					{
 						m_fAvoidSideSwitch = engine->Time() + randomFloat(1.5f, 2.5f);
@@ -9544,17 +9608,9 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 						}
 					}
 				}
-				// Force flamethrower only when within range to avoid weapon-switch loop
-				if (fDistance < 400.0f)
-				{
-					CBotWeapon *pFlame = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
-					if (pFlame && pFlame->hasWeapon() && !pFlame->outOfAmmo(this) && getCurrentWeapon() != pFlame)
-						select_CWeapon(pFlame->getWeaponInfo());
-				}
 			}
 			else if (m_iClass == TF_CLASS_HWGUY)
 			{
-				// Heavy: mid range for minigun accuracy, close if too far
 				const float fMinDist = 200.0f;
 				if (fDistance < fMinDist)
 				{
@@ -9571,19 +9627,17 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 					setMoveTo(vEnemyOrigin);
 				}
 			}
+			else if (m_iClass == TF_CLASS_SCOUT)
+			{
+				const float fCloseDist = 130.0f;
+				if (fDistance > fCloseDist)
+					setMoveTo(vEnemyOrigin);
+			}
 			else
 			{
-				// All other classes: close distance, use primary weapon
 				const float fCloseDist = 250.0f;
 				if (fDistance > fCloseDist)
 					setMoveTo(vEnemyOrigin);
-				// Switch from melee to primary if needed
-				if (pWeapon->isMelee() && !pWeapon->isSpecial())
-				{
-					CBotWeapon *pPrimary = m_pWeapons->getPrimaryWeapon();
-					if (pPrimary && pPrimary->hasWeapon() && !pPrimary->outOfAmmo(this))
-						select_CWeapon(pPrimary->getWeaponInfo());
-				}
 			}
 		}
 
