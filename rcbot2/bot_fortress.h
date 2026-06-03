@@ -1140,6 +1140,8 @@ class CBotTF2 : public CBotFortress
 
 	void handleSpecialAbilities();
 
+	float MvmTargetPriority(edict_t *pEnemy);
+
 	void handleBuildRequest(eEngiBuild iBuilding, int iWaypointFlag, edict_t *pCaller);
 
 	void healedPlayer(edict_t *pPlayer, float fAmount);

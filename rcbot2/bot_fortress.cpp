@@ -2767,6 +2767,45 @@ bool CBotTF2::tryExtinguishTeammates()
 	return false;
 }
 
+float CBotTF2::MvmTargetPriority(edict_t *pEnemy)
+{
+	if (!pEnemy) return 0.0f;
+	float fPri = 0.0f;
+
+	// Bomb carrier is highest priority
+	edict_t *pCarrier = CTeamFortress2Mod::getFlagCarrier(TF2_TEAM_BLUE);
+	if (pCarrier && pEnemy == pCarrier)
+	{
+		Vector vHatch;
+		if (CTeamFortress2Mod::getMVMCapturePoint(&vHatch))
+		{
+			float fDist = (CBotGlobals::entityOrigin(pCarrier) - vHatch).Length();
+			if (fDist < 2048.0f)
+				fPri += 3.0f * (1.0f - (fDist / 2048.0f)); // up to +3.0 near hatch
+			else
+				fPri += 0.5f;
+		}
+		else
+			fPri += 2.0f;
+	}
+
+	// Tank close to hatch is urgent
+	if (CTeamFortress2Mod::isTankBoss(pEnemy))
+	{
+		Vector vHatch;
+		if (CTeamFortress2Mod::getMVMCapturePoint(&vHatch))
+		{
+			float fDist = (CBotGlobals::entityOrigin(pEnemy) - vHatch).Length();
+			if (fDist < 2048.0f)
+				fPri += 2.5f * (1.0f - (fDist / 2048.0f)); // up to +2.5
+		}
+		else
+			fPri += 1.0f;
+	}
+
+	return fPri;
+}
+
 float CBotFortress::m_fAFKIdleSince[MAX_PLAYERS + 1];
 bool CBotFortress::m_bAFKStarted[MAX_PLAYERS + 1];
 std::vector<MyEHandle> CBotFortress::m_SappedRobots;
@@ -6338,7 +6377,9 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		                    || (m_pLastEnemy && CBotGlobals::isAlivePlayer(m_pLastEnemy))),
 		            fGetFlagUtility + (getHealthPercent() / 10)
 		                + (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
-		                    && CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict) ? 2.0f : 0.0f));
+		                    && CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict) ? 2.0f : 0.0f)
+		                + (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && m_pEnemy
+		                    ? MvmTargetPriority(m_pEnemy) : 0.0f));
 
 		ADD_UTILITY(BOT_UTIL_SAP_ENEMY_SENTRY,
 		            m_pEnemy && CTeamFortress2Mod::isSentry(m_pEnemy, CTeamFortress2Mod::getEnemyTeam(iTeam))
