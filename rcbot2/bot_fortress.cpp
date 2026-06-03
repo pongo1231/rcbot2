@@ -4617,13 +4617,13 @@ bool CBotTF2::canAvoid(edict_t *pEntity)
 		return false;
 	if (m_pTeleEntrance.get_old() == pEntity)
 		return false;
-	if (m_pNearestTeleEntrance == pEntity)
+	if (m_pNearestTeleEntrance.get_old() == pEntity)
 		return false;
-	if (m_pNearestDisp == pEntity)
+	if (m_pNearestDisp.get_old() == pEntity)
 		return false;
-	if (pEntity == m_pHealthkit)
+	if (pEntity == m_pHealthkit.get_old())
 		return false;
-	if (pEntity == m_pAmmo)
+	if (pEntity == m_pAmmo.get_old())
 		return false;
 	if ((m_pSentryGun.get_old() == pEntity) && (CClassInterface::isObjectCarried(pEntity)))
 		return false;
@@ -4658,12 +4658,12 @@ bool CBotTF2::canAvoid(edict_t *pEntity)
 	if ((distance > 1) && (distance < bot_avoid_radius.GetFloat()) && (vAvoidOrigin.z >= getOrigin().z)
 	    && (fabs(getOrigin().z - vAvoidOrigin.z) < 64))
 	{
-		if ((m_pAttackingEnemy.get() != nullptr) && (m_pAttackingEnemy.get() == pEntity))
+		if ((m_pAttackingEnemy.get_old() != nullptr) && (m_pAttackingEnemy.get_old() == pEntity))
 			return false; // I need to melee this guy probably
 		else if (isEnemy(pEntity, false))
 			return true;
 		else if ((m_iClass == TF_CLASS_ENGINEER)
-		         && ((pEntity == m_pSentryGun.get()) || (pEntity == m_pDispenser.get())))
+		         && ((pEntity == m_pSentryGun.get_old()) || (pEntity == m_pDispenser.get_old())))
 			return true;
 	}
 
