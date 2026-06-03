@@ -539,12 +539,35 @@ void CClassInterfaceValue::getData(void *edict, bool bIsEdict)
 
 		pEntity = pUnknown->GetBaseEntity();
 
+		if (!pEntity)
+		{
+			m_data   = nullptr;
+			m_berror = true;
+			return;
+		}
+
 		m_data  = (void *)((char *)pEntity + m_offset);
+
+		// Defense: reject near-NULL pointers from bad base entities
+		if ((size_t)m_data < 4096)
+		{
+			m_data   = nullptr;
+			m_berror = true;
+			return;
+		}
 	}
 	else
 	{
 		// raw
 		m_data = (void *)((char *)edict + m_offset);
+
+		// Defense: reject near-NULL pointers
+		if ((size_t)m_data < 4096)
+		{
+			m_data   = nullptr;
+			m_berror = true;
+			return;
+		}
 	}
 }
 
