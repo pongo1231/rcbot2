@@ -4779,30 +4779,16 @@ int CBotFortress::getSpyDisguiseClass(int iTeam)
 		}
 	}
 
-	if (availableClasses.empty())
-	{
-		// In MvM, prefer fast classes for fallback
-		if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
-		{
-			int fastClasses[] = { 1, 2, 5, 7, 8, 9 }; // Scout, Sniper, Medic, Pyro, Spy, Engi
-			return fastClasses[randomInt(0, 5)];
-		}
-		return randomInt(1, 9);
-	}
-
-	// In MvM, filter out slow classes (Soldier, Demoman, Heavy)
+	// In MvM, robots don't detect spies based on disguise class --
+	// just pick a random fast class regardless of what teammates exist
 	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
 	{
-		std::vector<int> filtered;
-		for (int i = 0; i < (int)availableClasses.size(); i++)
-		{
-			int c = availableClasses[i];
-			if (c != 3 && c != 4 && c != 6) // skip Soldier, Demoman, Heavy
-				filtered.push_back(c);
-		}
-		if (!filtered.empty())
-			availableClasses = filtered;
+		int fastClasses[] = { 1, 2, 5, 7, 8, 9 }; // Scout, Sniper, Medic, Pyro, Spy, Engi
+		return fastClasses[randomInt(0, 5)];
 	}
+
+	if (availableClasses.empty())
+		return randomInt(1, 9);
 
 	fTotal = 0;
 
