@@ -2992,18 +2992,20 @@ void CBotTF2::handleSpecialAbilities()
 	}
 
 	// --- Wrangler variants (140/1086/30668): hold secondary fire for shield ---
-	if (iActiveItem == 140 || iActiveItem == 1086 || iActiveItem == 30668)
+	if ((iActiveItem == 140 || iActiveItem == 1086 || iActiveItem == 30668)
+	    && m_pSentryGun.get() && CBotGlobals::entityIsAlive(m_pSentryGun.get()))
 	{
 		if (iActiveSlot == TF2_SLOT_SCNDR && bInDanger)
 			secondaryAttack();
 	}
 
-	// --- Wrangler: randomly unequip so engi doesn't get stuck wrangling forever ---
+	// --- Wrangler: unequip if no sentry or too far from it ---
 	if ((iActiveItem == 140 || iActiveItem == 1086 || iActiveItem == 30668)
-	    && iActiveSlot == TF2_SLOT_SCNDR && randomInt(0, 1) == 0)
+	    && iActiveSlot == TF2_SLOT_SCNDR
+	    && (!m_pSentryGun.get() || !CBotGlobals::entityIsAlive(m_pSentryGun.get())
+	        || distanceFrom(m_pSentryGun.get()) > 256.0f))
 	{
-		if (m_iClass == TF_CLASS_ENGINEER && m_pSentryGun.get()
-		    && distanceFrom(m_pSentryGun.get()) > 256.0f)
+		if (randomInt(0, 1) == 0)
 		{
 			CBotWeapon *pWrench = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_WRENCH));
 			if (pWrench && pWrench->hasWeapon())
