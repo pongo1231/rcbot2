@@ -3561,7 +3561,7 @@ void CBotTF2::modThink()
 	}
 
 	// when respawned -- check if I should change class
-	if (!m_pPlayerInfo->IsDead())
+	if (!m_pPlayerInfo->IsDead() && !m_bHijacked)
 	{
 		const int _forcedClass = rcbot_force_class.GetInt();
 		// Change class if not same class as forced one or class was forced but not anymore
