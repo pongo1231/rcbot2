@@ -6469,10 +6469,34 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 
 		if (iRobotCount > 0)
 		{
+			// Prioritize medics, giants, and sentry busters via model scan
 			int iMyPick = ENTINDEX(m_pEdict) % iRobotCount;
-			ADD_UTILITY_DATA(BOT_UTIL_SAP_MVM_ROBOT, true,
-			                 0.6f + (getHealthPercent() / 10),
-			                 ENTINDEX(pRobots[iMyPick]));
+			bool bIsMedic    = false;
+			bool bIsGiant    = false;
+			bool bIsBuster   = false;
+			edict_t *pPicked = pRobots[iMyPick];
+
+			// Check if picked robot is a high-value target
+			if (pPicked && pPicked->GetCollideable()
+			    && pPicked->GetCollideable()->OBBMaxs().Length() > 80.0f)
+				bIsGiant = true;
+
+			// Check for sentry buster by model
+			IServerEntity *pServ = pPicked ? pPicked->GetIServerEntity() : nullptr;
+			if (pServ)
+			{
+				const char *szModel = pServ->GetModelName().ToCStr();
+				if (szModel && strstr(szModel, "sentry_buster"))
+					bIsBuster = true;
+			}
+
+			// Check for medic robot
+			IPlayerInfo *pPInfo = pPicked ? playerinfomanager->GetPlayerInfo(pPicked) : nullptr;
+			if (pPInfo && CClassInterface::getTF2Class(pPicked) == TF_CLASS_MEDIC)
+				bIsMedic = true;
+
+			float fUtil = bIsBuster ? 0.95f : (bIsGiant ? 0.85f : (bIsMedic ? 0.8f : 0.5f));
+			ADD_UTILITY_DATA(BOT_UTIL_SAP_MVM_ROBOT, true, fUtil, ENTINDEX(pPicked));
 		}
 	}
 
@@ -8322,7 +8346,21 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		if (pRobot && CBotGlobals::entityIsAlive(pRobot))
 		{
 			m_pSchedules->add(new CBotSpySapBuildingSched(pRobot, ENGI_ROBOT));
-			m_fSpySapTime = engine->Time() + randomFloat(5.0f, 10.0f);
+			// Shorter cooldown for high-value targets
+			bool bBuster = false;
+			IServerEntity *pServ = pRobot->GetIServerEntity();
+			if (pServ)
+			{
+				const char *szModel = pServ->GetModelName().ToCStr();
+				if (szModel && strstr(szModel, "sentry_buster"))
+					bBuster = true;
+			}
+			bool bGiant = (pRobot->GetCollideable()
+			               && pRobot->GetCollideable()->OBBMaxs().Length() > 80.0f);
+			if (bBuster || bGiant)
+				m_fSpySapTime = engine->Time() + randomFloat(2.0f, 4.0f);
+			else
+				m_fSpySapTime = engine->Time() + randomFloat(8.0f, 15.0f);
 			return true;
 		}
 	}
