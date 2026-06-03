@@ -9320,11 +9320,11 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 					}
 				}
 			}
-		else if (m_iClass == TF_CLASS_PYRO)
-		{
-			// Tank doesn't fight back -- walk straight at it and burn
-			setMoveTo(vEnemyOrigin);
-		}
+			else if (m_iClass == TF_CLASS_PYRO)
+			{
+				// Tank doesn't fight back -- walk straight at it and burn
+				setMoveTo(vEnemyOrigin);
+			}
 			else if (m_iClass == TF_CLASS_HWGUY)
 			{
 				// Heavy: mid range for minigun accuracy, close if too far
