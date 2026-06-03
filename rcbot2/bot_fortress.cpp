@@ -2770,11 +2770,14 @@ bool CBotTF2::tryExtinguishTeammates()
 float CBotTF2::MvmTargetPriority(edict_t *pEnemy)
 {
 	if (!pEnemy) return 0.0f;
+	if (!CBotGlobals::entityIsValid(pEnemy) || !CBotGlobals::entityIsAlive(pEnemy))
+		return 0.0f;
+
 	float fPri = 0.0f;
 
 	// Bomb carrier is highest priority
 	edict_t *pCarrier = CTeamFortress2Mod::getFlagCarrier(TF2_TEAM_BLUE);
-	if (pCarrier && pEnemy == pCarrier)
+	if (pCarrier && CBotGlobals::entityIsAlive(pCarrier) && pEnemy == pCarrier)
 	{
 		Vector vHatch;
 		if (CTeamFortress2Mod::getMVMCapturePoint(&vHatch))
