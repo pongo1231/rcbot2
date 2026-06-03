@@ -2875,7 +2875,7 @@ void CBotTF2::handleBuildRequest(eEngiBuild iBuilding, int iWaypointFlag, edict_
 
 	Vector vCallerOrigin = CBotGlobals::entityOrigin(pCaller);
 
-	// Already carrying this building — drop it immediately
+	// Already carrying this building -- drop it immediately
 	bool bCarrying = false;
 	if (iBuilding == ENGI_SENTRY && m_bIsCarryingObj && m_bIsCarryingSentry) bCarrying = true;
 	if (iBuilding == ENGI_DISP && m_bIsCarryingObj && m_bIsCarryingDisp) bCarrying = true;
@@ -3160,7 +3160,7 @@ bool CBotFortress::isPlayerAFK(edict_t *pPlayer)
 			bActive = true;
 	}
 
-	// Player moved — reset everything
+	// Player moved -- reset everything
 	if (bActive)
 	{
 		m_fAFKIdleSince[idx] = 0.0f;
@@ -3776,7 +3776,7 @@ void CBotTF2::modThink()
 				}
 				else
 				{
-					// Bonks almost over or no sentry — escape
+					// Bonks almost over or no sentry -- escape
 					m_pEnemy    = nullptr;
 					m_pOldEnemy = nullptr;
 				}
@@ -3860,7 +3860,7 @@ void CBotTF2::modThink()
 		}
 		break;
 	case TF_CLASS_MEDIC:
-		// Heal teammates even while carrying the flag — but only until they reach max health
+		// Heal teammates even while carrying the flag -- but only until they reach max health
 		if (m_pHeal && CBotGlobals::entityIsAlive(m_pHeal))
 		{
 			bool bHealTargetNeedsHP = false;
@@ -3967,7 +3967,7 @@ void CBotTF2::modThink()
 
 		if (!m_pSchedules->hasSchedule(SCHED_REMOVESAPPER))
 		{
-			// Own buildings — highest priority, no range limit if not in combat
+			// Own buildings -- highest priority, no range limit if not in combat
 			bool bInCombat = (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot());
 			float fMaxDist = bInCombat ? 512.0f : 2048.0f;
 
@@ -3998,7 +3998,7 @@ void CBotTF2::modThink()
 				m_pSchedules->add(new CBotRemoveSapperSched(m_pTeleExit, ENGI_EXIT));
 				updateCondition(CONDITION_PARANOID);
 			}
-			// Ally buildings — helpful but lower priority
+			// Ally buildings -- helpful but lower priority
 			else if ((m_fRemoveSapTime < engine->Time()) && m_pNearestAllySentry
 			    && CBotGlobals::entityIsValid(m_pNearestAllySentry)
 			    && CTeamFortress2Mod::isSentrySapped(m_pNearestAllySentry))
@@ -5216,12 +5216,12 @@ bool CBotTF2::healPlayer()
 
 	if (pCurrentTarget == m_pHeal.get())
 	{
-		// Already healing the right target — keep beam connected
+		// Already healing the right target -- keep beam connected
 		primaryAttack(true);
 	}
 	else if (m_fHealClickTime < engine->Time())
 	{
-		// Wrong target or no target — release briefly, aim, and re-fire
+		// Wrong target or no target -- release briefly, aim, and re-fire
 		if (pCurrentTarget != nullptr)
 		{
 			m_pButtons->letGo(IN_ATTACK);
@@ -9506,7 +9506,7 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			}
 		}
 
-		// Extinguish burning teammates — reuse shared logic
+		// Extinguish burning teammates -- reuse shared logic
 		if (!bSecAttack && m_iClass == TF_CLASS_PYRO)
 		{
 			if (tryExtinguishTeammates())
