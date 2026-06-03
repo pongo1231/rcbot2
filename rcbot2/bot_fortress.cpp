@@ -5243,6 +5243,18 @@ bool CBotTF2::healPlayer()
 			}
 		}
 	}
+	else if (CBotGlobals::entityIsValid(m_pHeal))
+	{
+		int iCharge = CClassInterface::getUberChargeLevel(pWeaponEdict);
+		int iItemDef = CClassInterface::TF2_getItemDefinitionIndex(pWeaponEdict);
+		// Vaccinator (998) holds up to 4 ubers at 25% each
+		int iThreshold = (iItemDef == 998) ? 25 : 100;
+		if (iCharge >= iThreshold)
+		{
+			// Reviving marker -- pop uber to speed up revive
+			m_pButtons->tap(IN_ATTACK2);
+		}
+	}
 
 	return true;
 }
