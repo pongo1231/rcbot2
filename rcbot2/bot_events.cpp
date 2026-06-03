@@ -267,7 +267,8 @@ void CPlayerHurtEvent::execute(IBotEventInterface *pEvent)
 		            {
 		                pEvent->setInt("damage",0);
 		                pEvent->setInt("health",100);
-		            }
+}
+
 		        }
 		    }
 		*/
@@ -418,6 +419,10 @@ void CPlayerSpawnEvent::execute(IBotEventInterface *pEvent)
 		// find medigun
 		CTeamFortress2Mod::findMediGun(m_pActivator);
 	}
+
+	// MvM: revived players thank their medic
+	if (pBot && CTeamFortress2Mod::isMapType(TF_MAP_MVM))
+		pBot->addVoiceCommand(TF_VC_THANKS);
 #endif
 }
 
