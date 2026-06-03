@@ -308,6 +308,8 @@ void CBotFortress::setup()
 	// Bot comfort settings
 	helpers->ClientCommand(m_pEdict, "cl_autoreload 1");
 	helpers->ClientCommand(m_pEdict, "hud_medicautocallers 1");
+	if (getClass() == TF_CLASS_MEDIC)
+		helpers->ClientCommand(m_pEdict, "tf_medigun_autoheal 1");
 }
 
 bool CBotFortress::someoneCalledMedic()
@@ -5119,27 +5121,6 @@ bool CBotTF2::healPlayer()
 		}
 	}
 
-	// For revive markers, keep a slight standoff for beam tracking
-	if (!CBotGlobals::isPlayer(m_pHeal))
-	{
-		Vector vToMe = getOrigin() - vOrigin;
-		vToMe.z      = 0;
-		float fDist  = vToMe.Length();
-		if (fDist > 0.1f)
-		{
-			vToMe = vToMe / fDist;
-			m_vMedicPosition = vOrigin + vToMe * 50.0f;
-		}
-		else
-			m_vMedicPosition = vOrigin;
-	}
-
-	if (!CBotGlobals::isPlayer(m_pHeal))
-	{
-		// Precise aim at the marker
-		setAiming(vOrigin);
-	}
-
 	if (distanceFrom(m_vMedicPosition) < 100)
 		stopMoving();
 	else
@@ -5175,63 +5156,34 @@ bool CBotTF2::healPlayer()
 
 	m_bIncreaseSensitivity = true;
 
-	//!!!CRASH!!!
-	/*if ( !CClassInterface::getMedigunHealing(pWeapon) )
-	{
-	    if ( (m_fHealClickTime < engine->Time()) && (DotProductFromOrigin(vOrigin) > 0.98f) )
-	        primaryAttack();
-	    //else
-	        //m_pButtons->letGo(IN_ATTACK);
-	}
-	else
-	{*/
-	edict_t *pent;
+	edict_t *pWeaponEdict = INDEXENT(pWeap->getWeaponIndex());
+	edict_t *pCurrentTarget = CClassInterface::getMedigunTarget(pWeaponEdict);
 
-	edict_t *pPlayer = nullptr;
-
-	// Find the player I'm currently healing
-	for (unsigned short i = 1; i <= gpGlobals->maxClients; i++)
-	{
-		pent = INDEXENT(i);
-
-		if (pent && CBotGlobals::entityIsValid(pent))
-		{
-			if (CClassInterface::isMedigunTargetting(pWeapon, pent))
-			{
-				pPlayer = pent;
-				break;
-			}
-		}
-	}
-
-	// found it
-	// Look at target FIRST so the medigun is aimed before firing
+	// Look at healee
 	lookAtEdict(m_pHeal);
 	setLookAtTask(LOOK_EDICT);
 
-	// Keep revive markers visible in the bot's perception
 	if (!CBotGlobals::isPlayer(m_pHeal))
 		setVisible(m_pHeal, true);
 
-	if (pPlayer)
+	if (pCurrentTarget == m_pHeal.get())
 	{
-		// is the person I want to heal different from the player I am healing now?
-		if (m_pHeal != pPlayer)
-		{
-			// yes -- release attack to disconnect from wrong player
-			if (m_fHealClickTime < engine->Time())
-				m_fHealClickTime = engine->Time() + rcbot_tf2_medic_letgotime.GetFloat();
-
-			m_pButtons->letGo(IN_ATTACK);
-		}
-		else if (m_fHealClickTime < engine->Time())
-			primaryAttack(true); // hold continuously for consistent healing
+		// Already healing the right target — keep beam connected
+		primaryAttack(true);
 	}
-	else if ((m_fHealClickTime < engine->Time()) && (DotProductFromOrigin(vOrigin) > 0.98f))
-		primaryAttack(true); // hold continuously for consistent healing
-	//}
-	// else
-	//	m_pHeal = CClassInterface::getMedigunTarget(INDEXENT(pWeap->getWeaponIndex()));
+	else if (m_fHealClickTime < engine->Time())
+	{
+		// Wrong target or no target — release briefly, aim, and re-fire
+		if (pCurrentTarget != nullptr)
+		{
+			m_pButtons->letGo(IN_ATTACK);
+			m_fHealClickTime = engine->Time() + 0.15f;
+		}
+		else
+		{
+			primaryAttack(true);
+		}
+	}
 
 	m_pLastHeal = m_pHeal;
 
