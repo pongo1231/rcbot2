@@ -9322,8 +9322,8 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			}
 			else if (m_iClass == TF_CLASS_PYRO)
 			{
-				// Tank doesn't fight back -- walk straight at it and burn
-				setMoveTo(vEnemyOrigin);
+		// Tank doesn't fight back -- walk straight at it and burn
+		setMoveTo(vEnemyOrigin);
 			}
 			else if (m_iClass == TF_CLASS_HWGUY)
 			{
@@ -9371,10 +9371,12 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 							select_CWeapon(pPrimary->getWeaponInfo());
 					}
 				}
-			}
 		}
+		// Don't avoid the tank -- push through any collision avoidance
+		m_fAvoidTime = engine->Time() + 1.0f;
+	}
 
-		// Dodge incoming projectiles if one is heading at us
+	// Dodge incoming projectiles if one is heading at us
 		if (m_fStrafeTime < engine->Time())
 		{
 			edict_t *pIncoming = m_NearestEnemyRocket.get();
