@@ -4613,27 +4613,27 @@ bool CBotTF2::canAvoid(edict_t *pEntity)
 
 	if (!CBotGlobals::entityIsValid(pEntity))
 		return false;
-	if (pEntity == m_pLookEdict)
+	if (m_pLookEdict.get_old() == pEntity)
 		return false;
 	if (m_pEdict == pEntity) // can't avoid self!!!!
 		return false;
-	if (pEntity == m_pLastEnemy)
+	if (m_pLastEnemy.get_old() == pEntity)
 		return false;
-	if (pEntity == m_pTeleEntrance)
+	if (m_pTeleEntrance.get_old() == pEntity)
 		return false;
-	if (pEntity == m_pNearestTeleEntrance)
+	if (m_pNearestTeleEntrance == pEntity)
 		return false;
-	if (pEntity == m_pNearestDisp)
+	if (m_pNearestDisp == pEntity)
 		return false;
 	if (pEntity == m_pHealthkit)
 		return false;
 	if (pEntity == m_pAmmo)
 		return false;
-	if ((pEntity == m_pSentryGun) && (CClassInterface::isObjectCarried(pEntity)))
+	if ((m_pSentryGun.get_old() == pEntity) && (CClassInterface::isObjectCarried(pEntity)))
 		return false;
-	if ((pEntity == m_pDispenser) && (CClassInterface::isObjectCarried(pEntity)))
+	if ((m_pDispenser.get_old() == pEntity) && (CClassInterface::isObjectCarried(pEntity)))
 		return false;
-	if ((pEntity == m_pTeleExit) && (CClassInterface::isObjectCarried(pEntity)))
+	if ((m_pTeleExit.get_old() == pEntity) && (CClassInterface::isObjectCarried(pEntity)))
 		return false;
 
 	edict_t *groundEntity = CClassInterface::getGroundEntity(m_pEdict);
@@ -4641,9 +4641,9 @@ bool CBotTF2::canAvoid(edict_t *pEntity)
 	// must stand on worldspawn
 	if (groundEntity && (ENTINDEX(groundEntity) > 0) && (pEntity == groundEntity))
 	{
-		if (pEntity == m_pSentryGun)
+		if (m_pSentryGun.get_old() == pEntity)
 			return true;
-		if (pEntity == m_pDispenser)
+		if (m_pDispenser.get_old() == pEntity)
 			return true;
 	}
 
