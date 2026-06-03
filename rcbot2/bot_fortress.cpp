@@ -6533,7 +6533,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			if (pPInfo && CClassInterface::getTF2Class(pPicked) == TF_CLASS_MEDIC)
 				bIsMedic = true;
 
-			float fUtil = bIsBuster ? 0.95f : (bIsGiant ? 0.85f : (bIsMedic ? 0.8f : 0.5f));
+			float fUtil = bIsBuster ? 0.95f : (bIsGiant ? 1.5f : (bIsMedic ? 1.2f : 0.7f));
 			ADD_UTILITY_DATA(BOT_UTIL_SAP_MVM_ROBOT, true, fUtil, ENTINDEX(pPicked));
 		}
 	}

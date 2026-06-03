@@ -1,5 +1,7 @@
 #include "sap_task.h"
 
+#include "backstap_sched.h"
+#include "bot_fortress.h"
 #include "bot_getprop.h"
 #include "bot_globals.h"
 #include "bot_mods.h"
@@ -103,6 +105,15 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 		// Complete after evade period -- let utility evaluation pick next action
 		if (m_fEvadeTime < engine->Time())
 		{
+			// For robots: add backstab on the same target immediately after sap
+			if (m_id == ENGI_ROBOT && CBotGlobals::entityIsAlive(pBuilding))
+			{
+				pBot->getSchedule()->freeMemory();
+				pBot->getSchedule()->add(new CBotBackstabSched(pBuilding));
+				complete();
+				return;
+			}
+
 			// Continue moving away briefly after completing
 			Vector vAway = pBot->getOrigin() - m_vBuildingOrigin;
 			vAway.z      = 0;
