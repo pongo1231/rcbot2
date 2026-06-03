@@ -329,6 +329,10 @@ bool CBotFortress::startGame()
 
 	m_iClass = (TF_Class)CClassInterface::getTF2Class(m_pEdict);
 
+	// Hijacked bots: preserve the player's class, don't change it
+	if (m_bHijacked)
+		return (team == TF2_TEAM_BLUE || team == TF2_TEAM_RED) && m_iClass != TF_CLASS_MAX;
+
 	if ((team != TF2_TEAM_BLUE) && (team != TF2_TEAM_RED))
 		selectTeam();
 	else if (m_iDesiredClass == -1) // invalid class
