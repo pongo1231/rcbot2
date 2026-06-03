@@ -156,6 +156,7 @@ typedef enum
 	GETPROP_TF2DESIREDCLASS, // Jrob
 	GETPROP_TF2_HYPEMETER,
 	GETPROP_TF2_WEAPONENERGY,
+	GETPROP_TF2_ITEMCHARGEMETER,
 	GET_PROPDATA_MAX
 } getpropdata_id;
 
@@ -380,6 +381,10 @@ class CClassInterface
 	inline static float getWeaponEnergy(edict_t *edict)
 	{
 		return g_GetProps[GETPROP_TF2_WEAPONENERGY].getFloat(edict, 0);
+	}
+	inline static float *getItemChargeMeter(edict_t *player)
+	{
+		return g_GetProps[GETPROP_TF2_ITEMCHARGEMETER].getFloatPointer(player);
 	}
 	inline static int getFlags(edict_t *edict)
 	{

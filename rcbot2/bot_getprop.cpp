@@ -456,6 +456,7 @@ void CClassInterface::init()
 	DEFINE_GETPROP(GETPROP_TF2DESIREDCLASS, "CTFPlayer", "m_iDesiredPlayerClass", 0);
 	DEFINE_GETPROP(GETPROP_TF2_HYPEMETER, "CTFPlayer", "m_flHypeMeter", 0);
 	DEFINE_GETPROP(GETPROP_TF2_WEAPONENERGY, "CTFWeaponBase", "m_flEnergy", 0);
+	DEFINE_GETPROP(GETPROP_TF2_ITEMCHARGEMETER, "CTFPlayer", "m_flItemChargeMeter", 0);
 
 	for (unsigned int i = 0; i < GET_PROPDATA_MAX; i++)
 	{

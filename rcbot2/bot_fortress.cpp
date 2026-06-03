@@ -2953,6 +2953,177 @@ void CBotTF2::handleSpecialAbilities()
 	// In danger = active enemy visible and wanting to fight
 	bool bInDanger = (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot());
 
+	// --- Pyro Thermal Thruster (1179): travel launch toward destination ---
+	if (m_iClass == TF_CLASS_PYRO && !bInDanger
+	    && m_fThermalThrustTime < engine->Time())
+	{
+		edict_t *pThrustEnt = nullptr;
+		CBaseHandle *pList = CClassInterface::getWeaponList(m_pEdict);
+		if (pList)
+		{
+			for (int i = 0; i < MAX_WEAPONS; i++)
+			{
+				CBaseHandle &h = pList[i];
+				if (!h.IsValid()) continue;
+				edict_t *pWep = INDEXENT(h.GetEntryIndex());
+				if (pWep && !pWep->IsFree()
+				    && CClassInterface::TF2_getItemDefinitionIndex(pWep) == 1179)
+				{
+					pThrustEnt = pWep;
+					break;
+				}
+			}
+		}
+
+		if (pThrustEnt)
+		{
+			float *pMeter = CClassInterface::getItemChargeMeter(m_pEdict);
+			bool bHasCharge = pMeter && (pMeter[1] >= 50.0f);
+			if (!bHasCharge)
+			{
+				edict_t *pActive = CClassInterface::getCurrentWeapon(m_pEdict);
+				if (pActive && CClassInterface::TF2_getItemDefinitionIndex(pActive) == 1179)
+					helpers->ClientCommand(m_pEdict, "slot1");
+				if (m_bThrusterSwitchPending)
+					m_bThrusterSwitchPending = false;
+				m_fThermalThrustTime = engine->Time() + 0.5f;
+			}
+			else
+			{
+			Vector vDst = m_bMoveToIsValid ? m_vMoveTo
+			    : (getOrigin() + (m_vLookAt - getOrigin()));
+			float fDist = (getOrigin() - vDst).Length2D();
+			if (fDist > 350.0f)
+			{
+				Vector vHead = getOrigin() + Vector(0, 0, 72.0f);
+				CTraceFilterWorldAndPropsOnly filter;
+				CBotGlobals::traceLine(vHead, vHead + Vector(0, 0, 512.0f),
+				    MASK_SOLID_BRUSHONLY, &filter);
+				if (CBotGlobals::getTraceResult()->fraction >= 1.0f)
+				{
+					if (!m_bThrusterSwitchPending)
+					{
+						selectWeapon(engine->IndexOfEdict(pThrustEnt));
+						m_fThermalThrustTime = engine->Time() + 1.2f;
+						m_bThrusterSwitchPending = true;
+					}
+					else
+					{
+						edict_t *pCurWep = CClassInterface::getCurrentWeapon(m_pEdict);
+						if (pCurWep && CClassInterface::TF2_getItemDefinitionIndex(pCurWep) == 1179)
+						{
+							Vector vDir = vDst - getOrigin();
+							vDir.z = 0;
+							float fLen = vDir.Length();
+							if (fLen > 0.1f)
+							{
+								vDir = vDir / fLen;
+								Vector vAim = vDir + Vector(0, 0, 1.2f);
+								QAngle aimAngles;
+								VectorAngles(vAim, aimAngles);
+								m_vViewAngles = aimAngles;
+							}
+							primaryAttack(true, 0.5f);
+							doButtons();
+							float *pMeterPost = CClassInterface::getItemChargeMeter(m_pEdict);
+							if (!pMeterPost || pMeterPost[1] < 50.0f)
+								helpers->ClientCommand(m_pEdict, "slot1");
+						}
+						m_fThermalThrustTime = engine->Time() + 2.5f;
+						m_bThrusterSwitchPending = false;
+					}
+				}
+			}
+			}
+		}
+	}
+
+	// --- Pyro Thermal Thruster (1179): combat launch toward enemy ---
+	if (m_iClass == TF_CLASS_PYRO && bInDanger && m_pEnemy
+	    && m_fThermalThrustTime < engine->Time())
+	{
+		float fEnemyDist = distanceFrom(m_pEnemy);
+		if (fEnemyDist > 600.0f)
+		{
+			edict_t *pThrustEnt = nullptr;
+			CBaseHandle *pList = CClassInterface::getWeaponList(m_pEdict);
+			if (pList)
+			{
+				for (int i = 0; i < MAX_WEAPONS; i++)
+				{
+					CBaseHandle &h = pList[i];
+					if (!h.IsValid()) continue;
+					edict_t *pWep = INDEXENT(h.GetEntryIndex());
+					if (pWep && !pWep->IsFree()
+					    && CClassInterface::TF2_getItemDefinitionIndex(pWep) == 1179)
+					{
+						pThrustEnt = pWep;
+						break;
+					}
+				}
+			}
+
+			if (pThrustEnt)
+			{
+				float *pMeter = CClassInterface::getItemChargeMeter(m_pEdict);
+				bool bHasCharge = pMeter && (pMeter[1] >= 50.0f);
+				if (!bHasCharge)
+				{
+					edict_t *pActive = CClassInterface::getCurrentWeapon(m_pEdict);
+					if (pActive && CClassInterface::TF2_getItemDefinitionIndex(pActive) == 1179)
+						helpers->ClientCommand(m_pEdict, "slot1");
+					if (m_bThrusterSwitchPending)
+						m_bThrusterSwitchPending = false;
+					m_fThermalThrustTime = engine->Time() + 0.5f;
+				}
+				else
+				{
+				Vector vDst = CBotGlobals::entityOrigin(m_pEnemy);
+				if (!m_bThrusterSwitchPending)
+				{
+					selectWeapon(engine->IndexOfEdict(pThrustEnt));
+					m_fThermalThrustTime = engine->Time() + 0.8f;
+					m_bThrusterSwitchPending = true;
+				}
+				else
+				{
+					if (distanceFrom(m_pEnemy) < 400.0f)
+					{
+						helpers->ClientCommand(m_pEdict, "slot1");
+						m_bThrusterSwitchPending = false;
+						m_fThermalThrustTime = engine->Time() + 1.0f;
+					}
+					else
+					{
+					edict_t *pCurWep = CClassInterface::getCurrentWeapon(m_pEdict);
+					if (pCurWep && CClassInterface::TF2_getItemDefinitionIndex(pCurWep) == 1179)
+					{
+						Vector vDir = vDst - getOrigin();
+						vDir.z = 0;
+						float fLen = vDir.Length();
+						if (fLen > 0.1f)
+						{
+							vDir = vDir / fLen;
+							Vector vAim = vDir + Vector(0, 0, 1.2f);
+							QAngle aimAngles;
+							VectorAngles(vAim, aimAngles);
+							m_vViewAngles = aimAngles;
+						}
+						primaryAttack(true, 0.5f);
+						doButtons();
+						float *pMeterPost = CClassInterface::getItemChargeMeter(m_pEdict);
+						if (!pMeterPost || pMeterPost[1] < 50.0f)
+							helpers->ClientCommand(m_pEdict, "slot1");
+					}
+					m_fThermalThrustTime = engine->Time() + 4.0f;
+					m_bThrusterSwitchPending = false;
+					}
+				}
+				}
+			}
+		}
+	}
+
 	edict_t *pActiveWep = CClassInterface::getCurrentWeapon(m_pEdict);
 	int iActiveItem     = pActiveWep ? CClassInterface::TF2_getItemDefinitionIndex(pActiveWep) : 0;
 
@@ -3113,7 +3284,7 @@ void CBotTF2::handleSpecialAbilities()
 				}
 			}
 		}
-	}
+}
 }
 
 void CBotFortress::notePlayerEngaged(edict_t *pPlayer)
@@ -4228,6 +4399,11 @@ void CBotTF2::modThink()
 
 	// Handle special weapon abilities (charge shots, auto-taunt, etc.)
 	handleSpecialAbilities();
+
+	// Prevent weapon switching while Thermal Thruster state machine is pending (travel only)
+	bool bInDanger = (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot());
+	if (m_bThrusterSwitchPending && !bInDanger)
+		wantToChangeWeapon(false);
 
 	// look for tasks / more important tasks here
 
