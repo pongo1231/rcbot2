@@ -398,8 +398,15 @@ float CBotFortress::getHealFactor(edict_t *pPlayer)
 
 				if (fDistance < 0.1)
 					return 1000;
-				// in case of divide by zero
-				return 200.0f / fDistance;
+
+				float fFactor = 200.0f / fDistance;
+
+				// In danger mode, deprioritize markers so living teammates under 50% HP get healed first
+				bool bInDanger = (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot());
+				if (bInDanger)
+					fFactor *= 0.33f;
+
+				return fFactor;
 			}
 		}
 
@@ -514,6 +521,14 @@ float CBotFortress::getHealFactor(edict_t *pPlayer)
 	if (CTeamFortress2Mod::isFlagCarrier(pPlayer) || CTeamFortress2Mod::isCapping(pPlayer))
 		fFactor *= 1.5f;
 
+	// In danger mode, boost players below 50% HP to out-prioritize revive markers
+	if (fHealthPercent < 0.5f)
+	{
+		bool bInDanger = (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot());
+		if (bInDanger)
+			fFactor *= 2.0f;
+	}
+
 	// When carrying the flag, only heal teammates below max health
 	if (hasFlag() && fHealthPercent >= 1.0f)
 		return 0.0f;
@@ -563,13 +578,18 @@ bool CBotFortress::setVisible(edict_t *pEntity, bool bVisible)
 							{
 								if (m_pHeal != pEntity)
 								{
-									// Don't abandon a revive marker for a player unless under threat
 									bool bHealingMarker = (m_pHeal.get() != nullptr
 									    && !CBotGlobals::isPlayer(m_pHeal));
 									bool bUnderThreat   = (m_pEnemy
 									    && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot());
-									if (bHealingMarker && !bUnderThreat)
-										return true; // stick with the revive
+									if (bHealingMarker)
+									{
+										// Stick with revive unless under threat or player is critically wounded
+										IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pEntity);
+										float fHP = pInfo ? (pInfo->GetHealth() / pInfo->GetMaxHealth()) : 1.0f;
+										if (!bUnderThreat && fHP >= 0.5f)
+											return true;
+									}
 
 									if (fFactor > m_fHealFactor)
 									{
