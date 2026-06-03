@@ -285,6 +285,7 @@ CBotFortress::CBotFortress()
 	m_fLastCalledMedicTime    = 0.0f;
 	m_bIsBeingHealed          = false;
 	m_bCanBeUbered            = false;
+	m_bRevived                = false;
 }
 
 void CBotFortress::checkDependantEntities()
@@ -6440,7 +6441,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			for (int i = 1; i <= CBotGlobals::maxClients(); i++)
 			{
 				edict_t *pOther = INDEXENT(i);
-				if (!pOther || pOther == m_pEdict) continue;
+				if (!pOther || pOther == m_pEdict || pOther->IsFree() || !pOther->GetUnknown()) continue;
 				if (!CBotGlobals::entityIsValid(pOther)) continue;
 				CBot *pOtherBot = CBots::getBotPointer(pOther);
 				if (!pOtherBot) continue;
