@@ -388,7 +388,7 @@ float CBotFortress::getHealFactor(edict_t *pPlayer)
 	// adds extra factor to players who have recently shouted MEDIC!
 	if (!CBotGlobals::isPlayer(pPlayer))
 	{
-		if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
+		if (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && pPlayer)
 		{
 			if (strcmp(pPlayer->GetClassName(), "entity_revive_marker") == 0)
 			{
@@ -630,7 +630,8 @@ bool CBotFortress::setVisible(edict_t *pEntity, bool bVisible)
 				}
 			}
 		}
-		else if (m_pHeal == pEntity)
+		else if (m_pHeal == pEntity
+			&& strcmp(pEntity->GetClassName(), "entity_revive_marker") != 0)
 		{
 			m_pHeal = nullptr;
 			removeCondition(CONDITION_SEE_HEAL);
@@ -4996,12 +4997,17 @@ bool CBotTF2::healPlayer()
 	vOrigin = CBotGlobals::entityOrigin(m_pHeal);
 	pWeap   = getCurrentWeapon();
 
+	// Null guard: entity could be destroyed between checks
+	edict_t *pHealEdict = m_pHeal.get();
+	if (!pHealEdict || !CBotGlobals::entityIsValid(pHealEdict))
+		return false;
+
 	if (!CBotGlobals::isPlayer(m_pHeal))
 	{
-		if (!CBotGlobals::entityIsAlive(m_pHeal) || !CBotGlobals::entityIsValid(m_pHeal))
+		if (!CBotGlobals::entityIsAlive(m_pHeal))
 			return false;
 
-		if (strcmp(m_pHeal.get()->GetClassName(), "entity_revive_marker") != 0)
+		if (strcmp(pHealEdict->GetClassName(), "entity_revive_marker") != 0)
 			return false;
 
 		// Continue to positioning and attack logic below for revive markers
@@ -5113,7 +5119,7 @@ bool CBotTF2::healPlayer()
 		}
 	}
 
-	// For revive markers, keep a standoff distance so the medigun can track
+	// For revive markers, keep a slight standoff for beam tracking
 	if (!CBotGlobals::isPlayer(m_pHeal))
 	{
 		Vector vToMe = getOrigin() - vOrigin;
@@ -5122,13 +5128,19 @@ bool CBotTF2::healPlayer()
 		if (fDist > 0.1f)
 		{
 			vToMe = vToMe / fDist;
-			m_vMedicPosition = vOrigin + vToMe * 150.0f;
+			m_vMedicPosition = vOrigin + vToMe * 50.0f;
 		}
 		else
 			m_vMedicPosition = vOrigin;
 	}
 
-	if (distanceFrom(m_vMedicPosition) < 160)
+	if (!CBotGlobals::isPlayer(m_pHeal))
+	{
+		// Precise aim at the marker
+		setAiming(vOrigin);
+	}
+
+	if (distanceFrom(m_vMedicPosition) < 100)
 		stopMoving();
 	else
 		setMoveTo(m_vMedicPosition);
@@ -5152,6 +5164,9 @@ bool CBotTF2::healPlayer()
 			m_fSideSpeed     = fDodgeDir * m_fIdealMoveSpeed * 0.8f;
 		}
 	}
+
+	if (!pWeap || !pWeap->getWeaponInfo())
+		return false;
 
 	pWeapon = INDEXENT(pWeap->getWeaponIndex());
 
@@ -5190,6 +5205,14 @@ bool CBotTF2::healPlayer()
 	}
 
 	// found it
+	// Look at target FIRST so the medigun is aimed before firing
+	lookAtEdict(m_pHeal);
+	setLookAtTask(LOOK_EDICT);
+
+	// Keep revive markers visible in the bot's perception
+	if (!CBotGlobals::isPlayer(m_pHeal))
+		setVisible(m_pHeal, true);
+
 	if (pPlayer)
 	{
 		// is the person I want to heal different from the player I am healing now?
@@ -5209,8 +5232,6 @@ bool CBotTF2::healPlayer()
 	//}
 	// else
 	//	m_pHeal = CClassInterface::getMedigunTarget(INDEXENT(pWeap->getWeaponIndex()));
-	lookAtEdict(m_pHeal);
-	setLookAtTask(LOOK_EDICT);
 
 	m_pLastHeal = m_pHeal;
 

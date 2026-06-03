@@ -74,7 +74,7 @@ void CBotTF2MedicHeal::execute(CBot *pBot, CBotSchedule *pSchedule)
 	     ((CBotFortress*)pBot)->clearHealingEntity();
 	     fail();
 	 }*/
-	else if (pBot->distanceFrom(pHeal) > 416)
+	else if (pBot->distanceFrom(pHeal) > (CBotGlobals::isPlayer(pHeal) ? 416 : 600))
 	{
 		pBotTF2->clearHealingEntity();
 		pBot->getNavigator()->rollBackPosition();
