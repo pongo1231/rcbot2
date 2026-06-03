@@ -1430,6 +1430,7 @@ void CBotFortress::currentlyDead()
 {
 	CBot::currentlyDead();
 
+	m_bRevived     = true;
 	m_fUpdateClass = engine->Time() + 0.1f;
 }
 

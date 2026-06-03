@@ -731,6 +731,8 @@ class CBotFortress : public CBot
 		CBot::hearPlayerAttack(pAttacker, iWeaponID);
 	}
 
+	bool m_bRevived;
+
   protected:
 	virtual void selectTeam();
 

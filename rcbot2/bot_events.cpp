@@ -420,9 +420,12 @@ void CPlayerSpawnEvent::execute(IBotEventInterface *pEvent)
 		CTeamFortress2Mod::findMediGun(m_pActivator);
 	}
 
-	// MvM: revived players thank their medic
-	if (pBot && CTeamFortress2Mod::isMapType(TF_MAP_MVM))
+	// MvM: revived players thank their medic (only if actually revived, not wave respawn)
+	if (pBot && CTeamFortress2Mod::isMapType(TF_MAP_MVM) && ((CBotFortress *)pBot)->m_bRevived)
+	{
 		pBot->addVoiceCommand(TF_VC_THANKS);
+		((CBotFortress *)pBot)->m_bRevived = false;
+	}
 #endif
 }
 
