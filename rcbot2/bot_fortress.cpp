@@ -1061,6 +1061,15 @@ void CBotFortress::spawnInit()
 	m_bSentryGunVectorValid    = false;
 	m_bDispenserVectorValid    = false;
 	m_bTeleportExitVectorValid = false;
+
+	m_pSentryGun               = nullptr;
+	m_pDispenser               = nullptr;
+	m_pTeleEntrance            = nullptr;
+	m_pTeleExit                = nullptr;
+	m_pAttackingEnemy          = nullptr;
+	m_pNearestEnemyDisp        = nullptr;
+	m_pPrevSpy                 = nullptr;
+	m_pLastEnemySentry         = nullptr;
 }
 
 bool CBotFortress::isBuilding(edict_t *pBuilding)
@@ -1857,8 +1866,13 @@ void CBotTF2::spawnInit()
 	m_fUseTeleporterTime      = 0.0f;
 	m_fSpySapTime             = 0.0f;
 
-	// m_pPushPayloadBomb = nullptr;
-	// m_pDefendPayloadBomb = nullptr;
+	m_pDefendPayloadBomb      = nullptr;
+	m_pPushPayloadBomb        = nullptr;
+	m_pRedPayloadBomb         = nullptr;
+	m_pBluePayloadBomb        = nullptr;
+	m_NearestEnemyRocket      = nullptr;
+	m_NearestEnemyGrenade     = nullptr;
+	m_pLastEnemySentry        = nullptr;
 
 	m_iPrevWeaponSelectFailed = 0;
 
