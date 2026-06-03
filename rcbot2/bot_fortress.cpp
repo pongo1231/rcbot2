@@ -584,7 +584,14 @@ bool CBotFortress::setVisible(edict_t *pEntity, bool bVisible)
 									    && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot());
 									if (bHealingMarker)
 									{
-										// Stick with revive unless under threat or player is critically wounded
+										// If beam is connected to marker, finish the revive -- don't switch
+										edict_t *pGunEdict = pMedigun ? pMedigun->getWeaponEntity() : nullptr;
+										bool bBeamConnected = pGunEdict
+										    && (CClassInterface::getMedigunTarget(pGunEdict) == m_pHeal.get());
+										if (bBeamConnected)
+											return true;
+
+										// Not yet beaming -- stick with revive unless under threat or player is critically wounded
 										IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pEntity);
 										float fHP = pInfo ? (pInfo->GetHealth() / pInfo->GetMaxHealth()) : 1.0f;
 										if (!bUnderThreat && fHP >= 0.5f)
@@ -5037,7 +5044,7 @@ bool CBotTF2::healPlayer()
 	if (getHealFactor(m_pHeal) == 0.0f)
 		return false;
 
-	// Validate entity BEFORE touching it — marker may have been freed by another medic's revive
+	// Validate entity BEFORE touching it -- marker may have been freed by another medic's revive
 	edict_t *pHealEdict = m_pHeal.get();
 	if (!pHealEdict || !CBotGlobals::entityIsValid(pHealEdict))
 		return false;
