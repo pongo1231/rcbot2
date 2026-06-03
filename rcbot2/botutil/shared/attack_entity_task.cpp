@@ -1,5 +1,7 @@
 #include "attack_entity_task.h"
 
+#include "bot_fortress.h"
+#include "bot_mods.h"
 #include "bot_weapons.h"
 
 CAttackEntityTask::CAttackEntityTask(edict_t *pEdict)
@@ -41,8 +43,12 @@ void CAttackEntityTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 	if (!pBot->isVisible(m_pEdict))
 	{
-		fail();
-		return;
+		// Tanks are enormous -- don't fail on brief visibility loss during strafing
+		if (!(CTeamFortress2Mod::isMapType(TF_MAP_MVM) && CTeamFortress2Mod::isTankBoss(m_pEdict.get())))
+		{
+			fail();
+			return;
+		}
 	}
 
 	if (pBot->hasSomeConditions(CONDITION_ENEMY_DEAD))
@@ -51,9 +57,19 @@ void CAttackEntityTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 		return;
 	}
 
-	pWeapon = pBot->getBestWeapon(m_pEdict);
+	// Tank: skip generic weapon selection -- let handleAttack() force class-optimal weapon
+	bool bSkipWeaponSelect = false;
+	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && CTeamFortress2Mod::isTankBoss(m_pEdict.get()))
+	{
+		int iClass = ((CBotFortress *)pBot)->getClass();
+		bSkipWeaponSelect = (iClass == TF_CLASS_PYRO || iClass == TF_CLASS_SOLDIER
+		                     || iClass == TF_CLASS_DEMOMAN || iClass == TF_CLASS_SCOUT
+		                     || iClass == TF_CLASS_HWGUY);
+	}
 
-	if ((pWeapon != nullptr) && (pWeapon != pBot->getCurrentWeapon()) && pWeapon->getWeaponIndex())
+	pWeapon = bSkipWeaponSelect ? pBot->getCurrentWeapon() : pBot->getBestWeapon(m_pEdict);
+
+	if (!bSkipWeaponSelect && (pWeapon != nullptr) && (pWeapon != pBot->getCurrentWeapon()) && pWeapon->getWeaponIndex())
 		pBot->selectWeapon(pWeapon->getWeaponIndex());
 
 	pBot->setEnemy(m_pEdict);

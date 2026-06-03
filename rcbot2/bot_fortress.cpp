@@ -3544,6 +3544,20 @@ void CBotTF2::modThink()
 	// mod specific think code here
 	CBotFortress::modThink();
 
+	// Tank: keep moving toward the tank even when visibility drops
+	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
+	    && (m_iClass == TF_CLASS_PYRO || m_iClass == TF_CLASS_SOLDIER
+	        || m_iClass == TF_CLASS_DEMOMAN || m_iClass == TF_CLASS_SCOUT || m_iClass == TF_CLASS_HWGUY))
+	{
+		edict_t *pTank = CTeamFortress2Mod::getNearestTank();
+		if (pTank && CBotGlobals::entityIsAlive(pTank))
+		{
+			Vector vTankPos = CBotGlobals::entityOrigin(pTank);
+			if ((vTankPos - getOrigin()).Length() < 400.0f)
+				setMoveTo(vTankPos);
+		}
+	}
+
 	checkBeingHealed();
 
 	if (wantToListen())
@@ -4312,7 +4326,9 @@ void CBotTF2::modThink()
 			static const int sapTypes[3][3] = {
 				{ 1, 2, 3 }, // SENTRY, TELE, DISP priority
 				{ 2, 3, 1 }, // TELE, DISP, SENTRY
-				{ 3, 1, 2 }  // DISP, SENTRY, TELE
+				{ 3, 1, 2 	}
+
+	// DISP, SENTRY, TELE
 			};
 
 			for (int iOrder = 0; iOrder < 3; iOrder++)
@@ -4506,11 +4522,40 @@ void CBotTF2::handleWeapons()
 		}
 	}
 
+	// Tank combat: focus on tanks, prevent findEnemy() from cycling to random robots
+	bool bTankClass = (m_iClass == TF_CLASS_PYRO || m_iClass == TF_CLASS_SOLDIER
+	                   || m_iClass == TF_CLASS_DEMOMAN || m_iClass == TF_CLASS_SCOUT
+	                   || m_iClass == TF_CLASS_HWGUY);
+
+	if (m_pEnemy && bTankClass
+	    && CTeamFortress2Mod::isMapType(TF_MAP_MVM) && CTeamFortress2Mod::isTankBoss(m_pEnemy.get()))
+	{
+		bool bInDanger = hasSomeConditions(CONDITION_NEED_HEALTH) || hasSomeConditions(CONDITION_NEED_AMMO)
+		                 || recentlyHurt(2.0f) || (m_fCurrentDanger > 50.0f);
+		if (!bInDanger)
+		{
+			wantToShoot(true);
+			m_bWantToChangeWeapon = false;
+			if ((CBotGlobals::entityOrigin(m_pEnemy.get()) - getOrigin()).Length() < 128.0f)
+				updateCondition(CONDITION_SEE_CUR_ENEMY);
+		}
+		else
+		{
+			m_pEnemy = nullptr;
+			wantToShoot(false);
+		}
+	}
+
 	//
 	// Handle attacking at this point
 	//
-	if (m_pEnemy && !hasSomeConditions(CONDITION_ENEMY_DEAD) && hasSomeConditions(CONDITION_SEE_CUR_ENEMY)
-	    && wantToShoot() && isVisible(m_pEnemy) && isEnemy(m_pEnemy) && m_pWeapons)
+	bool bTankClose = (m_pEnemy && CTeamFortress2Mod::isMapType(TF_MAP_MVM)
+	                   && CTeamFortress2Mod::isTankBoss(m_pEnemy.get())
+	                   && (CBotGlobals::entityOrigin(m_pEnemy.get()) - getOrigin()).Length() < 128.0f);
+
+	if (m_pEnemy && !hasSomeConditions(CONDITION_ENEMY_DEAD)
+	    && (bTankClose || hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
+	    && wantToShoot() && (bTankClose || isVisible(m_pEnemy)) && isEnemy(m_pEnemy) && m_pWeapons)
 	{
 		CBotWeapon *pWeapon;
 
@@ -9459,7 +9504,7 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 
 		clearFailedWeaponSelect();
 
-		if (pWeapon->isMelee())
+		if (pWeapon->isMelee() && !(CTeamFortress2Mod::isMapType(TF_MAP_MVM) && CTeamFortress2Mod::isTankBoss(pEnemy)))
 		{
 			Vector vEnemyOrigin = CBotGlobals::entityOrigin(pEnemy);
 
@@ -9540,8 +9585,38 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 					select_CWeapon(pPrimary->getWeaponInfo());
 			}
 
+			// Find closest non-tank enemy to use the tank as cover
+		edict_t *pThreat = nullptr;
+		float fThreatDist = 800.0f;
+		{
+		for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+		{
+			edict_t *p = INDEXENT(i);
+			if (!p || p == m_pEdict || p->IsFree() || !p->GetUnknown()) continue;
+			if (!CBotGlobals::entityIsValid(p) || !CBotGlobals::entityIsAlive(p)) continue;
+			if (!isEnemy(p) || CTeamFortress2Mod::isTankBoss(p)) continue;
+			float d = (CBotGlobals::entityOrigin(p) - getOrigin()).Length();
+			if (d < fThreatDist) { pThreat = p; fThreatDist = d; }
+		}
+		}
+
 			if (m_iClass == TF_CLASS_SOLDIER || m_iClass == TF_CLASS_DEMOMAN)
 			{
+				const float fCoverDist = 350.0f;
+				if (pThreat)
+				{
+					Vector vAway = vEnemyOrigin - CBotGlobals::entityOrigin(pThreat);
+					vAway.z = 0;
+					if (vAway.Length() > 0.1f)
+					{
+						vAway = vAway / vAway.Length();
+						setMoveTo(vEnemyOrigin + vAway * fCoverDist);
+					}
+					else
+						setMoveTo(vEnemyOrigin);
+				}
+				else
+				{
 				const float fMinDist = 300.0f;
 				if (fDistance < fMinDist)
 				{
@@ -9558,6 +9633,7 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 				else if (fDistance > fMinDist + 200.0f)
 				{
 					setMoveTo(vEnemyOrigin);
+				}
 				}
 
 				if (m_iClass == TF_CLASS_DEMOMAN)
@@ -9598,49 +9674,69 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			}
 			else if (m_iClass == TF_CLASS_PYRO)
 			{
-				const float fIdealDist = 180.0f;
-				if (fDistance > fIdealDist + 60.0f)
+				if (fDistance > 200.0f)
 				{
 					setMoveTo(vEnemyOrigin);
 				}
-				else if (fDistance < fIdealDist - 40.0f)
-				{
-					Vector vAway = getOrigin() - vEnemyOrigin;
-					vAway.z = 0;
-					if (vAway.Length() > 0.1f)
-					{
-						vAway = vAway / vAway.Length();
-						setMoveTo(getOrigin() + (vAway * fIdealDist));
-					}
-				}
 				else
 				{
-					if (m_fAvoidSideSwitch < engine->Time())
+					const float fCoverDist = 200.0f;
+					if (pThreat)
 					{
-						m_fAvoidSideSwitch = engine->Time() + randomFloat(1.5f, 2.5f);
-						m_bAvoidRight      = !m_bAvoidRight;
-					}
-					Vector vToTank       = vEnemyOrigin - getOrigin();
-					vToTank.z            = 0;
-					float flDistToTank   = vToTank.Length();
-					if (flDistToTank > 0.1f)
-					{
-						Vector vToTankNorm = vToTank / flDistToTank;
-						Vector vLeft       = vToTankNorm.Cross(Vector(0, 0, 1));
-						if (vLeft.Length() > 0.1f)
+						Vector vAway = vEnemyOrigin - CBotGlobals::entityOrigin(pThreat);
+						vAway.z = 0;
+						if (vAway.Length() > 0.1f)
 						{
-							vLeft           = vLeft / vLeft.Length();
-							float fStrafeOff = bot_avoid_strength.GetFloat() * 1.2f;
-							if (m_bAvoidRight)
-								setMoveTo(vEnemyOrigin + (vLeft * fStrafeOff));
-							else
-								setMoveTo(vEnemyOrigin - (vLeft * fStrafeOff));
+							vAway = vAway / vAway.Length();
+							setMoveTo(vEnemyOrigin + vAway * fCoverDist);
+						}
+						else
+							setMoveTo(vEnemyOrigin);
+					}
+					else
+					{
+						if (m_fAvoidSideSwitch < engine->Time())
+						{
+							m_fAvoidSideSwitch = engine->Time() + randomFloat(1.5f, 2.5f);
+							m_bAvoidRight      = !m_bAvoidRight;
+						}
+						Vector vToTank       = vEnemyOrigin - getOrigin();
+						vToTank.z            = 0;
+						float flDistToTank   = vToTank.Length();
+						if (flDistToTank > 0.1f)
+						{
+							Vector vToTankNorm = vToTank / flDistToTank;
+							Vector vLeft       = vToTankNorm.Cross(Vector(0, 0, 1));
+							if (vLeft.Length() > 0.1f)
+							{
+								vLeft           = vLeft / vLeft.Length();
+								float fStrafeOff = bot_avoid_strength.GetFloat() * 1.2f;
+								if (m_bAvoidRight)
+									setMoveTo(vEnemyOrigin + (vLeft * fStrafeOff));
+								else
+									setMoveTo(vEnemyOrigin - (vLeft * fStrafeOff));
+							}
 						}
 					}
 				}
 			}
 			else if (m_iClass == TF_CLASS_HWGUY)
 			{
+				const float fCoverDist = 250.0f;
+				if (pThreat)
+				{
+					Vector vAway = vEnemyOrigin - CBotGlobals::entityOrigin(pThreat);
+					vAway.z = 0;
+					if (vAway.Length() > 0.1f)
+					{
+						vAway = vAway / vAway.Length();
+						setMoveTo(vEnemyOrigin + vAway * fCoverDist);
+					}
+					else
+						setMoveTo(vEnemyOrigin);
+				}
+				else
+				{
 				const float fMinDist = 200.0f;
 				if (fDistance < fMinDist)
 				{
@@ -9656,18 +9752,47 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 				{
 					setMoveTo(vEnemyOrigin);
 				}
+				}
 			}
 			else if (m_iClass == TF_CLASS_SCOUT)
 			{
-				const float fCloseDist = 130.0f;
-				if (fDistance > fCloseDist)
+				const float fCoverDist = 150.0f;
+				if (pThreat)
+				{
+					Vector vAway = vEnemyOrigin - CBotGlobals::entityOrigin(pThreat);
+					vAway.z = 0;
+					if (vAway.Length() > 0.1f)
+					{
+						vAway = vAway / vAway.Length();
+						setMoveTo(vEnemyOrigin + vAway * fCoverDist);
+					}
+					else
+						setMoveTo(vEnemyOrigin);
+				}
+				else if (fDistance > 200.0f)
 					setMoveTo(vEnemyOrigin);
 			}
 			else
 			{
+				const float fCoverDist = 250.0f;
+				if (pThreat)
+				{
+					Vector vAway = vEnemyOrigin - CBotGlobals::entityOrigin(pThreat);
+					vAway.z = 0;
+					if (vAway.Length() > 0.1f)
+					{
+						vAway = vAway / vAway.Length();
+						setMoveTo(vEnemyOrigin + vAway * fCoverDist);
+					}
+					else
+						setMoveTo(vEnemyOrigin);
+				}
+				else
+				{
 				const float fCloseDist = 250.0f;
 				if (fDistance > fCloseDist)
 					setMoveTo(vEnemyOrigin);
+				}
 			}
 		}
 
@@ -10372,7 +10497,7 @@ bool CBotTF2::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 				return false;
 			else if (bIsGrenade && !pWeapon->canDeflectRockets())
 				return false;
-			else if (bIsBoss && pWeapon->isMelee())
+			else if (bIsBoss && pWeapon->isMelee() && !pWeapon->isSpecial())
 				return false;
 		}
 
