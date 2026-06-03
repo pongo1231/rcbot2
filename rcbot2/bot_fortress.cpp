@@ -3256,16 +3256,18 @@ void CBotTF2::handleSpecialAbilities()
 	if (m_iClass == TF_CLASS_SCOUT && bInDanger && randomInt(1, 25) == 1)
 		tapButton(IN_JUMP);
 
-	// --- Sniper / Scout: don't throw Jarate/Milk at already debuffed targets ---
+	// --- Sniper / Scout: don't throw Jarate/Milk at already debuffed targets or tanks ---
 	if ((iActiveItem == 58 || iActiveItem == 1083 || iActiveItem == 1105) // Jarate variants
-	    && m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
+	    && m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY)
+	    && !CTeamFortress2Mod::isTankBoss(m_pEnemy))
 	{
 		int iCond = CClassInterface::getTF2Conditions(m_pEnemy);
 		if (iCond & (1 << 24)) // already Jarated
 			return;
 	}
 	if ((iActiveItem == 222 || iActiveItem == 1121) // Mad Milk variants
-	    && m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
+	    && m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY)
+	    && !CTeamFortress2Mod::isTankBoss(m_pEnemy))
 	{
 		int iCond = CClassInterface::getTF2Conditions(m_pEnemy);
 		if (iCond & (1 << 27)) // already Milked
