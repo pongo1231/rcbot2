@@ -50,6 +50,37 @@
 
 #include <in_buttons.h>
 
+#ifdef __linux__
+#include <execinfo.h>
+#include <signal.h>
+#include <unistd.h>
+
+static void crashHandler(int sig)
+{
+	void *stack[64];
+	int frames   = backtrace(stack, 64);
+	char **symbols = backtrace_symbols(stack, frames);
+
+	fprintf(stderr, "\n=== RCBot CRASH (signal %d) ===\n", sig);
+	for (int i = 0; i < frames; i++)
+		fprintf(stderr, "  #%02d %s\n", i, symbols[i] ? symbols[i] : "???");
+	fprintf(stderr, "=== END STACK TRACE ===\n\n");
+
+	free(symbols);
+
+	signal(sig, SIG_DFL);
+	raise(sig);
+}
+#endif
+
+static void installCrashHandler()
+{
+#ifdef __linux__
+	signal(SIGSEGV, crashHandler);
+	signal(SIGABRT, crashHandler);
+#endif
+}
+
 SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, 0, bool, char const *, char const *, char const *, char const *,
               bool, bool);
 SH_DECL_HOOK3_void(IServerGameDLL, ServerActivate, SH_NOATTRIB, 0, edict_t *, int, int);
@@ -456,6 +487,8 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 	gpGlobals = ismm->GetCGlobals();
 
 	META_LOG(g_PLAPI, "Starting plugin.");
+
+	installCrashHandler();
 
 	/* Load the VSP listener.  This is usually needed for IServerPluginHelpers. */
 	ismm->AddListener(this, this);
