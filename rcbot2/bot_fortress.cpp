@@ -6334,13 +6334,15 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 				}
 			}
 
-			// Avoid overkill: scale down if enough defenders already there
-			if (iNearbyDefenders >= 4)
-				fMvmDefendUtil *= 0.2f;
-			else if (iNearbyDefenders >= 3)
-				fMvmDefendUtil *= 0.4f;
-			else if (iNearbyDefenders >= 2 && !pCarrier)
-				fMvmDefendUtil *= 0.6f;
+		// Avoid overkill: scale down if enough defenders already there
+		if (iNearbyDefenders >= 4)
+			fMvmDefendUtil *= 0.1f;
+		else if (iNearbyDefenders >= 3)
+			fMvmDefendUtil *= 0.2f;
+		else if (iNearbyDefenders >= 2)
+			fMvmDefendUtil *= 0.4f;
+		else if (iNearbyDefenders >= 1 && !pCarrier)
+			fMvmDefendUtil *= 0.7f;
 		}
 
 		ADD_UTILITY(BOT_UTIL_DEFEND_FLAG, true, fMvmDefendUtil);
@@ -6349,6 +6351,20 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		edict_t *pTank = CTeamFortress2Mod::getNearestTank();
 		if (pTank && CBotGlobals::entityIsAlive(pTank))
 		{
+			// Count how many friendly bots are already focused on a tank
+			int iTankFocusBots = 0;
+			for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+			{
+				edict_t *pOther = INDEXENT(i);
+				if (!pOther || pOther == m_pEdict) continue;
+				if (!CBotGlobals::entityIsValid(pOther)) continue;
+				CBot *pOtherBot = CBots::getBotPointer(pOther);
+				if (!pOtherBot) continue;
+				edict_t *pTheirEnemy = pOtherBot->getEnemy();
+				if (pTheirEnemy && CTeamFortress2Mod::isTankBoss(pTheirEnemy))
+					iTankFocusBots++;
+			}
+
 			float fTankUtil = 0.0f;
 			bool bTankClass  = (m_iClass == TF_CLASS_PYRO || m_iClass == TF_CLASS_SOLDIER
 					 || m_iClass == TF_CLASS_DEMOMAN || m_iClass == TF_CLASS_SCOUT
@@ -6369,6 +6385,17 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 					if (fDistToHatch < 1024.0f)
 						fTankUtil = 1.0f + (1.0f - (fDistToHatch / 1024.0f));
 				}
+			}
+
+			// Limit to ~3 bots per tank unless emergency
+			if (fTankUtil > 0.0f && iTankFocusBots >= 3)
+			{
+				Vector vHatch;
+				bool bEmergency = false;
+				if (CTeamFortress2Mod::getMVMCapturePoint(&vHatch))
+					bEmergency = ((CBotGlobals::entityOrigin(pTank) - vHatch).Length() < 1024.0f);
+				if (!bEmergency)
+					fTankUtil = 0.0f;
 			}
 
 			if (fTankUtil > 0.0f)
@@ -8569,7 +8596,9 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		edict_t *pTank = CTeamFortress2Mod::getNearestTank();
 		if (pTank && CBotGlobals::entityIsAlive(pTank))
 		{
-			m_pSchedules->add(new CBotAttackSched(pTank));
+			m_pEnemy = pTank;
+			m_fUtilTimes[BOT_UTIL_ATTACK_TANK] = engine->Time() + 2.0f;
+			wantToShoot(true);
 			return true;
 		}
 	}

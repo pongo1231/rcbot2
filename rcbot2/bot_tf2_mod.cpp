@@ -814,6 +814,11 @@ void CTeamFortress2Mod::checkMVMTankBoss(edict_t *pEntity)
 	}
 }
 
+edict_t *CTeamFortress2Mod::getNearestTank()
+{
+	return m_pNearestTankBoss.get();
+}
+
 CWaypoint *CTeamFortress2Mod::getBestWaypointMVM(CBot *pBot, int iFlags)
 {
 	Vector vFlagLocation;

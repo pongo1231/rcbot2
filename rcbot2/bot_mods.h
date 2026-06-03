@@ -834,6 +834,7 @@ class CTeamFortress2Mod : public CBotMod
 	static bool isSentry(edict_t *pEntity, int iTeam, bool checkcarrying = false);
 	static bool isTankBoss(edict_t *pEntity);
 	static void checkMVMTankBoss(edict_t *pEntity);
+	static edict_t *getNearestTank();
 	static bool isTeleporter(edict_t *pEntity, int iTeam, bool checkcarrying = false);
 
 	static void updateTeleportTime(edict_t *pOwner);
