@@ -6052,11 +6052,12 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		{
 			ADD_UTILITY(BOT_UTIL_BUILDSENTRY, !m_bIsCarryingObj && !bHasFlag && !m_pSentryGun && (iMetal >= 130),
 			            CTeamFortress2Mod::isMapType(TF_MAP_MVM) ? 0.95f : 0.9f);
-			ADD_UTILITY(BOT_UTIL_BUILDDISP,
-			            !m_bIsCarryingObj && !bHasFlag && m_pSentryGun
-			                && (CClassInterface::getSentryHealth(m_pSentryGun) > 125) && !m_pDispenser
-			                && (iMetal >= 100),
-			            fSentryUtil);
+		ADD_UTILITY(BOT_UTIL_BUILDDISP,
+		            !m_bIsCarryingObj && !bHasFlag && m_pSentryGun
+		                && (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
+		                    || CClassInterface::getSentryHealth(m_pSentryGun) > 125)
+		                && !m_pDispenser && (iMetal >= 100),
+		            fSentryUtil);
 
 			if (CTeamFortress2Mod::isAttackDefendMap() && (iTeam == TF2_TEAM_BLUE))
 			{
@@ -6071,15 +6072,18 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			}
 			else
 			{
-				ADD_UTILITY(BOT_UTIL_BUILDTELENT,
-				            (fSentryHealthPercent > 0.99f) && !m_bIsCarryingObj && !bHasFlag
-				                && ((m_pSentryGun.get() && (iSentryLevel > 1)) || (m_pSentryGun.get() == nullptr))
-				                && m_bEntranceVectorValid && !m_pTeleEntrance && (iMetal >= 125),
-				            0.7f);
-				ADD_UTILITY(BOT_UTIL_BUILDTELEXT,
-				            !bSentryHasEnemy && (fSentryHealthPercent > 0.99f) && !m_bIsCarryingObj && !bHasFlag
-				                && m_pSentryGun && (iSentryLevel > 1) && !m_pTeleExit && (iMetal >= 125),
-				            randomFloat(0.7, 0.9));
+			ADD_UTILITY(BOT_UTIL_BUILDTELENT,
+			            (CTeamFortress2Mod::isMapType(TF_MAP_MVM) || fSentryHealthPercent > 0.99f)
+			                && !m_bIsCarryingObj && !bHasFlag
+			                && ((m_pSentryGun.get() && (iSentryLevel > 1)) || (m_pSentryGun.get() == nullptr))
+			                && m_bEntranceVectorValid && !m_pTeleEntrance && (iMetal >= 125),
+			            0.7f);
+			ADD_UTILITY(BOT_UTIL_BUILDTELEXT,
+			            (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
+			                || (!bSentryHasEnemy && fSentryHealthPercent > 0.99f))
+			                && !m_bIsCarryingObj && !bHasFlag
+			                && m_pSentryGun && (iSentryLevel > 1) && !m_pTeleExit && (iMetal >= 125),
+			            randomFloat(0.7, 0.9));
 			}
 
 			if ((m_fSpawnTime + 5.0f) > engine->Time())
@@ -6147,7 +6151,45 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		                && !CClassInterface::isObjectBeingBuilt(m_pDispenser)
 		                && (iMetal >= (200 - CClassInterface::getTF2SentryUpgradeMetal(m_pDispenser)))
 		                && ((iDispenserLevel < 3) || (fDispenserHealthPercent < 1.0f)),
-		            0.7 + ((1.0f - fDispenserHealthPercent) * 0.3));
+		    0.7 + ((1.0f - fDispenserHealthPercent) * 0.3));
+
+		// MvM: sequential build priority -- fix what's damaged before expanding
+		if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
+		{
+			bool bHasSentry = (m_pSentryGun.get() != nullptr);
+			bool bHasDisp   = (m_pDispenser.get() != nullptr);
+			bool bSentryHealthy = bHasSentry && (fSentryHealthPercent > 0.6f)
+			                    && (CClassInterface::getSentryEnemy(m_pSentryGun) == nullptr);
+			bool bDispHealthy   = bHasDisp && (fDispenserHealthPercent > 0.4f);
+
+			if (!bHasSentry)
+			{
+				ADD_UTILITY(BOT_UTIL_BUILDSENTRY, !m_bIsCarryingObj && !bHasFlag && !m_pSentryGun
+				    && (iMetal >= 130), 0.98f);
+			}
+			else if (!bSentryHealthy)
+			{
+				ADD_UTILITY(BOT_UTIL_UPGSENTRY, !m_bIsCarryingObj && (m_fRemoveSapTime < engine->Time())
+				    && !bHasFlag && bHasSentry, 0.96f);
+			}
+			else if (!bHasDisp)
+			{
+				ADD_UTILITY(BOT_UTIL_BUILDDISP, !m_bIsCarryingObj && !bHasFlag && bHasSentry
+				    && !m_pDispenser && (iMetal >= 100), 0.94f);
+			}
+			else if (!bDispHealthy)
+			{
+				ADD_UTILITY(BOT_UTIL_UPGDISP, !m_bIsCarryingObj && (m_fRemoveSapTime < engine->Time())
+				    && bHasDisp, 0.92f);
+			}
+			else if (!m_pTeleEntrance || !m_pTeleExit)
+			{
+				ADD_UTILITY(BOT_UTIL_BUILDTELENT, !m_bIsCarryingObj && !bHasFlag
+				    && m_bEntranceVectorValid && !m_pTeleEntrance && (iMetal >= 125), 0.90f);
+				ADD_UTILITY(BOT_UTIL_BUILDTELEXT, !m_bIsCarryingObj && !bHasFlag
+				    && bHasSentry && !m_pTeleExit && (iMetal >= 125), 0.90f);
+			}
+		}
 
 		// remove sappers
 		ADD_UTILITY(BOT_UTIL_REMOVE_SENTRY_SAPPER,
@@ -7785,8 +7827,13 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		}
 
 		if ((pWaypoint == nullptr) && (m_pSentryGun.get() != nullptr))
-			pWaypoint = CWaypoints::getWaypoint(CWaypointLocations::NearestWaypoint(
-			    CBotGlobals::entityOrigin(m_pSentryGun), 150, -1, true, false, true, nullptr, false, getTeam(), true));
+		{
+			if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
+				pWaypoint = CTeamFortress2Mod::getBestWaypointMVM(this, CWaypointTypes::W_FL_SENTRY);
+			if (pWaypoint == nullptr)
+				pWaypoint = CWaypoints::getWaypoint(CWaypointLocations::NearestWaypoint(
+				    CBotGlobals::entityOrigin(m_pSentryGun), 150, -1, true, false, true, nullptr, false, getTeam(), true));
+		}
 
 		if (pWaypoint)
 		{
