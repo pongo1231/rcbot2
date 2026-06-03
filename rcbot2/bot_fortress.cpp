@@ -9322,25 +9322,13 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			}
 		else if (m_iClass == TF_CLASS_PYRO)
 		{
-			// Close in and strafe around tank with flamethrower
-			const float fIdealDist = 180.0f;
-			if (fDistance > fIdealDist + 60.0f)
-			{
+			// Tank doesn't fight back -- just get close and burn
+			const float fCloseDist = 100.0f;
+			if (fDistance > fCloseDist + 80.0f)
 				setMoveTo(vEnemyOrigin);
-			}
-			else if (fDistance < fIdealDist - 40.0f)
-			{
-				Vector vAway = getOrigin() - vEnemyOrigin;
-				vAway.z = 0;
-				if (vAway.Length() > 0.1f)
-				{
-					vAway = vAway / vAway.Length();
-					setMoveTo(getOrigin() + (vAway * fIdealDist));
-				}
-			}
 			else
 			{
-				// Strafe around the tank at optimal flamethrower range
+				// Strafe around the tank at close range
 				if (m_fAvoidSideSwitch < engine->Time())
 				{
 					m_fAvoidSideSwitch = engine->Time() + randomFloat(1.5f, 2.5f);
