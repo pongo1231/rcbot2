@@ -4327,6 +4327,16 @@ void CBotTF2::handleWeapons()
 		pWeapon = m_pWeapons->getBestWeapon(m_pEnemy, !hasFlag(), !hasFlag(), rcbot_melee_only.GetBool(), false,
 		                                    CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict));
 
+		// Pyro vs tank: force flamethrower to avoid weapon-switch loop with secondary
+		if (m_iClass == TF_CLASS_PYRO
+		    && CTeamFortress2Mod::isMapType(TF_MAP_MVM)
+		    && CTeamFortress2Mod::isTankBoss(m_pEnemy))
+		{
+			CBotWeapon *pFlame = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
+			if (pFlame && pFlame->hasWeapon() && !pFlame->outOfAmmo(this))
+				pWeapon = pFlame;
+		}
+
 		setLookAtTask(LOOK_ENEMY);
 
 		m_pAttackingEnemy = nullptr;
@@ -9310,58 +9320,51 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 					}
 				}
 			}
-			else if (m_iClass == TF_CLASS_PYRO)
+		else if (m_iClass == TF_CLASS_PYRO)
+		{
+			// Close in and strafe around tank with flamethrower
+			const float fIdealDist = 180.0f;
+			if (fDistance > fIdealDist + 60.0f)
 			{
-				// Pyro: close in and strafe around tank with flamethrower
-				const float fIdealDist = 180.0f;
-				if (fDistance > fIdealDist + 60.0f)
+				setMoveTo(vEnemyOrigin);
+			}
+			else if (fDistance < fIdealDist - 40.0f)
+			{
+				Vector vAway = getOrigin() - vEnemyOrigin;
+				vAway.z = 0;
+				if (vAway.Length() > 0.1f)
 				{
-					setMoveTo(vEnemyOrigin);
-				}
-				else if (fDistance < fIdealDist - 40.0f)
-				{
-					Vector vAway = getOrigin() - vEnemyOrigin;
-					vAway.z = 0;
-					if (vAway.Length() > 0.1f)
-					{
-						vAway = vAway / vAway.Length();
-						setMoveTo(getOrigin() + (vAway * fIdealDist));
-					}
-				}
-				else
-				{
-					// Strafe around the tank at optimal flamethrower range
-					if (m_fAvoidSideSwitch < engine->Time())
-					{
-						m_fAvoidSideSwitch = engine->Time() + randomFloat(1.5f, 2.5f);
-						m_bAvoidRight      = !m_bAvoidRight;
-					}
-					Vector vToTank       = vEnemyOrigin - getOrigin();
-					vToTank.z            = 0;
-					float flDistToTank   = vToTank.Length();
-					if (flDistToTank > 0.1f)
-					{
-						Vector vToTankNorm = vToTank / flDistToTank;
-						Vector vLeft       = vToTankNorm.Cross(Vector(0, 0, 1));
-						if (vLeft.Length() > 0.1f)
-						{
-							vLeft           = vLeft / vLeft.Length();
-							float fStrafeOff = bot_avoid_strength.GetFloat() * 1.2f;
-							if (m_bAvoidRight)
-								setMoveTo(vEnemyOrigin + (vLeft * fStrafeOff));
-							else
-								setMoveTo(vEnemyOrigin - (vLeft * fStrafeOff));
-						}
-					}
-				}
-				// Force flamethrower only when within range to avoid weapon-switch loop
-				if (fDistance < 400.0f)
-				{
-					CBotWeapon *pFlame = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
-					if (pFlame && pFlame->hasWeapon() && !pFlame->outOfAmmo(this) && getCurrentWeapon() != pFlame)
-						select_CWeapon(pFlame->getWeaponInfo());
+					vAway = vAway / vAway.Length();
+					setMoveTo(getOrigin() + (vAway * fIdealDist));
 				}
 			}
+			else
+			{
+				// Strafe around the tank at optimal flamethrower range
+				if (m_fAvoidSideSwitch < engine->Time())
+				{
+					m_fAvoidSideSwitch = engine->Time() + randomFloat(1.5f, 2.5f);
+					m_bAvoidRight      = !m_bAvoidRight;
+				}
+				Vector vToTank       = vEnemyOrigin - getOrigin();
+				vToTank.z            = 0;
+				float flDistToTank   = vToTank.Length();
+				if (flDistToTank > 0.1f)
+				{
+					Vector vToTankNorm = vToTank / flDistToTank;
+					Vector vLeft       = vToTankNorm.Cross(Vector(0, 0, 1));
+					if (vLeft.Length() > 0.1f)
+					{
+						vLeft           = vLeft / vLeft.Length();
+						float fStrafeOff = bot_avoid_strength.GetFloat() * 1.2f;
+						if (m_bAvoidRight)
+							setMoveTo(vEnemyOrigin + (vLeft * fStrafeOff));
+						else
+							setMoveTo(vEnemyOrigin - (vLeft * fStrafeOff));
+					}
+				}
+			}
+		}
 			else if (m_iClass == TF_CLASS_HWGUY)
 			{
 				// Heavy: mid range for minigun accuracy, close if too far
@@ -9383,16 +9386,30 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			}
 			else
 			{
-				// All other classes: close distance, use primary weapon
-				const float fCloseDist = 250.0f;
-				if (fDistance > fCloseDist)
-					setMoveTo(vEnemyOrigin);
-				// Switch from melee to primary if needed
-				if (pWeapon->isMelee() && !pWeapon->isSpecial())
+				// Check if bot only has a melee weapon available
+				CBotWeapon *pPrimary = m_pWeapons->getPrimaryWeapon();
+				bool bOnlyMelee = !pPrimary || !pPrimary->hasWeapon() || (pPrimary->isMelee() && !pPrimary->isSpecial())
+				    || pPrimary->outOfAmmo(this);
+
+				if (bOnlyMelee)
 				{
-					CBotWeapon *pPrimary = m_pWeapons->getPrimaryWeapon();
-					if (pPrimary && pPrimary->hasWeapon() && !pPrimary->outOfAmmo(this))
-						select_CWeapon(pPrimary->getWeaponInfo());
+					// Bot only has melee -- close to punch range
+					const float fMeleeDist = 64.0f;
+					if (fDistance > fMeleeDist)
+						setMoveTo(vEnemyOrigin);
+				}
+				else
+				{
+					// All other classes: close distance, use primary weapon
+					const float fCloseDist = 250.0f;
+					if (fDistance > fCloseDist)
+						setMoveTo(vEnemyOrigin);
+					// Switch from melee to primary if needed
+					if (pWeapon->isMelee() && !pWeapon->isSpecial())
+					{
+						if (pPrimary && pPrimary->hasWeapon() && !pPrimary->outOfAmmo(this))
+							select_CWeapon(pPrimary->getWeaponInfo());
+					}
 				}
 			}
 		}
