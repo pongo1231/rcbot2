@@ -4780,7 +4780,29 @@ int CBotFortress::getSpyDisguiseClass(int iTeam)
 	}
 
 	if (availableClasses.empty())
+	{
+		// In MvM, prefer fast classes for fallback
+		if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
+		{
+			int fastClasses[] = { 1, 2, 5, 7, 8, 9 }; // Scout, Sniper, Medic, Pyro, Spy, Engi
+			return fastClasses[randomInt(0, 5)];
+		}
 		return randomInt(1, 9);
+	}
+
+	// In MvM, filter out slow classes (Soldier, Demoman, Heavy)
+	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
+	{
+		std::vector<int> filtered;
+		for (int i = 0; i < (int)availableClasses.size(); i++)
+		{
+			int c = availableClasses[i];
+			if (c != 3 && c != 4 && c != 6) // skip Soldier, Demoman, Heavy
+				filtered.push_back(c);
+		}
+		if (!filtered.empty())
+			availableClasses = filtered;
+	}
 
 	fTotal = 0;
 
