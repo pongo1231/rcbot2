@@ -9322,36 +9322,8 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			}
 		else if (m_iClass == TF_CLASS_PYRO)
 		{
-			// Tank doesn't fight back -- just get close and burn
-			const float fCloseDist = 100.0f;
-			if (fDistance > fCloseDist + 80.0f)
-				setMoveTo(vEnemyOrigin);
-			else
-			{
-				// Strafe around the tank at close range
-				if (m_fAvoidSideSwitch < engine->Time())
-				{
-					m_fAvoidSideSwitch = engine->Time() + randomFloat(1.5f, 2.5f);
-					m_bAvoidRight      = !m_bAvoidRight;
-				}
-				Vector vToTank       = vEnemyOrigin - getOrigin();
-				vToTank.z            = 0;
-				float flDistToTank   = vToTank.Length();
-				if (flDistToTank > 0.1f)
-				{
-					Vector vToTankNorm = vToTank / flDistToTank;
-					Vector vLeft       = vToTankNorm.Cross(Vector(0, 0, 1));
-					if (vLeft.Length() > 0.1f)
-					{
-						vLeft           = vLeft / vLeft.Length();
-						float fStrafeOff = bot_avoid_strength.GetFloat() * 1.2f;
-						if (m_bAvoidRight)
-							setMoveTo(vEnemyOrigin + (vLeft * fStrafeOff));
-						else
-							setMoveTo(vEnemyOrigin - (vLeft * fStrafeOff));
-					}
-				}
-			}
+			// Tank doesn't fight back -- walk straight at it and burn
+			setMoveTo(vEnemyOrigin);
 		}
 			else if (m_iClass == TF_CLASS_HWGUY)
 			{
