@@ -522,7 +522,7 @@ float CBotFortress::getHealFactor(edict_t *pPlayer)
 		fFactor *= 1.5f;
 
 	// In danger mode, boost players below 50% HP to out-prioritize revive markers
-	if (fHealthPercent < 0.5f)
+	if (fHealthPercent < 0.5f && CTeamFortress2Mod::isMapType(TF_MAP_MVM))
 	{
 		bool bInDanger = (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot());
 		if (bInDanger)
