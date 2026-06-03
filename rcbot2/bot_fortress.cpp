@@ -5552,8 +5552,8 @@ float CBotTF2::getEnemyFactor(edict_t *pEnemy)
 		         && (szModel[17] == 'b') && (szModel[21] == 's')
 		         && (szModel[28] == 'b'))
 		{
-			// sentry buster
-			fPreFactor = -500.0f;
+			// sentry buster: engineers rush to protect sentry, others ignore
+			fPreFactor = (m_iClass == TF_CLASS_ENGINEER) ? -500.0f : 2000.0f;
 		}
 		else
 		{
@@ -6388,7 +6388,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			else if (fDistToHatch > 512.0f)
 			{
 				// Bomb not being carried, far from hatch -- guard it lightly
-				fMvmDefendUtil += 0.3f;
+				fMvmDefendUtil += 0.15f;
 			}
 			else
 			{
@@ -7337,11 +7337,11 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 					edict_t *pCarrier = CTeamFortress2Mod::getFlagCarrier(TF2_TEAM_BLUE);
 
 					if (pCarrier && CBotGlobals::entityIsAlive(pCarrier))
-						fGuardTime = randomFloat(12.0f, 20.0f); // carrier active -- guard longer
+						fGuardTime = randomFloat(8.0f, 15.0f); // carrier active -- guard
 					else if (fDistToHatch < 512.0f)
-						fGuardTime = randomFloat(8.0f, 15.0f); // bomb near hatch -- guard a while
+						fGuardTime = randomFloat(5.0f, 10.0f); // bomb near hatch -- guard briefly
 					else
-						fGuardTime = randomFloat(3.0f, 8.0f); // bomb far from hatch -- brief guard
+						fGuardTime = randomFloat(2.0f, 5.0f); // bomb far from hatch -- barely guard
 				}
 				else
 				{
