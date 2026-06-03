@@ -634,6 +634,27 @@ bool CBotFortress::setVisible(edict_t *pEntity, bool bVisible)
 				if (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
 				    && strcmp(pEntity->GetClassName(), "entity_revive_marker") == 0)
 				{
+					// Skip if another medic is already reviving this marker
+					bool bOtherMedicHasIt = false;
+					for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+					{
+						edict_t *pOther = INDEXENT(i);
+						if (pOther && pOther != m_pEdict && CBotGlobals::entityIsValid(pOther)
+						    && CClassInterface::getTeam(pOther) == getTeam()
+						    && CClassInterface::getTF2Class(pOther) == TF_CLASS_MEDIC
+						    && CBotGlobals::entityIsAlive(pOther))
+						{
+							CBot *pOtherBot = CBots::getBotPointer(pOther);
+							if (pOtherBot && ((CBotTF2 *)pOtherBot)->getHealingEntity() == pEntity)
+							{
+								bOtherMedicHasIt = true;
+								break;
+							}
+						}
+					}
+					if (bOtherMedicHasIt)
+						return true;
+
 					float fFactor = getHealFactor(pEntity);
 					// add extra factor and ensure this guys actually being healed
 					if (!m_pHeal || (m_pHeal == pEntity) || (fFactor > m_fHealFactor))
@@ -5016,10 +5037,7 @@ bool CBotTF2::healPlayer()
 	if (getHealFactor(m_pHeal) == 0.0f)
 		return false;
 
-	vOrigin = CBotGlobals::entityOrigin(m_pHeal);
-	pWeap   = getCurrentWeapon();
-
-	// Null guard: entity could be destroyed between checks
+	// Validate entity BEFORE touching it — marker may have been freed by another medic's revive
 	edict_t *pHealEdict = m_pHeal.get();
 	if (!pHealEdict || !CBotGlobals::entityIsValid(pHealEdict))
 		return false;
@@ -5031,16 +5049,16 @@ bool CBotTF2::healPlayer()
 
 		if (strcmp(pHealEdict->GetClassName(), "entity_revive_marker") != 0)
 			return false;
-
-		// Continue to positioning and attack logic below for revive markers
 	}
 	else
 	{
-		// Player-specific validity checks
 		p = playerinfomanager->GetPlayerInfo(m_pHeal);
 		if (!p || p->IsDead() || !p->IsConnected() || p->IsObserver())
 			return false;
 	}
+
+	vOrigin = CBotGlobals::entityOrigin(m_pHeal);
+	pWeap   = getCurrentWeapon();
 
 	if (m_fMedicUpdatePosTime < engine->Time())
 	{
@@ -5177,6 +5195,9 @@ bool CBotTF2::healPlayer()
 	m_bIncreaseSensitivity = true;
 
 	edict_t *pWeaponEdict = INDEXENT(pWeap->getWeaponIndex());
+	if (!pWeaponEdict || !CBotGlobals::entityIsValid(pWeaponEdict))
+		return false;
+
 	edict_t *pCurrentTarget = CClassInterface::getMedigunTarget(pWeaponEdict);
 
 	// Look at healee
