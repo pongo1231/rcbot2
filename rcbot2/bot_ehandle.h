@@ -32,6 +32,7 @@
 #define __RCBOT_EHANDLE_H__
 
 #include "edict.h"
+#include "engine_wrappers.h"
 
 ////// entity handling in network
 class MyEHandle
@@ -64,12 +65,13 @@ class MyEHandle
 
 	inline edict_t *get()
 	{
-		// Return raw pointer without dereferencing — IsFree() crashes
-		// on stale handles. Callers needing validation use isValid().
-		// Stale handles are cleared in spawnInit; entityOrigin and
-		// distanceFrom have null guards; setVisible/canAvoid use get_old().
 		if (m_iSerialNumber && m_pEnt)
+		{
+			int iIndex = engine->IndexOfEdict(m_pEnt);
+			if (iIndex < 0 || iIndex >= gpGlobals->maxEntities)
+				return nullptr;
 			return m_pEnt;
+		}
 		return nullptr;
 	}
 
@@ -80,9 +82,7 @@ class MyEHandle
 
 	inline operator edict_t * const()
 	{ // same as get()
-		if (m_iSerialNumber && m_pEnt)
-			return m_pEnt;
-		return nullptr;
+		return get();
 	}
 
 	inline bool operator==(int a)
