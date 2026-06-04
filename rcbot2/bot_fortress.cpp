@@ -3698,25 +3698,19 @@ void CBotTF2::modThink()
 
 		if (pIncoming && CBotGlobals::entityIsValid(pIncoming)
 		    && CBotGlobals::entityIsAlive(pIncoming)
-		    && incomingRocket(512.0f))
+		    && incomingRocket(800.0f))
 		{
-			Vector vFromProj = getOrigin() - CBotGlobals::entityOrigin(pIncoming);
-			vFromProj.z      = 0;
-			float fLen       = vFromProj.Length2D();
+			Vector vOrigin  = getOrigin();
+			Vector vProjOrg = CBotGlobals::entityOrigin(pIncoming);
+			Vector vDodge   = vOrigin - vProjOrg;
+			vDodge.z        = 0;
+			float fLen      = vDodge.Length2D();
 			if (fLen > 0.1f)
 			{
-				Vector vAway = vFromProj / fLen;
-				Vector vPerp = vAway.Cross(Vector(0, 0, 1));
-
-				// Pick dodge direction: perpendicular away from projectile path,
-				// with a backward component to open distance
-				if (vPerp.y > 0)
-					setMoveTo(getOrigin() + (vPerp * 128.0f) + (vAway * 64.0f));
-				else
-					setMoveTo(getOrigin() - (vPerp * 128.0f) + (vAway * 64.0f));
-
+				vDodge = vDodge / fLen;
+				setMoveTo(vOrigin + vDodge * (BLAST_RADIUS + 128.0f));
 				m_fStrafeTime = engine->Time() + 0.2f;
-				m_fSideSpeed  = (vPerp.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed * 0.8f;
+				m_fSideSpeed  = (vDodge.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed;
 			}
 		}
 	}
@@ -5219,9 +5213,21 @@ bool CBotFortress::incomingRocket(float fRange)
 		if (fDist < fRange)
 		{
 			CClassInterface::getVelocity(pRocket, &vel);
+			float fSpeed = vel.Length();
 
-			vel   = vel / vel.Length();
-			vcomp = vorg + vel * fDist;
+			if (fSpeed > 0.1f)
+			{
+				vel = vel / fSpeed;
+
+				Vector vToProj = vorg - getOrigin();
+				float fDot     = vel.Dot(vToProj);
+				if (fDot <= 0.0f) // projectile heading away, not a threat
+					return false;
+
+				vcomp = vorg + vel * fDist;
+			}
+			else
+				vcomp = vorg;
 
 			return (distanceFrom(vcomp) < BLAST_RADIUS);
 		}
@@ -5242,7 +5248,12 @@ bool CBotFortress::incomingRocket(float fRange)
 
 			if (vel.Length() > 0)
 			{
-				vel   = vel / vel.Length();
+				vel = vel / vel.Length();
+
+				Vector vToProj = vorg - getOrigin();
+				if (vel.Dot(vToProj) <= 0.0f)
+					return false;
+
 				vcomp = vorg + vel * fDist;
 			}
 			else
@@ -5585,13 +5596,23 @@ bool CBotTF2::healPlayer()
 	if (m_fStrafeTime < engine->Time())
 	{
 		edict_t *pIncoming = m_NearestEnemyRocket.get();
-		if (pIncoming && incomingRocket(512.0f))
+		if (!pIncoming)
+			pIncoming = m_pNearestPipeGren.get();
+
+		if (pIncoming && incomingRocket(800.0f))
 		{
-			Vector vFromProj = getOrigin() - CBotGlobals::entityOrigin(pIncoming);
-			Vector vPerp     = vFromProj.Cross(Vector(0, 0, 1));
-			float fDodgeDir  = (vPerp.y > 0) ? 1.0f : -1.0f;
-			m_fStrafeTime    = engine->Time() + 0.4f;
-			m_fSideSpeed     = fDodgeDir * m_fIdealMoveSpeed * 0.8f;
+			Vector vOrigin  = getOrigin();
+			Vector vProjOrg = CBotGlobals::entityOrigin(pIncoming);
+			Vector vDodge   = vOrigin - vProjOrg;
+			vDodge.z        = 0;
+			float fLen      = vDodge.Length2D();
+			if (fLen > 0.1f)
+			{
+				vDodge = vDodge / fLen;
+				setMoveTo(vOrigin + vDodge * (BLAST_RADIUS + 128.0f));
+				m_fStrafeTime = engine->Time() + 0.2f;
+				m_fSideSpeed  = (vDodge.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed;
+			}
 		}
 	}
 
@@ -10011,20 +10032,19 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			if (!pIncoming)
 				pIncoming = m_pNearestPipeGren.get();
 
-			if (pIncoming && incomingRocket(512.0f))
+			if (pIncoming && incomingRocket(800.0f))
 			{
-				Vector vFromProj = getOrigin() - CBotGlobals::entityOrigin(pIncoming);
-				vFromProj.z      = 0;
-				float fLen       = vFromProj.Length2D();
+				Vector vOrigin  = getOrigin();
+				Vector vProjOrg = CBotGlobals::entityOrigin(pIncoming);
+				Vector vDodge   = vOrigin - vProjOrg;
+				vDodge.z        = 0;
+				float fLen      = vDodge.Length2D();
 				if (fLen > 0.1f)
 				{
-					Vector vAway = vFromProj / fLen;
-					Vector vPerp = vAway.Cross(Vector(0, 0, 1));
-					float fDodgeDir = (vPerp.y > 0) ? 1.0f : -1.0f;
-
-					setMoveTo(getOrigin() + (vPerp * fDodgeDir * 128.0f) + (vAway * 64.0f));
+					vDodge = vDodge / fLen;
+					setMoveTo(vOrigin + vDodge * (BLAST_RADIUS + 128.0f));
 					m_fStrafeTime = engine->Time() + 0.2f;
-					m_fSideSpeed  = fDodgeDir * m_fIdealMoveSpeed * 0.8f;
+					m_fSideSpeed  = (vDodge.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed;
 				}
 			}
 		}
