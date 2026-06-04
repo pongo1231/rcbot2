@@ -1531,7 +1531,7 @@ void CBotFortress::modThink()
 
 	if (!CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict) && (m_pNearestPipeGren.get() != nullptr))
 	{
-		if (!m_pSchedules->hasSchedule(SCHED_GOOD_HIDE_SPOT) && (distanceFrom(m_pNearestPipeGren) < BLAST_RADIUS))
+		if (!m_pSchedules->hasSchedule(SCHED_GOOD_HIDE_SPOT) && (distanceFrom(m_pNearestPipeGren) < 400.0f))
 		{
 			CGotoHideSpotSched *pSchedule = new CGotoHideSpotSched(this, m_pNearestPipeGren.get(), true);
 
@@ -3688,6 +3688,39 @@ void CBotTF2::modThink()
 		}
 	}
 
+	// Per-frame projectile dodge: works even when not in active combat,
+	// e.g. while pathing, retreating, or repositioning
+	if (m_fStrafeTime < engine->Time())
+	{
+		edict_t *pIncoming = m_NearestEnemyRocket.get();
+		if (!pIncoming)
+			pIncoming = m_pNearestPipeGren.get();
+
+		if (pIncoming && CBotGlobals::entityIsValid(pIncoming)
+		    && CBotGlobals::entityIsAlive(pIncoming)
+		    && incomingRocket(512.0f))
+		{
+			Vector vFromProj = getOrigin() - CBotGlobals::entityOrigin(pIncoming);
+			vFromProj.z      = 0;
+			float fLen       = vFromProj.Length2D();
+			if (fLen > 0.1f)
+			{
+				Vector vAway = vFromProj / fLen;
+				Vector vPerp = vAway.Cross(Vector(0, 0, 1));
+
+				// Pick dodge direction: perpendicular away from projectile path,
+				// with a backward component to open distance
+				if (vPerp.y > 0)
+					setMoveTo(getOrigin() + (vPerp * 128.0f) + (vAway * 64.0f));
+				else
+					setMoveTo(getOrigin() - (vPerp * 128.0f) + (vAway * 64.0f));
+
+				m_fStrafeTime = engine->Time() + 0.2f;
+				m_fSideSpeed  = (vPerp.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed * 0.8f;
+			}
+		}
+	}
+
 	checkBeingHealed();
 
 	if (wantToListen())
@@ -5261,7 +5294,7 @@ bool CBotTF2::setVisible(edict_t *pEntity, bool bVisible)
 		edict_t *pTest;
 
 		if (((pTest = m_NearestEnemyRocket.get()) != pEntity)
-		    && CTeamFortress2Mod::isRocket(pEntity, CTeamFortress2Mod::getEnemyTeam(m_iTeam)))
+		    && CTeamFortress2Mod::isHostileProjectile(pEntity, CTeamFortress2Mod::getEnemyTeam(m_iTeam)))
 		{
 			if ((pTest == nullptr) || (distanceFrom(pEntity) < distanceFrom(pTest)))
 				m_NearestEnemyRocket = pEntity;
@@ -9975,13 +10008,24 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 		if (m_fStrafeTime < engine->Time())
 		{
 			edict_t *pIncoming = m_NearestEnemyRocket.get();
+			if (!pIncoming)
+				pIncoming = m_pNearestPipeGren.get();
+
 			if (pIncoming && incomingRocket(512.0f))
 			{
 				Vector vFromProj = getOrigin() - CBotGlobals::entityOrigin(pIncoming);
-				Vector vPerp     = vFromProj.Cross(Vector(0, 0, 1));
-				float fDodgeDir  = (vPerp.y > 0) ? 1.0f : -1.0f;
-				m_fStrafeTime    = engine->Time() + 0.4f;
-				m_fSideSpeed     = fDodgeDir * m_fIdealMoveSpeed * 0.8f;
+				vFromProj.z      = 0;
+				float fLen       = vFromProj.Length2D();
+				if (fLen > 0.1f)
+				{
+					Vector vAway = vFromProj / fLen;
+					Vector vPerp = vAway.Cross(Vector(0, 0, 1));
+					float fDodgeDir = (vPerp.y > 0) ? 1.0f : -1.0f;
+
+					setMoveTo(getOrigin() + (vPerp * fDodgeDir * 128.0f) + (vAway * 64.0f));
+					m_fStrafeTime = engine->Time() + 0.2f;
+					m_fSideSpeed  = fDodgeDir * m_fIdealMoveSpeed * 0.8f;
+				}
 			}
 		}
 

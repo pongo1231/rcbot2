@@ -594,7 +594,9 @@ bool CTeamFortress2Mod::isPipeBomb(edict_t *pEntity, int iTeam)
 
 bool CTeamFortress2Mod::isHurtfulPipeGrenade(edict_t *pEntity, edict_t *pPlayer, bool bCheckOwner)
 {
-	if (strcmp(pEntity->GetClassName(), "tf_projectile_pipe") == 0)
+	const char *pszClass = pEntity->GetClassName();
+	if (strcmp(pszClass, "tf_projectile_pipe") == 0
+	    || strcmp(pszClass, "tf_projectile_pipe_remote") == 0)
 	{
 		if (bCheckOwner && (CClassInterface::getPipeBombOwner(pEntity) == pPlayer))
 			return true;
@@ -606,6 +608,20 @@ bool CTeamFortress2Mod::isHurtfulPipeGrenade(edict_t *pEntity, edict_t *pPlayer,
 	}
 
 	return false;
+}
+
+bool CTeamFortress2Mod::isHostileProjectile(edict_t *pEntity, int iTeam)
+{
+	const char *pszClass = pEntity->GetClassName();
+
+	return (!iTeam || (iTeam == getTeam(pEntity)))
+	    && (strcmp(pszClass, "tf_projectile_rocket") == 0
+	        || strcmp(pszClass, "tf_projectile_sentryrocket") == 0
+	        || strcmp(pszClass, "tf_projectile_arrow") == 0
+	        || strcmp(pszClass, "tf_projectile_flare") == 0
+	        || strcmp(pszClass, "tf_projectile_energy_ball") == 0
+	        || strcmp(pszClass, "tf_projectile_ball_ornament") == 0
+	        || strcmp(pszClass, "tf_projectile_healing_bolt") == 0);
 }
 
 bool CTeamFortress2Mod::isRocket(edict_t *pEntity, int iTeam)

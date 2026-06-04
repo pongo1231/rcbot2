@@ -25,7 +25,7 @@ general RCBot2 support.
 - Setup phase behaviors expanded, gate timing for pre-round readiness
 - Injured bots actively seek medics (FVisible trace, not FOV-limited), skip when health packs nearby
 - Burning bots seek out pyros or medics to get extinguished
-- Projectile dodging and melee combat strafing
+- Per-frame projectile dodging during combat, healing, and general movement -- bots strafe perpendicular and backward from incoming rockets, pipes, stickies, sentry rockets, arrows, and flares
 - Statistical projectile prediction with zigzag detection and overshoot/undershoot learning
 - Crash stack traces with backtrace and symbol resolution on SIGSEGV/SIGABRT
 - Null guard defenses across entity access and handle comparison code to prevent server crashes

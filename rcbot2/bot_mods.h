@@ -856,7 +856,7 @@ class CTeamFortress2Mod : public CBotMod
 	static bool isPipeBomb(edict_t *pEntity, int iTeam);
 
 	static bool isHurtfulPipeGrenade(edict_t *pEntity, edict_t *pPlayer, bool bCheckOwner = true);
-
+	static bool isHostileProjectile(edict_t *pEntity, int iTeam);
 	static bool isRocket(edict_t *pEntity, int iTeam);
 
 	static int getEnemyTeam(int iTeam);
