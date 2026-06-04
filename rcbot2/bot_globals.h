@@ -112,7 +112,8 @@ class CBotGlobals
 
 	static inline bool entityIsValid(edict_t *pEntity)
 	{
-		return pEntity && !pEntity->IsFree() && (pEntity->GetNetworkable() != nullptr)
+		return pEntity && pEntity->GetUnknown() && !pEntity->IsFree()
+		    && (pEntity->GetNetworkable() != nullptr)
 		    && (pEntity->GetIServerEntity() != nullptr) && (pEntity->m_NetworkSerialNumber != 0);
 	}
 
