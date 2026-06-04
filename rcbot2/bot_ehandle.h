@@ -42,16 +42,14 @@ class MyEHandle
 	{
 		m_pEnt          = nullptr;
 		m_iSerialNumber = 0;
+		m_iIndex        = 0;
 	}
 
 	MyEHandle(edict_t *pent)
 	{
-		m_pEnt = pent;
-
-		if (pent)
-			m_iSerialNumber = pent->m_NetworkSerialNumber;
-		else
-			m_iSerialNumber = 0;
+		m_pEnt          = pent;
+		m_iIndex        = pent ? IndexOfEdict(pent) : 0;
+		m_iSerialNumber = pent ? pent->m_NetworkSerialNumber : 0;
 	}
 
 	inline bool notValid()
@@ -65,12 +63,12 @@ class MyEHandle
 
 	inline edict_t *get()
 	{
-		if (m_iSerialNumber && m_pEnt)
+		if (m_iSerialNumber && m_pEnt
+		    && m_iIndex > 0 && m_iIndex < gpGlobals->maxEntities)
 		{
-			int iIndex = engine->IndexOfEdict(m_pEnt);
-			if (iIndex < 0 || iIndex >= gpGlobals->maxEntities)
-				return nullptr;
-			return m_pEnt;
+			edict_t *pCurrent = PEntityOfEntIndex(m_iIndex);
+			if (pCurrent && pCurrent->m_NetworkSerialNumber == m_iSerialNumber)
+				return m_pEnt;
 		}
 		return nullptr;
 	}
@@ -81,7 +79,7 @@ class MyEHandle
 	}
 
 	inline operator edict_t * const()
-	{ // same as get()
+	{
 		return get();
 	}
 
@@ -102,12 +100,9 @@ class MyEHandle
 
 	inline edict_t *operator=(edict_t *pent)
 	{
-		m_pEnt = pent;
-
-		if (pent)
-			m_iSerialNumber = pent->m_NetworkSerialNumber;
-		else
-			m_iSerialNumber = 0;
+		m_pEnt          = pent;
+		m_iIndex        = pent ? IndexOfEdict(pent) : 0;
+		m_iSerialNumber = pent ? pent->m_NetworkSerialNumber : 0;
 
 		return m_pEnt;
 	}
@@ -115,6 +110,7 @@ class MyEHandle
   private:
 	int m_iSerialNumber;
 	edict_t *m_pEnt;
+	int m_iIndex;
 };
 
 #endif
