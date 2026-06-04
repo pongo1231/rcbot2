@@ -19,6 +19,7 @@ CBotTF2DefendPoint::CBotTF2DefendPoint(int iArea, Vector vOrigin, int iRadius)
 
 void CBotTF2DefendPoint::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
+	if (m_iArea < 0 || m_iArea >= MAX_CONTROL_POINTS) { fail(); return; }
 	int iCpIndex = CTeamFortress2Mod::m_ObjectiveResource.m_WaypointAreaToIndexTranslation[m_iArea];
 	int iTeam    = pBot->getTeam();
 

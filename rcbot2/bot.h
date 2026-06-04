@@ -369,9 +369,13 @@ class CBot
 
 	inline float distanceFrom2D(edict_t *pEntity)
 	{
+		if (!pEntity) return 9999.0f;
+		ICollideable *pCollide = pEntity->GetCollideable();
+		if (!pCollide) return 9999.0f;
 		Vector vMe = getOrigin();
-		return (pEntity->GetCollideable()->GetCollisionOrigin() - vMe).Length2D();
-		// return distanceFrom(CBotGlobals::entityOrigin(pEntity));
+		Vector vEntity = pCollide->GetCollisionOrigin();
+		vEntity.z = vMe.z;
+		return (vEntity - vMe).Length();
 	}
 
 	/*
