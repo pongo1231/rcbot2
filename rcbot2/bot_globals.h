@@ -172,6 +172,8 @@ class CBotGlobals
 	////////
 	static inline Vector entityOrigin(edict_t *pEntity)
 	{
+		if (!pEntity || !pEntity->GetUnknown())
+			return Vector(0, 0, 0);
 		return pEntity->GetIServerEntity()->GetCollideable()->GetCollisionOrigin();
 	}
 	static int getTeam(edict_t *pEntity);

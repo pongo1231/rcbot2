@@ -64,10 +64,14 @@ class MyEHandle
 
 	inline edict_t *get()
 	{
-		// Skip IsFree() — it crashes when m_pEnt points to freed memory.
-		// Callers that need validation should use isValid() instead.
 		if (m_iSerialNumber && m_pEnt)
-			return m_pEnt;
+		{
+			if (!m_pEnt->IsFree() && (m_iSerialNumber == m_pEnt->m_NetworkSerialNumber))
+				return m_pEnt;
+		}
+		else if (m_pEnt)
+			m_pEnt = nullptr;
+
 		return nullptr;
 	}
 
@@ -77,9 +81,15 @@ class MyEHandle
 	}
 
 	inline operator edict_t * const()
-	{ // same as get function (skip IsFree for crash safety)
+	{ // same as get function (inlined for speed)
 		if (m_iSerialNumber && m_pEnt)
-			return m_pEnt;
+		{
+			if (!m_pEnt->IsFree() && (m_iSerialNumber == m_pEnt->m_NetworkSerialNumber))
+				return m_pEnt;
+		}
+		else if (m_pEnt)
+			m_pEnt = nullptr;
+
 		return nullptr;
 	}
 
