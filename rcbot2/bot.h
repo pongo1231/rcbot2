@@ -360,6 +360,7 @@ class CBot
 	}
 	inline float distanceFrom(edict_t *pEntity)
 	{
+		if (!pEntity) return 9999.0f;
 		Vector vMe = getOrigin();
 		return (pEntity->GetCollideable()->GetCollisionOrigin() - vMe).Length();
 	}
