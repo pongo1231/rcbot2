@@ -2372,6 +2372,9 @@ Vector CBot::getAimVector(edict_t *pEntity)
 	static float fDist;
 	static float fDist2D;
 
+	if (!pEntity || !pEntity->GetUnknown())
+		return m_vAimVector;
+
 	if (m_fNextUpdateAimVector > engine->Time())
 		return m_vAimVector;
 
