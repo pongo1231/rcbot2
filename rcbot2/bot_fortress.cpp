@@ -285,6 +285,7 @@ CBotFortress::CBotFortress()
 	m_fLastCalledMedicTime    = 0.0f;
 	m_bIsBeingHealed          = false;
 	m_bCanBeUbered            = false;
+	m_bRevived                = false;
 }
 
 void CBotFortress::checkDependantEntities()
@@ -702,9 +703,10 @@ bool CBotFortress::setVisible(edict_t *pEntity, bool bVisible)
 		{
 			if ((m_iClass != TF_CLASS_ENGINEER) || !CClassInterface::isObjectCarried(pEntity))
 			{
-				if (!m_pNearestEnemySentry
-				    || ((pEntity != m_pNearestEnemySentry)
-				        && (fEntDist < distanceFrom(m_pNearestEnemySentry))))
+				edict_t *pNearest = m_pNearestEnemySentry.get();
+				if (!pNearest
+				    || ((pEntity != pNearest)
+				        && (fEntDist < distanceFrom(pNearest))))
 				{
 					m_pNearestEnemySentry = pEntity;
 				}
@@ -712,109 +714,110 @@ bool CBotFortress::setVisible(edict_t *pEntity, bool bVisible)
 		}
 		else if (CTeamFortress2Mod::isTeleporter(pEntity, CTeamFortress2Mod::getEnemyTeam(getTeam())))
 		{
-			if (!m_pNearestEnemyTeleporter
-			    || ((pEntity != m_pNearestEnemyTeleporter)
-			        && (fEntDist < distanceFrom(m_pNearestEnemyTeleporter))))
+			edict_t *pNearest = m_pNearestEnemyTeleporter.get();
+			if (!pNearest
+			    || ((pEntity != pNearest)
+			        && (fEntDist < distanceFrom(pNearest))))
 			{
 				m_pNearestEnemyTeleporter = pEntity;
 			}
 		}
 		else if (CTeamFortress2Mod::isDispenser(pEntity, CTeamFortress2Mod::getEnemyTeam(getTeam())))
 		{
-			if (!m_pNearestEnemyDisp
-			    || ((pEntity != m_pNearestEnemyDisp) && (fEntDist < distanceFrom(m_pNearestEnemyDisp))))
+			edict_t *pNearest = m_pNearestEnemyDisp.get();
+			if (!pNearest
+			    || ((pEntity != pNearest) && (fEntDist < distanceFrom(pNearest))))
 			{
 				m_pNearestEnemyDisp = pEntity;
 			}
 		}
 		else if (CTeamFortress2Mod::isHurtfulPipeGrenade(pEntity, m_pEdict))
 		{
-			if (!m_pNearestPipeGren
-			    || ((pEntity != m_pNearestPipeGren) && (fEntDist < distanceFrom(m_pNearestPipeGren))))
+			edict_t *pNearest = m_pNearestPipeGren.get();
+			if (!pNearest
+			    || ((pEntity != pNearest) && (fEntDist < distanceFrom(pNearest))))
 			{
 				m_pNearestPipeGren = pEntity;
 			}
 		}
 	}
-	else if (pEntity == m_pNearestEnemySentry)
+	else if (pEntity == m_pNearestEnemySentry.get())
 	{
 		m_pNearestEnemySentry = nullptr;
 	}
-	else if (pEntity == m_pNearestEnemyTeleporter)
+	else if (pEntity == m_pNearestEnemyTeleporter.get())
 	{
 		m_pNearestEnemyTeleporter = nullptr;
 	}
-	else if (pEntity == m_pNearestEnemyDisp)
+	else if (pEntity == m_pNearestEnemyDisp.get())
 	{
 		m_pNearestEnemyDisp = nullptr;
 	}
-	else if (pEntity == m_pNearestPipeGren)
+	else if (pEntity == m_pNearestPipeGren.get())
 	{
 		m_pNearestPipeGren = nullptr;
 	}
 
 	//}
-
 	// Check for nearest Dispenser for health/ammo & flag
 	if (bValid && bVisible && !(CClassInterface::getEffects(pEntity) & EF_NODRAW)) // EF_NODRAW == invisible
 	{
-		if ((m_pFlag != pEntity) && CTeamFortress2Mod::isFlag(pEntity, getTeam()))
+		if ((m_pFlag.get() != pEntity) && CTeamFortress2Mod::isFlag(pEntity, getTeam()))
 			m_pFlag = pEntity;
-		else if ((m_pNearestAllySentry != pEntity) && CTeamFortress2Mod::isSentry(pEntity, getTeam()))
+		else if ((m_pNearestAllySentry.get() != pEntity) && CTeamFortress2Mod::isSentry(pEntity, getTeam()))
 		{
-			if (!m_pNearestAllySentry || (distanceFrom(pEntity) < distanceFrom(m_pNearestAllySentry)))
+			edict_t *pNearest = m_pNearestAllySentry.get();
+			if (!pNearest || (distanceFrom(pEntity) < distanceFrom(pNearest)))
 				m_pNearestAllySentry = pEntity;
 		}
-		else if ((m_pNearestDisp != pEntity) && CTeamFortress2Mod::isDispenser(pEntity, getTeam()))
+		else if ((m_pNearestDisp.get() != pEntity) && CTeamFortress2Mod::isDispenser(pEntity, getTeam()))
 		{
-			if (!m_pNearestDisp || (distanceFrom(pEntity) < distanceFrom(m_pNearestDisp)))
+			edict_t *pNearest = m_pNearestDisp.get();
+			if (!pNearest || (distanceFrom(pEntity) < distanceFrom(pNearest)))
 				m_pNearestDisp = pEntity;
 		}
-		else if ((pEntity != m_pNearestTeleEntrance) && CTeamFortress2Mod::isTeleporterEntrance(pEntity, getTeam()))
+		else if ((m_pNearestTeleEntrance.get() != pEntity) && CTeamFortress2Mod::isTeleporterEntrance(pEntity, getTeam()))
 		{
-			if (!m_pNearestTeleEntrance || (distanceFrom(pEntity) < distanceFrom(m_pNearestTeleEntrance)))
+			edict_t *pNearest = m_pNearestTeleEntrance.get();
+			if (!pNearest || (distanceFrom(pEntity) < distanceFrom(pNearest)))
 				m_pNearestTeleEntrance = pEntity;
 		}
-		else if ((pEntity != m_pAmmo) && CTeamFortress2Mod::isAmmo(pEntity))
+		else if ((m_pAmmo.get() != pEntity) && CTeamFortress2Mod::isAmmo(pEntity))
 		{
 			static float fDistance;
-
 			fDistance = distanceFrom(pEntity);
-
-			// Track ammo packs within 512 units (not just 200) so bots notice
-			// dropped ammo from dead players and go collect it
 			if (fDistance <= 512)
 			{
-				if (!m_pAmmo || (fDistance < distanceFrom(m_pAmmo)))
+				edict_t *pAmmo = m_pAmmo.get();
+				if (!pAmmo || (fDistance < distanceFrom(pAmmo)))
 					m_pAmmo = pEntity;
 			}
 		}
-		else if ((pEntity != m_pHealthkit) && CTeamFortress2Mod::isHealthKit(pEntity))
+		else if ((m_pHealthkit.get() != pEntity) && CTeamFortress2Mod::isHealthKit(pEntity))
 		{
 			static float fDistance;
-
 			fDistance = distanceFrom(pEntity);
-
 			if (fDistance <= 200)
 			{
-				if (!m_pHealthkit || (fDistance < distanceFrom(m_pHealthkit)))
+				edict_t *pHealth = m_pHealthkit.get();
+				if (!pHealth || (fDistance < distanceFrom(pHealth)))
 					m_pHealthkit = pEntity;
 			}
 		}
 	}
 	else
 	{
-		if (pEntity == m_pFlag.get_old())
+		if (pEntity == m_pFlag.get())
 			m_pFlag = nullptr;
-		else if (pEntity == m_pNearestDisp.get_old())
+		else if (pEntity == m_pNearestDisp.get())
 			m_pNearestDisp = nullptr;
-		else if (pEntity == m_pAmmo.get_old())
+		else if (pEntity == m_pAmmo.get())
 			m_pAmmo = nullptr;
-		else if (pEntity == m_pHealthkit.get_old())
+		else if (pEntity == m_pHealthkit.get())
 			m_pHealthkit = nullptr;
-		else if (pEntity == m_pHeal.get_old())
+		else if (pEntity == m_pHeal.get())
 			m_pHeal = nullptr;
-		else if (pEntity == m_pNearestPipeGren.get_old())
+		else if (pEntity == m_pNearestPipeGren.get())
 			m_pNearestPipeGren = nullptr;
 	}
 
@@ -1060,6 +1063,15 @@ void CBotFortress::spawnInit()
 	m_bSentryGunVectorValid    = false;
 	m_bDispenserVectorValid    = false;
 	m_bTeleportExitVectorValid = false;
+
+	m_pSentryGun               = nullptr;
+	m_pDispenser               = nullptr;
+	m_pTeleEntrance            = nullptr;
+	m_pTeleExit                = nullptr;
+	m_pAttackingEnemy          = nullptr;
+	m_pNearestEnemyDisp        = nullptr;
+	m_pPrevSpy                 = nullptr;
+	m_pLastEnemySentry         = nullptr;
 }
 
 bool CBotFortress::isBuilding(edict_t *pBuilding)
@@ -1856,8 +1868,13 @@ void CBotTF2::spawnInit()
 	m_fUseTeleporterTime      = 0.0f;
 	m_fSpySapTime             = 0.0f;
 
-	// m_pPushPayloadBomb = nullptr;
-	// m_pDefendPayloadBomb = nullptr;
+	m_pDefendPayloadBomb      = nullptr;
+	m_pPushPayloadBomb        = nullptr;
+	m_pRedPayloadBomb         = nullptr;
+	m_pBluePayloadBomb        = nullptr;
+	m_NearestEnemyRocket      = nullptr;
+	m_NearestEnemyGrenade     = nullptr;
+	m_pLastEnemySentry        = nullptr;
 
 	m_iPrevWeaponSelectFailed = 0;
 
@@ -3625,10 +3642,11 @@ void CBotTF2::modThink()
 	{
 		edict_t *pBuster   = nullptr;
 		float fBusterDist  = 9999.0f;
-		for (int i = gpGlobals->maxClients + 1; i < gpGlobals->maxEntities; i++)
+		bool bTaunting     = false;
+		for (int i = 1; i <= gpGlobals->maxClients; i++)
 		{
 			edict_t *pEnt = INDEXENT(i);
-			if (!pEnt || pEnt->IsFree()) continue;
+			if (!pEnt || pEnt->IsFree() || !pEnt->GetUnknown()) continue;
 			if (!CBotGlobals::entityIsValid(pEnt) || !CBotGlobals::entityIsAlive(pEnt)) continue;
 
 			IServerEntity *pServerEnt = pEnt->GetIServerEntity();
@@ -3641,64 +3659,51 @@ void CBotTF2::modThink()
 			{
 				fBusterDist = fDist;
 				pBuster     = pEnt;
+				int iConds  = CClassInterface::getTF2Conditions(pEnt);
+				bTaunting   = (iConds & (1 << 7)) != 0; // TFCond_Taunting
 			}
 		}
 
-		if (pBuster)
+		const float fBlastRadius = 600.0f;
+
+		if (pBuster && bTaunting && fBusterDist < fBlastRadius)
 		{
-			// Engineer: if far from sentry and buster is incoming, rush to sentry first
+			// Engineer: try to rescue sentry before fleeing
 			if (m_iClass == TF_CLASS_ENGINEER && m_pSentryGun.get()
 			    && CBotGlobals::entityIsValid(m_pSentryGun)
 			    && !m_bIsCarryingObj
-			    && distanceFrom(m_pSentryGun) > 200.0f
-			    && fBusterDist > 200.0f)
+			    && distanceFrom(m_pSentryGun) < 250.0f
+			    && FVisible(m_pSentryGun))
 			{
-				setMoveLookPriority(MOVELOOK_ATTACK);
-				setMoveTo(CBotGlobals::entityOrigin(m_pSentryGun));
-				setMoveLookPriority(MOVELOOK_MODTHINK);
-			}
-			// Close range: rescue and/or run
-			else if (fBusterDist < 350.0f)
-			{
-				if (m_iClass == TF_CLASS_ENGINEER && m_pSentryGun.get()
-				    && CBotGlobals::entityIsValid(m_pSentryGun)
-				    && !m_bIsCarryingObj
-				    && distanceFrom(m_pSentryGun) < 250.0f)
+				CBotWeapon *pRescue = m_pWeapons->getWeapon(
+				    CWeapons::getWeapon(TF2_WEAPON_SHOTGUN_PRIMARY));
+				edict_t *pRescueEnt = pRescue ? pRescue->getWeaponEntity() : nullptr;
+				if (pRescueEnt && CClassInterface::TF2_getItemDefinitionIndex(pRescueEnt) == 997
+				    && pRescue->getAmmo(this) >= 60)
 				{
-					CBotWeapon *pRescue = m_pWeapons->getWeapon(
-					    CWeapons::getWeapon(TF2_WEAPON_SHOTGUN_PRIMARY));
-					edict_t *pRescueEnt = pRescue ? pRescue->getWeaponEntity() : nullptr;
-					if (pRescueEnt && CClassInterface::TF2_getItemDefinitionIndex(pRescueEnt) == 997
-					    && pRescue->getAmmo(this) >= 130)
+					lookAtEdict(m_pSentryGun);
+					select_CWeapon(pRescue->getWeaponInfo());
+					secondaryAttack();
+					doButtons();
+					resetCarryTime();
+				}
+				else
+				{
+					CBotWeapon *pWrench = m_pWeapons->getWeapon(
+					    CWeapons::getWeapon(TF2_WEAPON_WRENCH));
+					if (pWrench && pWrench->hasWeapon())
 					{
-						lookAtEdict(m_pSentryGun);
-						select_CWeapon(pRescue->getWeaponInfo());
+						select_CWeapon(pWrench->getWeaponInfo());
 						secondaryAttack();
+						doButtons();
 						resetCarryTime();
 					}
-					else
-					{
-						CBotWeapon *pWrench = m_pWeapons->getWeapon(
-						    CWeapons::getWeapon(TF2_WEAPON_WRENCH));
-						if (pWrench && pWrench->hasWeapon())
-						{
-							select_CWeapon(pWrench->getWeaponInfo());
-							secondaryAttack();
-							resetCarryTime();
-						}
-					}
-				}
-
-				Vector vAway = getOrigin() - CBotGlobals::entityOrigin(pBuster);
-				vAway.z      = 0;
-				if (vAway.Length() > 0.1f)
-				{
-					vAway = vAway / vAway.Length();
-					setMoveLookPriority(MOVELOOK_ATTACK);
-					setMoveTo(getOrigin() + (vAway * 512.0f));
-					setMoveLookPriority(MOVELOOK_MODTHINK);
 				}
 			}
+
+			// All classes: flee using proper hide-spot navigation
+			m_pSchedules->freeMemory();
+			m_pSchedules->addFront(new CGotoHideSpotSched(this, pBuster));
 		}
 	}
 
@@ -3718,6 +3723,12 @@ void CBotTF2::modThink()
 			else if (m_pDispenser.get() && CBotGlobals::entityIsValid(m_pDispenser)
 			    && CClassInterface::getDispenserHealth(m_pDispenser) < 100.0f)
 				pTarget = m_pDispenser;
+			else if (m_pTeleEntrance.get() && CBotGlobals::entityIsValid(m_pTeleEntrance)
+			    && CClassInterface::getTeleporterHealth(m_pTeleEntrance) < 100.0f)
+				pTarget = m_pTeleEntrance;
+			else if (m_pTeleExit.get() && CBotGlobals::entityIsValid(m_pTeleExit)
+			    && CClassInterface::getTeleporterHealth(m_pTeleExit) < 100.0f)
+				pTarget = m_pTeleExit;
 
 			if (pTarget && FVisible(pTarget) && distanceFrom(pTarget) > 180.0f)
 			{
@@ -3725,6 +3736,7 @@ void CBotTF2::modThink()
 				setLookAtTask(LOOK_EDICT);
 				select_CWeapon(pRescue->getWeaponInfo());
 				secondaryAttack();
+				doButtons();
 			}
 		}
 	}
@@ -4613,27 +4625,27 @@ bool CBotTF2::canAvoid(edict_t *pEntity)
 
 	if (!CBotGlobals::entityIsValid(pEntity))
 		return false;
-	if (pEntity == m_pLookEdict)
+	if (m_pLookEdict.get() == pEntity)
 		return false;
 	if (m_pEdict == pEntity) // can't avoid self!!!!
 		return false;
-	if (pEntity == m_pLastEnemy)
+	if (m_pLastEnemy.get() == pEntity)
 		return false;
-	if (pEntity == m_pTeleEntrance)
+	if (m_pTeleEntrance.get() == pEntity)
 		return false;
-	if (pEntity == m_pNearestTeleEntrance)
+	if (m_pNearestTeleEntrance.get() == pEntity)
 		return false;
-	if (pEntity == m_pNearestDisp)
+	if (m_pNearestDisp.get() == pEntity)
 		return false;
-	if (pEntity == m_pHealthkit)
+	if (pEntity == m_pHealthkit.get())
 		return false;
-	if (pEntity == m_pAmmo)
+	if (pEntity == m_pAmmo.get())
 		return false;
-	if ((pEntity == m_pSentryGun) && (CClassInterface::isObjectCarried(pEntity)))
+	if ((m_pSentryGun.get() == pEntity) && (CClassInterface::isObjectCarried(pEntity)))
 		return false;
-	if ((pEntity == m_pDispenser) && (CClassInterface::isObjectCarried(pEntity)))
+	if ((m_pDispenser.get() == pEntity) && (CClassInterface::isObjectCarried(pEntity)))
 		return false;
-	if ((pEntity == m_pTeleExit) && (CClassInterface::isObjectCarried(pEntity)))
+	if ((m_pTeleExit.get() == pEntity) && (CClassInterface::isObjectCarried(pEntity)))
 		return false;
 
 	edict_t *groundEntity = CClassInterface::getGroundEntity(m_pEdict);
@@ -4641,9 +4653,9 @@ bool CBotTF2::canAvoid(edict_t *pEntity)
 	// must stand on worldspawn
 	if (groundEntity && (ENTINDEX(groundEntity) > 0) && (pEntity == groundEntity))
 	{
-		if (pEntity == m_pSentryGun)
+		if (m_pSentryGun.get() == pEntity)
 			return true;
-		if (pEntity == m_pDispenser)
+		if (m_pDispenser.get() == pEntity)
 			return true;
 	}
 
@@ -5143,7 +5155,7 @@ bool CBotTF2::setVisible(edict_t *pEntity, bool bVisible)
 	}
 	else
 	{
-		if (pEntity == m_NearestEnemyRocket.get_old())
+		if (pEntity == m_NearestEnemyRocket.get())
 			m_NearestEnemyRocket = nullptr;
 	}
 
@@ -5210,7 +5222,7 @@ bool CBotTF2::setVisible(edict_t *pEntity, bool bVisible)
 		}
 		else
 		{
-			if (m_pCloakedSpy.get_old() == pEntity)
+			if (m_pCloakedSpy.get() == pEntity)
 				m_pCloakedSpy = nullptr;
 		}
 	}
@@ -5556,8 +5568,8 @@ float CBotTF2::getEnemyFactor(edict_t *pEnemy)
 		         && (szModel[17] == 'b') && (szModel[21] == 's')
 		         && (szModel[28] == 'b'))
 		{
-			// sentry buster
-			fPreFactor = -500.0f;
+			// sentry buster: engineers rush to protect sentry, others ignore
+			fPreFactor = (m_iClass == TF_CLASS_ENGINEER) ? -500.0f : 2000.0f;
 		}
 		else
 		{
@@ -6392,7 +6404,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			else if (fDistToHatch > 512.0f)
 			{
 				// Bomb not being carried, far from hatch -- guard it lightly
-				fMvmDefendUtil += 0.3f;
+				fMvmDefendUtil += 0.15f;
 			}
 			else
 			{
@@ -6445,7 +6457,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			for (int i = 1; i <= CBotGlobals::maxClients(); i++)
 			{
 				edict_t *pOther = INDEXENT(i);
-				if (!pOther || pOther == m_pEdict) continue;
+				if (!pOther || pOther == m_pEdict || pOther->IsFree() || !pOther->GetUnknown()) continue;
 				if (!CBotGlobals::entityIsValid(pOther)) continue;
 				CBot *pOtherBot = CBots::getBotPointer(pOther);
 				if (!pOtherBot) continue;
@@ -7341,11 +7353,11 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 					edict_t *pCarrier = CTeamFortress2Mod::getFlagCarrier(TF2_TEAM_BLUE);
 
 					if (pCarrier && CBotGlobals::entityIsAlive(pCarrier))
-						fGuardTime = randomFloat(12.0f, 20.0f); // carrier active -- guard longer
+						fGuardTime = randomFloat(8.0f, 15.0f); // carrier active -- guard
 					else if (fDistToHatch < 512.0f)
-						fGuardTime = randomFloat(8.0f, 15.0f); // bomb near hatch -- guard a while
+						fGuardTime = randomFloat(5.0f, 10.0f); // bomb near hatch -- guard briefly
 					else
-						fGuardTime = randomFloat(3.0f, 8.0f); // bomb far from hatch -- brief guard
+						fGuardTime = randomFloat(2.0f, 5.0f); // bomb far from hatch -- barely guard
 				}
 				else
 				{

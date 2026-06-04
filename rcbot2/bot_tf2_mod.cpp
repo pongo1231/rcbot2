@@ -1285,7 +1285,7 @@ void CTeamFortress2Mod::roundReset()
 
 	updatePointMaster();
 
-	if (m_ObjectiveResource.isInitialised())
+	if (m_ObjectiveResource.isInitialised() && m_ObjectiveResource.GetNumControlPoints() > 0)
 	{
 		int numpoints = m_ObjectiveResource.GetNumControlPoints();
 		int i;

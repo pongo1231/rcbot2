@@ -64,14 +64,12 @@ class MyEHandle
 
 	inline edict_t *get()
 	{
+		// Return raw pointer without dereferencing — IsFree() crashes
+		// on stale handles. Callers needing validation use isValid().
+		// Stale handles are cleared in spawnInit; entityOrigin and
+		// distanceFrom have null guards; setVisible/canAvoid use get_old().
 		if (m_iSerialNumber && m_pEnt)
-		{
-			if (!m_pEnt->IsFree() && (m_iSerialNumber == m_pEnt->m_NetworkSerialNumber))
-				return m_pEnt;
-		}
-		else if (m_pEnt)
-			m_pEnt = nullptr;
-
+			return m_pEnt;
 		return nullptr;
 	}
 
@@ -81,15 +79,9 @@ class MyEHandle
 	}
 
 	inline operator edict_t * const()
-	{ // same as get function (inlined for speed)
+	{ // same as get()
 		if (m_iSerialNumber && m_pEnt)
-		{
-			if (!m_pEnt->IsFree() && (m_iSerialNumber == m_pEnt->m_NetworkSerialNumber))
-				return m_pEnt;
-		}
-		else if (m_pEnt)
-			m_pEnt = nullptr;
-
+			return m_pEnt;
 		return nullptr;
 	}
 

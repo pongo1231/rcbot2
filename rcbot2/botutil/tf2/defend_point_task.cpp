@@ -22,12 +22,12 @@ void CBotTF2DefendPoint::execute(CBot *pBot, CBotSchedule *pSchedule)
 	int iCpIndex = CTeamFortress2Mod::m_ObjectiveResource.m_WaypointAreaToIndexTranslation[m_iArea];
 	int iTeam    = pBot->getTeam();
 
-	if (m_iArea && (CTeamFortress2Mod::m_ObjectiveResource.GetOwningTeam(iCpIndex) != iTeam))
+	if (m_iArea && iCpIndex >= 0 && (CTeamFortress2Mod::m_ObjectiveResource.GetOwningTeam(iCpIndex) != iTeam))
 	{
 		((CBotTF2 *)pBot)->updateAttackDefendPoints();
 		complete();
 	}
-	else if (m_iArea && !CTeamFortress2Mod::m_ObjectiveResource.isCPValid(iCpIndex, iTeam, TF2_POINT_DEFEND))
+	else if (m_iArea && iCpIndex >= 0 && !CTeamFortress2Mod::m_ObjectiveResource.isCPValid(iCpIndex, iTeam, TF2_POINT_DEFEND))
 	{
 		((CBotTF2 *)pBot)->updateAttackDefendPoints();
 		fail();

@@ -54,14 +54,44 @@
 #include <execinfo.h>
 #include <signal.h>
 #include <unistd.h>
+#include <ucontext.h>
 
-static void crashHandler(int sig)
+static const char *siCodeStr(int si_code)
+{
+	switch (si_code)
+	{
+	case SEGV_MAPERR: return "SEGV_MAPERR (bad address)";
+	case SEGV_ACCERR: return "SEGV_ACCERR (permissions)";
+	default: return "unknown";
+	}
+}
+
+static void crashHandler(int sig, siginfo_t *info, void *secret)
 {
 	void *stack[64];
 	int frames   = backtrace(stack, 64);
 	char **symbols = backtrace_symbols(stack, frames);
 
-	fprintf(stderr, "\n=== RCBot CRASH (signal %d) ===\n", sig);
+	fprintf(stderr, "\n=== RCBot CRASH (signal %d, code=%s) ===\n", sig, siCodeStr(info->si_code));
+	fprintf(stderr, "Fault address: %p\n", info->si_addr);
+
+	ucontext_t *ctx = (ucontext_t *)secret;
+	fprintf(stderr, "Registers:\n");
+	fprintf(stderr, "  EIP=0x%08X  ESP=0x%08X  EBP=0x%08X\n",
+	        ctx->uc_mcontext.gregs[REG_EIP],
+	        ctx->uc_mcontext.gregs[REG_ESP],
+	        ctx->uc_mcontext.gregs[REG_EBP]);
+	fprintf(stderr, "  EAX=0x%08X  EBX=0x%08X",
+	        ctx->uc_mcontext.gregs[REG_EAX],
+	        ctx->uc_mcontext.gregs[REG_EBX]);
+	fprintf(stderr, "  ECX=0x%08X  EDX=0x%08X\n",
+	        ctx->uc_mcontext.gregs[REG_ECX],
+	        ctx->uc_mcontext.gregs[REG_EDX]);
+	fprintf(stderr, "  ESI=0x%08X  EDI=0x%08X\n",
+	        ctx->uc_mcontext.gregs[REG_ESI],
+	        ctx->uc_mcontext.gregs[REG_EDI]);
+
+	fprintf(stderr, "Stack trace:\n");
 	for (int i = 0; i < frames; i++)
 		fprintf(stderr, "  #%02d %s\n", i, symbols[i] ? symbols[i] : "???");
 	fprintf(stderr, "=== END STACK TRACE ===\n\n");
@@ -76,8 +106,12 @@ static void crashHandler(int sig)
 static void installCrashHandler()
 {
 #ifdef __linux__
-	signal(SIGSEGV, crashHandler);
-	signal(SIGABRT, crashHandler);
+	struct sigaction sa;
+	sa.sa_sigaction = crashHandler;
+	sa.sa_flags     = SA_SIGINFO;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGSEGV, &sa, nullptr);
+	sigaction(SIGABRT, &sa, nullptr);
 #endif
 }
 
