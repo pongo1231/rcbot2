@@ -68,7 +68,7 @@ class MyEHandle
 		{
 			edict_t *pCurrent = PEntityOfEntIndex(m_iIndex);
 			if (pCurrent && pCurrent->m_NetworkSerialNumber == m_iSerialNumber)
-				return m_pEnt;
+				return pCurrent;
 		}
 		return nullptr;
 	}
