@@ -9691,12 +9691,20 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 
 		if (bSniperThreat)
 		{
-			if (m_fStrafeTime < engine->Time())
+			m_fStrafeTime = engine->Time() + 0.3f;
+
+			if (m_fAvoidSideSwitch < engine->Time())
 			{
-				m_fStrafeTime = engine->Time() + 0.3f;
-				m_bAvoidRight = !m_bAvoidRight;
+				m_fAvoidSideSwitch = engine->Time() + randomFloat(0.25f, 0.35f);
+				m_bAvoidRight      = !m_bAvoidRight;
 			}
-			m_fSideSpeed = m_bAvoidRight ? m_fIdealMoveSpeed * 0.8f : -m_fIdealMoveSpeed * 0.8f;
+
+			m_fSideSpeed = m_bAvoidRight ? m_fIdealMoveSpeed : -m_fIdealMoveSpeed;
+
+			Vector vForward;
+			AngleVectors(m_vViewAngles, &vForward);
+			vForward.z = 0;
+			setMoveTo(getOrigin() + vForward * 128.0f);
 		}
 	}
 
