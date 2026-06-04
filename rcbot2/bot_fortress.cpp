@@ -1829,6 +1829,9 @@ void CBotTF2::spawnInit()
 	m_pHealer             = nullptr;
 	m_fCallMedic          = engine->Time() + 10.0f;
 	m_fCarryTime          = 0.0f;
+	m_fNextBowIgnite       = 0.0f;
+	m_bBowIgnitePending    = false;
+	m_iLastBowIgniteSniper = -1;
 
 	m_bIsCarryingTeleExit = false;
 	m_bIsCarryingSentry   = false;
@@ -2845,6 +2848,114 @@ bool CBotTF2::tryExtinguishTeammates()
 	setLookAtTask(LOOK_VECTOR);
 	setMoveLookPriority(MOVELOOK_MODTHINK);
 	return false;
+}
+
+bool CBotTF2::tryIgniteSniperBow()
+{
+	if (m_iClass != TF_CLASS_PYRO)
+		return false;
+
+	CBotWeapon *pFlame = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
+	if (!pFlame || !pFlame->hasWeapon())
+		return false;
+
+	if (m_bBowIgnitePending)
+	{
+		if (getCurrentWeapon() != pFlame)
+			return false;
+
+		edict_t *pT = INDEXENT(m_iLastBowIgniteSniper);
+		if (!pT || !CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT))
+		{
+			m_bBowIgnitePending = false;
+			return false;
+		}
+		if (CTeamFortress2Mod::getTeam(pT) != m_iTeam
+		    || CClassInterface::getTF2Class(pT) != TF_CLASS_SNIPER
+		    || !FVisible(pT) || distanceFrom(pT) > 200.0f)
+		{
+			m_bBowIgnitePending = false;
+			return false;
+		}
+
+		Vector vSniper = CBotGlobals::entityOrigin(pT);
+		vSniper.z += 48.0f;
+		Vector vLook = vSniper - getEyePosition();
+		QAngle angTarget;
+		VectorAngles(vLook, angTarget);
+		angTarget.x = clamp(angTarget.x, -89.0f, 89.0f);
+		m_vViewAngles = angTarget;
+
+		m_pButtons->holdButton(IN_ATTACK, 0, 0.2f, 0.1f);
+		m_iButtons          = m_pButtons->getBitMask();
+		m_bBowIgnitePending = false;
+		m_fNextBowIgnite    = engine->Time() + 3.0f;
+
+		return true;
+	}
+
+	if (m_fNextBowIgnite > engine->Time())
+		return false;
+
+	if (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot())
+		return false;
+
+	if (pFlame->outOfAmmo(this))
+		return false;
+
+	edict_t *pBest  = nullptr;
+	float fBestDist = 200.0f;
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		edict_t *pT = INDEXENT(i);
+		if (!pT || pT == m_pEdict) continue;
+		if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+		if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+		if (CClassInterface::getTF2Class(pT) != TF_CLASS_SNIPER) continue;
+		if (CClassInterface::getWaterLevel(pT) > 1) continue;
+
+		edict_t *pWep = CClassInterface::TF2_getActiveWeapon(pT);
+		if (!pWep || pWep->IsFree()) continue;
+		if (strcmp(pWep->GetClassName(), "tf_weapon_compound_bow") != 0)
+			continue;
+
+		float fDist = distanceFrom(pT);
+		if (fDist < fBestDist && FVisible(pT))
+		{
+			fBestDist = fDist;
+			pBest     = pT;
+		}
+	}
+
+	if (!pBest)
+		return false;
+
+	int iSniperIdx = ENTINDEX(pBest);
+	if (iSniperIdx == m_iLastBowIgniteSniper)
+		return false;
+
+	if (getCurrentWeapon() != pFlame)
+	{
+		select_CWeapon(pFlame->getWeaponInfo());
+		m_bBowIgnitePending    = true;
+		m_iLastBowIgniteSniper = iSniperIdx;
+		return false;
+	}
+
+	Vector vSniper = CBotGlobals::entityOrigin(pBest);
+	vSniper.z += 48.0f;
+	Vector vLook = vSniper - getEyePosition();
+	QAngle angTarget;
+	VectorAngles(vLook, angTarget);
+	angTarget.x = clamp(angTarget.x, -89.0f, 89.0f);
+	m_vViewAngles = angTarget;
+
+	m_pButtons->holdButton(IN_ATTACK, 0, 0.2f, 0.1f);
+	m_iButtons             = m_pButtons->getBitMask();
+	m_fNextBowIgnite       = engine->Time() + 3.0f;
+	m_iLastBowIgniteSniper = iSniperIdx;
+
+	return true;
 }
 
 float CBotTF2::MvmTargetPriority(edict_t *pEnemy)
@@ -4429,7 +4540,10 @@ void CBotTF2::modThink()
 	case TF_CLASS_PYRO:
 		// Extinguish burning teammates when not in active combat
 		if (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY) || !wantToShoot())
+		{
 			tryExtinguishTeammates();
+			tryIgniteSniperBow();
+		}
 		break;
 	default:
 		break;

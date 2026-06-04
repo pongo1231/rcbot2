@@ -35,6 +35,7 @@ general RCBot2 support.
 #### Pyro
 - Thermal Thruster travel launch toward distant waypoints and combat launch toward enemies
 - Flamethrower forced against tanks, no back-off, stays point-blank for maximum damage
+- Ignites friendly sniper bow arrows with a brief flame puff at close range, out of combat
 - Active extinguish: moves toward burning allies, uses manmelter as preference
 
 #### Engineer

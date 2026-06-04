@@ -755,6 +755,9 @@ class CBotFortress : public CBot
 	float m_fTauntTime;
 	float m_fTaunting;
 	float m_fDefendTime;
+	float m_fNextBowIgnite;
+	bool m_bBowIgnitePending;
+	int m_iLastBowIgniteSniper;
 
 	float m_fHealFactor;
 
@@ -1139,6 +1142,7 @@ class CBotTF2 : public CBotFortress
 	void spyUnCloak();
 
 	bool tryExtinguishTeammates();
+	bool tryIgniteSniperBow();
 
 	void handleSpecialAbilities();
 
