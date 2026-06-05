@@ -556,8 +556,11 @@ CWaypoint *CWaypointNavigator::chooseBestFromBelief(std::vector<CWaypoint *> &go
 					if ((pPlayer != nullptr) && !pPlayer->IsFree()
 					    && (CClassInterface::getTF2Class(pPlayer) == TF_CLASS_SNIPER))
 					{
-						if (goals[i]->distanceFrom(CBotGlobals::entityOrigin(pPlayer)) < 200.0f)
-							bBeliefFactor *= 0.1f;
+						if ((iTeam == 0) || (iTeam == CClassInterface::getTeam(pPlayer)))
+						{
+							if (goals[i]->distanceFrom(CBotGlobals::entityOrigin(pPlayer)) < 200.0f)
+								bBeliefFactor *= 0.1f;
+						}
 					}
 				}
 			}
@@ -570,8 +573,11 @@ CWaypoint *CWaypointNavigator::chooseBestFromBelief(std::vector<CWaypoint *> &go
 
 					if ((pPlayer != nullptr) && !pPlayer->IsFree())
 					{
-						if (goals[i]->distanceFrom(CBotGlobals::entityOrigin(pPlayer)) < 200.0f)
-							bBeliefFactor *= 0.1f;
+						if ((iTeam == 0) || (iTeam == CClassInterface::getTeam(pPlayer)))
+						{
+							if (goals[i]->distanceFrom(CBotGlobals::entityOrigin(pPlayer)) < 200.0f)
+								bBeliefFactor *= 0.1f;
+						}
 					}
 				}
 			}
