@@ -1286,7 +1286,8 @@ int CBotFortress::engiBuildObject(int *iState, eEngiBuild iObject, float *fTime,
 					if (iObject == ENGI_DISP)
 						m_bDispenserVectorValid = false;
 					else if (iObject == ENGI_EXIT)
-						m_bTeleportExitVectorValid = false;
+	m_bTeleportExitVectorValid = false;
+	m_iBestObscureTeleExit     = -1;
 
 					removeCondition(CONDITION_COVERT);
 					return 1;
@@ -2091,9 +2092,10 @@ float CBotTF2::evaluateTeleExitSpot(CWaypoint *pWpt)
 	float fDom         = CTeamFortress2Mod::getTeamDominance(m_iTeam);
 
 	// Proximity to flag or capture point
-	Vector vFlag;
+	Vector vFlag = getOrigin();
 	float fProximity = 0.5f;
-	CTeamFortress2Mod::getFlagLocation(TF2_TEAM_BLUE, &vFlag);
+	if (!CTeamFortress2Mod::getFlagLocation(TF2_TEAM_BLUE, &vFlag))
+		CTeamFortress2Mod::getMVMCapturePoint(&vFlag);
 	float fDist = (pWpt->getOrigin() - vFlag).Length();
 	fProximity = 1500.0f / (1500.0f + fDist);
 
@@ -8171,12 +8173,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			float fBestScore = evaluateTeleExitSpot(pWaypoint);
 			int iBestIdx     = CWaypoints::getWaypointIndex(pWaypoint);
 
-			if (m_iBestObscureTeleExit < 0 || (engine->Time() - (engine->Time() + 0.0f) > 0.0f))
-			{
-				m_iBestObscureTeleExit = -1;
-			}
-
-			// Scan nearby W_FL_TELE_EXIT waypoints for a sufficiently better obscure spot
+			// Scan all W_FL_TELE_EXIT waypoints for a sufficiently better obscure spot
 			for (int w = 0; w < CWaypoints::numWaypoints(); w++)
 			{
 				CWaypoint *pW = CWaypoints::getWaypoint(w);
