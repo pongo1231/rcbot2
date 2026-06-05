@@ -1836,6 +1836,7 @@ void CBotTF2::spawnInit()
 	m_fNextCrossbowHeal    = 0.0f;
 	m_bCrossbowPending     = false;
 	m_fLastEnemyNearBomb   = engine->Time();
+	m_fLastEurekaTeleport  = 0.0f;
 	m_iGuardSlot           = ENTINDEX(m_pEdict) % 4;
 
 	m_bIsCarryingTeleExit = false;
@@ -3441,9 +3442,11 @@ void CBotTF2::handleSpecialAbilities()
 
 	// --- Eureka Effect (589): teleport home when low HP and not in danger ---
 	if (iActiveItem == 589 && iActiveSlot == TF2_SLOT_MELEE
-	    && getHealthPercent() < 0.4f && !bInDanger)
+	    && getHealthPercent() < 0.4f && !bInDanger
+	    && m_fLastEurekaTeleport < engine->Time())
 	{
 		helpers->ClientCommand(m_pEdict, "eureka_teleport");
+		m_fLastEurekaTeleport = engine->Time() + 5.0f;
 	}
 
 	// --- Demoman: shield charge when no secondary weapon (shield in that slot) ---
@@ -5071,6 +5074,7 @@ void CBotTF2::checkStuckonSpy(void)
 			else if ((m_fStuckSpyTime + 0.5f) < engine->Time())
 			{
 				foundSpy(pStuck, CTeamFortress2Mod::getSpyDisguise(pStuck));
+				m_pEnemy       = pStuck;
 				m_fStuckSpyTime = 0.0f;
 			}
 		}

@@ -482,10 +482,15 @@ bool CBot::checkStuck()
 	{
 		if ((getOrigin() - m_vFastStuckPos).Length() < 16.0f)
 		{
-			// Try to look at the obstacle
+			// Try to look at the obstacle: alternate forward/backward
+			static bool bLookBack = false;
+			bLookBack = !bLookBack;
 			Vector vForward;
 			AngleVectors(eyeAngles(), &vForward);
-			setLookVector(getEyePosition() + vForward * 80.0f);
+			if (bLookBack)
+				setLookVector(getEyePosition() - vForward * 80.0f);
+			else
+				setLookVector(getEyePosition() + vForward * 80.0f);
 			setLookAtTask(LOOK_VECTOR, 1.0f);
 			m_fFastStuckTime = 0.0f;
 			return true;
