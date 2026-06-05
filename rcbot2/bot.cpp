@@ -1464,8 +1464,6 @@ void CBot::spawnInit()
 
 	m_fAvoidSideSwitch        = 0.0f;
 	m_fStickyDetTime          = 0.0f;
-	m_iLastDeathArea          = -1;
-	m_fLastDeathTime          = 0.0f;
 
 	m_bAvoidRight             = (randomInt(0, 1) == 0);
 
