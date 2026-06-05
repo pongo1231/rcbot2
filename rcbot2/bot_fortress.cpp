@@ -1034,6 +1034,7 @@ void CBotFortress::spawnInit()
 
 	m_fMedicUpdatePosTime      = 0.0f;
 	m_bShouldCrouchCover       = false;
+	m_vLastMedicPatientOrigin  = Vector(0, 0, 0);
 
 	m_pLastHeal                = nullptr;
 
@@ -5553,14 +5554,71 @@ bool CBotTF2::healPlayer()
 			return false;
 	}
 
-	vOrigin = CBotGlobals::entityOrigin(m_pHeal);
+	Vector vPatientOrigin = CBotGlobals::entityOrigin(m_pHeal);
 	pWeap   = getCurrentWeapon();
+
+	// Default standoff: stay 150u behind patient relative to their movement direction,
+	// or toward medic's current position if patient is stationary
+	{
+		Vector vDefaultDir;
+		Vector vPatVel;
+		CClassInterface::getVelocity(m_pHeal, &vPatVel);
+		vPatVel.z = 0;
+		if (vPatVel.Length2D() > 10.0f)
+			vDefaultDir = -vPatVel / vPatVel.Length2D();  // opposite of patient movement
+		else
+		{
+			vDefaultDir = getOrigin() - vPatientOrigin;
+			vDefaultDir.z = 0;
+			if (vDefaultDir.Length2D() < 10.0f)
+				vDefaultDir = Vector(1, 0, 0);  // arbitrary default behind
+			else
+				vDefaultDir = vDefaultDir / vDefaultDir.Length2D();
+		}
+		vOrigin = vPatientOrigin + vDefaultDir * 150.0f;
+	}
+
+	bool bShouldUpdate = false;
+
+	// Update more aggressively: throttle 0.5-1.0s instead of 1-2s
+	float fPatientMoved = (vPatientOrigin - m_vLastMedicPatientOrigin).Length();
+	float fThreatAngular = 0.0f;
 
 	if (m_fMedicUpdatePosTime < engine->Time())
 	{
-		float fRand;
+		bShouldUpdate = true;
+	}
+	else if (fPatientMoved > 100.0f)
+	{
+		// Patient moved significantly -- force update
+		bShouldUpdate = true;
+	}
+	else
+	{
+		// Check if enemy has flanked -- force update if threat direction changed
+		edict_t *pEnemyCheck = m_pEnemy.get();
+		if (pEnemyCheck && CBotGlobals::entityIsValid(pEnemyCheck)
+		    && CBotGlobals::entityIsAlive(pEnemyCheck))
+		{
+			Vector vCurDir = CBotGlobals::entityOrigin(pEnemyCheck) - getOrigin();
+			vCurDir.z = 0;
+			if (vCurDir.Length2D() > 0.1f && m_vLastMedicEnemyDir.Length2D() > 0.1f)
+			{
+				vCurDir = vCurDir / vCurDir.Length2D();
+				Vector vLastDir = m_vLastMedicEnemyDir / m_vLastMedicEnemyDir.Length2D();
+				fThreatAngular = acosf(clamp(vCurDir.Dot(vLastDir), -1.0f, 1.0f));
+				if (fThreatAngular > 0.5f) // enemy moved >30° laterally
+					bShouldUpdate = true;
+			}
+		}
+	}
 
-		fRand   = randomFloat(1.0f, 2.0f);
+	if (bShouldUpdate)
+	{
+		float fRand;
+		float fSpeed = 0.0f;
+
+		fRand   = randomFloat(0.5f, 1.0f);
 
 		pClient = CClients::get(m_pHeal);
 
@@ -5568,6 +5626,9 @@ bool CBotTF2::healPlayer()
 			fSpeed = pClient->getSpeed();
 
 		m_fMedicUpdatePosTime = engine->Time() + (fRand * (1.0f - (fSpeed / 320)));
+
+		// Update last known patient origin
+		m_vLastMedicPatientOrigin = vPatientOrigin;
 
 		if (p && (p->GetLastUserCommand().buttons & IN_ATTACK))
 		{
@@ -5579,13 +5640,14 @@ bool CBotTF2::healPlayer()
 				    && isVisible(pEnemy))
 				{
 					Vector vEnemyPos  = CBotGlobals::entityOrigin(pEnemy);
-					Vector vFromEnemy = vOrigin - vEnemyPos;
+					m_vLastMedicEnemyDir = vEnemyPos - getOrigin();
+					Vector vFromEnemy = vPatientOrigin - vEnemyPos;
 					vFromEnemy.z      = 0;
 					float fLen         = vFromEnemy.Length();
 					if (fLen > 0.1f)
 					{
 						vFromEnemy           = vFromEnemy / fLen;
-						Vector vCandidate    = vOrigin + (vFromEnemy * 180.0f);
+						Vector vCandidate    = vPatientOrigin + (vFromEnemy * 250.0f);
 						CTraceFilterWorldAndPropsOnly filter;
 						CBotGlobals::traceLine(vEnemyPos, vCandidate, MASK_SOLID_BRUSHONLY, &filter);
 						if (CBotGlobals::getTraceResult()->fraction < 1.0f)
@@ -5604,18 +5666,38 @@ bool CBotTF2::healPlayer()
 						}
 						else
 						{
-							vOrigin = vOrigin + (vFromEnemy * 150.0f);
+							vOrigin = vPatientOrigin + (vFromEnemy * 150.0f);
 							m_bShouldCrouchCover = false;
 						}
 					}
 				}
 				else
 				{
-					// No visible enemy -- default behind patient
-					eyes = CBotGlobals::playerAngles(m_pHeal);
-					AngleVectors(eyes, &vForward);
-					vForward = vForward / vForward.Length();
-					vOrigin  = vOrigin - (vForward * 150);
+					// No visible enemy: use last enemy or patient velocity, not facing
+					Vector vAwayDir;
+					edict_t *pLastEnemy = m_pLastEnemy.get();
+					if (pLastEnemy && CBotGlobals::entityIsValid(pLastEnemy))
+					{
+						vAwayDir = vPatientOrigin - CBotGlobals::entityOrigin(pLastEnemy);
+						vAwayDir.z = 0;
+					}
+					if (vAwayDir.Length2D() < 10.0f)
+					{
+						// Fall back to patient velocity direction
+						Vector vPatVel;
+						CClassInterface::getVelocity(m_pHeal, &vPatVel);
+						vPatVel.z = 0;
+						if (vPatVel.Length2D() > 10.0f)
+							vAwayDir = -vPatVel;
+					}
+					if (vAwayDir.Length2D() < 10.0f)
+						vAwayDir = getOrigin() - vPatientOrigin;
+					vAwayDir.z = 0;
+					if (vAwayDir.Length2D() > 10.0f)
+					{
+						vAwayDir = vAwayDir / vAwayDir.Length2D();
+						vOrigin  = vPatientOrigin + vAwayDir * 150.0f;
+					}
 				}
 			}
 			m_fHealingMoveTime = engine->Time();
@@ -5627,8 +5709,28 @@ bool CBotTF2::healPlayer()
 			m_fHealingMoveTime = engine->Time();
 
 		m_vMedicPosition = vOrigin;
+	}
+	else
+	{
+		m_vMedicPosition = vOrigin;
+	}
 
-		if (CBotGlobals::isPlayer(m_pHeal))
+	// Validate target position is reachable -- trace from medic toward target,
+	// fall back to patient origin if blocked by geometry
+	{
+		Vector vToTarget = m_vMedicPosition - getOrigin();
+		vToTarget.z = 0;
+		float fTargetDist = vToTarget.Length2D();
+		if (fTargetDist > 64.0f)
+		{
+			CTraceFilterWorldAndPropsOnly targetFilter;
+			CBotGlobals::traceLine(getOrigin(), m_vMedicPosition, MASK_SOLID_BRUSHONLY, &targetFilter);
+			if (CBotGlobals::getTraceResult()->fraction < 0.5f)
+				m_vMedicPosition = vPatientOrigin;
+		}
+	}
+
+	if (CBotGlobals::isPlayer(m_pHeal))
 		{
 			if (m_pNearestPipeGren.get() || m_NearestEnemyRocket.get())
 				m_iDesiredResistType = RESIST_EXPLO;
@@ -5637,7 +5739,6 @@ bool CBotTF2::healPlayer()
 			else if (randomInt(0, 1) == 1)
 				m_iDesiredResistType = RESIST_BULLETS;
 		}
-	}
 
 	/*if ( CTeamFortress2Mod::hasRoundStarted() && (m_fHealingMoveTime + 8.0f < engine->Time()) )
 	{
