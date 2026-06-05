@@ -1200,17 +1200,24 @@ class CTeamFortress2Mod : public CBotMod
 		return m_bDontClearPoints;
 	}
 
-	static inline void UpdateEnemyApproachDir(Vector vEnemyPos, Vector vObjectivePos)
+	static inline void UpdateEnemyApproachDir(Vector vEnemyPos, Vector vObjectivePos, int iTeam)
 	{
+		int t = (iTeam == TF2_TEAM_RED) ? 0 : 1;
 		Vector vDir = vEnemyPos - vObjectivePos;
 		vDir.z      = 0;
 		float fLen  = vDir.Length2D();
 		if (fLen > 0.1f)
 		{
 			vDir = vDir / fLen;
-			m_ObjectiveResource.m_vEnemyApproachDir =
-			    m_ObjectiveResource.m_vEnemyApproachDir * 0.9f + vDir * 0.1f;
+			m_ObjectiveResource.m_vEnemyApproachDir[t] =
+			    m_ObjectiveResource.m_vEnemyApproachDir[t] * 0.9f + vDir * 0.1f;
 		}
+	}
+
+	inline static Vector getTeamEnemyApproachDir(int iTeam)
+	{
+		int t = (iTeam == TF2_TEAM_RED) ? 0 : 1;
+		return m_ObjectiveResource.m_vEnemyApproachDir[t];
 	}
 
 	static CTFObjectiveResource m_ObjectiveResource;

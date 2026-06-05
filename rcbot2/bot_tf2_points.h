@@ -270,9 +270,7 @@ class CTFObjectiveResource
 
 	float m_fUpdatePointTime;
 
-	Vector m_vEnemyApproachDir;
-
-	inline Vector getEnemyApproachDir() const { return m_vEnemyApproachDir; }
+	Vector m_vEnemyApproachDir[2];
 
   private:
 	bool m_bInitialised;

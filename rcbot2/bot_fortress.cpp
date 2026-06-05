@@ -1835,7 +1835,7 @@ void CBotTF2::spawnInit()
 	m_iLastBowIgniteSniper = -1;
 	m_fNextCrossbowHeal    = 0.0f;
 	m_bCrossbowPending     = false;
-	m_fLastEnemyNearBomb   = 0.0f;
+	m_fLastEnemyNearBomb   = engine->Time();
 
 	m_bIsCarryingTeleExit = false;
 	m_bIsCarryingSentry   = false;
@@ -3777,7 +3777,17 @@ void CBotTF2::modThink()
 	    && (m_iCurrentDefendArea > 0 || m_iCurrentAttackArea > 0))
 	{
 		Vector vObj = getOrigin();
-		CTeamFortress2Mod::UpdateEnemyApproachDir(CBotGlobals::entityOrigin(m_pEnemy), vObj);
+		if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
+		{
+			CTeamFortress2Mod::getMVMCapturePoint(&vObj);
+		}
+		else if (CTeamFortress2Mod::isMapType(TF_MAP_CTF))
+		{
+			Vector vFlag;
+			if (CTeamFortress2Mod::getFlagLocation(TF2_TEAM_BLUE, &vFlag))
+				vObj = vFlag;
+		}
+		CTeamFortress2Mod::UpdateEnemyApproachDir(CBotGlobals::entityOrigin(m_pEnemy), vObj, m_iTeam);
 	}
 
 	// Per-frame projectile dodge: works even when not in active combat,

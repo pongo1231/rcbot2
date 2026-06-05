@@ -417,12 +417,18 @@ class CWaypoint //: public INavigatorNode
 
 	inline void markTraversal()
 	{
-		m_iRecentTraversalCount++;
+		float fDt = engine->Time() - m_fLastTraversalTime;
+		float fDecay = expf(-fDt * 0.15f);
+		m_iRecentTraversalCount = (int)(m_iRecentTraversalCount * fDecay) + 1;
 		m_fLastTraversalTime = engine->Time();
 	}
 
-	inline int getTraversalCount() const
+	inline int getTraversalCount()
 	{
+		float fDt = engine->Time() - m_fLastTraversalTime;
+		float fDecay = expf(-fDt * 0.15f);
+		m_iRecentTraversalCount = (int)(m_iRecentTraversalCount * fDecay);
+		m_fLastTraversalTime = engine->Time();
 		return m_iRecentTraversalCount;
 	}
 
