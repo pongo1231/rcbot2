@@ -98,6 +98,8 @@ int CTeamFortress2Mod::m_iCapturePointWptID                = -1;
 int CTeamFortress2Mod::m_iFlagPointWptID                   = -1;
 int CTeamFortress2Mod::m_iThiefExitWpt                     = -1;
 float CTeamFortress2Mod::m_fThiefSeenTime                   = 0.0f;
+float CTeamFortress2Mod::m_fTeamDominance[2]                = { 0.0f, 0.0f };
+float CTeamFortress2Mod::m_fNextDominanceCompute             = 0.0f;
 MyEHandle CTeamFortress2Mod::m_pNearestTankBoss            = nullptr;
 float CTeamFortress2Mod::m_fNearestTankDistance            = 0.0f;
 Vector CTeamFortress2Mod::m_vNearestTankLocation           = Vector(0, 0, 0);
@@ -123,6 +125,138 @@ bool CTeamFortress2Mod::isSuddenDeath()
 bool CTeamFortress2Mod::isMedievalMode()
 {
 	return CClassInterface::TF2_IsMedievalMode(GetGameRules());
+}
+
+void CTeamFortress2Mod::computeTeamDominance()
+{
+	if (m_fNextDominanceCompute > engine->Time())
+		return;
+	m_fNextDominanceCompute = engine->Time() + 1.0f;
+
+	for (int t = 0; t < 2; t++)
+	{
+		int iTeam    = (t == 0) ? TF2_TEAM_RED : TF2_TEAM_BLUE;
+		int iEnemy   = (t == 0) ? TF2_TEAM_BLUE : TF2_TEAM_RED;
+		float fDom   = 0.0f;
+
+		if (isMapType(TF_MAP_CTF))
+		{
+			Vector vFlag, vEnemyFlag;
+			if (getFlagLocation(iEnemy, &vEnemyFlag) && getFlagLocation(iTeam, &vFlag))
+			{
+				float fOurDist    = (vFlag - vEnemyFlag).Length();
+				float fTotal      = fOurDist + 1.0f;
+				fDom = 2.0f * (fOurDist / fTotal) - 1.0f;
+			}
+			else
+			{
+				Vector vSpawn;
+				if (getFlagLocation(iEnemy, &vSpawn))
+				{
+					edict_t *pCarrier = getFlagCarrier(iEnemy);
+					float fDist = vSpawn.Length();
+					fDom = -1.0f + (fDist / (fDist + 512.0f));
+				}
+			}
+		}
+		else if (isMapType(TF_MAP_CP) || isMapType(TF_MAP_TC))
+		{
+			int iOwned = 0, iTotal = 0;
+			if (m_ObjectiveResource.m_iNumControlPoints)
+			{
+				for (int c = 0; c < *m_ObjectiveResource.m_iNumControlPoints; c++)
+				{
+					int iOwner = m_ObjectiveResource.m_iOwner[c];
+					if (iOwner >= 0)
+					{
+						iTotal++;
+						if (iOwner == iTeam) iOwned++;
+					}
+				}
+			}
+			if (iTotal > 0)
+				fDom = 2.0f * ((float)iOwned / (float)iTotal) - 1.0f;
+		}
+		else if (isMapType(TF_MAP_CART) || isMapType(TF_MAP_CARTRACE))
+		{
+			edict_t *pBomb = (iTeam == TF2_TEAM_RED) ? m_pPayLoadBombBlue.get()
+			                                         : m_pPayLoadBombRed.get();
+			if (pBomb && CBotGlobals::entityIsValid(pBomb))
+			{
+				Vector vBomb   = CBotGlobals::entityOrigin(pBomb);
+				Vector vTarget;
+				if (getMVMCapturePoint(&vTarget) || getFlagLocation(iTeam, &vTarget))
+				{
+					float fDist    = (vBomb - vTarget).Length();
+					float fMaxDist = 6000.0f;
+					float fProgress = fDist / fMaxDist;
+					if (fProgress > 1.0f) fProgress = 1.0f;
+					fDom = (t == 0) ? (1.0f - 2.0f * fProgress) : (2.0f * fProgress - 1.0f);
+				}
+			}
+		}
+		else if (isMapType(TF_MAP_KOTH))
+		{
+			// Use point ownership like CP
+			int iOwned = 0, iTotal = 0;
+			if (m_ObjectiveResource.m_iNumControlPoints)
+			{
+				for (int c = 0; c < *m_ObjectiveResource.m_iNumControlPoints; c++)
+				{
+					int iOwner = m_ObjectiveResource.m_iOwner[c];
+					if (iOwner >= 0)
+					{
+						iTotal++;
+						if (iOwner == iTeam) iOwned++;
+					}
+				}
+			}
+			if (iTotal > 0)
+				fDom = 2.0f * ((float)iOwned / (float)iTotal) - 1.0f;
+		}
+		else if (isMapType(TF_MAP_MVM))
+		{
+			Vector vBomb, vHatch;
+			if (getFlagLocation(TF2_TEAM_BLUE, &vBomb) && getMVMCapturePoint(&vHatch))
+			{
+				float fDist = (vBomb - vHatch).Length();
+				fDom = 2.0f * (fDist / (fDist + 1024.0f)) - 1.0f;
+			}
+		}
+		else
+		{
+			// Generic: compare team center-of-mass positions
+			Vector vCenter = Vector(0, 0, 0);
+			Vector vEnemyCenter = Vector(0, 0, 0);
+			int iCount = 0, iEnemyCount = 0;
+			for (int i = 1; i <= gpGlobals->maxClients; i++)
+			{
+				edict_t *pP = INDEXENT(i);
+				if (!pP || !CBotGlobals::entityIsValid(pP) || !CBotGlobals::entityIsAlive(pP))
+					continue;
+				if (CClassInterface::getTeam(pP) == iTeam)
+				{
+					vCenter += CBotGlobals::entityOrigin(pP);
+					iCount++;
+				}
+				else if (CClassInterface::getTeam(pP) == iEnemy)
+				{
+					vEnemyCenter += CBotGlobals::entityOrigin(pP);
+					iEnemyCount++;
+				}
+			}
+			if (iCount > 0 && iEnemyCount > 0)
+			{
+				vCenter = vCenter / (float)iCount;
+				vEnemyCenter = vEnemyCenter / (float)iEnemyCount;
+				float fDist  = (vCenter - vEnemyCenter).Length();
+				fDom = (fDist / (fDist + 2048.0f)) * 2.0f - 1.0f;
+				if (iCount < iEnemyCount) fDom *= 0.7f;
+			}
+		}
+
+		m_fTeamDominance[t] = fDom * 0.9f + m_fTeamDominance[t] * 0.1f;
+	}
 }
 
 bool CTeamFortress2Mod::checkWaypointForTeam(CWaypoint *pWpt, int iTeam)

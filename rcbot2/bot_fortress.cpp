@@ -3741,6 +3741,8 @@ bool m_classWasForced = false;
 
 void CBotTF2::modThink()
 {
+	CTeamFortress2Mod::computeTeamDominance();
+
 	static bool bNeedHealth;
 	static bool bNeedAmmo;
 	static bool bIsCloaked;
@@ -6718,6 +6720,21 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		int iActiveSlot = ((int)(engine->Time() / 10.0f)) % 4;
 		if (m_iGuardSlot != iActiveSlot)
 			fDefendFlagUtility *= 0.4f;
+	}
+
+	// Team dominance: shift posture between defense and aggression
+	{
+		float fDom = CTeamFortress2Mod::getTeamDominance(m_iTeam);
+		if (fDom < 0.0f)
+		{
+			fDefendFlagUtility *= (1.0f - fDom);
+			fGetFlagUtility *= (1.0f + fDom);
+		}
+		else
+		{
+			fDefendFlagUtility *= (1.0f - fDom * 0.7f);
+			fGetFlagUtility *= (1.0f + fDom);
+		}
 	}
 
 	if (m_iClass == TF_CLASS_ENGINEER)

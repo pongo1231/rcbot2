@@ -1220,6 +1220,20 @@ class CTeamFortress2Mod : public CBotMod
 		return m_ObjectiveResource.m_vEnemyApproachDir[t];
 	}
 
+	static float m_fTeamDominance[2];
+	static float m_fNextDominanceCompute;
+
+	static void computeTeamDominance();
+
+	static inline float getTeamDominance(int iTeam)
+	{
+		int t = (iTeam == TF2_TEAM_RED) ? 0 : 1;
+		float fDom = m_fTeamDominance[t];
+		if (fDom > 1.0f) return 1.0f;
+		if (fDom < -1.0f) return -1.0f;
+		return fDom;
+	}
+
 	static CTFObjectiveResource m_ObjectiveResource;
 
 	static CTeamControlPointRound *getCurrentRound()

@@ -491,7 +491,11 @@ CWaypoint *CWaypointNavigator::chooseBestFromBelief(std::vector<CWaypoint *> &go
 			if (m_pBot && m_pBot->m_iLastDeathArea >= 0
 			    && (engine->Time() - m_pBot->m_fLastDeathTime) < 30.0f
 			    && goals[i]->getArea() == m_pBot->m_iLastDeathArea)
-				bBeliefFactor *= 0.3f;
+			{
+				float fDom = CTeamFortress2Mod::getTeamDominance(m_pBot->getTeam());
+				float fPenalty = (fDom > 0.0f) ? 0.3f + fDom * 0.3f : 0.3f;
+				bBeliefFactor *= fPenalty;
+			}
 
 			if (bHighDanger)
 				fBelief += bBeliefFactor * (1.0f + (m_fBelief[CWaypoints::getWaypointIndex(goals[i])]));
@@ -565,7 +569,11 @@ CWaypoint *CWaypointNavigator::chooseBestFromBelief(std::vector<CWaypoint *> &go
 			if (m_pBot && m_pBot->m_iLastDeathArea >= 0
 			    && (engine->Time() - m_pBot->m_fLastDeathTime) < 30.0f
 			    && goals[i]->getArea() == m_pBot->m_iLastDeathArea)
-				bBeliefFactor *= 0.3f;
+			{
+				float fDom = CTeamFortress2Mod::getTeamDominance(m_pBot->getTeam());
+				float fPenalty = (fDom > 0.0f) ? 0.3f + fDom * 0.3f : 0.3f;
+				bBeliefFactor *= fPenalty;
+			}
 
 			if (bHighDanger)
 				fBelief += bBeliefFactor * (1.0f + (m_fBelief[CWaypoints::getWaypointIndex(goals[i])]));
