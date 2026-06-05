@@ -1410,9 +1410,9 @@ bool CBotTF2::needAmmo()
 	else if (getClass() == TF_CLASS_DEMOMAN)
 	{
 		CBotWeapon *pWeapon = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_GRENADELAUNCHER));
-
+		CBotWeapon *pSticky = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_PIPEBOMBS));
 		if (pWeapon)
-			return (pWeapon->getAmmo(this) < 1);
+			return (pWeapon->getAmmo(this) < 1 && (!pSticky || pSticky->getAmmo(this) < 1));
 	}
 	else if (getClass() == TF_CLASS_HWGUY)
 	{
@@ -7455,7 +7455,16 @@ bool CBotTF2::deployStickies(eDemoTrapType type, Vector vStand, Vector vLocation
 
 			if ((*fTime < engine->Time()) && (CBotGlobals::yawAngleFromEdict(m_pEdict, *vPoint) < 20))
 			{
-				primaryAttack();
+				float fTrapDist2D = (vStand - *vPoint).Length2D();
+				if (fTrapDist2D > 64.0f)
+				{
+					float fCharge = fTrapDist2D / pWeapon->getPrimaryMaxRange();
+					fCharge = fCharge * fCharge * 2.0f;
+					if (fCharge > 1.5f) fCharge = 1.5f;
+					primaryAttack(true, fCharge);
+				}
+				else
+					primaryAttack();
 				*fTime      = engine->Time() + randomFloat(1.0f, 1.5f);
 				*iState     = 1;
 				*iStickyNum = *iStickyNum - 1;
@@ -9983,6 +9992,13 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 				CBotWeapon *pGren = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_GRENADELAUNCHER));
 				if (pGren && pGren->hasWeapon() && !pGren->outOfAmmo(this) && getCurrentWeapon() != pGren)
 					select_CWeapon(pGren->getWeaponInfo());
+				else
+				{
+					CBotWeapon *pSticky = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_PIPEBOMBS));
+					if (pSticky && pSticky->hasWeapon() && !pSticky->outOfAmmo(this)
+					    && pSticky->getClip1(this) > 0 && getCurrentWeapon() != pSticky)
+						select_CWeapon(pSticky->getWeaponInfo());
+				}
 			}
 			else if (m_iClass == TF_CLASS_HWGUY)
 			{
@@ -10074,7 +10090,7 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 							if (fCharge > 1.5f) fCharge  = 1.5f;
 							primaryAttack(true, fCharge);
 							float fFlyTime = fDistance / 700.0f;
-							m_fStickyDetTime = engine->Time() + fCharge + fFlyTime + 0.05f;
+							m_fStickyDetTime = engine->Time() + fCharge + fFlyTime + 0.8f;
 						}
 						else if (m_fStickyDetTime < engine->Time())
 						{
@@ -10234,8 +10250,7 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 
 		// Demoman: use sticky launcher as combat weapon when grenade launcher is dry
 		// Only outside melee range and inside sticky launcher range
-		if (m_iClass == TF_CLASS_DEMOMAN
-		    && !(CTeamFortress2Mod::isMapType(TF_MAP_MVM) && CTeamFortress2Mod::isTankBoss(pEnemy)))
+		if (m_iClass == TF_CLASS_DEMOMAN)
 		{
 			CBotWeapon *pGrenadeLauncher = m_pWeapons->getWeapon(
 			    CWeapons::getWeapon(TF2_WEAPON_GRENADELAUNCHER));
@@ -10269,7 +10284,7 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 					if (fCharge > 1.5f) fCharge  = 1.5f;
 					primaryAttack(true, fCharge);
 					float fFlyTime = fDistance / 700.0f;
-					m_fStickyDetTime = engine->Time() + fCharge + fFlyTime + 0.05f;
+					m_fStickyDetTime = engine->Time() + fCharge + fFlyTime + 0.8f;
 				}
 				else if (m_fStickyDetTime < engine->Time())
 				{
