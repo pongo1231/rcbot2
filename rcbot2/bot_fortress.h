@@ -882,6 +882,8 @@ class CBotFortress : public CBot
 
 	MyEHandle m_pLastEnemySentry;
 	std::vector<MyEHandle> m_KnownSentries;
+	std::vector<MyEHandle> m_KnownEnemyTeleporters;
+	std::vector<MyEHandle> m_KnownEnemyDispensers;
 	static std::vector<MyEHandle> m_SappedRobots;
 	MyEHandle m_NearestEnemyRocket;
 	MyEHandle m_NearestEnemyGrenade;
@@ -1122,6 +1124,9 @@ class CBotTF2 : public CBotFortress
 
 	void seeFriendlyDie(edict_t *pDied, edict_t *pKiller, CWeapon *pWeapon);
 	void addKnownSentry(edict_t *pSentry);
+	void addKnownEnemyTeleporter(edict_t *pTele);
+	void addKnownEnemyDispenser(edict_t *pDisp);
+	void pruneKnownEnemyBuildings();
 	void seeFriendlyKill(edict_t *pTeamMate, edict_t *pDied, CWeapon *pWeapon);
 
 	void voiceCommand(int cmd);

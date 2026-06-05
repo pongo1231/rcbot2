@@ -2456,6 +2456,57 @@ void CBotTF2::addKnownSentry(edict_t *pSentry)
 	m_KnownSentries.push_back(MyEHandle(pSentry));
 }
 
+void CBotTF2::addKnownEnemyTeleporter(edict_t *pTele)
+{
+	if (!pTele) return;
+	for (size_t i = 0; i < m_KnownEnemyTeleporters.size();)
+	{
+		edict_t *pE = m_KnownEnemyTeleporters[i].get();
+		if (!pE || !CBotGlobals::entityIsValid(pE) || !CBotGlobals::entityIsAlive(pE))
+			m_KnownEnemyTeleporters.erase(m_KnownEnemyTeleporters.begin() + i);
+		else i++;
+	}
+	for (size_t i = 0; i < m_KnownEnemyTeleporters.size(); i++)
+		if (m_KnownEnemyTeleporters[i].get() == pTele) return;
+	if (m_KnownEnemyTeleporters.size() >= 8) return;
+	m_KnownEnemyTeleporters.push_back(MyEHandle(pTele));
+	CTeamFortress2Mod::addTeamKnownTeleporter(CBotGlobals::entityOrigin(pTele));
+}
+
+void CBotTF2::addKnownEnemyDispenser(edict_t *pDisp)
+{
+	if (!pDisp) return;
+	for (size_t i = 0; i < m_KnownEnemyDispensers.size();)
+	{
+		edict_t *pE = m_KnownEnemyDispensers[i].get();
+		if (!pE || !CBotGlobals::entityIsValid(pE) || !CBotGlobals::entityIsAlive(pE))
+			m_KnownEnemyDispensers.erase(m_KnownEnemyDispensers.begin() + i);
+		else i++;
+	}
+	for (size_t i = 0; i < m_KnownEnemyDispensers.size(); i++)
+		if (m_KnownEnemyDispensers[i].get() == pDisp) return;
+	if (m_KnownEnemyDispensers.size() >= 8) return;
+	m_KnownEnemyDispensers.push_back(MyEHandle(pDisp));
+}
+
+void CBotTF2::pruneKnownEnemyBuildings()
+{
+	for (size_t i = 0; i < m_KnownEnemyTeleporters.size();)
+	{
+		edict_t *pE = m_KnownEnemyTeleporters[i].get();
+		if (!pE || !CBotGlobals::entityIsValid(pE) || !CBotGlobals::entityIsAlive(pE))
+			m_KnownEnemyTeleporters.erase(m_KnownEnemyTeleporters.begin() + i);
+		else i++;
+	}
+	for (size_t i = 0; i < m_KnownEnemyDispensers.size();)
+	{
+		edict_t *pE = m_KnownEnemyDispensers[i].get();
+		if (!pE || !CBotGlobals::entityIsValid(pE) || !CBotGlobals::entityIsAlive(pE))
+			m_KnownEnemyDispensers.erase(m_KnownEnemyDispensers.begin() + i);
+		else i++;
+	}
+}
+
 void CBotTF2::engiBuildSuccess(eEngiBuild iBuilding, int index)
 {
 	edict_t *pEntity = findEngineerBuiltObject(iBuilding, index);
@@ -3912,6 +3963,8 @@ void CBotTF2::modThink()
 			i++;
 		}
 	}
+
+	pruneKnownEnemyBuildings();
 
 	// MvM sentry buster avoidance
 	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
@@ -5423,6 +5476,14 @@ void CBotFortress::enemyLost(edict_t *pEnemy)
 bool CBotTF2::setVisible(edict_t *pEntity, bool bVisible)
 {
 	bool bValid = CBotFortress::setVisible(pEntity, bVisible);
+
+	if (bValid && bVisible)
+	{
+		if (CTeamFortress2Mod::isTeleporter(pEntity, CTeamFortress2Mod::getEnemyTeam(m_iTeam)))
+			addKnownEnemyTeleporter(pEntity);
+		else if (CTeamFortress2Mod::isDispenser(pEntity, CTeamFortress2Mod::getEnemyTeam(m_iTeam)))
+			addKnownEnemyDispenser(pEntity);
+	}
 
 	if (bValid)
 	{
@@ -7015,6 +7076,39 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		                 (m_iClass != TF_CLASS_SPY) && pWeapon && !pWeapon->outOfAmmo(this)
 		                     && pWeapon->primaryGreaterThanRange(TF2_MAX_SENTRYGUN_RANGE + 32.0f),
 		                 0.7f, ENTINDEX(m_pNearestEnemySentry.get()));
+
+		// Nest destruction: attack known enemy teleporters near our vital points
+		if (!m_KnownEnemyTeleporters.empty())
+		{
+			Vector vFlag = getOrigin();
+			CTeamFortress2Mod::getFlagLocation(m_iTeam, &vFlag);
+			float fBestDist = 9999.0f;
+			int iBest       = -1;
+			for (size_t i = 0; i < m_KnownEnemyTeleporters.size(); i++)
+			{
+				edict_t *pTele = m_KnownEnemyTeleporters[i].get();
+				if (!pTele || !CBotGlobals::entityIsValid(pTele) || !CBotGlobals::entityIsAlive(pTele))
+					continue;
+				float fD = (CBotGlobals::entityOrigin(pTele) - vFlag).Length();
+				if (fD < fBestDist) { fBestDist = fD; iBest = (int)i; }
+			}
+			if (iBest >= 0 && fBestDist < 2000.0f)
+			{
+				float fProximityBoost = 2000.0f / (2000.0f + fBestDist);
+				float fClassMult      = 1.0f;
+				if (m_iClass == TF_CLASS_HWGUY || m_iClass == TF_CLASS_SOLDIER
+				    || m_iClass == TF_CLASS_DEMOMAN)
+					fClassMult = 1.5f;
+				else if (m_iClass == TF_CLASS_PYRO) fClassMult = 1.2f;
+				else if (m_iClass == TF_CLASS_SCOUT || m_iClass == TF_CLASS_SNIPER
+				         || m_iClass == TF_CLASS_MEDIC) fClassMult = 0.5f;
+
+				float fUtil = fProximityBoost * fClassMult * 0.6f;
+				if (m_iClass != TF_CLASS_SPY && pWeapon && !pWeapon->outOfAmmo(this))
+					ADD_UTILITY_DATA(BOT_UTIL_DESTROY_NEST, true, fUtil,
+					                 ENTINDEX(m_KnownEnemyTeleporters[iBest].get()));
+			}
+		}
 	}
 	// only attack if attack area is > 0
 	ADD_UTILITY(BOT_UTIL_ATTACK_POINT,
@@ -8109,6 +8203,13 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		edict_t *pSentry    = INDEXENT(util->getIntData());
 
 		m_pSchedules->add(new CBotTF2AttackSentryGun(pSentry, pWeapon));
+	}
+	break;
+	case BOT_UTIL_DESTROY_NEST:
+	{
+		edict_t *pTele = INDEXENT(util->getIntData());
+		if (pTele && CBotGlobals::entityIsValid(pTele) && CBotGlobals::entityIsAlive(pTele))
+			m_pSchedules->add(new CBotTF2AttackSentryGun(pTele, m_pWeapons->getPrimaryWeapon()));
 	}
 	break;
 	case BOT_UTIL_ENGI_DESTROY_EXIT: // destroy and rebuild sentry elsewhere
@@ -10784,6 +10885,8 @@ void CBotTF2::roundReset(bool bFullReset)
 	m_pFlag                    = nullptr;
 	m_pPrevSpy                 = nullptr;
 	m_KnownSentries.clear();
+	m_KnownEnemyTeleporters.clear();
+	m_KnownEnemyDispensers.clear();
 
 	// Clear movement prediction history
 	for (int i = 0; i < 64; i++)

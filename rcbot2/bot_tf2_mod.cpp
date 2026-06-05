@@ -100,6 +100,8 @@ int CTeamFortress2Mod::m_iThiefExitWpt                     = -1;
 float CTeamFortress2Mod::m_fThiefSeenTime                   = 0.0f;
 float CTeamFortress2Mod::m_fTeamDominance[2]                = { 0.0f, 0.0f };
 float CTeamFortress2Mod::m_fNextDominanceCompute             = 0.0f;
+Vector CTeamFortress2Mod::m_vTeamKnownTeleporters[8];
+float CTeamFortress2Mod::m_fTeamKnownTeleporterTimes[8]      = { 0.0f };
 MyEHandle CTeamFortress2Mod::m_pNearestTankBoss            = nullptr;
 float CTeamFortress2Mod::m_fNearestTankDistance            = 0.0f;
 Vector CTeamFortress2Mod::m_vNearestTankLocation           = Vector(0, 0, 0);

@@ -1295,6 +1295,23 @@ class CTeamFortress2Mod : public CBotMod
 		m_fThiefSeenTime = engine->Time();
 	}
 
+	static Vector m_vTeamKnownTeleporters[8];
+	static float m_fTeamKnownTeleporterTimes[8];
+
+	static inline void addTeamKnownTeleporter(Vector vPos)
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			if (m_fTeamKnownTeleporterTimes[i] < engine->Time()
+			    || (m_vTeamKnownTeleporters[i] - vPos).Length() < 200.0f)
+			{
+				m_vTeamKnownTeleporters[i]   = vPos;
+				m_fTeamKnownTeleporterTimes[i] = engine->Time() + 30.0f;
+				return;
+			}
+		}
+	}
+
   private:
 	static float TF2_GetClassSpeed(int iClass);
 
