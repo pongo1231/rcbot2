@@ -10385,6 +10385,12 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 		// Airblast an enemy rocket, ubered player, or capping/defending player if on fire
 		if (!bSecAttack)
 		{
+			bool bPhlog = false;
+			{
+				edict_t *pFlameEnt = CClassInterface::getCurrentWeapon(m_pEdict);
+				bPhlog = (pFlameEnt && CClassInterface::TF2_getItemDefinitionIndex(pFlameEnt) == 594);
+			}
+
 			if ((pEnemy == m_NearestEnemyRocket.get()) || (pEnemy == m_pNearestPipeGren.get())
 			    || (((bIsPlayer = CBotGlobals::isPlayer(pEnemy)) == true)
 			        && (CTeamFortress2Mod::TF2_IsPlayerInvuln(pEnemy)
@@ -10394,6 +10400,7 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			                    || (m_iCurrentAttackArea && CTeamFortress2Mod::isDefending(pEnemy)))))))
 			{
 				if ((bIsPlayer || (fDistance > 80)) && (fDistance < 400) && pWeapon->canDeflectRockets()
+				    && !bPhlog
 				    && (pWeapon->getAmmo(this) >= rcbot_tf2_pyro_airblast.GetInt()))
 					bSecAttack = true;
 				else if ((pEnemy == m_NearestEnemyRocket.get()) || (pEnemy == m_pNearestPipeGren.get()))
@@ -10932,8 +10939,20 @@ bool CBotTF2::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 				return false;
 			else if (bIsRocket && !pWeapon->canDeflectRockets())
 				return false;
+			else if (bIsRocket && m_iClass == TF_CLASS_PYRO)
+			{
+				edict_t *pFEnt = CClassInterface::getCurrentWeapon(m_pEdict);
+				if (pFEnt && CClassInterface::TF2_getItemDefinitionIndex(pFEnt) == 594)
+					return false;
+			}
 			else if (bIsGrenade && !pWeapon->canDeflectRockets())
 				return false;
+			else if (bIsGrenade && m_iClass == TF_CLASS_PYRO)
+			{
+				edict_t *pFEnt = CClassInterface::getCurrentWeapon(m_pEdict);
+				if (pFEnt && CClassInterface::TF2_getItemDefinitionIndex(pFEnt) == 594)
+					return false;
+			}
 			else if (bIsBoss && pWeapon->isMelee() && !pWeapon->isSpecial())
 				return false;
 		}
