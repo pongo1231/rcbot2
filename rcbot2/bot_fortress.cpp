@@ -6729,10 +6729,12 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		{
 			fDefendFlagUtility *= (1.0f - fDom);
 			fGetFlagUtility *= (1.0f + fDom);
+			if (fGetFlagUtility < 0.05f) fGetFlagUtility = 0.05f;
 		}
 		else
 		{
 			fDefendFlagUtility *= (1.0f - fDom * 0.7f);
+			if (fDefendFlagUtility < 0.01f) fDefendFlagUtility = 0.01f;
 			fGetFlagUtility *= (1.0f + fDom);
 		}
 	}

@@ -141,21 +141,59 @@ void CTeamFortress2Mod::computeTeamDominance()
 
 		if (isMapType(TF_MAP_CTF))
 		{
-			Vector vFlag, vEnemyFlag;
-			if (getFlagLocation(iEnemy, &vEnemyFlag) && getFlagLocation(iTeam, &vFlag))
+			edict_t *pOurCarrier   = getFlagCarrier(iEnemy);
+			edict_t *pTheirCarrier = getFlagCarrier(iTeam);
+
+			if (pOurCarrier && CBotGlobals::entityIsValid(pOurCarrier))
 			{
-				float fOurDist    = (vFlag - vEnemyFlag).Length();
-				float fTotal      = fOurDist + 1.0f;
-				fDom = 2.0f * (fOurDist / fTotal) - 1.0f;
+				// We have their flag -- dominating
+				Vector vFlag;
+				if (getFlagLocation(iEnemy, &vFlag))
+				{
+					float fDist = (CBotGlobals::entityOrigin(pOurCarrier) - vFlag).Length();
+					fDom = 0.4f + 0.6f * (1.0f - fDist / (fDist + 1024.0f));
+				}
+				else
+					fDom = 0.6f;
+			}
+			else if (pTheirCarrier && CBotGlobals::entityIsValid(pTheirCarrier))
+			{
+				// They have our flag -- dominated
+				Vector vFlag;
+				if (getFlagLocation(iTeam, &vFlag))
+				{
+					float fDist = (CBotGlobals::entityOrigin(pTheirCarrier) - vFlag).Length();
+					fDom = -0.4f - 0.6f * (1.0f - fDist / (fDist + 1024.0f));
+				}
+				else
+					fDom = -0.6f;
 			}
 			else
 			{
-				Vector vSpawn;
-				if (getFlagLocation(iEnemy, &vSpawn))
+				// Neither flag carried -- check drop proximity
+				Vector vOurFlag, vTheirFlag;
+				bool bOurDropped   = getFlagLocation(iTeam, &vOurFlag);
+				bool bTheirDropped = getFlagLocation(iEnemy, &vTheirFlag);
+				if (bOurDropped)
 				{
-					edict_t *pCarrier = getFlagCarrier(iEnemy);
-					float fDist = vSpawn.Length();
-					fDom = -1.0f + (fDist / (fDist + 512.0f));
+					// Our flag is dropped -- slightly threatened
+					Vector vHome;
+					if (CWaypoints::randomWaypointGoal(CWaypointTypes::W_FL_FLAG, iTeam))
+						vHome = CWaypoints::randomWaypointGoal(CWaypointTypes::W_FL_FLAG, iTeam)->getOrigin();
+					else
+						vHome = vOurFlag;
+					float fDist = (vOurFlag - vHome).Length();
+					fDom = -0.3f * (1.0f - fDist / (fDist + 512.0f));
+				}
+				if (bTheirDropped)
+				{
+					Vector vHome;
+					if (CWaypoints::randomWaypointGoal(CWaypointTypes::W_FL_FLAG, iEnemy))
+						vHome = CWaypoints::randomWaypointGoal(CWaypointTypes::W_FL_FLAG, iEnemy)->getOrigin();
+					else
+						vHome = vTheirFlag;
+					float fDist = (vTheirFlag - vHome).Length();
+					fDom += 0.3f * (1.0f - fDist / (fDist + 512.0f));
 				}
 			}
 		}
@@ -191,7 +229,10 @@ void CTeamFortress2Mod::computeTeamDominance()
 					float fMaxDist = 6000.0f;
 					float fProgress = fDist / fMaxDist;
 					if (fProgress > 1.0f) fProgress = 1.0f;
-					fDom = (t == 0) ? (1.0f - 2.0f * fProgress) : (2.0f * fProgress - 1.0f);
+					// Cart near target = pushing team winning, defending team losing
+					// RED defends, BLU attacks on standard PL; symmetric on cart race
+					bool bDefender = (isAttackDefendMap() && iTeam == TF2_TEAM_RED);
+					fDom = bDefender ? (2.0f * fProgress - 1.0f) : (1.0f - 2.0f * fProgress);
 				}
 			}
 		}
@@ -255,7 +296,7 @@ void CTeamFortress2Mod::computeTeamDominance()
 			}
 		}
 
-		m_fTeamDominance[t] = fDom * 0.9f + m_fTeamDominance[t] * 0.1f;
+		m_fTeamDominance[t] = fDom * 0.3f + m_fTeamDominance[t] * 0.7f;
 	}
 }
 
