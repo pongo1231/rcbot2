@@ -3761,6 +3761,14 @@ void CBotTF2::modThink()
 		}
 	}
 
+	// Update team-shared enemy approach direction when we see an enemy near an objective
+	if (m_pEnemy && CBotGlobals::entityIsValid(m_pEnemy) && CBotGlobals::entityIsAlive(m_pEnemy)
+	    && (m_iCurrentDefendArea > 0 || m_iCurrentAttackArea > 0))
+	{
+		Vector vObj = getOrigin();
+		CTeamFortress2Mod::UpdateEnemyApproachDir(CBotGlobals::entityOrigin(m_pEnemy), vObj);
+	}
+
 	// Per-frame projectile dodge: works even when not in active combat,
 	// e.g. while pathing, retreating, or repositioning
 	if (m_fStrafeTime < engine->Time())
@@ -6796,6 +6804,17 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 
 		if (engine->Time() - m_fLastEnemyNearBomb > 30.0f)
 			fMvmDefendUtil *= 0.05f;
+
+		// Organic rotation: if nearby waypoint has activity, reduce guard weight
+		{
+			int iWpt = CWaypointLocations::NearestWaypoint(getOrigin(), 256.0f, -1);
+			if (iWpt >= 0)
+			{
+				CWaypoint *pWpt = CWaypoints::getWaypoint(iWpt);
+				if (pWpt && pWpt->getTraversalCount() > 2)
+					fMvmDefendUtil *= 0.6f;
+			}
+		}
 
 		ADD_UTILITY(BOT_UTIL_DEFEND_FLAG, true, fMvmDefendUtil);
 

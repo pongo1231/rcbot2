@@ -1199,6 +1199,20 @@ class CTeamFortress2Mod : public CBotMod
 	{
 		return m_bDontClearPoints;
 	}
+
+	static inline void UpdateEnemyApproachDir(Vector vEnemyPos, Vector vObjectivePos)
+	{
+		Vector vDir = vEnemyPos - vObjectivePos;
+		vDir.z      = 0;
+		float fLen  = vDir.Length2D();
+		if (fLen > 0.1f)
+		{
+			vDir = vDir / fLen;
+			m_ObjectiveResource.m_vEnemyApproachDir =
+			    m_ObjectiveResource.m_vEnemyApproachDir * 0.9f + vDir * 0.1f;
+		}
+	}
+
 	static CTFObjectiveResource m_ObjectiveResource;
 
 	static CTeamControlPointRound *getCurrentRound()
