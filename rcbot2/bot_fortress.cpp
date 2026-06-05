@@ -1837,6 +1837,7 @@ void CBotTF2::spawnInit()
 	m_bCrossbowPending     = false;
 	m_fLastEnemyNearBomb   = engine->Time();
 	m_fLastEurekaTeleport  = 0.0f;
+	m_iBestObscureTeleExit = -1;
 	m_iGuardSlot           = ENTINDEX(m_pEdict) % 4;
 
 	m_bIsCarryingTeleExit = false;
@@ -2079,6 +2080,34 @@ void CBotTF2::updateCarrying()
 		m_bIsCarryingDisp     = false;
 		m_bIsCarryingTeleEnt  = false;
 	}
+}
+
+float CBotTF2::evaluateTeleExitSpot(CWaypoint *pWpt)
+{
+	if (!pWpt) return 0.0f;
+
+	float fTraversal   = (float)pWpt->peekTraversalCount();
+	float fObscurity   = 1.0f - (fTraversal / (fTraversal + 3.0f));
+	float fDom         = CTeamFortress2Mod::getTeamDominance(m_iTeam);
+
+	// Proximity to flag or capture point
+	Vector vFlag;
+	float fProximity = 0.5f;
+	CTeamFortress2Mod::getFlagLocation(TF2_TEAM_BLUE, &vFlag);
+	float fDist = (pWpt->getOrigin() - vFlag).Length();
+	fProximity = 1500.0f / (1500.0f + fDist);
+
+	// Score: balance obscurity with proximity based on team posture
+	float fScore = fObscurity * 0.7f + fProximity * 0.3f;
+	if (fDom > 0.0f) // dominating: value proximity more
+		fScore = fObscurity * (0.7f - fDom * 0.3f) + fProximity * (0.3f + fDom * 0.3f);
+	if (fDom < -0.2f) // dominated: value obscurity more (hide the exit)
+		fScore = fObscurity * 0.85f + fProximity * 0.15f;
+
+	if (CTeamFortress2Mod::buildingNearby(m_iTeam, pWpt->getOrigin()))
+		fScore *= 0.3f;
+
+	return fScore;
 }
 
 void CBotTF2::checkBuildingsValid(bool bForce) // force check carrying
@@ -8138,6 +8167,35 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 
 		if (pWaypoint)
 		{
+			// Evaluate all teleporter exit spots for obscurity; prefer hidden ones
+			float fBestScore = evaluateTeleExitSpot(pWaypoint);
+			int iBestIdx     = CWaypoints::getWaypointIndex(pWaypoint);
+
+			if (m_iBestObscureTeleExit < 0 || (engine->Time() - (engine->Time() + 0.0f) > 0.0f))
+			{
+				m_iBestObscureTeleExit = -1;
+			}
+
+			// Scan nearby W_FL_TELE_EXIT waypoints for a sufficiently better obscure spot
+			for (int w = 0; w < CWaypoints::numWaypoints(); w++)
+			{
+				CWaypoint *pW = CWaypoints::getWaypoint(w);
+				if (!pW || !pW->isUsed() || !pW->forTeam(getTeam())
+				    || !pW->hasFlag(CWaypointTypes::W_FL_TELE_EXIT))
+					continue;
+				if (pW->getArea() != pWaypoint->getArea())
+					continue;
+				float fScore = evaluateTeleExitSpot(pW);
+				if (fScore > fBestScore * 1.3f)
+				{
+					fBestScore = fScore;
+					iBestIdx   = w;
+				}
+			}
+
+			if (iBestIdx != CWaypoints::getWaypointIndex(pWaypoint))
+				pWaypoint = CWaypoints::getWaypoint(iBestIdx);
+
 			m_bTeleportExitVectorValid = true;
 			m_vTeleportExit            = pWaypoint->getOrigin() + pWaypoint->applyRadius();
 			updateCondition(CONDITION_COVERT); // sneak around to get there

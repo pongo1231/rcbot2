@@ -762,6 +762,7 @@ class CBotFortress : public CBot
 	bool m_bCrossbowPending;
 	float m_fLastEnemyNearBomb;
 	float m_fLastEurekaTeleport;
+	int m_iBestObscureTeleExit;
 	int m_iGuardSlot;
 
 	float m_fHealFactor;
@@ -1151,6 +1152,7 @@ class CBotTF2 : public CBotFortress
 	bool tryExtinguishTeammates();
 	bool tryIgniteSniperBow();
 	bool tryCrossbowHeal();
+	float evaluateTeleExitSpot(CWaypoint *pWpt);
 
 	void handleSpecialAbilities();
 
