@@ -447,7 +447,7 @@ CWaypoint *CWaypointNavigator::chooseBestFromBelief(std::vector<CWaypoint *> &go
 			{
 				for (int j = 1; j <= gpGlobals->maxClients; j++)
 				{
-					edict_t *pPlayer = INDEXENT(i);
+					edict_t *pPlayer = INDEXENT(j);
 
 					if ((pPlayer != nullptr) && !pPlayer->IsFree()
 					    && (CClassInterface::getTF2Class(pPlayer) == TF_CLASS_SNIPER))
@@ -465,7 +465,7 @@ CWaypoint *CWaypointNavigator::chooseBestFromBelief(std::vector<CWaypoint *> &go
 			{
 				for (int j = 1; j <= gpGlobals->maxClients; j++)
 				{
-					edict_t *pPlayer = INDEXENT(i);
+					edict_t *pPlayer = INDEXENT(j);
 
 					if ((pPlayer != nullptr) && !pPlayer->IsFree())
 					{
@@ -527,7 +527,7 @@ CWaypoint *CWaypointNavigator::chooseBestFromBelief(std::vector<CWaypoint *> &go
 			{
 				for (int j = 1; j <= gpGlobals->maxClients; j++)
 				{
-					edict_t *pPlayer = INDEXENT(i);
+					edict_t *pPlayer = INDEXENT(j);
 
 					if ((pPlayer != nullptr) && !pPlayer->IsFree()
 					    && (CClassInterface::getTF2Class(pPlayer) == TF_CLASS_SNIPER))
@@ -542,7 +542,7 @@ CWaypoint *CWaypointNavigator::chooseBestFromBelief(std::vector<CWaypoint *> &go
 			{
 				for (int j = 1; j <= gpGlobals->maxClients; j++)
 				{
-					edict_t *pPlayer = INDEXENT(i);
+					edict_t *pPlayer = INDEXENT(j);
 
 					if ((pPlayer != nullptr) && !pPlayer->IsFree())
 					{
@@ -551,6 +551,21 @@ CWaypoint *CWaypointNavigator::chooseBestFromBelief(std::vector<CWaypoint *> &go
 					}
 				}
 			}
+
+			// Action proximity: prefer waypoints closer to recent enemy sightings
+			if (m_pBot && m_pBot->getLastSeeEnemyTime() > 0
+			    && (engine->Time() - m_pBot->getLastSeeEnemyTime()) < 10.0f)
+			{
+				float fDistToAction = goals[i]->distanceFrom(m_pBot->getLastSeeEnemyPosition());
+				if (fDistToAction < 2000.0f)
+					bBeliefFactor *= 1.0f + (1.0f - (fDistToAction / 2000.0f));
+			}
+
+			// Death avoidance: penalize waypoints in areas where we recently died
+			if (m_pBot && m_pBot->m_iLastDeathArea >= 0
+			    && (engine->Time() - m_pBot->m_fLastDeathTime) < 30.0f
+			    && goals[i]->getArea() == m_pBot->m_iLastDeathArea)
+				bBeliefFactor *= 0.3f;
 
 			if (bHighDanger)
 				fBelief += bBeliefFactor * (1.0f + (m_fBelief[CWaypoints::getWaypointIndex(goals[i])]));
@@ -1044,7 +1059,7 @@ bool CWaypointNavigator::workRoute(Vector vFrom, Vector vTo, bool *bFail, bool b
 				fCost = succWpt->distanceFrom(vOrigin);
 			else
 				fCost = curr->getCost() + (succWpt->distanceFrom(vOrigin))
-				    + (succWpt->getTraversalCount() * 40.0f);
+				    + (succWpt->peekTraversalCount() * 40.0f);
 
 			if (!CWaypointDistances::isSet(m_iCurrentWaypoint, iSucc)
 			    || (CWaypointDistances::getDistance(m_iCurrentWaypoint, iSucc) > fCost))

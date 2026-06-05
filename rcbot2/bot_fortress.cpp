@@ -3777,17 +3777,17 @@ void CBotTF2::modThink()
 	    && (m_iCurrentDefendArea > 0 || m_iCurrentAttackArea > 0))
 	{
 		Vector vObj = getOrigin();
+		bool bHasObj = false;
 		if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
 		{
-			CTeamFortress2Mod::getMVMCapturePoint(&vObj);
+			bHasObj = CTeamFortress2Mod::getMVMCapturePoint(&vObj);
 		}
 		else if (CTeamFortress2Mod::isMapType(TF_MAP_CTF))
 		{
-			Vector vFlag;
-			if (CTeamFortress2Mod::getFlagLocation(TF2_TEAM_BLUE, &vFlag))
-				vObj = vFlag;
+			bHasObj = CTeamFortress2Mod::getFlagLocation(TF2_TEAM_BLUE, &vObj);
 		}
-		CTeamFortress2Mod::UpdateEnemyApproachDir(CBotGlobals::entityOrigin(m_pEnemy), vObj, m_iTeam);
+		if (bHasObj)
+			CTeamFortress2Mod::UpdateEnemyApproachDir(CBotGlobals::entityOrigin(m_pEnemy), vObj, m_iTeam);
 	}
 
 	// Per-frame projectile dodge: works even when not in active combat,
@@ -6832,7 +6832,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			if (iWpt >= 0)
 			{
 				CWaypoint *pWpt = CWaypoints::getWaypoint(iWpt);
-				if (pWpt && pWpt->getTraversalCount() > 2)
+				if (pWpt && pWpt->peekTraversalCount() > 2)
 					fMvmDefendUtil *= 0.6f;
 			}
 		}

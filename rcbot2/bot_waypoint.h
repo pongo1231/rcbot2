@@ -432,6 +432,13 @@ class CWaypoint //: public INavigatorNode
 		return m_iRecentTraversalCount;
 	}
 
+	inline int peekTraversalCount() const
+	{
+		float fDt = engine->Time() - m_fLastTraversalTime;
+		float fDecay = expf(-fDt * 0.15f);
+		return (int)(m_iRecentTraversalCount * fDecay);
+	}
+
 	inline void decayTraversal()
 	{
 		if (m_iRecentTraversalCount > 0)
