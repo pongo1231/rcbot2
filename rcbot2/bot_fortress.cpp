@@ -6951,7 +6951,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			fMvmDefendUtil *= 0.1f;
 		else if (iNearbyDefenders >= 2)
 			fMvmDefendUtil *= 0.2f;
-		else if (iNearbyDefenders >= 1 && !pCarrier)
+		else if (iNearbyDefenders >= 1)
 			fMvmDefendUtil *= 0.5f;
 		}
 
