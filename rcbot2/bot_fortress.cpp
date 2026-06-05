@@ -7388,7 +7388,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	// MvM: sap robots (one spy per target via entindex stagger)
 	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && m_iClass == TF_CLASS_SPY
 	    && m_fSpySapTime < engine->Time() && !hasFlag()
-	    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
+	    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING) && m_bHijacked)
 	{
 		// Prune dead entries from sapped robot list
 		for (size_t i = 0; i < m_SappedRobots.size();)
