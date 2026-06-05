@@ -1137,6 +1137,9 @@ void CBot::init(bool bVarInit)
 
 	cmd.command_number = 0;
 
+	m_iLastDeathArea = -1;
+	m_fLastDeathTime = 0.0f;
+
 	if (bVarInit)
 		spawnInit();
 }
