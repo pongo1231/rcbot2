@@ -361,15 +361,25 @@ CWaypoint *CWaypointNavigator::chooseBestFromBeliefBetweenAreas(std::vector<ASta
 		{
 			node = goals[i];
 
+			float fFactor = 1.0f;
+			CWaypoint *pWptCheck = CWaypoints::getWaypoint(node->getWaypoint());
+			if (m_pBot && pWptCheck && m_pBot->m_iLastDeathArea >= 0
+			    && (engine->Time() - m_pBot->m_fLastDeathTime) < 30.0f
+			    && pWptCheck->getArea() == m_pBot->m_iLastDeathArea)
+			{
+				float fDom = CTeamFortress2Mod::getTeamDominance(m_pBot->getTeam());
+				fFactor = (fDom > 0.0f) ? (0.3f + fDom * 0.3f) : 0.3f;
+			}
+
 			if (bIgnoreBelief)
 				if (bHighDanger)
-					fBelief += node->getHeuristic();
+					fBelief += node->getHeuristic() * fFactor;
 				else
-					fBelief += (131072.0f - node->getHeuristic());
+					fBelief += (131072.0f - node->getHeuristic()) * fFactor;
 			else if (bHighDanger)
-				fBelief += m_fBelief[node->getWaypoint()] + node->getHeuristic();
+				fBelief += (m_fBelief[node->getWaypoint()] + node->getHeuristic()) * fFactor;
 			else
-				fBelief += MAX_BELIEF - m_fBelief[node->getWaypoint()] + (131072.0f - node->getHeuristic());
+				fBelief += (MAX_BELIEF - m_fBelief[node->getWaypoint()] + (131072.0f - node->getHeuristic())) * fFactor;
 		}
 
 		fSelect = randomFloat(0, fBelief);
@@ -380,15 +390,25 @@ CWaypoint *CWaypointNavigator::chooseBestFromBeliefBetweenAreas(std::vector<ASta
 		{
 			node = goals[i];
 
+			float fFactor = 1.0f;
+			CWaypoint *pWptCheck = CWaypoints::getWaypoint(node->getWaypoint());
+			if (m_pBot && pWptCheck && m_pBot->m_iLastDeathArea >= 0
+			    && (engine->Time() - m_pBot->m_fLastDeathTime) < 30.0f
+			    && pWptCheck->getArea() == m_pBot->m_iLastDeathArea)
+			{
+				float fDom = CTeamFortress2Mod::getTeamDominance(m_pBot->getTeam());
+				fFactor = (fDom > 0.0f) ? (0.3f + fDom * 0.3f) : 0.3f;
+			}
+
 			if (bIgnoreBelief)
 				if (bHighDanger)
-					fBelief += node->getHeuristic();
+					fBelief += node->getHeuristic() * fFactor;
 				else
-					fBelief += (131072.0f - node->getHeuristic());
+					fBelief += (131072.0f - node->getHeuristic()) * fFactor;
 			else if (bHighDanger)
-				fBelief += m_fBelief[node->getWaypoint()] + node->getHeuristic();
+				fBelief += (m_fBelief[node->getWaypoint()] + node->getHeuristic()) * fFactor;
 			else
-				fBelief += MAX_BELIEF - m_fBelief[node->getWaypoint()] + (131072.0f - node->getHeuristic());
+				fBelief += (MAX_BELIEF - m_fBelief[node->getWaypoint()] + (131072.0f - node->getHeuristic())) * fFactor;
 
 			if (fSelect <= fBelief)
 			{
