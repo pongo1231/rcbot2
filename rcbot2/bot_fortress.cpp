@@ -1835,6 +1835,7 @@ void CBotTF2::spawnInit()
 	m_iLastBowIgniteSniper = -1;
 	m_fNextCrossbowHeal    = 0.0f;
 	m_bCrossbowPending     = false;
+	m_fLastEnemyNearBomb   = 0.0f;
 
 	m_bIsCarryingTeleExit = false;
 	m_bIsCarryingSentry   = false;
@@ -6645,7 +6646,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			fGetFlagUtility = 0.0f;
 	}
 
-	fDefendFlagUtility = bot_defrate.GetFloat() / 2;
+	fDefendFlagUtility = bot_defrate.GetFloat() / 4;
 
 	if ((m_iClass == TF_CLASS_HWGUY) || (m_iClass == TF_CLASS_DEMOMAN) || (m_iClass == TF_CLASS_SOLDIER)
 	    || (m_iClass == TF_CLASS_PYRO))
@@ -6726,7 +6727,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	// MvM bomb defense: scale with threat (carrier proximity to hatch)
 	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && !bHasFlag)
 	{
-		float fMvmDefendUtil = fDefendFlagUtility + 0.1f;
+		float fMvmDefendUtil = fDefendFlagUtility;
 		Vector vFlagLocation;
 		Vector vCapturePoint;
 
@@ -6789,6 +6790,13 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			fMvmDefendUtil *= 0.7f;
 		}
 
+		if (m_pEnemy && CBotGlobals::entityIsValid(m_pEnemy) && CBotGlobals::entityIsAlive(m_pEnemy)
+		    && hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
+			m_fLastEnemyNearBomb = engine->Time();
+
+		if (engine->Time() - m_fLastEnemyNearBomb > 30.0f)
+			fMvmDefendUtil *= 0.05f;
+
 		ADD_UTILITY(BOT_UTIL_DEFEND_FLAG, true, fMvmDefendUtil);
 
 		// Tank attack utility — tank-effective classes prioritize tanks
@@ -6850,7 +6858,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	{
 		ADD_UTILITY(BOT_UTIL_DEFEND_FLAG,
 		            CTeamFortress2Mod::isMapType(TF_MAP_CTF) && !bHasFlag,
-		            fDefendFlagUtility + 0.1);
+		            fDefendFlagUtility);
 	}
 
 	ADD_UTILITY(BOT_UTIL_DEFEND_FLAG_LASTKNOWN,

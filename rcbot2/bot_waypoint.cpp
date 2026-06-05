@@ -1028,7 +1028,8 @@ bool CWaypointNavigator::workRoute(Vector vFrom, Vector vTo, bool *bFail, bool b
 			else if (succWpt->hasFlag(CWaypointTypes::W_FL_TELEPORT_CHEAT))
 				fCost = succWpt->distanceFrom(vOrigin);
 			else
-				fCost = curr->getCost() + (succWpt->distanceFrom(vOrigin));
+				fCost = curr->getCost() + (succWpt->distanceFrom(vOrigin))
+				    + (succWpt->getTraversalCount() * 40.0f);
 
 			if (!CWaypointDistances::isSet(m_iCurrentWaypoint, iSucc)
 			    || (CWaypointDistances::getDistance(m_iCurrentWaypoint, iSucc) > fCost))
@@ -1337,6 +1338,8 @@ void CWaypointNavigator::updatePosition()
 				else if ((stats->stats.m_iTeamMatesVisible > 0) && (stats->stats.m_iTeamMatesInRange > 0))
 					beliefOne(iWaypointID, BELIEF_SAFETY, 100.0f);
 			}
+
+			pWaypoint->markTraversal();
 
 			m_bOffsetApplied = false;
 
@@ -1956,8 +1959,10 @@ void CWaypoint::init()
 	m_bHasGround           = false;
 	m_fRadius              = 0;
 	m_OpensLaterInfo.clear();
-	m_bIsReachable        = true;
-	m_fCheckReachableTime = 0;
+	m_bIsReachable         = true;
+	m_fCheckReachableTime  = 0;
+	m_iRecentTraversalCount = 0;
+	m_fLastTraversalTime   = 0;
 }
 
 void CWaypoint::save(std::fstream &bfp)

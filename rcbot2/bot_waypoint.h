@@ -415,6 +415,23 @@ class CWaypoint //: public INavigatorNode
 
 	bool isAiming(void);
 
+	inline void markTraversal()
+	{
+		m_iRecentTraversalCount++;
+		m_fLastTraversalTime = engine->Time();
+	}
+
+	inline int getTraversalCount() const
+	{
+		return m_iRecentTraversalCount;
+	}
+
+	inline void decayTraversal()
+	{
+		if (m_iRecentTraversalCount > 0)
+			m_iRecentTraversalCount = (int)(m_iRecentTraversalCount * 0.999f);
+	}
+
   private:
 	Vector m_vOrigin;
 	// aim of vector (used with certain waypoint types)
@@ -433,6 +450,9 @@ class CWaypoint //: public INavigatorNode
 	bool m_bIsReachable;
 	float m_fCheckReachableTime;
 	WaypointList m_PathsTo; // paths to this waypoint from other waypoints
+
+	int m_iRecentTraversalCount;
+	float m_fLastTraversalTime;
 
 	std::vector<wpt_opens_later_t> m_OpensLaterInfo;
 };

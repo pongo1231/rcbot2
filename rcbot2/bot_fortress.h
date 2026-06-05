@@ -760,6 +760,7 @@ class CBotFortress : public CBot
 	int m_iLastBowIgniteSniper;
 	float m_fNextCrossbowHeal;
 	bool m_bCrossbowPending;
+	float m_fLastEnemyNearBomb;
 
 	float m_fHealFactor;
 
