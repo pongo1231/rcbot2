@@ -2468,7 +2468,7 @@ void CBotTF2::addKnownEnemyTeleporter(edict_t *pTele)
 	}
 	for (size_t i = 0; i < m_KnownEnemyTeleporters.size(); i++)
 		if (m_KnownEnemyTeleporters[i].get() == pTele) return;
-	if (m_KnownEnemyTeleporters.size() >= 8) return;
+	if (m_KnownEnemyTeleporters.size() >= 16) return;
 	m_KnownEnemyTeleporters.push_back(MyEHandle(pTele));
 	CTeamFortress2Mod::addTeamKnownTeleporter(CBotGlobals::entityOrigin(pTele));
 }
@@ -2485,7 +2485,7 @@ void CBotTF2::addKnownEnemyDispenser(edict_t *pDisp)
 	}
 	for (size_t i = 0; i < m_KnownEnemyDispensers.size(); i++)
 		if (m_KnownEnemyDispensers[i].get() == pDisp) return;
-	if (m_KnownEnemyDispensers.size() >= 8) return;
+	if (m_KnownEnemyDispensers.size() >= 16) return;
 	m_KnownEnemyDispensers.push_back(MyEHandle(pDisp));
 }
 
@@ -7081,7 +7081,8 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		if (!m_KnownEnemyTeleporters.empty())
 		{
 			Vector vFlag = getOrigin();
-			CTeamFortress2Mod::getFlagLocation(m_iTeam, &vFlag);
+			if (!CTeamFortress2Mod::getFlagLocation(m_iTeam, &vFlag))
+				CTeamFortress2Mod::getMVMCapturePoint(&vFlag);
 			float fBestDist = 9999.0f;
 			int iBest       = -1;
 			for (size_t i = 0; i < m_KnownEnemyTeleporters.size(); i++)
