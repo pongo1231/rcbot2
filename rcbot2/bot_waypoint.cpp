@@ -487,6 +487,12 @@ CWaypoint *CWaypointNavigator::chooseBestFromBelief(std::vector<CWaypoint *> &go
 					bBeliefFactor *= 1.0f + (1.0f - (fDistToAction / 2000.0f));
 			}
 
+			// Death avoidance: penalize waypoints in areas where we recently died
+			if (m_pBot && m_pBot->m_iLastDeathArea >= 0
+			    && (engine->Time() - m_pBot->m_fLastDeathTime) < 30.0f
+			    && goals[i]->getArea() == m_pBot->m_iLastDeathArea)
+				bBeliefFactor *= 0.3f;
+
 			if (bHighDanger)
 				fBelief += bBeliefFactor * (1.0f + (m_fBelief[CWaypoints::getWaypointIndex(goals[i])]));
 			else

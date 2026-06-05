@@ -987,6 +987,9 @@ class CBot
 	inline float getLastSeeEnemyTime() const { return m_fLastSeeEnemy; }
 	inline Vector getLastSeeEnemyPosition() const { return m_vLastSeeEnemy; }
 
+	int m_iLastDeathArea;
+	float m_fLastDeathTime;
+
   protected:
 	inline void setLookAt(Vector vNew)
 	{

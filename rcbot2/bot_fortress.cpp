@@ -2173,6 +2173,17 @@ void CBotTF2::died(edict_t *pKiller, const char *pszWeapon)
 {
 	CBotFortress::died(pKiller, pszWeapon);
 
+	int iWpt = CWaypointLocations::NearestWaypoint(getOrigin(), 256.0f, -1);
+	if (iWpt >= 0)
+	{
+		CWaypoint *pWpt = CWaypoints::getWaypoint(iWpt);
+		if (pWpt)
+		{
+			m_iLastDeathArea = pWpt->getArea();
+			m_fLastDeathTime = engine->Time();
+		}
+	}
+
 	if (pKiller)
 	{
 		if (CBotGlobals::entityIsValid(pKiller))
