@@ -6723,7 +6723,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	// Guard turn-taking: rotate which bots are on guard duty every 10s
 	{
 		int iActiveSlot = ((int)(engine->Time() / 10.0f)) % 4;
-		if (m_iGuardSlot != iActiveSlot)
+		if (m_iGuardSlot != iActiveSlot && numplayersonteam_alive >= 4)
 			fDefendFlagUtility *= 0.4f;
 	}
 
@@ -10706,6 +10706,8 @@ void CBotTF2::roundReset(bool bFullReset)
 	m_pRedPayloadBomb          = nullptr;
 	m_pBluePayloadBomb         = nullptr;
 	m_fLastKnownTeamFlagTime   = 0.0f;
+	m_iLastDeathArea           = -1;
+	m_fLastDeathTime           = 0.0f;
 	m_bEntranceVectorValid     = false;
 	m_bSentryGunVectorValid    = false;
 	m_bDispenserVectorValid    = false;

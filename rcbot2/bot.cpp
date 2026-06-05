@@ -483,11 +483,10 @@ bool CBot::checkStuck()
 		if ((getOrigin() - m_vFastStuckPos).Length() < 16.0f)
 		{
 			// Try to look at the obstacle: alternate forward/backward
-			static bool bLookBack = false;
-			bLookBack = !bLookBack;
+			m_bLookBack = !m_bLookBack;
 			Vector vForward;
 			AngleVectors(eyeAngles(), &vForward);
-			if (bLookBack)
+			if (m_bLookBack)
 				setLookVector(getEyePosition() - vForward * 80.0f);
 			else
 				setLookVector(getEyePosition() + vForward * 80.0f);
@@ -1474,6 +1473,7 @@ void CBot::spawnInit()
 	m_fStickyDetTime          = 0.0f;
 
 	m_bAvoidRight             = (randomInt(0, 1) == 0);
+	m_bLookBack               = false;
 
 	m_iLookTask               = LOOK_WAYPOINT;
 

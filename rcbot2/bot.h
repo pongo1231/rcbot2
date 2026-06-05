@@ -1165,6 +1165,7 @@ class CBot
 	MyEHandle m_PlayerListeningTo;
 	float m_fWantToListenTime;
 	bool m_bOpenFire;
+	bool m_bLookBack;
 	unsigned int m_iPrevWeaponSelectFailed;
 
 	bool m_bWantToListen;
