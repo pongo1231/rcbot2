@@ -758,6 +758,8 @@ class CBotFortress : public CBot
 	float m_fNextBowIgnite;
 	bool m_bBowIgnitePending;
 	int m_iLastBowIgniteSniper;
+	float m_fNextCrossbowHeal;
+	bool m_bCrossbowPending;
 
 	float m_fHealFactor;
 
@@ -1143,6 +1145,7 @@ class CBotTF2 : public CBotFortress
 
 	bool tryExtinguishTeammates();
 	bool tryIgniteSniperBow();
+	bool tryCrossbowHeal();
 
 	void handleSpecialAbilities();
 

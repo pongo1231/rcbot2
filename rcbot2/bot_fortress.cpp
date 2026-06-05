@@ -1832,6 +1832,8 @@ void CBotTF2::spawnInit()
 	m_fNextBowIgnite       = 0.0f;
 	m_bBowIgnitePending    = false;
 	m_iLastBowIgniteSniper = -1;
+	m_fNextCrossbowHeal    = 0.0f;
+	m_bCrossbowPending     = false;
 
 	m_bIsCarryingTeleExit = false;
 	m_bIsCarryingSentry   = false;
@@ -2954,6 +2956,75 @@ bool CBotTF2::tryIgniteSniperBow()
 	m_iButtons             = m_pButtons->getBitMask();
 	m_fNextBowIgnite       = engine->Time() + 3.0f;
 	m_iLastBowIgniteSniper = iSniperIdx;
+
+	return true;
+}
+
+bool CBotTF2::tryCrossbowHeal()
+{
+	if (m_iClass != TF_CLASS_MEDIC)
+		return false;
+
+	if (m_fNextCrossbowHeal > engine->Time())
+		return false;
+
+	if (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot())
+		return false;
+
+	CBotWeapon *pCrossbow = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_CROSSBOW));
+	if (!pCrossbow || !pCrossbow->hasWeapon() || pCrossbow->outOfAmmo(this))
+		return false;
+
+	edict_t *pBest   = nullptr;
+	float fBestHpPct = 0.5f;
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		edict_t *pT = INDEXENT(i);
+		if (!pT || pT == m_pEdict) continue;
+		if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+		if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+
+		IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pT);
+		if (!pInfo) continue;
+		int iHp    = pInfo->GetHealth();
+		int iMaxHp = pInfo->GetMaxHealth();
+		float fPct = (float)iHp / (float)iMaxHp;
+		if (fPct >= 0.5f || fPct <= 0.0f) continue;
+
+		float fDist = distanceFrom(pT);
+		if (fDist < 400.0f || fDist > 2500.0f) continue;
+		if (!FVisible(pT)) continue;
+
+		if (fPct < fBestHpPct)
+		{
+			fBestHpPct = fPct;
+			pBest       = pT;
+		}
+	}
+
+	if (!pBest)
+		return false;
+
+	if (getCurrentWeapon() != pCrossbow)
+	{
+		select_CWeapon(pCrossbow->getWeaponInfo());
+		m_bCrossbowPending = true;
+		return false;
+	}
+
+	if (m_bCrossbowPending)
+		m_bCrossbowPending = false;
+
+	Vector vAim = getAimVector(pBest);
+	Vector vLook = vAim - getEyePosition();
+	QAngle angTarget;
+	VectorAngles(vLook, angTarget);
+	angTarget.x = clamp(angTarget.x, -89.0f, 89.0f);
+	m_vViewAngles = angTarget;
+
+	m_pButtons->holdButton(IN_ATTACK, 0, 0.15f, 0.1f);
+	m_iButtons = m_pButtons->getBitMask();
+	m_fNextCrossbowHeal = engine->Time() + 2.0f;
 
 	return true;
 }
@@ -4235,6 +4306,9 @@ void CBotTF2::modThink()
 				wantToShoot(false);
 			}
 		}
+
+		tryCrossbowHeal();
+
 		break;
 	case TF_CLASS_HWGUY:
 	{

@@ -47,6 +47,7 @@ general RCBot2 support.
 #### Medic
 - Smart positioning: far side of patient from enemies, wall cover, crouching
 - Projectile dodging while healing
+- Crusader's Crossbow: fires healing bolts at distant low-HP teammates with lead prediction
 
 #### Spy
 - Backstab with flank approach positioning, scaled for giant enemies
