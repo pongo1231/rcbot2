@@ -6705,6 +6705,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	{
 		float fRemaining  = m_fLastKnownTeamFlagTime - engine->Time();
 		float fEscalation = 1.0f + (fRemaining / 60.0f);
+		if (fEscalation > 4.0f) fEscalation = 4.0f;
 		fDefendFlagUtility *= fEscalation;
 	}
 
