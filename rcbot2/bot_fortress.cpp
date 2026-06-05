@@ -7774,7 +7774,8 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			int iRouteWpt     = -1;
 			bool bNest        = false;
 
-			if ((m_fUseRouteTime < engine->Time()))
+			if ((m_fUseRouteTime < engine->Time())
+		    || (m_iClass == TF_CLASS_SCOUT) || (m_iClass == TF_CLASS_SPY) || (m_iClass == TF_CLASS_SNIPER))
 			{
 				// find random route
 				pRoute = CWaypoints::randomRouteWaypoint(this, getOrigin(), pWaypoint->getOrigin(), getTeam(),
@@ -7784,7 +7785,10 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 				{
 					bUseRoute       = true;
 					vRoute          = pRoute->getOrigin();
-					m_fUseRouteTime = engine->Time() + randomFloat(30.0f, 60.0f);
+					m_fUseRouteTime = engine->Time() + ((m_iClass == TF_CLASS_SCOUT || m_iClass == TF_CLASS_SPY
+					                                    || m_iClass == TF_CLASS_SNIPER)
+					                                       ? randomFloat(5.0f, 10.0f)
+					                                       : randomFloat(30.0f, 60.0f));
 					iRouteWpt       = CWaypoints::getWaypointIndex(pRoute);
 
 					bNest = ((m_pNavigator->getBelief(iRouteWpt) / MAX_BELIEF) + (1.0f - getHealthPercent()) > 0.75f);
@@ -9005,7 +9009,8 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			Vector vRoute     = Vector(0, 0, 0);
 			bool bUseRoute    = false;
 
-			if ((m_fUseRouteTime < engine->Time()))
+			if ((m_fUseRouteTime < engine->Time())
+		    || (m_iClass == TF_CLASS_SCOUT) || (m_iClass == TF_CLASS_SPY) || (m_iClass == TF_CLASS_SNIPER))
 			{
 				// find random route
 				pRoute = CWaypoints::randomRouteWaypoint(this, getOrigin(), pWaypoint->getOrigin(), getTeam(),
@@ -9015,7 +9020,10 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 				{
 					bUseRoute       = true;
 					vRoute          = pRoute->getOrigin();
-					m_fUseRouteTime = engine->Time() + randomFloat(30.0f, 60.0f);
+					m_fUseRouteTime = engine->Time() + ((m_iClass == TF_CLASS_SCOUT || m_iClass == TF_CLASS_SPY
+					                                    || m_iClass == TF_CLASS_SNIPER)
+					                                       ? randomFloat(5.0f, 10.0f)
+					                                       : randomFloat(30.0f, 60.0f));
 				}
 			}
 

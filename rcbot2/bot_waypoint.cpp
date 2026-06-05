@@ -478,6 +478,15 @@ CWaypoint *CWaypointNavigator::chooseBestFromBelief(std::vector<CWaypoint *> &go
 				}
 			}
 
+			// Action proximity: prefer waypoints closer to recent enemy sightings
+			if (m_pBot && m_pBot->getLastSeeEnemyTime() > 0
+			    && (engine->Time() - m_pBot->getLastSeeEnemyTime()) < 10.0f)
+			{
+				float fDistToAction = goals[i]->distanceFrom(m_pBot->getLastSeeEnemyPosition());
+				if (fDistToAction < 2000.0f)
+					bBeliefFactor *= 1.0f + (1.0f - (fDistToAction / 2000.0f));
+			}
+
 			if (bHighDanger)
 				fBelief += bBeliefFactor * (1.0f + (m_fBelief[CWaypoints::getWaypointIndex(goals[i])]));
 			else
