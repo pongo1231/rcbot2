@@ -2993,7 +2993,7 @@ bool CBotTF2::tryCrossbowHeal()
 		if (fPct >= 0.5f || fPct <= 0.0f) continue;
 
 		float fDist = distanceFrom(pT);
-		if (fDist < 400.0f || fDist > 2500.0f) continue;
+		if (fDist < 800.0f || fDist > 2500.0f) continue;
 		if (!FVisible(pT)) continue;
 
 		if (fPct < fBestHpPct)
