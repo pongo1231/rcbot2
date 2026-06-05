@@ -27,6 +27,7 @@ general RCBot2 support.
 - Burning bots seek out pyros or medics to get extinguished
 - Per-frame projectile dodging during combat, healing, and general movement -- bots strafe perpendicular and backward from incoming rockets, pipes, stickies, sentry rockets, arrows, and flares
 - Statistical projectile prediction with zigzag detection and overshoot/undershoot learning
+- Organic objective guarding: turn-taking patrols near flags and capture points, theft escalation scaling defense weight after flag steals, flank-route security detecting which exit the thief used, unguarded detection filling gaps when nobody is near the objective
 - Crash stack traces with backtrace and symbol resolution on SIGSEGV/SIGABRT
 - Null guard defenses across entity access and handle comparison code to prevent server crashes
 

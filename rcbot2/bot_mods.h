@@ -1262,6 +1262,25 @@ class CTeamFortress2Mod : public CBotMod
 
 	static bool isMedievalMode();
 
+	static int m_iThiefExitWpt;
+	static float m_fThiefSeenTime;
+	static inline void TrackThiefExit(Vector vThief, int iTeam)
+	{
+		CWaypoint *pFlag = CWaypoints::randomWaypointGoal(CWaypointTypes::W_FL_FLAG, iTeam);
+		if (!pFlag) return;
+		int iBest     = -1;
+		float fBestDist = 9999.0f;
+		for (int p = 0; p < pFlag->numPaths(); p++)
+		{
+			CWaypoint *pNeighbor = CWaypoints::getWaypoint(pFlag->getPath(p));
+			if (!pNeighbor) continue;
+			float fD = (pNeighbor->getOrigin() - vThief).Length2D();
+			if (fD < fBestDist) { fBestDist = fD; iBest = CWaypoints::getWaypointIndex(pNeighbor); }
+		}
+		m_iThiefExitWpt  = iBest;
+		m_fThiefSeenTime = engine->Time();
+	}
+
   private:
 	static float TF2_GetClassSpeed(int iClass);
 
@@ -1318,6 +1337,7 @@ class CTeamFortress2Mod : public CBotMod
 
 	static bool m_bMVMFlagStartValid;
 	static Vector m_vMVMFlagStart;
+
 	static bool m_bMVMCapturePointValid;
 	static Vector m_vMVMCapturePoint;
 	static bool m_bMVMAlarmSounded;

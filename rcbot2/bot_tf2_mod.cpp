@@ -96,6 +96,8 @@ bool CTeamFortress2Mod::m_bMVMAlarmSounded                 = false;
 float CTeamFortress2Mod::m_fMVMCapturePointRadius          = 0.0f;
 int CTeamFortress2Mod::m_iCapturePointWptID                = -1;
 int CTeamFortress2Mod::m_iFlagPointWptID                   = -1;
+int CTeamFortress2Mod::m_iThiefExitWpt                     = -1;
+float CTeamFortress2Mod::m_fThiefSeenTime                   = 0.0f;
 MyEHandle CTeamFortress2Mod::m_pNearestTankBoss            = nullptr;
 float CTeamFortress2Mod::m_fNearestTankDistance            = 0.0f;
 Vector CTeamFortress2Mod::m_vNearestTankLocation           = Vector(0, 0, 0);
@@ -757,6 +759,8 @@ void CTeamFortress2Mod::flagPickedUp(int iTeam, edict_t *pPlayer)
 	}
 
 	m_iFlagCarrierTeam = iTeam;
+
+	TrackThiefExit(CBotGlobals::entityOrigin(pPlayer), getTeam(pPlayer));
 
 	CBotTF2FunctionEnemyAtIntel func(iTeam, CBotGlobals::entityOrigin(pPlayer), EVENT_FLAG_PICKUP);
 	CBots::botFunction(&func);

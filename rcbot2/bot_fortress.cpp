@@ -1836,6 +1836,7 @@ void CBotTF2::spawnInit()
 	m_fNextCrossbowHeal    = 0.0f;
 	m_bCrossbowPending     = false;
 	m_fLastEnemyNearBomb   = engine->Time();
+	m_iGuardSlot           = ENTINDEX(m_pEdict) % 4;
 
 	m_bIsCarryingTeleExit = false;
 	m_bIsCarryingSentry   = false;
@@ -6698,6 +6699,27 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	    && CBotGlobals::entityIsAlive(m_pLastEnemy.get()) && (m_fLastSeeEnemy > 0))
 		fDefendFlagUtility = fGetFlagUtility + 0.1f;
 
+	if (m_fLastKnownTeamFlagTime > engine->Time())
+	{
+		float fRemaining  = m_fLastKnownTeamFlagTime - engine->Time();
+		float fEscalation = 1.0f + (fRemaining / 60.0f);
+		fDefendFlagUtility *= fEscalation;
+	}
+
+	// Unguarded objective detection: if no bots near flag, boost defense
+	{
+		CWaypoint *pFlag = CWaypoints::randomWaypointGoal(CWaypointTypes::W_FL_FLAG, getTeam());
+		if (pFlag && pFlag->peekTraversalCount() == 0)
+			fDefendFlagUtility *= 2.0f;
+	}
+
+	// Guard turn-taking: rotate which bots are on guard duty every 10s
+	{
+		int iActiveSlot = ((int)(engine->Time() / 10.0f)) % 4;
+		if (m_iGuardSlot != iActiveSlot)
+			fDefendFlagUtility *= 0.4f;
+	}
+
 	if (m_iClass == TF_CLASS_ENGINEER)
 	{
 		if (m_bIsCarryingObj)
@@ -7762,6 +7784,16 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 				else
 				{
 					fGuardTime = randomFloat(3.0f, 8.0f);
+				}
+			}
+
+			if (pWaypoint == nullptr)
+			{
+				// Prefer guard positions near the thief's last known exit
+				if (CTeamFortress2Mod::m_iThiefExitWpt >= 0
+				    && (engine->Time() - CTeamFortress2Mod::m_fThiefSeenTime) < 60.0f)
+				{
+					pWaypoint = CWaypoints::getWaypoint(CTeamFortress2Mod::m_iThiefExitWpt);
 				}
 			}
 
