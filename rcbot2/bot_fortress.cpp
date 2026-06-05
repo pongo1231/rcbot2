@@ -6947,19 +6947,21 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			}
 
 		// Avoid overkill: scale down if enough defenders already there
-		if (iNearbyDefenders >= 4)
+		if (iNearbyDefenders >= 3)
 			fMvmDefendUtil *= 0.1f;
-		else if (iNearbyDefenders >= 3)
-			fMvmDefendUtil *= 0.2f;
 		else if (iNearbyDefenders >= 2)
-			fMvmDefendUtil *= 0.4f;
+			fMvmDefendUtil *= 0.2f;
 		else if (iNearbyDefenders >= 1 && !pCarrier)
-			fMvmDefendUtil *= 0.7f;
+			fMvmDefendUtil *= 0.5f;
 		}
 
 		if (m_pEnemy && CBotGlobals::entityIsValid(m_pEnemy) && CBotGlobals::entityIsAlive(m_pEnemy)
 		    && hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
 			m_fLastEnemyNearBomb = engine->Time();
+
+		// Preemptive fighting: reduce defend utility when we can actively engage enemies
+		if (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
+			fMvmDefendUtil *= 0.3f;
 
 		if (engine->Time() - m_fLastEnemyNearBomb > 30.0f)
 			fMvmDefendUtil *= 0.05f;
@@ -7953,6 +7955,21 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 
 			if (pWaypoint)
 			{
+				// MVM: shift guard position forward toward enemy approach, not at the bomb
+				if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
+				{
+					Vector vDir = CTeamFortress2Mod::getTeamEnemyApproachDir(m_iTeam);
+					if (vDir.Length2D() > 0.1f)
+					{
+						Vector vForward = CBotGlobals::entityOrigin(m_pEdict)
+						    + vDir * 384.0f;
+						CWaypoint *pFwd = CWaypoints::getWaypoint(
+						    CWaypointLocations::NearestWaypoint(vForward, 512.0f, -1));
+						if (pFwd)
+							pWaypoint = pFwd;
+					}
+				}
+
 				setLookAt(pWaypoint->getOrigin());
 				m_pSchedules->add(new CBotDefendSched(pWaypoint->getOrigin(), fGuardTime));
 				removeCondition(CONDITION_DEFENSIVE);

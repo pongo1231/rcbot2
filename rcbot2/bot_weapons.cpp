@@ -239,6 +239,9 @@ std::vector<CWeapon *> CWeapons::m_theWeapons;
 
 int CBotWeapon::getAmmo(CBot *pBot, int type)
 {
+	if (!m_pWeaponInfo)
+		return 0;
+
 	if (type == AMMO_PRIM)
 		return pBot->getAmmo(m_pWeaponInfo->getAmmoIndex1());
 
