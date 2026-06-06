@@ -3472,13 +3472,6 @@ void CBotTF2::handleSpecialAbilities()
 			helpers->ClientCommand(m_pEdict, "taunt");
 	}
 
-	// --- Beggar's Bazooka (730): cancel attack if too many rockets loaded to avoid self-damage ---
-	if (iActiveItem == 730 && iActiveSlot == TF2_SLOT_PRMRY)
-	{
-		if (pCurWep->getClip1(this) > 2)
-			primaryAttack(false); // release attack
-	}
-
 	// --- Wrangler variants (140/1086/30668): hold secondary fire for shield ---
 	if ((iActiveItem == 140 || iActiveItem == 1086 || iActiveItem == 30668)
 	    && m_pSentryGun.get() && CBotGlobals::entityIsAlive(m_pSentryGun.get()))
@@ -10917,10 +10910,29 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 		}
 		else if (!bSecAttack)
 		{
-			if (pWeapon->mustHoldAttack())
-				primaryAttack(true);
-			else
-				primaryAttack();
+			bool bHandled = false;
+
+			// --- Beggar's Bazooka (730): hold to load, release at 3 rockets ---
+			if (m_iClass == TF_CLASS_SOLDIER)
+			{
+				edict_t *pWepEnt = pWeapon->getWeaponEntity();
+				if (pWepEnt && CClassInterface::TF2_getItemDefinitionIndex(pWepEnt) == 730)
+				{
+					if (pWeapon->getClip1(this) < 3)
+						primaryAttack(true);
+					else
+						m_pButtons->letGo(IN_ATTACK);
+					bHandled = true;
+				}
+			}
+
+			if (!bHandled)
+			{
+				if (pWeapon->mustHoldAttack())
+					primaryAttack(true);
+				else
+					primaryAttack();
+			}
 		}
 		else
 		{
