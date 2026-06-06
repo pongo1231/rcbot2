@@ -185,16 +185,6 @@ void CBotTF2::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 	}
 		break;
 	case TF_VC_HELP:
-		// add utility can find player
-		if (isVisible(pPlayer))
-		{
-			if (!m_pSchedules->isCurrentSchedule(SCHED_GOTO_ORIGIN))
-			{
-				m_pSchedules->removeSchedule(SCHED_GOTO_ORIGIN);
-
-				m_pSchedules->addFront(new CBotGotoOriginSched(pPlayer));
-			}
-		}
 		break;
 	case TF_VC_GOGOGO:
 		// if bot is nesting, or waiting for something, it will go
