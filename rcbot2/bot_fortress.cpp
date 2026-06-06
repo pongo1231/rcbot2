@@ -4335,6 +4335,7 @@ void CBotTF2::modThink()
 					// Run toward the sentry to distract it
 					m_pEnemy    = pTargetSentry;
 					m_pOldEnemy = pTargetSentry;
+					addVoiceCommand(TF_VC_GOGOGO); // signal team to push!
 				}
 				else
 				{
@@ -7098,10 +7099,26 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	{
 		CBotWeapon *pWeapon = m_pWeapons->getPrimaryWeapon();
 
+		// Count teammates near the sentry for coordination
+		int iNearbyTeam = 0;
+		for (int t = 1; t <= gpGlobals->maxClients; t++)
+		{
+			edict_t *pT = INDEXENT(t);
+			if (!pT || pT == m_pEdict) continue;
+			if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+			if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+			if ((CBotGlobals::entityOrigin(pT)
+			     - CBotGlobals::entityOrigin(m_pNearestEnemySentry.get())).Length() < 512.0f)
+				iNearbyTeam++;
+		}
+
+		float fSentryUtil = 0.7f + iNearbyTeam * 0.1f;
+		if (iNearbyTeam == 0) fSentryUtil *= 0.5f;
+
 		ADD_UTILITY_DATA(BOT_UTIL_ATTACK_SENTRY,
 		                 (m_iClass != TF_CLASS_SPY) && pWeapon && !pWeapon->outOfAmmo(this)
 		                     && pWeapon->primaryGreaterThanRange(TF2_MAX_SENTRYGUN_RANGE + 32.0f),
-		                 0.7f, ENTINDEX(m_pNearestEnemySentry.get()));
+		                 fSentryUtil, ENTINDEX(m_pNearestEnemySentry.get()));
 
 		// Nest destruction: attack known enemy teleporters near our vital points
 		if (!m_KnownEnemyTeleporters.empty())

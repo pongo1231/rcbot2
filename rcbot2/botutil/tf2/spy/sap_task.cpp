@@ -187,6 +187,9 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 		m_fEvadeTime       = 0.0f;
 		m_fStateChangeTime = engine->Time();
 		m_bSapperPlaced    = false;
+
+		// Alert teammates: sentry/building is sapped, push now!
+		((CBotTF2 *)pBot)->addVoiceCommand(TF_VC_GOGOGO);
 		return;
 	}
 
