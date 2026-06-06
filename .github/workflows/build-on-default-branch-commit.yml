@@ -114,6 +114,11 @@ jobs:
           git clone hl2sdk-proxy-repo -b $sdk hl2sdk-$sdk
         done
 
+    - name: Fetch SDK Manifests
+      shell: bash
+      run: |
+        git clone https://github.com/alliedmodders/hl2sdk-manifests hl2sdk-manifests
+
     - name: Fetch RCBot2
       uses: actions/checkout@v2
       with:

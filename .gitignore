@@ -1,3 +1,7 @@
+# SDK dependencies
+hl2sdk-*/
+hl2sdk-manifests/
+
 # Build outputs
 build/
 

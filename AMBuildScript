@@ -16,67 +16,9 @@ proj_c_flags_dbg = [
 
 import os, sys
 
-class SDK(object):
-  def __init__(self, sdk, ext, aDef, name, platform, dir):
-    self.folder = 'hl2sdk-' + dir
-    self.envvar = sdk
-    self.ext = ext
-    self.code = aDef
-    self.define = name
-    self.name = dir
-    self.path = None # Actual path
-    self.platformSpec = platform
-
-    # By default, nothing supports x64.
-    if type(platform) is list:
-      self.platformSpec = {p: ['x86'] for p in platform}
-    else:
-      self.platformSpec = platform
-
-  def shouldBuild(self, target, archs):
-    if target.platform not in self.platformSpec:
-      return False
-    if not len([i for i in self.platformSpec[target.platform] if i in archs]):
-      return False
-    return True
-
-WinOnly = ['windows']
-WinLinux = ['windows', 'linux']
-WinLinuxMac = ['windows', 'linux', 'mac']
-CSGO = {
-  'windows': ['x86'],
-  'linux': ['x86', 'x64'],
-  'mac': ['x64']
-}
-Source2 = {
-  'windows': ['x86', 'x64'],
-  'linux': ['x64'],
-}
-
-PossibleSDKs = {
-  'episode1':  SDK('HL2SDK', '2.ep1', '1', 'EPISODEONE', WinLinux, 'episode1'),
-  'ep2':  SDK('HL2SDKOB', '2.ep2', '3', 'ORANGEBOX', WinLinux, 'orangebox'),
-  'css':  SDK('HL2SDKCSS', '2.css', '6', 'CSS', WinLinuxMac, 'css'),
-  'hl2dm':  SDK('HL2SDKHL2DM', '2.hl2dm', '7', 'HL2DM', WinLinuxMac, 'hl2dm'),
-  'dods': SDK('HL2SDKDODS', '2.dods', '8', 'DODS', WinLinuxMac, 'dods'),
-  'sdk2013': SDK('HL2SDK2013', '2.sdk2013', '9', 'SDK2013', WinLinuxMac, 'sdk2013'),
-  'tf2':  SDK('HL2SDKTF2', '2.tf2', '11', 'TF2', WinLinuxMac, 'tf2'),
-  'l4d':  SDK('HL2SDKL4D', '2.l4d', '12', 'LEFT4DEAD', WinLinuxMac, 'l4d'),
-  'nucleardawn': SDK('HL2SDKND', '2.nd', '13', 'NUCLEARDAWN', WinLinuxMac, 'nucleardawn'),
-  'l4d2': SDK('HL2SDKL4D2', '2.l4d2', '15', 'LEFT4DEAD2', WinLinuxMac, 'l4d2'),
-  'darkm':  SDK('HL2SDK-DARKM', '2.darkm', '2', 'DARKMESSIAH', WinOnly, 'darkm'),
-  'swarm':  SDK('HL2SDK-SWARM', '2.swarm', '16', 'ALIENSWARM', WinOnly, 'swarm'),
-  'bgt':  SDK('HL2SDK-BGT', '2.bgt', '4', 'BLOODYGOODTIME', WinOnly, 'bgt'),
-  'eye':  SDK('HL2SDK-EYE', '2.eye', '5', 'EYE', WinOnly, 'eye'),
-  'csgo': SDK('HL2SDKCSGO', '2.csgo', '21', 'CSGO', CSGO, 'csgo'),
-  'dota': SDK('HL2SDKDOTA', '2.dota', '22', 'DOTA', Source2, 'dota'),
-  'portal2':  SDK('HL2SDKPORTAL2', '2.portal2', '17', 'PORTAL2', [], 'portal2'),
-  'blade':  SDK('HL2SDKBLADE', '2.blade', '18', 'BLADE', WinLinux, 'blade'),
-  'insurgency':  SDK('HL2SDKINSURGENCY', '2.insurgency', '19', 'INSURGENCY', WinLinuxMac, 'insurgency'),
-  'doi':  SDK('HL2SDKDOI', '2.doi', '20', 'DOI', WinLinuxMac, 'doi'),
-  'contagion':  SDK('HL2SDKCONTAGION', '2.contagion', '14', 'CONTAGION', WinOnly, 'contagion'),
-  'bms':  SDK('HL2SDKBMS', '2.bms', '10', 'BMS', WinLinux, 'bms'),
-}
+SdkHelpers = builder.Eval('hl2sdk-manifests/SdkHelpers.ambuild', {
+    'Project': 'rcbot'
+})
 
 def ResolveEnvPath(env, folder):
   if env in os.environ:
@@ -119,11 +61,14 @@ def AppendArchSuffix(binary, name, arch):
 class MMSConfig(object):
   def __init__(self):
     self.sdks = {}
+    self.sdk_targets = []
     self.binaries = []
     self.generated_headers = None
-    self.archs = builder.target.arch.replace('x86_64', 'x64').split(',')
+    self.archs = ['x86']
     self.mms_root = builder.options.mms_path
     self.sm_path = builder.options.sm_path or None
+    self.cxx_list = []
+    self.platform = None
 
   def detectProductVersion(self):
     builder.AddConfigureFile('product.version')
@@ -139,40 +84,64 @@ class MMSConfig(object):
       major, minor, release = m.groups()
       self.productVersion = '{0}.{1}.{2}'.format(major, minor, release)
 
+  def findSdkPath(self, sdk_name):
+    dir_name = 'hl2sdk-{}'.format(sdk_name)
+    if builder.options.hl2sdk_root:
+      sdk_path = os.path.join(builder.options.hl2sdk_root, dir_name)
+      if os.path.exists(sdk_path):
+        return sdk_path
+    return ResolveEnvPath('HL2SDK{}'.format(sdk_name.upper()), dir_name)
+
+  def shouldIncludeSdk(self, sdk):
+    # Filter out Source2 SDKs
+    return not sdk.get('source2', False)
+
   def detectSDKs(self):
     sdk_list = builder.options.sdks.split(',')
-    use_all = sdk_list[0] == 'all'
-    use_present = sdk_list[0] == 'present'
     if sdk_list[0] == '':
-        sdk_list = []
+      sdk_list = []
 
-    for sdk_name in PossibleSDKs:
-      sdk = PossibleSDKs[sdk_name]
-      if sdk.shouldBuild(builder.target, self.archs):
-        if builder.options.hl2sdk_root:
-          sdk_path = os.path.join(builder.options.hl2sdk_root, sdk.folder)
-        else:
-          sdk_path = ResolveEnvPath(sdk.envvar, sdk.folder)
-        if sdk_path is None:
-          if use_all or sdk_name in sdk_list:
-            raise Exception('Could not find a valid path for {0}'.format(sdk.envvar))
-          continue
-        if use_all or use_present or sdk_name in sdk_list:
-          sdk.path = sdk_path
-          self.sdks[sdk_name] = sdk
+    # Detect compilers for each arch
+    for arch in self.archs:
+      try:
+        cxx = builder.DetectCxx(target_arch = arch)
+        self.cxx_list.append(cxx)
+        if self.platform is None:
+          self.platform = cxx.target.platform
+      except Exception as e:
+        print('Skipping target {}: {}'.format(arch, e))
+        continue
 
-    if len(self.sdks) < 1 and len(sdk_list):
-      raise Exception('No SDKs were found that build on {0}-{1}, nothing to do.'.format(
-        builder.target.platform, builder.target.arch))
+    if not self.cxx_list:
+      raise Exception('No suitable C/C++ compiler was found.')
 
-    if builder.options.mms_path:
-      self.mms_root = builder.options.mms_path
+    # Set up SDK manifest callbacks
+    SdkHelpers.find_sdk_path = self.findSdkPath
+    SdkHelpers.sdk_filter = self.shouldIncludeSdk
+
+    SdkHelpers.findSdks(builder, self.cxx_list, sdk_list)
+
+    self.sdks = SdkHelpers.sdks
+    self.sdk_targets = SdkHelpers.sdk_targets
+
+    if not self.sdk_targets and len(sdk_list):
+      raise Exception('No buildable SDKs were found, nothing to build.')
+
+    if not builder.options.mms_path:
+      self.mms_root = ResolveEnvPath('MMSOURCE', 'metamod-source')
+    else:
+      self.mms_root = os.path.abspath(os.path.join(builder.sourcePath, builder.options.mms_path))
+    if not self.mms_root:
+      raise Exception('Metamod:Source path is missing. Supply a --mms_path flag')
 
   def configure(self):
     if not set(self.archs).issubset(['x86', 'x64']):
-      raise Exception('Unknown target architecture: {0}'.format(builder.target.arch))
+      raise Exception('Unknown target architecture: {0}'.format(self.archs))
 
-    cxx = builder.DetectCxx()
+    if not self.cxx_list:
+      return
+
+    cxx = self.cxx_list[0]
 
     if cxx.like('msvc') and len(self.archs) > 1:
       raise Exception('Building multiple archs with MSVC is not currently supported')
@@ -187,7 +156,7 @@ class MMSConfig(object):
         'GNUC'
       ]
       cxx.cflags += proj_c_flags
-      cxx.cflags += [ # todo: what is the difference between cflags and cxxflags
+      cxx.cflags += [
         '-fPIC',
         '-fno-exceptions',
         '-fno-rtti',
@@ -203,7 +172,6 @@ class MMSConfig(object):
           '-w',
           '-D__linux',
         ]
-      # apple clang <-> llvm clang version correspondence is just a guess as there is no way to figure it out for real
       if (cxx.version >= 'gcc-4.7' or cxx.version >= 'clang-3.0' or cxx.version >= 'apple-clang-5.1'):
         cxx.cflags += [
           '-Wno-delete-non-virtual-dtor',
@@ -215,7 +183,6 @@ class MMSConfig(object):
           cxx.cxxflags += ['-Wno-expansion-to-defined']
 
     elif cxx.like('msvc'):
-      # raise Exception('MSVC builds should use the Visual Studio projects until somebody implements support') # todo: implement MSVC support
       if builder.options.debug == '1':
         cxx.cflags += ['/MTd']
         cxx.linkflags += ['/NODEFAULTLIB:libcmt']
@@ -264,7 +231,7 @@ class MMSConfig(object):
       cxx.cflags += ['/Oy-']
 
     # Platform-specifics
-    if builder.target.platform == 'linux':
+    if self.platform == 'linux':
       cxx.defines += [
         'POSIX',
         '_LINUX',
@@ -275,7 +242,7 @@ class MMSConfig(object):
 
       # catch link errors at compile time
       cxx.linkflags += [ '-Wl,-no-undefined' ]
-    elif builder.target.platform == 'mac':
+    elif self.platform == 'mac':
       cxx.defines += [
         'POSIX',
         'OSX',
@@ -287,81 +254,16 @@ class MMSConfig(object):
         '-lc++',
         '-mmacosx-version-min=10.9',
       ]
-    # elif builder.target.platform == 'windows': # todo: implement MSVC support
+    elif self.platform == 'windows':
+      pass
     cxx.includes += [
       os.path.join(builder.buildPath, 'includes')
     ]
 
-  def HL2Compiler(self, context, sdk, arch):
-    compiler = context.cxx.clone()
-    compiler.cxxincludes += [
-      os.path.join(context.currentSourcePath),
-    ]
-
-    defines = ['SE_' + PossibleSDKs[i].define + '=' + PossibleSDKs[i].code for i in PossibleSDKs]
-    compiler.defines += defines
-    paths = [
-              ['public'],
-              ['public', 'engine'],
-              ['public', 'mathlib'],
-              ['public', 'vstdlib'],
-              ['public', 'tier0'],
-              ['public', 'tier1'],
-              ['game_shared'],
-              ['game', 'shared'],
-              ['game', 'server'],
-              ['public', 'game', 'server'],
-            ]
-
-    if not builder.options.mms_path:
-      raise Exception('Metamod:Source path is missing. Supply a --mms_path flag')
-
-    if sdk.name == 'episode1' or sdk.name == 'darkm':
-      paths.append(['public', 'dlls'])
-      compiler.cxxincludes.append(os.path.join(builder.options.mms_path, 'core-legacy'))
-      compiler.cxxincludes.append(os.path.join(builder.options.mms_path, 'core-legacy', 'sourcehook'))
-    else:
-      paths.append(['public', 'game', 'server'])
-      compiler.cxxincludes.append(os.path.join(builder.options.mms_path, 'core'))
-      compiler.cxxincludes.append(os.path.join(builder.options.mms_path, 'core', 'sourcehook'))
-
-    compiler.defines += ['SOURCE_ENGINE=' + sdk.code]
-
-    if sdk.name in ['sdk2013', 'bms'] and compiler.like('gcc'):
-      # The 2013 SDK already has these in public/tier0/basetypes.h
-      compiler.defines.remove('stricmp=strcasecmp')
-      compiler.defines.remove('_stricmp=strcasecmp')
-      compiler.defines.remove('_snprintf=snprintf')
-      compiler.defines.remove('_vsnprintf=vsnprintf')
-
-    if compiler.family == 'msvc':
-      # todo: verify this for MSVC support
-      compiler.defines += ['COMPILER_MSVC']
-      if arch == 'x86':
-        compiler.defines += ['COMPILER_MSVC32']
-      elif arch == 'x64':
-        compiler.defines += ['COMPILER_MSVC64']
-
-      if compiler.version >= 1900:
-        compiler.linkflags += ['legacy_stdio_definitions.lib']
-    else: # todo: is it better to check compiler.behavior?
-      compiler.defines += ['COMPILER_GCC']
-
-    for path in paths:
-      compiler.cxxincludes += [os.path.join(sdk.path, *path)]
-
-    return compiler
-
   def AddVersioning(self, binary, arch):
-    if builder.target.platform == 'windows':
-      # todo: verify this for MSVC support
-      #binary.sources += ['version.rc']
-      #binary.compiler.rcdefines += [
-      #  'BINARY_NAME="{0}"'.format(binary.outputFile),
-      #  'RC_COMPILE'
-      #]
+    if self.platform == 'windows':
       pass
-    elif builder.target.platform == 'mac' and binary.type == 'library':
+    elif self.platform == 'mac' and binary.type == 'library':
       binary.compiler.postlink += [
         '-compatibility_version', '1.0.0',
         '-current_version', self.productVersion
@@ -376,90 +278,39 @@ class MMSConfig(object):
     self.AddVersioning(binary, arch)
     return binary
 
-  def Library(self, context, name, arch):
-    compiler = context.cxx.clone()
-    SetArchFlags(compiler, arch, builder.target.platform)
+  def Library(self, context, name, cxx, arch):
+    compiler = cxx.clone()
+    SetArchFlags(compiler, arch, self.platform)
     return self.LibraryBuilder(compiler, name, arch)
 
-  def HL2Library(self, context, name, sdk, arch):
-    compiler = self.HL2Compiler(context, sdk, arch)
+  def HL2Library(self, context, name, sdk, cxx, arch):
+    compiler = cxx.clone()
+    SetArchFlags(compiler, arch, self.platform)
 
-    SetArchFlags(compiler, arch, builder.target.platform)
+    compiler.cxxincludes += [
+      os.path.join(context.currentSourcePath),
+    ]
 
-    if builder.target.platform == 'linux':
-      if sdk.name == 'episode1':
-        lib_folder = os.path.join(sdk.path, 'linux_sdk')
-      elif sdk.name in ['sdk2013', 'bms']:
-        lib_folder = os.path.join(sdk.path, 'lib', 'public', 'linux32')
-      elif arch == 'x64':
-        lib_folder = os.path.join(sdk.path, 'lib', 'linux64')
-      else:
-        lib_folder = os.path.join(sdk.path, 'lib', 'linux')
-    elif builder.target.platform == 'mac':
-      if sdk.name in ['sdk2013', 'bms']:
-        lib_folder = os.path.join(sdk.path, 'lib', 'public', 'osx32')
-      elif arch == 'x64':
-        lib_folder = os.path.join(sdk.path, 'lib', 'osx64')
-      else:
-        lib_folder = os.path.join(sdk.path, 'lib', 'mac')
+    # Generate SE_* defines for all known SDKs (used for SOURCE_ENGINE checks)
+    for other_sdk in SdkHelpers.sdk_manifests:
+      compiler.defines += ['SE_{}={}'.format(other_sdk['define'], other_sdk['code'])]
 
-    if builder.target.platform in ['linux', 'mac']:
-      if sdk.name in ['sdk2013', 'bms'] or arch == 'x64':
-        compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'tier1.a'))]
-      else:
-        compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'tier1_i486.a'))]
-
-      if sdk.name in ['blade', 'insurgency', 'doi', 'csgo', 'dota']:
-        if arch == 'x64':
-          compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'interfaces.a'))]
-        else:
-          compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'interfaces_i486.a'))]
-
-      if sdk.name == 'bms':
-        compiler.postlink += [compiler.Dep(os.path.join(lib_folder, 'mathlib.a'))]
+    # MMS include paths
+    if sdk['name'] in ['episode1', 'darkm']:
+      compiler.cxxincludes.append(os.path.join(self.mms_root, 'core-legacy'))
+      compiler.cxxincludes.append(os.path.join(self.mms_root, 'core-legacy', 'sourcehook'))
+    else:
+      compiler.cxxincludes.append(os.path.join(self.mms_root, 'core'))
+      compiler.cxxincludes.append(os.path.join(self.mms_root, 'core', 'sourcehook'))
 
     binary = self.LibraryBuilder(compiler, name, arch)
 
-    dynamic_libs = [] # todo: this whole section is slightly different, but I imagine it is "more correct"
-    if builder.target.platform == 'linux':
-      compiler.linkflags[0:0] = ['-lm', '-ldl'] # todo: do we need -ldl?
-      if sdk.name in ['css', 'hl2dm', 'dods', 'tf2', 'sdk2013', 'bms', 'nucleardawn', 'l4d2', 'insurgency', 'doi']:
-        dynamic_libs = ['libtier0_srv.so', 'libvstdlib_srv.so']
-      elif arch == 'x64' and sdk.name == 'csgo':
-        dynamic_libs = ['libtier0_client.so', 'libvstdlib_client.so']
-      elif sdk.name in ['l4d', 'blade', 'insurgency', 'doi', 'csgo', 'dota']:
-        dynamic_libs = ['libtier0.so', 'libvstdlib.so']
-      else:
-        dynamic_libs = ['tier0_i486.so', 'vstdlib_i486.so']
-    elif builder.target.platform == 'mac':
-      binary.compiler.linkflags.append('-liconv')
-      dynamic_libs = ['libtier0.dylib', 'libvstdlib.dylib']
-    elif builder.target.platform == 'windows':
-      # todo: verify this for MSVC support
-      libs = ['tier0', 'tier1', 'vstdlib', 'mathlib']
-      if sdk.name in ['swarm', 'blade', 'insurgency', 'doi', 'csgo', 'dota']:
-        libs.append('interfaces')
-      if sdk.name == 'bms':
-        libs.append('mathlib')
-      for lib in libs:
-        if arch == 'x86':
-          lib_path = os.path.join(sdk.path, 'lib', 'public', lib) + '.lib'
-        elif arch == 'x64':
-          lib_path = os.path.join(sdk.path, 'lib', 'public', 'win64', lib) + '.lib'
-        binary.compiler.linkflags.append(binary.Dep(lib_path))
+    # Let SdkHelpers configure all SDK-specific includes, defines, and libraries
+    SdkHelpers.configureCxx(context, binary, sdk)
 
-    for library in dynamic_libs:
-      source_path = os.path.join(lib_folder, library)
-      output_path = os.path.join(binary.localFolder, library)
-
-      def make_linker(source_path, output_path):
-        def link(context, binary):
-          cmd_node, (output,) = context.AddSymlink(source_path, output_path)
-          return output
-        return link
-
-      linker = make_linker(source_path, output_path)
-      binary.compiler.linkflags[0:0] = [binary.Dep(library, linker)]
+    # SDK manifests omit some include paths that the SDK headers need.
+    if sdk['name'] not in ['episode1', 'darkm']:
+      binary.compiler.cxxincludes += [os.path.join(sdk['path'], 'game', 'server')]
 
     return binary
 

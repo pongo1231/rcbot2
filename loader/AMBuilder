@@ -4,17 +4,17 @@ import os.path
 loader_name = 'RCBot2Meta'
 
 for arch in MMS.archs:
-  if builder.target.platform in ['windows', 'mac']:
+  if MMS.platform in ['windows', 'mac']:
     name = loader_name
     extra_ldflags = []
-  elif builder.target.platform == 'linux':
+  elif MMS.platform == 'linux':
     name = loader_name + '_i486'
     extra_ldflags = ['-ldl']
 
   if arch == 'x64':
     name = loader_name + '.x64'
 
-  binary = MMS.Library(builder, name, arch)
+  binary = MMS.Library(builder, name, MMS.cxx_list[0], arch)
   binary.compiler.cxxincludes += [
     os.path.join(MMS.mms_root, 'core'),
     os.path.join(MMS.mms_root, 'sourcehook')

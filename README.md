@@ -138,8 +138,10 @@ working repository.  This will create a repository with the earliest commit at
 
 ### Compiling on Windows / Linux
 
-1. [Install the prerequisites for building SourceMod for your OS.][Building SourceMod]
-2. Create a `build/` subdirectory, then run `configure.py`.
+1. Clone the SDK manifests alongside the HL2SDK checkouts:
+	`git clone https://github.com/alliedmodders/hl2sdk-manifests hl2sdk-manifests`
+2. [Install the prerequisites for building SourceMod for your OS.][Building SourceMod]
+3. Create a `build/` subdirectory, then run `configure.py`.
 	- The project requires C++11 support.  It was previously confirmed to compile on
 	GCC 5.4 (Ubuntu 16.04 LTS) and on MSVC 1900.
 	- `configure.py` can be run with the following settings:
