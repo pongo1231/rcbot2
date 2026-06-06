@@ -3,6 +3,8 @@
 #include "bot.h"
 #include "bot_const.h"
 
+class CBasePlayer;
+
 class CBotSchedule;
 
 class IBotTaskInterrupt

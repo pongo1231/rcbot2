@@ -45,6 +45,8 @@
 #include "engine/iserverplugin.h"
 #include "filesystem.h"
 #include "interface.h"
+
+class CBasePlayer;
 #include "iplayerinfo.h"
 #include "toolframework/itoolentity.h"
 #ifdef __linux__

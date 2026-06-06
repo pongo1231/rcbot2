@@ -1,3 +1,4 @@
+class CBasePlayer;
 #include "use_button_task.h"
 
 #include "bot_globals.h"
