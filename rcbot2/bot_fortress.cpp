@@ -7571,8 +7571,35 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		if (fRemaining > 0.1f && fRemaining < 8.0f && randomFloat(0.0f, 1.0f) > 0.7f)
 			bInSetup = false;
 
+		// Bored: during active gameplay, bot is near spawn or on guard duty
+		// with no enemy danger for a while and team isn't being dominated
+		bool bBored = false;
+		if (!bInSetup && CTeamFortress2Mod::hasRoundStarted() && wantToShoot())
+		{
+			if (!m_pEnemy
+			    && (m_fLastSeeEnemy == 0.0f || (engine->Time() - m_fLastSeeEnemy) > 15.0f)
+			    && CTeamFortress2Mod::getTeamDominance(m_iTeam) > -0.3f)
+			{
+				// Near spawn or on guard/defense duty
+				int iWpt = CWaypointLocations::NearestWaypoint(getOrigin(), 256.0f, -1);
+				if (iWpt >= 0)
+				{
+					CWaypoint *pWpt = CWaypoints::getWaypoint(iWpt);
+					if (pWpt && (pWpt->getArea() == 0
+					    || m_pSchedules->isCurrentSchedule(SCHED_DEFEND)
+					    || m_pSchedules->isCurrentSchedule(SCHED_DEFENDPOINT)
+					    || m_pSchedules->hasSchedule(SCHED_DEFEND)
+					    || m_pSchedules->hasSchedule(SCHED_DEFENDPOINT)))
+					{
+						bBored = true;
+						fMessUtil = 0.6f;
+					}
+				}
+			}
+		}
+
 		ADD_UTILITY(BOT_UTIL_MESSAROUND,
-		            bMedicOk && bInSetup
+		            bMedicOk && (bInSetup || bBored)
 		                && ((iTeam == TF2_TEAM_BLUE) || (!CTeamFortress2Mod::isAttackDefendMap())),
 		            fMessUtil);
 	}
