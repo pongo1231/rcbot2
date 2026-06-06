@@ -1,3 +1,4 @@
+class CBasePlayer;
 #include "gravgun_pickup_task.h"
 
 #include "bot_getprop.h"

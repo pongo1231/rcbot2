@@ -1,3 +1,4 @@
+class CBasePlayer;
 #include "use_charger_task.h"
 
 #include "bot_getprop.h"
