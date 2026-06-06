@@ -1,3 +1,4 @@
+class CBasePlayer;
 #include "snipe_task.h"
 
 #include "bot_getprop.h"
