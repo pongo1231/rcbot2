@@ -1467,7 +1467,7 @@ void CBotFortress::modThink()
 
 	// if ( !hasSomeConditions(CONDITION_PUSH) )
 	///{
-	if (CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict) || CTeamFortress2Mod::TF2_IsPlayerKrits(m_pEdict))
+	if (CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict) || CTeamFortress2Mod::TF2_IsPlayerCritBoosted(m_pEdict))
 		updateCondition(CONDITION_PUSH);
 	//}
 
@@ -1531,7 +1531,9 @@ void CBotFortress::modThink()
 			m_pButtons->tap(IN_RELOAD);
 	}
 
-	if (!CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict) && (m_pNearestPipeGren.get() != nullptr))
+	if (!CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
+	    && !CTeamFortress2Mod::TF2_IsPlayerCritBoosted(m_pEdict)
+	    && (m_pNearestPipeGren.get() != nullptr))
 	{
 		if (!m_pSchedules->hasSchedule(SCHED_GOOD_HIDE_SPOT) && (distanceFrom(m_pNearestPipeGren) < 400.0f))
 		{
@@ -4462,7 +4464,8 @@ void CBotTF2::modThink()
 			if (pWeapon && (pWeapon->getID() == TF2_WEAPON_MINIGUN))
 			{
 				if (!CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict)
-				    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
+	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
+	    && !CTeamFortress2Mod::TF2_IsPlayerCritBoosted(m_pEdict))
 				{
 					if (m_fCurrentDanger >= TF2_HWGUY_REV_BELIEF)
 					{
@@ -4927,7 +4930,8 @@ void CBotTF2::handleWeapons()
 		CBotWeapon *pWeapon;
 
 		pWeapon = m_pWeapons->getBestWeapon(m_pEnemy, !hasFlag(), !hasFlag(), rcbot_melee_only.GetBool(), false,
-		                                    CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict));
+		                                    CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
+		                                        || CTeamFortress2Mod::TF2_IsPlayerCritBoosted(m_pEdict));
 
 		setLookAtTask(LOOK_ENEMY);
 
@@ -5229,6 +5233,9 @@ bool CBotTF2::wantToFollowEnemy()
 	else if ((pEnemy != nullptr) && CBotGlobals::isPlayer(pEnemy) && CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
 	         && (m_iClass != TF_CLASS_MEDIC))
 		return true; // I am ubered  GO!!!
+	else if ((pEnemy != nullptr) && CBotGlobals::isPlayer(pEnemy)
+	         && CTeamFortress2Mod::TF2_IsPlayerCritBoosted(m_pEdict) && (m_iClass != TF_CLASS_MEDIC))
+		return true; // I am crit boosted -- GO!!!
 	else if ((pEnemy != nullptr) && CBotGlobals::isPlayer(pEnemy) && CTeamFortress2Mod::TF2_IsPlayerInvuln(pEnemy))
 		return false; // Enemy is UBERED  -- don't follow
 	else if ((m_iCurrentDefendArea != 0) && (pEnemy != nullptr) && CTeamFortress2Mod::isMapType(TF_MAP_CP)

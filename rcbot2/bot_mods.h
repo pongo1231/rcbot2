@@ -877,6 +877,8 @@ class CTeamFortress2Mod : public CBotMod
 
 	static bool TF2_IsPlayerKrits(edict_t *pPlayer);
 
+	static bool TF2_IsPlayerCritBoosted(edict_t *pPlayer);
+
 	static bool TF2_IsPlayerOnFire(edict_t *pPlayer);
 
 	static bool TF2_IsPlayerTaunting(edict_t *pPlayer);
