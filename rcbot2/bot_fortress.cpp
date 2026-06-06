@@ -2083,33 +2083,50 @@ void CBotTF2::updateCarrying()
 	}
 }
 
-float CBotTF2::evaluateTeleExitSpot(CWaypoint *pWpt)
+float CBotTF2::evaluateBuildSpot(CWaypoint *pWpt, int iBuildingType)
 {
 	if (!pWpt) return 0.0f;
 
+	float fDom         = CTeamFortress2Mod::getTeamDominance(m_iTeam);
+
+	// Dominance gate: only use obscure placement when not dominated
+	if (fDom < -0.2f && iBuildingType != 0) // BUILD_TELE=0 always uses this path
+		return 0.0f;
+
 	float fTraversal   = (float)pWpt->peekTraversalCount();
 	float fObscurity   = 1.0f - (fTraversal / (fTraversal + 3.0f));
-	float fDom         = CTeamFortress2Mod::getTeamDominance(m_iTeam);
 
 	// Proximity to flag or capture point
 	Vector vFlag = getOrigin();
-	float fProximity = 0.5f;
 	if (!CTeamFortress2Mod::getFlagLocation(TF2_TEAM_BLUE, &vFlag))
 		CTeamFortress2Mod::getMVMCapturePoint(&vFlag);
 	float fDist = (pWpt->getOrigin() - vFlag).Length();
-	fProximity = 1500.0f / (1500.0f + fDist);
+	float fProximity = 1500.0f / (1500.0f + fDist);
 
-	// Score: balance obscurity with proximity based on team posture
-	float fScore = fObscurity * 0.7f + fProximity * 0.3f;
-	if (fDom > 0.0f) // dominating: value proximity more
-		fScore = fObscurity * (0.7f - fDom * 0.3f) + fProximity * (0.3f + fDom * 0.3f);
-	if (fDom < -0.2f) // dominated: value obscurity more (hide the exit)
-		fScore = fObscurity * 0.85f + fProximity * 0.15f;
+	// Base weights vary by building type
+	float fObsWeight = 0.7f, fProxWeight = 0.3f;
+	if (iBuildingType == 1) // sentry: less obscure, more proximity
+	{
+		fObsWeight = 0.4f; fProxWeight = 0.6f;
+	}
+	else if (iBuildingType == 2) // dispenser: balanced, hidden but useful
+	{
+		fObsWeight = 0.6f; fProxWeight = 0.4f;
+	}
+
+	float fScore = fObscurity * fObsWeight + fProximity * fProxWeight;
+	if (fDom > 0.0f)
+		fScore = fObscurity * (fObsWeight - fDom * 0.3f) + fProximity * (fProxWeight + fDom * 0.3f);
 
 	if (CTeamFortress2Mod::buildingNearby(m_iTeam, pWpt->getOrigin()))
 		fScore *= 0.3f;
 
 	return fScore;
+}
+
+float CBotTF2::evaluateTeleExitSpot(CWaypoint *pWpt)
+{
+	return evaluateBuildSpot(pWpt, 0);
 }
 
 void CBotTF2::checkBuildingsValid(bool bForce) // force check carrying
@@ -8400,6 +8417,26 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 
 		if (pWaypoint)
 		{
+			// Prefer obscure spots when team is not dominated
+			{
+				float fBestScore = evaluateBuildSpot(pWaypoint, 1);
+				int iBestIdx     = CWaypoints::getWaypointIndex(pWaypoint);
+				for (int w = 0; w < CWaypoints::numWaypoints(); w++)
+				{
+					CWaypoint *pW = CWaypoints::getWaypoint(w);
+					if (!pW || !pW->isUsed() || !pW->forTeam(getTeam())
+					    || !pW->hasFlag(CWaypointTypes::W_FL_SENTRY))
+						continue;
+					if (pW->getArea() != pWaypoint->getArea())
+						continue;
+					float fScore = evaluateBuildSpot(pW, 1);
+					if (fScore > fBestScore * 1.3f)
+						{ fBestScore = fScore; iBestIdx = w; }
+				}
+				if (iBestIdx != CWaypoints::getWaypointIndex(pWaypoint))
+					pWaypoint = CWaypoints::getWaypoint(iBestIdx);
+			}
+
 			m_iLastFailSentryWpt    = CWaypoints::getWaypointIndex(pWaypoint);
 			m_vSentryGun            = pWaypoint->getOrigin() + pWaypoint->applyRadius();
 			m_bSentryGunVectorValid = true;
@@ -8497,6 +8534,26 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 
 		if (pWaypoint)
 		{
+			// Prefer obscure spots for dispenser too when not dominated
+			{
+				float fBestScore = evaluateBuildSpot(pWaypoint, 2);
+				int iBestIdx     = CWaypoints::getWaypointIndex(pWaypoint);
+				for (int w = 0; w < CWaypoints::numWaypoints(); w++)
+				{
+					CWaypoint *pW = CWaypoints::getWaypoint(w);
+					if (!pW || !pW->isUsed() || !pW->forTeam(getTeam())
+					    || !pW->hasFlag(CWaypointTypes::W_FL_SENTRY))
+						continue;
+					if (pW->getArea() != pWaypoint->getArea())
+						continue;
+					float fScore = evaluateBuildSpot(pW, 2);
+					if (fScore > fBestScore * 1.3f)
+						{ fBestScore = fScore; iBestIdx = w; }
+				}
+				if (iBestIdx != CWaypoints::getWaypointIndex(pWaypoint))
+					pWaypoint = CWaypoints::getWaypoint(iBestIdx);
+			}
+
 			m_vDispenser            = pWaypoint->getOrigin();
 			m_bDispenserVectorValid = true;
 			updateCondition(CONDITION_COVERT);
