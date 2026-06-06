@@ -2576,7 +2576,7 @@ void CBotFortress::teamFlagDropped(Vector vOrigin)
 	m_vLastKnownTeamFlagPoint = vOrigin;
 
 	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
-		m_fLastKnownTeamFlagTime = engine->Time() + 1800.0f; // its going to stay there
+		m_fLastKnownTeamFlagTime = engine->Time() + 60.0f;
 	else
 		m_fLastKnownTeamFlagTime = engine->Time() + 60.0f;
 
@@ -6915,7 +6915,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			else if (fDistToHatch > 512.0f)
 			{
 				// Bomb not being carried, far from hatch -- guard it lightly
-				fMvmDefendUtil += 0.15f;
+				fMvmDefendUtil += 0.0f;
 			}
 			else
 			{
