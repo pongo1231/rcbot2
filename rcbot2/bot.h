@@ -1077,6 +1077,7 @@ class CBot
 	float m_fUpdateOriginTime;
 	float m_fStuckTime;
 	float m_fCheckStuckTime;
+	float m_fStuckStartTime;
 	float m_fNextUpdateStuckConstants;
 
 	float m_fStrafeTime;

@@ -862,9 +862,20 @@ void CBot::think()
 #endif
 		if (checkStuck())
 		{
+			// Track how long we've been stuck for timeout-based respawn
+			if (m_fStuckStartTime == 0.0f)
+				m_fStuckStartTime = engine->Time();
+			else if (engine->Time() - m_fStuckStartTime > 30.0f)
+			{
+				kill();
+				m_fStuckStartTime = 0.0f;
+			}
+
 			// look in the direction I'm going to see what I'm stuck on
 			setLookAtTask(LOOK_WAYPOINT, randomFloat(2.0f, 4.0f));
 		}
+		else
+			m_fStuckStartTime = 0.0f;
 #ifdef _DEBUG
 	}
 #endif
@@ -1460,6 +1471,7 @@ void CBot::spawnInit()
 	m_fUpSpeed                = 0;
 	m_iConditions             = 0;
 	m_fStrafeTime             = 0;
+	m_fStuckStartTime         = 0.0f;
 
 	m_bInitAlive              = true;
 
