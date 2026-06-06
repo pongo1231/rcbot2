@@ -3987,7 +3987,8 @@ void CBotTF2::modThink()
 
 	// MvM sentry buster avoidance
 	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
-	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
+	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
+	    && !CTeamFortress2Mod::TF2_IsPlayerCritBoosted(m_pEdict))
 	{
 		edict_t *pBuster   = nullptr;
 		float fBusterDist  = 9999.0f;
@@ -4093,7 +4094,8 @@ void CBotTF2::modThink()
 	// Also avoid visible sentries we're not actively engaging
 	if (m_pNearestEnemySentry.get() != nullptr
 	    && !(m_iClass == TF_CLASS_SPY && (isDisguised() || isCloaked()))
-	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
+	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
+	    && !CTeamFortress2Mod::TF2_IsPlayerCritBoosted(m_pEdict))
 	{
 		edict_t *pSentry = m_pNearestEnemySentry.get();
 		if (CBotGlobals::entityIsValid(pSentry) && CBotGlobals::entityIsAlive(pSentry)
@@ -7584,7 +7586,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		if (!bInSetup && CTeamFortress2Mod::hasRoundStarted() && wantToShoot())
 		{
 			if (!m_pEnemy
-			    && (m_fLastSeeEnemy == 0.0f || (engine->Time() - m_fLastSeeEnemy) > 15.0f)
+			    && (engine->Time() - m_fLastHurtTime) > 15.0f
 			    && CTeamFortress2Mod::getTeamDominance(m_iTeam) > -0.3f)
 			{
 				// Near spawn or on guard/defense duty
@@ -10197,7 +10199,8 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 	// If behind a wall, no need to avoid. If we have no ranged weapon, rush or path around.
 	if (!(m_iClass == TF_CLASS_SPY && (isDisguised() || isCloaked()))
 	    && !((CClassInterface::getTF2Conditions(m_pEdict) & TF2_PLAYER_BONKED) == TF2_PLAYER_BONKED)
-	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
+	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
+	    && !CTeamFortress2Mod::TF2_IsPlayerCritBoosted(m_pEdict))
 	{
 		edict_t *pDangerSentry = m_pNearestEnemySentry.get();
 		if (pDangerSentry && CBotGlobals::entityIsValid(pDangerSentry)
