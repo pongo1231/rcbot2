@@ -1177,6 +1177,8 @@ class CBot
 	bool m_bAvoidRight;
 	float m_fAvoidSideSwitch;
 	float m_fStickyDetTime;
+	float m_fStickyChargeStart;
+	bool m_bStickyCharging;
 	float m_fHealClickTime;
 
 	unsigned int m_iSpecialVisibleId;

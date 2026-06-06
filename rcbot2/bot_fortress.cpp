@@ -10473,20 +10473,46 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 					{
 						if (getCurrentWeapon() != pStickyLauncher)
 							select_CWeapon(pStickyLauncher->getWeaponInfo());
-						else if (m_fStickyDetTime == 0.0f)
+						else if (!m_bStickyCharging && m_fStickyDetTime == 0.0f)
+						{
+							primaryAttack(true);
+							m_fStickyChargeStart = engine->Time();
+							m_bStickyCharging    = true;
+						}
+						else if (m_bStickyCharging)
 						{
 							float fCharge = fDistance / pStickyLauncher->getPrimaryMaxRange();
 							fCharge       = fCharge * fCharge * 2.0f;
 							if (fCharge < 0.03f) fCharge = 0.03f;
-							if (fCharge > 1.5f) fCharge  = 1.5f;
-							primaryAttack(true, fCharge);
-							float fFlyTime = fDistance / 700.0f;
-							m_fStickyDetTime = engine->Time() + fCharge + fFlyTime + 0.8f;
+							if (fCharge > 2.0f) fCharge  = 2.0f;
+
+							float fElapsed = engine->Time() - m_fStickyChargeStart;
+							if (fDistance <= 200.0f || fElapsed >= fCharge)
+							{
+								m_pButtons->letGo(IN_ATTACK);
+								m_bStickyCharging = false;
+
+								edict_t *pStickyEnt = pStickyLauncher->getWeaponEntity();
+								int iItem = pStickyEnt
+								    ? CClassInterface::TF2_getItemDefinitionIndex(pStickyEnt) : 0;
+								float fArmTime = 0.8f;
+								if (iItem == 1150)       fArmTime = 0.6f;
+								else if (iItem == 130)   fArmTime = 1.6f;
+
+								float fFlyTime = fDistance / 700.0f;
+								m_fStickyDetTime = engine->Time() + fFlyTime + fArmTime;
+							}
 						}
 						else if (m_fStickyDetTime < engine->Time())
 						{
-							tapButton(IN_ATTACK2);
-							m_fStickyDetTime = 0.0f;
+							if (fDistance < BLAST_RADIUS
+							    && distanceFrom(CBotGlobals::entityOrigin(m_pEnemy.get())) > (BLAST_RADIUS / 2))
+							{
+								tapButton(IN_ATTACK2);
+								m_fStickyDetTime = 0.0f;
+							}
+							else
+								m_fStickyDetTime = engine->Time() + 0.1f;
 						}
 					}
 				}
@@ -10667,20 +10693,51 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			{
 				if (getCurrentWeapon() != pStickyLauncher)
 					select_CWeapon(pStickyLauncher->getWeaponInfo());
-				else if (m_fStickyDetTime == 0.0f)
+				else if (!m_bStickyCharging && m_fStickyDetTime == 0.0f)
 				{
+					// Start continuous charge — release later based on live distance
+					primaryAttack(true);
+					m_fStickyChargeStart = engine->Time();
+					m_bStickyCharging    = true;
+				}
+				else if (m_bStickyCharging)
+				{
+					// Recompute ideal charge based on current distance each frame
 					float fCharge = fDistance / pStickyLauncher->getPrimaryMaxRange();
 					fCharge       = fCharge * fCharge * 2.0f;
 					if (fCharge < 0.03f) fCharge = 0.03f;
-					if (fCharge > 1.5f) fCharge  = 1.5f;
-					primaryAttack(true, fCharge);
-					float fFlyTime = fDistance / 700.0f;
-					m_fStickyDetTime = engine->Time() + fCharge + fFlyTime + 0.8f;
+					if (fCharge > 2.0f) fCharge  = 2.0f;
+
+					float fElapsed = engine->Time() - m_fStickyChargeStart;
+					// Release if enemy moved close enough or charge reached
+					if (fDistance <= 200.0f || fElapsed >= fCharge)
+					{
+						m_pButtons->letGo(IN_ATTACK);
+						m_bStickyCharging = false;
+
+						// Arm time by item
+						edict_t *pStickyEnt = pStickyLauncher->getWeaponEntity();
+						int iItem = pStickyEnt
+						    ? CClassInterface::TF2_getItemDefinitionIndex(pStickyEnt) : 0;
+						float fArmTime = 0.8f;
+						if (iItem == 1150)       fArmTime = 0.6f;
+						else if (iItem == 130)   fArmTime = 1.6f;
+
+						float fFlyTime = fDistance / 700.0f;
+						m_fStickyDetTime = engine->Time() + fFlyTime + fArmTime;
+					}
 				}
 				else if (m_fStickyDetTime < engine->Time())
 				{
-					tapButton(IN_ATTACK2);
-					m_fStickyDetTime = 0.0f;
+					// Detonate only if enemy is within blast radius and we're safe
+					if (fDistance < BLAST_RADIUS
+					    && distanceFrom(CBotGlobals::entityOrigin(m_pEnemy.get())) > (BLAST_RADIUS / 2))
+					{
+						tapButton(IN_ATTACK2);
+						m_fStickyDetTime = 0.0f;
+					}
+					else
+						m_fStickyDetTime = engine->Time() + 0.1f; // recheck soon
 				}
 			}
 		}

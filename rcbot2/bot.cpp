@@ -1471,6 +1471,8 @@ void CBot::spawnInit()
 
 	m_fAvoidSideSwitch        = 0.0f;
 	m_fStickyDetTime          = 0.0f;
+	m_fStickyChargeStart      = 0.0f;
+	m_bStickyCharging         = false;
 
 	m_bAvoidRight             = (randomInt(0, 1) == 0);
 	m_bLookBack               = false;
