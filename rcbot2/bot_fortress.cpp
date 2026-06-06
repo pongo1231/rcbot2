@@ -6948,11 +6948,11 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 
 		// Avoid overkill: scale down if enough defenders already there
 		if (iNearbyDefenders >= 3)
-			fMvmDefendUtil *= 0.1f;
+			fMvmDefendUtil = 0.0f;
 		else if (iNearbyDefenders >= 2)
-			fMvmDefendUtil *= 0.2f;
+			fMvmDefendUtil *= 0.15f;
 		else if (iNearbyDefenders >= 1)
-			fMvmDefendUtil *= 0.5f;
+			fMvmDefendUtil *= 0.4f;
 		}
 
 		if (m_pEnemy && CBotGlobals::entityIsValid(m_pEnemy) && CBotGlobals::entityIsAlive(m_pEnemy)
@@ -7969,6 +7969,20 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 							pWaypoint = pFwd;
 					}
 				}
+
+				// Skip if a teammate is already at this exact spot
+				Vector vWpt = pWaypoint->getOrigin();
+				bool bTooClose = false;
+				for (int i = 1; i <= gpGlobals->maxClients; i++)
+				{
+					edict_t *pT = INDEXENT(i);
+					if (!pT || pT == m_pEdict) continue;
+					if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+					if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+					if ((CBotGlobals::entityOrigin(pT) - vWpt).Length2D() < 150.0f)
+						{ bTooClose = true; break; }
+				}
+				if (bTooClose) return false;
 
 				setLookAt(pWaypoint->getOrigin());
 				m_pSchedules->add(new CBotDefendSched(pWaypoint->getOrigin(), fGuardTime));
