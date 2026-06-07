@@ -854,6 +854,16 @@ class CBotFortress : public CBot
 	float m_fClassDisguiseTime[10];
 	float m_fDisguiseTime;
 	unsigned short m_iDisguiseClass;
+
+	// Spy context-aware disguise / infiltration / lurking
+	float m_fSpyRedisguiseTime;
+	float m_fSpyInfiltrateTime;
+	float m_fSpyLurkStart;
+	bool  m_bSpyLurking;
+	bool  m_bSpyOpportunisticStrike;
+	int   m_iSpyContext;               // last known location context
+	int   m_iSpySeenClassCount[10];    // class frequencies seen while lurking
+	MyEHandle m_pSpyLurkTarget;       // enemy being watched while lurking
 	float m_fSentryPlaceTime;
 	unsigned int m_iSentryKills;
 	float m_fTeleporterEntPlacedTime;
