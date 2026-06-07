@@ -9,6 +9,7 @@ CMessAround::CMessAround(edict_t *pFriendly, int iMaxVoiceCmd)
 {
 	m_fTime        = 0.0f;
 	m_fSubTime     = 0.0f;
+	m_fWanderTime  = 0.0f;
 	m_pFriendly    = pFriendly;
 	m_iType        = randomInt(0, 11);
 	m_iMaxVoiceCmd = iMaxVoiceCmd;
@@ -96,16 +97,25 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 	break;
 
-	case 2: // random voice commands
+	case 2: // random voice commands, aimless wandering
 	{
 		if (!m_fTime)
 			pBot->addVoiceCommand(randomInt(0, m_iMaxVoiceCmd - 1));
 		if (!m_fTime)
 			m_fTime = engine->Time() + randomFloat(1.5f, 3.0f);
+
+		if (m_fWanderTime < engine->Time())
+		{
+			Vector vWander = pBot->getOrigin();
+			vWander.x     += randomFloat(-200, 200);
+			vWander.y     += randomFloat(-200, 200);
+			pBot->setMoveTo(vWander);
+			m_fWanderTime = engine->Time() + randomFloat(1.5f, 3.0f);
+		}
 	}
 	break;
 
-	case 3: // random buttons
+	case 3: // random buttons, aimless wandering
 	{
 		if (randomInt(0, 1))
 			pBot->jump();
@@ -116,10 +126,19 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 		}
 		if (!m_fTime)
 			m_fTime = engine->Time() + randomFloat(1.5f, 3.0f);
+
+		if (m_fWanderTime < engine->Time())
+		{
+			Vector vWander = pBot->getOrigin();
+			vWander.x     += randomFloat(-200, 200);
+			vWander.y     += randomFloat(-200, 200);
+			pBot->setMoveTo(vWander);
+			m_fWanderTime = engine->Time() + randomFloat(1.5f, 3.0f);
+		}
 	}
 	break;
 
-	case 4: // synchronized voice spam: spam same voice command every 0.5s
+	case 4: // synchronized voice spam: spam same voice command every 0.5s, wander nearby
 	{
 		Vector origin = CBotGlobals::entityOrigin(m_pFriendly);
 		pBot->setLookVector(origin);
@@ -134,6 +153,14 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 		{
 			pBot->addVoiceCommand(m_iVoiceCmd);
 			m_fSubTime = engine->Time() + 0.4f;
+		}
+		if (m_fWanderTime < engine->Time())
+		{
+			Vector vWander = pBot->getOrigin();
+			vWander.x     += randomFloat(-200, 200);
+			vWander.y     += randomFloat(-200, 200);
+			pBot->setMoveTo(vWander);
+			m_fWanderTime = engine->Time() + randomFloat(1.5f, 3.0f);
 		}
 	}
 	break;
@@ -236,13 +263,13 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 	break;
 
-	case 7: // shoot props/walls nearby
+	case 7: // shoot props/walls nearby while wandering
 	{
 		if (!m_fTime)
 		{
-			m_fTime    = engine->Time() + randomFloat(3.0f, 6.0f);
-			m_fSubTime = 0.0f;
-			m_iSubState = 0;
+			m_fTime      = engine->Time() + randomFloat(3.0f, 6.0f);
+			m_fSubTime   = 0.0f;
+			m_iSubState  = 0;
 		}
 
 		// Spray bullets at random nearby point
@@ -257,6 +284,15 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			m_fSubTime = engine->Time() + 0.3f;
 		}
 
+		if (m_fWanderTime < engine->Time())
+		{
+			Vector vWander = pBot->getOrigin();
+			vWander.x     += randomFloat(-200, 200);
+			vWander.y     += randomFloat(-200, 200);
+			pBot->setMoveTo(vWander);
+			m_fWanderTime = engine->Time() + randomFloat(1.5f, 3.0f);
+		}
+
 		CBotWeapon *pWeapon = pBot->getBestWeapon(nullptr, false, false);
 		if (pWeapon && !pWeapon->isMelee() && !pWeapon->outOfAmmo(pBot))
 		{
@@ -267,7 +303,7 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 	break;
 
-	case 8: // weapon switch spam: rapidly cycle weapons
+	case 8: // weapon switch spam: rapidly cycle weapons while wandering
 	{
 		if (!m_fTime)
 			m_fTime = engine->Time() + randomFloat(2.0f, 4.0f);
@@ -284,10 +320,19 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			pBot->select_CWeapon(CWeapons::getWeapon(iWeap));
 			m_fSubTime = engine->Time() + randomFloat(0.3f, 0.6f);
 		}
+
+		if (m_fWanderTime < engine->Time())
+		{
+			Vector vWander = pBot->getOrigin();
+			vWander.x     += randomFloat(-200, 200);
+			vWander.y     += randomFloat(-200, 200);
+			pBot->setMoveTo(vWander);
+			m_fWanderTime = engine->Time() + randomFloat(1.5f, 3.0f);
+		}
 	}
 	break;
 
-	case 9: // crouch spam
+	case 9: // crouch spam while wandering
 	{
 		if (!m_fTime)
 			m_fTime = engine->Time() + randomFloat(2.0f, 4.0f);
@@ -311,6 +356,15 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 		Vector origin = CBotGlobals::entityOrigin(m_pFriendly);
 		pBot->setLookVector(origin);
 		pBot->setLookAtTask(LOOK_VECTOR);
+
+		if (m_fWanderTime < engine->Time())
+		{
+			Vector vWander = pBot->getOrigin();
+			vWander.x     += randomFloat(-200, 200);
+			vWander.y     += randomFloat(-200, 200);
+			pBot->setMoveTo(vWander);
+			m_fWanderTime = engine->Time() + randomFloat(1.5f, 3.0f);
+		}
 	}
 	break;
 

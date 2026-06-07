@@ -17,6 +17,7 @@ class CMessAround : public CBotTask
   private:
 	float m_fTime;
 	float m_fSubTime;
+	float m_fWanderTime;
 	MyEHandle m_pFriendly;
 	int m_iMaxVoiceCmd;
 	int m_iType;
