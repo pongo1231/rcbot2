@@ -4515,173 +4515,558 @@ void CBotTF2::modThink()
 			}
 		}
 
-		// --- Spy context detection and blend-in (braced scope for switch safety) ---
+	case TF_CLASS_SNIPER:
+		if (CTeamFortress2Mod::TF2_IsPlayerZoomed(m_pEdict))
 		{
-			int iNewContext = 0; // 0=neutral, 1=backline, 2=nest, 3=frontline
-		if (!bIsCloaked && isDisguised())
-		{
-			CWaypoint *pNearest = nullptr;
-			int iNearest = CWaypointLocations::NearestWaypoint(getOrigin(), 256.0f, -1);
-			if (iNearest >= 0) pNearest = CWaypoints::getWaypoint(iNearest);
-			if (pNearest && pNearest->getArea() == 0)
-				iNewContext = 1; // spawn area = backline
-
-			if (iNewContext == 0 && m_pNearestEnemySentry.get())
+			CBotWeapon *pWp = getCurrentWeapon();
+			if (pWp && pWp->isProjectile())
 			{
-				if (distanceFrom(m_pNearestEnemySentry) < 400.0f)
-					iNewContext = 2; // near sentry = nest
+				// Bow: never scoped, always normal FOV
 			}
-
-			if (iNewContext == 0)
+			else
 			{
-				Vector vObj;
-				if (CTeamFortress2Mod::getFlagLocation(m_iTeam, &vObj)
-				    || CTeamFortress2Mod::getMVMCapturePoint(&vObj))
+				m_fFov = 20.0f;
+
+				if (moveToIsValid() && !hasEnemy())
+					secondaryAttack();
+			}
+		}
+		else
+			m_fFov = BOT_DEFAULT_FOV;
+
+		break;
+	case TF_CLASS_SOLDIER:
+		if (m_pWeapons->hasWeapon(TF2_WEAPON_BUFF_ITEM))
+		{
+			if (CClassInterface::getRageMeter(m_pEdict) > 99.99f)
+			{
+				if (m_fCurrentDanger > 99.0f)
 				{
-					if ((getOrigin() - vObj).Length() < 800.0f)
-						iNewContext = 3; // near objective = frontline
+					if (m_fUseBuffItemTime < engine->Time())
+					{
+						m_fUseBuffItemTime = engine->Time() + 30.0f;
+						m_pSchedules->addFront(new CBotSchedule(new CBotUseBuffItem()));
+					}
+				}
+			}
+		}
+		break;
+	case TF_CLASS_DEMOMAN:
+		if (m_iTrapType != TF_TRAP_TYPE_NONE)
+		{
+			if (m_pEnemy)
+			{
+				if ((CBotGlobals::entityOrigin(m_pEnemy) - m_vStickyLocation).Length() < BLAST_RADIUS)
+					detonateStickies();
+			}
+		}
+		break;
+	case TF_CLASS_MEDIC:
+		// Heal teammates even while carrying the flag -- but only until they reach max health
+		if (m_pHeal && CBotGlobals::entityIsAlive(m_pHeal))
+		{
+			bool bHealTargetNeedsHP = false;
+			if (hasFlag())
+			{
+				IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(m_pHeal);
+				if (pInfo && pInfo->GetHealth() < pInfo->GetMaxHealth())
+					bHealTargetNeedsHP = true;
+			}
+			else
+				bHealTargetNeedsHP = true;
+
+			if (bHealTargetNeedsHP)
+			{
+				if (!m_pSchedules->hasSchedule(SCHED_HEAL))
+				{
+					m_pSchedules->freeMemory();
+					m_pSchedules->add(new CBotTF2HealSched(m_pHeal));
+				}
+
+				wantToShoot(false);
+			}
+		}
+
+		tryCrossbowHeal();
+
+		break;
+	case TF_CLASS_HWGUY:
+	{
+		bool bRevMiniGun;
+
+		bRevMiniGun = false;
+
+		// hwguys dont rev minigun if they have the flag
+		if (wantToShoot() && !m_bHasFlag)
+		{
+			CBotWeapon *pWeapon = getCurrentWeapon();
+
+			if (pWeapon && (pWeapon->getID() == TF2_WEAPON_MINIGUN))
+			{
+				if (!CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict)
+	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
+	    && !CTeamFortress2Mod::TF2_IsPlayerCritBoosted(m_pEdict))
+				{
+					if (m_fCurrentDanger >= TF2_HWGUY_REV_BELIEF)
+					{
+						if (pWeapon->getAmmo(this) > 100)
+							bRevMiniGun = true;
+					}
 				}
 			}
 		}
 
-		// Context-aware redisguise
-		if (iNewContext != 0 && iNewContext != m_iSpyContext
-		    && m_fSpyRedisguiseTime < engine->Time()
-		    && !bIsCloaked && isDisguised()
-		    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING)
-		    && !m_pSchedules->isCurrentSchedule(SCHED_BACKSTAB))
+		// Rev the minigun
+		if (bRevMiniGun)
 		{
-			bool bVisibleToEnemy = false;
-			for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+			// record time when bot started revving up
+			if (m_fRevMiniGunTime == 0)
 			{
-				edict_t *pEd = INDEXENT(i);
-				if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
-				if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam) continue;
-				if (distanceFrom(pEd) < 800.0f && isVisible(pEd))
+				float fMinTime        = (m_fCurrentDanger / 200) * 10;
+
+				m_fRevMiniGunTime     = engine->Time();
+				m_fNextRevMiniGunTime = randomFloat(fMinTime, fMinTime + 5.0f);
+			}
+
+			// rev for 10 seconds
+			if ((m_fRevMiniGunTime + m_fNextRevMiniGunTime) > engine->Time())
+			{
+				secondaryAttack(true);
+				// m_fIdealMoveSpeed = 30.0f; Improve Max Speed here
+
+				if (m_fCurrentDanger < 1)
 				{
-					bVisibleToEnemy = true;
+					m_fRevMiniGunTime     = 0.0f;
+					m_fNextRevMiniGunTime = 0.0f;
+				}
+			}
+			else if ((m_fRevMiniGunTime + (2.0f * m_fNextRevMiniGunTime)) < engine->Time())
+			{
+				m_fRevMiniGunTime = 0.0;
+			}
+		}
+
+		if (m_pButtons->holdingButton(IN_ATTACK) || m_pButtons->holdingButton(IN_ATTACK2))
+		{
+			if (m_pButtons->holdingButton(IN_JUMP))
+				m_pButtons->letGo(IN_JUMP);
+		}
+	}
+
+	break;
+	case TF_CLASS_ENGINEER:
+
+		checkBuildingsValid(false);
+
+		// MvM: stop defending and go build a sentry if missing one
+		if (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
+		    && !m_pSentryGun && !m_bIsCarryingObj && !m_pEnemy)
+		{
+			CBotWeapon *pWrench = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_WRENCH));
+			if (pWrench && pWrench->getAmmo(this) >= 130
+			    && m_pSchedules->hasSchedule(SCHED_DEFENDPOINT))
+			{
+				m_pSchedules->freeMemory();
+				updateCondition(CONDITION_CHANGED);
+			}
+		}
+
+		if (!m_pSchedules->hasSchedule(SCHED_REMOVESAPPER))
+		{
+			// Own buildings -- highest priority, no range limit if not in combat
+			bool bInCombat = (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot());
+			float fMaxDist = bInCombat ? 512.0f : 2048.0f;
+
+			if ((m_fRemoveSapTime < engine->Time()) && m_pSentryGun
+			    && CBotGlobals::entityIsValid(m_pSentryGun)
+			    && CTeamFortress2Mod::isSentrySapped(m_pSentryGun)
+			    && distanceFrom(m_pSentryGun) < fMaxDist)
+			{
+				m_pSchedules->freeMemory();
+				m_pSchedules->add(new CBotRemoveSapperSched(m_pSentryGun, ENGI_SENTRY));
+				updateCondition(CONDITION_PARANOID);
+			}
+			else if ((m_fRemoveSapTime < engine->Time()) && m_pDispenser
+			         && CBotGlobals::entityIsValid(m_pDispenser)
+			         && CTeamFortress2Mod::isDispenserSapped(m_pDispenser)
+			         && distanceFrom(m_pDispenser) < fMaxDist)
+			{
+				m_pSchedules->freeMemory();
+				m_pSchedules->add(new CBotRemoveSapperSched(m_pDispenser, ENGI_DISP));
+				updateCondition(CONDITION_PARANOID);
+			}
+			else if ((m_fRemoveSapTime < engine->Time()) && m_pTeleExit
+			         && CBotGlobals::entityIsValid(m_pTeleExit)
+			         && CTeamFortress2Mod::isTeleporterSapped(m_pTeleExit)
+			         && distanceFrom(m_pTeleExit) < fMaxDist)
+			{
+				m_pSchedules->freeMemory();
+				m_pSchedules->add(new CBotRemoveSapperSched(m_pTeleExit, ENGI_EXIT));
+				updateCondition(CONDITION_PARANOID);
+			}
+			// Ally buildings -- helpful but lower priority
+			else if ((m_fRemoveSapTime < engine->Time()) && m_pNearestAllySentry
+			    && CBotGlobals::entityIsValid(m_pNearestAllySentry)
+			    && CTeamFortress2Mod::isSentrySapped(m_pNearestAllySentry))
+			{
+				m_pSchedules->freeMemory();
+				m_pSchedules->add(new CBotRemoveSapperSched(m_pNearestAllySentry, ENGI_SENTRY));
+				updateCondition(CONDITION_PARANOID);
+			}
+		}
+
+		// Thank nearby engineers who are helping with our buildings
+		if (m_fThanksTime < engine->Time())
+		{
+			auto thankHelper = [&](edict_t *pBuilding, float &fPrevHp, float fHp, float &fPrevShells,
+			                       float fShells, float &fPrevRockets, float fRockets) {
+				bool bImproved = (fHp > fPrevHp || fShells > fPrevShells || fRockets > fPrevRockets);
+				if (bImproved)
+				{
+					for (int i = 1; i <= gpGlobals->maxClients; i++)
+					{
+						edict_t *pT = INDEXENT(i);
+						if (!pT || pT == m_pEdict) continue;
+						if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+						if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+						if (CClassInterface::getTF2Class(pT) != TF_CLASS_ENGINEER) continue;
+						if (distanceFrom(pT) < 256.0f && isVisible(pT))
+						{
+							setLookAt(CBotGlobals::entityOrigin(pT));
+							m_fLookSetTime = engine->Time() + 1.0f;
+							addVoiceCommand(TF_VC_THANKS);
+							m_fThanksTime = engine->Time() + randomFloat(20.0f, 40.0f);
+							break;
+						}
+					}
+				}
+				fPrevHp      = fHp;
+				fPrevShells  = fShells;
+				fPrevRockets = fRockets;
+			};
+
+			if (m_pSentryGun.get())
+			{
+				edict_t *pS = m_pSentryGun.get();
+				thankHelper(pS, m_prevSentryHealth, CClassInterface::getSentryHealth(pS),
+				            m_prevSentryShells, (float)CClassInterface::getTF2SentryShells(pS),
+				            m_prevSentryRockets, (float)CClassInterface::getTF2SentryRockets(pS));
+			}
+		}
+
+		break;
+	case TF_CLASS_SPY:
+		if (!hasFlag())
+		{
+			if (rcbot_tf2_debug_spies_cloakdisguise.GetBool() && (m_fSpyDisguiseTime < engine->Time()))
+			{
+				// if previously detected or isn't disguised
+				if ((m_fDisguiseTime == 0.0f) || !isDisguised())
+				{
+					int iteam = CTeamFortress2Mod::getEnemyTeam(getTeam());
+
+					spyDisguise(iteam, getSpyDisguiseClass(iteam));
+				}
+
+				m_fSpyDisguiseTime = engine->Time() + 5.0f;
+			}
+
+			bIsCloaked = CTeamFortress2Mod::TF2_IsPlayerCloaked(m_pEdict);
+
+			// When disguised or cloaked, avoid bumping into enemy bots
+			if ((isDisguised() || bIsCloaked) && !hasEnemy())
+			{
+				for (int i = 1; i <= gpGlobals->maxClients; i++)
+				{
+					edict_t *pT = INDEXENT(i);
+					if (!pT || pT == m_pEdict) continue;
+					if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+					if (CTeamFortress2Mod::getTeam(pT) == m_iTeam) continue;
+
+					float fDist = distanceFrom(pT);
+					float fAvoidDist = 80.0f;
+					if (pT->GetCollideable() && pT->GetCollideable()->OBBMaxs().Length() > 80.0f)
+						fAvoidDist = 200.0f; // giant enemies have larger hitboxes
+					if (fDist < fAvoidDist)
+					{
+						// Sidestep away: move perpendicular to the direction to them
+						Vector vTo = getOrigin() - CBotGlobals::entityOrigin(pT);
+						vTo.z      = 0;
+						if (vTo.Length() > 0.1f)
+						{
+							vTo = vTo / vTo.Length();
+							Vector vPerp = vTo.Cross(Vector(0, 0, 1));
+							if (vPerp.Length() > 0.1f)
+							{
+								vPerp = vPerp / vPerp.Length();
+								if (randomInt(0, 1))
+									vPerp = -vPerp;
+								setMoveTo(getOrigin() + vPerp * 160.0f);
+								updateCondition(CONDITION_COVERT);
+							}
+						}
+						break;
+					}
+				}
+			}
+
+			// Let sap schedule manage its own cloak/uncloak to avoid oscillation
+			if (!m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
+			{
+				if (bIsCloaked && wantToUnCloak())
+					spyUnCloak();
+				else if (!bIsCloaked && wantToCloak())
+					spyCloak();
+				else if (bIsCloaked || isDisguised() && !hasEnemy())
+					updateCondition(CONDITION_COVERT);
+			}
+
+			// Split sap tasks between multiple spies: each spy prefers a different
+			// building type based on its entindex to avoid overlapping
+			int iEntIdx   = ENTINDEX(m_pEdict);
+			int iSapOrder = iEntIdx % 3;
+			static const int sapTypes[3][3] = {
+				{ 1, 2, 3 }, // SENTRY, TELE, DISP priority
+				{ 2, 3, 1 }, // TELE, DISP, SENTRY
+				{ 3, 1, 2 	}
+			};
+
+			for (int iOrder = 0; iOrder < 3; iOrder++)
+			{
+				int iType = sapTypes[iSapOrder][iOrder];
+				if (iType == 1 && m_pNearestEnemySentry && (m_fSpySapTime < engine->Time())
+				    && !CTeamFortress2Mod::isSentrySapped(m_pNearestEnemySentry)
+				    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
+				{
+					m_fSpySapTime = engine->Time() + randomFloat(0.5f, 1.5f);
+					m_pSchedules->freeMemory();
+					m_pSchedules->add(new CBotSpySapBuildingSched(m_pNearestEnemySentry, ENGI_SENTRY));
+					break;
+				}
+				if (iType == 2 && m_pNearestEnemyTeleporter && (m_fSpySapTime < engine->Time())
+				    && !CTeamFortress2Mod::isTeleporterSapped(m_pNearestEnemyTeleporter)
+				    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
+				{
+					m_fSpySapTime = engine->Time() + randomFloat(0.5f, 1.5f);
+					m_pSchedules->freeMemory();
+					m_pSchedules->add(new CBotSpySapBuildingSched(m_pNearestEnemyTeleporter, ENGI_TELE));
+					break;
+				}
+				if (iType == 3 && m_pNearestEnemyDisp && (m_fSpySapTime < engine->Time())
+				    && !CTeamFortress2Mod::isDispenserSapped(m_pNearestEnemyDisp)
+				    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
+				{
+					m_fSpySapTime = engine->Time() + randomFloat(0.5f, 1.5f);
+					m_pSchedules->freeMemory();
+					m_pSchedules->add(new CBotSpySapBuildingSched(m_pNearestEnemyDisp, ENGI_DISP));
 					break;
 				}
 			}
-
-			if (!bVisibleToEnemy)
-			{
-				int iTeam = CTeamFortress2Mod::getEnemyTeam(getTeam());
-				int iDisp = getSpyDisguiseClass(iTeam);
-
-				if (iNewContext == 1)
-				{
-					static int backlineClasses[] = { TF_CLASS_ENGINEER, TF_CLASS_SNIPER, TF_CLASS_MEDIC, TF_CLASS_SCOUT };
-					iDisp = backlineClasses[randomInt(0, 3)];
-				}
-				else if (iNewContext == 2)
-				{
-					static int nestClasses[] = { TF_CLASS_ENGINEER, TF_CLASS_ENGINEER, TF_CLASS_PYRO, TF_CLASS_HWGUY };
-					iDisp = nestClasses[randomInt(0, 3)];
-				}
-				else if (iNewContext == 3)
-				{
-					static int frontlineClasses[] = { TF_CLASS_SOLDIER, TF_CLASS_PYRO, TF_CLASS_DEMOMAN, TF_CLASS_HWGUY };
-					iDisp = frontlineClasses[randomInt(0, 3)];
-				}
-
-				spyDisguise(iTeam, iDisp);
-			}
-
-			m_fSpyRedisguiseTime = engine->Time() + randomFloat(15.0f, 25.0f);
 		}
-		m_iSpyContext = iNewContext;
 
-		// --- Blend-in behavior when disguised and close to enemies ---
-		if (isDisguised() && !bIsCloaked
-		    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING)
+		// Medic-bait: lure enemy medics by calling medic when actually injured
+		if (!m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING)
 		    && !m_pSchedules->isCurrentSchedule(SCHED_BACKSTAB)
-		    && !m_pEnemy)
+		    && isDisguised() && !bIsCloaked && (m_fBaitCallTime < engine->Time())
+		    && bNeedHealth)
 		{
-			int iDClass, iDTeam, iDIndex, iDHealth;
-			CClassInterface::getTF2SpyDisguised(m_pEdict, &iDClass, &iDTeam, &iDIndex, &iDHealth);
+			edict_t *pBaitTarget = nullptr;
+			float fBaitDist      = 1024.0f;
 
-			// Look around instead of at enemies (more natural)
-			for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+			for (int i = 1; i <= gpGlobals->maxClients; i++)
 			{
-				edict_t *pEd = INDEXENT(i);
-				if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
-				if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam) continue;
-				if (distanceFrom(pEd) < 400.0f && isVisible(pEd))
+				edict_t *pT = INDEXENT(i);
+				if (!pT || pT == m_pEdict) continue;
+				if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+				if (CTeamFortress2Mod::getTeam(pT) == m_iTeam) continue;
+				if (CClassInterface::getTF2Class(pT) != TF_CLASS_MEDIC) continue;
+				if (thinkSpyIsEnemy(pT, (TF_Class)CClassInterface::getTF2Class(pT))) continue;
+
+				float fDist = distanceFrom(pT);
+				if (fDist < fBaitDist && FVisible(pT))
 				{
-					setLookAtTask(LOOK_AROUND);
-					break;
+					fBaitDist    = fDist;
+					pBaitTarget  = pT;
 				}
 			}
 
-			switch (iDClass)
+			if (pBaitTarget)
 			{
-			case TF_CLASS_ENGINEER:
-				if (m_pNearestEnemySentry.get() && distanceFrom(m_pNearestEnemySentry) > 150.0f
-				    && distanceFrom(m_pNearestEnemySentry) < 600.0f)
-					setMoveTo(CBotGlobals::entityOrigin(m_pNearestEnemySentry));
-				break;
-			case TF_CLASS_MEDIC:
+				if (fBaitDist < 200.0f)
+				{
+					CBotWeapon *pKnife = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_KNIFE));
+					if (pKnife && pKnife->hasWeapon())
+						select_CWeapon(pKnife->getWeaponInfo());
+				}
+				else
+				{
+					addVoiceCommand(TF_VC_MEDIC);
+					m_fBaitCallTime = engine->Time() + randomFloat(2.0f, 4.0f);
+
+					int iDClass, iDTeam, iDIndex, iDHealth;
+					CClassInterface::getTF2SpyDisguised(m_pEdict, &iDClass, &iDTeam, &iDIndex, &iDHealth);
+					if (iDClass == TF_CLASS_MEDIC)
+						spyDisguise(iDTeam, TF_CLASS_MEDIC);
+				}
+			}
+		}
+
+		// --- Spy context detection and blend-in ---
+		{
+			int iNewContext = 0;
+			if (!CTeamFortress2Mod::TF2_IsPlayerCloaked(m_pEdict) && isDisguised())
+			{
+				int iNearest = CWaypointLocations::NearestWaypoint(getOrigin(), 256.0f, -1);
+				if (iNearest >= 0)
+				{
+					CWaypoint *pNearest = CWaypoints::getWaypoint(iNearest);
+					if (pNearest && pNearest->getArea() == 0)
+						iNewContext = 1;
+				}
+				if (iNewContext == 0 && m_pNearestEnemySentry.get()
+				    && distanceFrom(m_pNearestEnemySentry) < 400.0f)
+					iNewContext = 2;
+				if (iNewContext == 0)
+				{
+					Vector vObj;
+					if (CTeamFortress2Mod::getFlagLocation(m_iTeam, &vObj)
+					    || CTeamFortress2Mod::getMVMCapturePoint(&vObj))
+					{
+						if ((getOrigin() - vObj).Length() < 800.0f)
+							iNewContext = 3;
+					}
+				}
+			}
+
+			if (iNewContext != 0 && iNewContext != m_iSpyContext
+			    && m_fSpyRedisguiseTime < engine->Time()
+			    && !CTeamFortress2Mod::TF2_IsPlayerCloaked(m_pEdict) && isDisguised()
+			    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING)
+			    && !m_pSchedules->isCurrentSchedule(SCHED_BACKSTAB))
+			{
+				bool bVisibleToEnemy = false;
 				for (int i = 1; i <= CBotGlobals::maxClients(); i++)
 				{
 					edict_t *pEd = INDEXENT(i);
 					if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
 					if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam) continue;
-					float fD = distanceFrom(pEd);
-					if (fD < 300.0f && fD > 50.0f)
-						setMoveTo(CBotGlobals::entityOrigin(pEd));
-				}
-				break;
-			case TF_CLASS_SNIPER:
-			{
-				int iWpt = CWaypointLocations::NearestWaypoint(getOrigin(), 512.0f, -1);
-				if (iWpt >= 0)
-				{
-					CWaypoint *pWpt = CWaypoints::getWaypoint(iWpt);
-					if (pWpt)
+					if (distanceFrom(pEd) < 800.0f && isVisible(pEd))
 					{
-						for (int j = 0; j < pWpt->numPaths(); j++)
+						bVisibleToEnemy = true;
+						break;
+					}
+				}
+				if (!bVisibleToEnemy)
+				{
+					int iTeam = CTeamFortress2Mod::getEnemyTeam(getTeam());
+					int iDisp = getSpyDisguiseClass(iTeam);
+					if (iNewContext == 1)
+					{
+						static int bc[] = { TF_CLASS_ENGINEER, TF_CLASS_SNIPER, TF_CLASS_MEDIC, TF_CLASS_SCOUT };
+						iDisp = bc[randomInt(0, 3)];
+					}
+					else if (iNewContext == 2)
+					{
+						static int nc[] = { TF_CLASS_ENGINEER, TF_CLASS_ENGINEER, TF_CLASS_PYRO, TF_CLASS_HWGUY };
+						iDisp = nc[randomInt(0, 3)];
+					}
+					else if (iNewContext == 3)
+					{
+						static int fc[] = { TF_CLASS_SOLDIER, TF_CLASS_PYRO, TF_CLASS_DEMOMAN, TF_CLASS_HWGUY };
+						iDisp = fc[randomInt(0, 3)];
+					}
+					spyDisguise(iTeam, iDisp);
+				}
+				m_fSpyRedisguiseTime = engine->Time() + randomFloat(15.0f, 25.0f);
+			}
+			m_iSpyContext = iNewContext;
+
+			// Blend-in: look natural when disguised and close to enemies
+			if (isDisguised() && !CTeamFortress2Mod::TF2_IsPlayerCloaked(m_pEdict)
+			    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING)
+			    && !m_pSchedules->isCurrentSchedule(SCHED_BACKSTAB)
+			    && !m_pEnemy)
+			{
+				int iDClass, iDTeam, iDIndex, iDHealth;
+				CClassInterface::getTF2SpyDisguised(m_pEdict, &iDClass, &iDTeam, &iDIndex, &iDHealth);
+				for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+				{
+					edict_t *pEd = INDEXENT(i);
+					if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+					if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam) continue;
+					if (distanceFrom(pEd) < 400.0f && isVisible(pEd))
+					{
+						setLookAtTask(LOOK_AROUND);
+						break;
+					}
+				}
+				switch (iDClass)
+				{
+				case TF_CLASS_ENGINEER:
+					if (m_pNearestEnemySentry.get() && distanceFrom(m_pNearestEnemySentry) > 150.0f
+					    && distanceFrom(m_pNearestEnemySentry) < 600.0f)
+						setMoveTo(CBotGlobals::entityOrigin(m_pNearestEnemySentry));
+					break;
+				case TF_CLASS_MEDIC:
+					for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+					{
+						edict_t *pEd = INDEXENT(i);
+						if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+						if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam) continue;
+						float fD = distanceFrom(pEd);
+						if (fD < 300.0f && fD > 50.0f)
+							setMoveTo(CBotGlobals::entityOrigin(pEd));
+					}
+					break;
+				case TF_CLASS_SNIPER:
+				{
+					int iWpt = CWaypointLocations::NearestWaypoint(getOrigin(), 512.0f, -1);
+					if (iWpt >= 0)
+					{
+						CWaypoint *pWpt = CWaypoints::getWaypoint(iWpt);
+						if (pWpt)
 						{
-							int n = pWpt->getPath(j);
-							CWaypoint *pn = CWaypoints::getWaypoint(n);
-							if (pn && pn->getFlags() & CWaypointTypes::W_FL_SNIPER)
+							for (int j = 0; j < pWpt->numPaths(); j++)
 							{
-								setMoveTo(pn->getOrigin());
-								break;
+								int n = pWpt->getPath(j);
+								CWaypoint *pn = CWaypoints::getWaypoint(n);
+								if (pn && pn->getFlags() & CWaypointTypes::W_FL_SNIPER)
+								{
+									setMoveTo(pn->getOrigin());
+									break;
+								}
 							}
 						}
 					}
 				}
-			}
-			break;
-			default:
 				break;
-			}
-
-			// Don't walk straight at enemies when disguised
-			for (int i = 1; i <= CBotGlobals::maxClients(); i++)
-			{
-				edict_t *pEd = INDEXENT(i);
-				if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
-				if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam) continue;
-				if (distanceFrom(pEd) < 200.0f)
-				{
-					Vector vAway = getOrigin() - CBotGlobals::entityOrigin(pEd);
-					vAway.z = 0;
-					if (vAway.Length() > 0.1f)
-					{
-						vAway = vAway / vAway.Length();
-						Vector vPerp = vAway.Cross(Vector(0, 0, 1));
-						setMoveTo(getOrigin() + vPerp * 160.0f);
-					}
+				default:
 					break;
 				}
+				for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+				{
+					edict_t *pEd = INDEXENT(i);
+					if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+					if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam) continue;
+					if (distanceFrom(pEd) < 200.0f)
+					{
+						Vector vAway = getOrigin() - CBotGlobals::entityOrigin(pEd);
+						vAway.z = 0;
+						if (vAway.Length() > 0.1f)
+						{
+							vAway = vAway / vAway.Length();
+							Vector vPerp = vAway.Cross(Vector(0, 0, 1));
+							setMoveTo(getOrigin() + vPerp * 160.0f);
+						}
+						break;
+					}
+				}
 			}
-			}
-		} // end spy context/blend-in scope
+		}
 
 		break;
 	case TF_CLASS_PYRO:
+
 		// Extinguish burning teammates when not in active combat
 		if (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY) || !wantToShoot())
 		{
