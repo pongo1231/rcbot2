@@ -102,17 +102,17 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 		if (!m_fTime)
 			pBot->addVoiceCommand(randomInt(0, m_iMaxVoiceCmd - 1));
 		if (!m_fTime)
-			m_fTime = engine->Time() + randomFloat(1.5f, 3.0f);
+			m_fTime = engine->Time() + randomFloat(5.0f, 10.0f);
 
 		if (m_fWanderTime < engine->Time())
 		{
 			float fAngle = randomFloat(0, M_PI * 2);
-			float fDist  = randomFloat(100, 300);
+			float fDist  = randomFloat(200, 500);
 			Vector vWander = pBot->getOrigin();
 			vWander.x     += cos(fAngle) * fDist;
 			vWander.y     += sin(fAngle) * fDist;
 			pBot->setMoveTo(vWander);
-			m_fWanderTime = engine->Time() + randomFloat(1.5f, 3.0f);
+			m_fWanderTime = engine->Time() + randomFloat(1.0f, 2.0f);
 		}
 	}
 	break;
@@ -127,17 +127,17 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 				pBot->secondaryAttack(true);
 		}
 		if (!m_fTime)
-			m_fTime = engine->Time() + randomFloat(1.5f, 3.0f);
+			m_fTime = engine->Time() + randomFloat(5.0f, 10.0f);
 
 		if (m_fWanderTime < engine->Time())
 		{
 			float fAngle = randomFloat(0, M_PI * 2);
-			float fDist  = randomFloat(100, 300);
+			float fDist  = randomFloat(200, 500);
 			Vector vWander = pBot->getOrigin();
 			vWander.x     += cos(fAngle) * fDist;
 			vWander.y     += sin(fAngle) * fDist;
 			pBot->setMoveTo(vWander);
-			m_fWanderTime = engine->Time() + randomFloat(1.5f, 3.0f);
+			m_fWanderTime = engine->Time() + randomFloat(1.0f, 2.0f);
 		}
 	}
 	break;
@@ -150,7 +150,7 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 		if (!m_fTime)
 		{
-			m_fTime    = engine->Time() + randomFloat(2.5f, 5.0f);
+			m_fTime    = engine->Time() + randomFloat(5.0f, 10.0f);
 			m_fSubTime = 0.0f;
 		}
 		if (m_fSubTime < engine->Time())
@@ -161,12 +161,12 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 		if (m_fWanderTime < engine->Time())
 		{
 			float fAngle = randomFloat(0, M_PI * 2);
-			float fDist  = randomFloat(100, 300);
+			float fDist  = randomFloat(200, 500);
 			Vector vWander = pBot->getOrigin();
 			vWander.x     += cos(fAngle) * fDist;
 			vWander.y     += sin(fAngle) * fDist;
 			pBot->setMoveTo(vWander);
-			m_fWanderTime = engine->Time() + randomFloat(1.5f, 3.0f);
+			m_fWanderTime = engine->Time() + randomFloat(1.0f, 2.0f);
 		}
 	}
 	break;
@@ -273,7 +273,7 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 	{
 		if (!m_fTime)
 		{
-			m_fTime      = engine->Time() + randomFloat(3.0f, 6.0f);
+			m_fTime      = engine->Time() + randomFloat(5.0f, 10.0f);
 			m_fSubTime   = 0.0f;
 			m_iSubState  = 0;
 		}
@@ -293,12 +293,12 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 		if (m_fWanderTime < engine->Time())
 		{
 			float fAngle = randomFloat(0, M_PI * 2);
-			float fDist  = randomFloat(100, 300);
+			float fDist  = randomFloat(200, 500);
 			Vector vWander = pBot->getOrigin();
 			vWander.x     += cos(fAngle) * fDist;
 			vWander.y     += sin(fAngle) * fDist;
 			pBot->setMoveTo(vWander);
-			m_fWanderTime = engine->Time() + randomFloat(1.5f, 3.0f);
+			m_fWanderTime = engine->Time() + randomFloat(1.0f, 2.0f);
 		}
 
 		CBotWeapon *pWeapon = pBot->getBestWeapon(nullptr, false, false);
@@ -314,7 +314,7 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 	case 8: // weapon switch spam: rapidly cycle weapons while wandering
 	{
 		if (!m_fTime)
-			m_fTime = engine->Time() + randomFloat(2.0f, 4.0f);
+			m_fTime = engine->Time() + randomFloat(5.0f, 10.0f);
 
 		if (m_fSubTime < engine->Time())
 		{
@@ -332,12 +332,12 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 		if (m_fWanderTime < engine->Time())
 		{
 			float fAngle = randomFloat(0, M_PI * 2);
-			float fDist  = randomFloat(100, 300);
+			float fDist  = randomFloat(200, 500);
 			Vector vWander = pBot->getOrigin();
 			vWander.x     += cos(fAngle) * fDist;
 			vWander.y     += sin(fAngle) * fDist;
 			pBot->setMoveTo(vWander);
-			m_fWanderTime = engine->Time() + randomFloat(1.5f, 3.0f);
+			m_fWanderTime = engine->Time() + randomFloat(1.0f, 2.0f);
 		}
 	}
 	break;
@@ -345,7 +345,7 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 	case 9: // crouch spam while wandering
 	{
 		if (!m_fTime)
-			m_fTime = engine->Time() + randomFloat(2.0f, 4.0f);
+			m_fTime = engine->Time() + randomFloat(5.0f, 10.0f);
 
 		if (m_fSubTime < engine->Time())
 		{
@@ -370,12 +370,12 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 		if (m_fWanderTime < engine->Time())
 		{
 			float fAngle = randomFloat(0, M_PI * 2);
-			float fDist  = randomFloat(100, 300);
+			float fDist  = randomFloat(200, 500);
 			Vector vWander = pBot->getOrigin();
 			vWander.x     += cos(fAngle) * fDist;
 			vWander.y     += sin(fAngle) * fDist;
 			pBot->setMoveTo(vWander);
-			m_fWanderTime = engine->Time() + randomFloat(1.5f, 3.0f);
+			m_fWanderTime = engine->Time() + randomFloat(1.0f, 2.0f);
 		}
 	}
 	break;
