@@ -2116,8 +2116,11 @@ float CBotTF2::evaluateBuildSpot(CWaypoint *pWpt, int iBuildingType)
 
 	float fDom         = CTeamFortress2Mod::getTeamDominance(m_iTeam);
 
+	bool bMini = (iBuildingType == 1 && hasGunslinger()); // mini sentries are more aggressive
+
 	// Dominance gate: only use obscure placement when not dominated
-	if (fDom < -0.2f && iBuildingType != 0) // BUILD_TELE=0 always uses this path
+	// Mini sentries skip this gate -- they are disposable and cost 100 metal
+	if (fDom < -0.2f && iBuildingType != 0 && !bMini)
 		return 0.0f;
 
 	float fTraversal   = (float)pWpt->peekTraversalCount();
@@ -2132,7 +2135,11 @@ float CBotTF2::evaluateBuildSpot(CWaypoint *pWpt, int iBuildingType)
 
 	// Base weights vary by building type
 	float fObsWeight = 0.7f, fProxWeight = 0.3f;
-	if (iBuildingType == 1) // sentry: less obscure, more proximity
+	if (bMini) // gunslinger mini sentry: heavily aggressive forward placement
+	{
+		fObsWeight = 0.15f; fProxWeight = 0.85f;
+	}
+	else if (iBuildingType == 1) // sentry: less obscure, more proximity
 	{
 		fObsWeight = 0.4f; fProxWeight = 0.6f;
 	}
@@ -4663,7 +4670,7 @@ void CBotTF2::modThink()
 		    && !m_pSentryGun && !m_bIsCarryingObj && !m_pEnemy)
 		{
 			CBotWeapon *pWrench = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_WRENCH));
-			if (pWrench && pWrench->getAmmo(this) >= 130
+			if (pWrench && pWrench->getAmmo(this) >= (hasGunslinger() ? 100 : 130)
 			    && m_pSchedules->hasSchedule(SCHED_DEFENDPOINT))
 			{
 				m_pSchedules->freeMemory();
@@ -6901,7 +6908,8 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 
 		if (bCanBuild)
 		{
-			ADD_UTILITY(BOT_UTIL_BUILDSENTRY, !m_bIsCarryingObj && !bHasFlag && !m_pSentryGun && (iMetal >= 130),
+			ADD_UTILITY(BOT_UTIL_BUILDSENTRY, !m_bIsCarryingObj && !bHasFlag && !m_pSentryGun
+			    && (iMetal >= (hasGunslinger() ? 100 : 130)),
 			            CTeamFortress2Mod::isMapType(TF_MAP_MVM) ? 0.95f : 0.9f);
 		ADD_UTILITY(BOT_UTIL_BUILDDISP,
 		            !m_bIsCarryingObj && !bHasFlag && m_pSentryGun
@@ -7016,7 +7024,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			if (!bHasSentry)
 			{
 				ADD_UTILITY(BOT_UTIL_BUILDSENTRY, !m_bIsCarryingObj && !bHasFlag && !m_pSentryGun
-				    && (iMetal >= 130), 0.98f);
+				    && (iMetal >= (hasGunslinger() ? 100 : 130)), 0.98f);
 			}
 			else if (!bSentryHealthy)
 			{
@@ -11749,6 +11757,14 @@ int CBotFortress::getMetal()
 	}
 
 	return 0;
+}
+
+bool CBotTF2::hasGunslinger()
+{
+	CBotWeapon *pWrench = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_WRENCH));
+	if (pWrench && pWrench->getWeaponEntity())
+		return CClassInterface::TF2_getItemDefinitionIndex(pWrench->getWeaponEntity()) == 142;
+	return false;
 }
 
 bool CBotTF2::upgradeBuilding(edict_t *pBuilding, bool removesapper)

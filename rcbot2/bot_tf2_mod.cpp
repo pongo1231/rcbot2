@@ -743,7 +743,9 @@ float CTeamFortress2Mod::getTeleportTime(edict_t *pOwner)
 
 bool CTeamFortress2Mod::isSentry(edict_t *pEntity, int iTeam, bool checkcarrying)
 {
-	return (!iTeam || (iTeam == getTeam(pEntity))) && (strcmp(pEntity->GetClassName(), "obj_sentrygun") == 0)
+	return (!iTeam || (iTeam == getTeam(pEntity)))
+	    && (strcmp(pEntity->GetClassName(), "obj_sentrygun") == 0
+	        || strcmp(pEntity->GetClassName(), "obj_minisentry") == 0)
 	    && (checkcarrying || !CClassInterface::isSentryGunBeingPlaced(pEntity));
 }
 

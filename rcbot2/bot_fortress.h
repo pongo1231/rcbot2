@@ -1178,6 +1178,7 @@ class CBotTF2 : public CBotFortress
 	bool tryCrossbowHeal();
 	float evaluateTeleExitSpot(CWaypoint *pWpt);
 	float evaluateBuildSpot(CWaypoint *pWpt, int iBuildingType);
+	bool hasGunslinger();
 
 	void handleSpecialAbilities();
 
