@@ -7580,26 +7580,56 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 
 		// Bored: during active gameplay, bot is near spawn or on guard duty
 		// with no enemy danger for a while and team isn't being dominated
-		bool bBored = false;
+		// Social invite: nearby bot is already messing around -- join in
+		bool bBored         = false;
+		bool bSocialInvite  = false;
+
 		if (!bInSetup && CTeamFortress2Mod::hasRoundStarted() && wantToShoot())
 		{
 			if (!m_pEnemy
-			    && (engine->Time() - m_fLastHurtTime) > 15.0f
 			    && CTeamFortress2Mod::getTeamDominance(m_iTeam) > -0.3f)
 			{
-				// Near spawn or on guard/defense duty
-				int iWpt = CWaypointLocations::NearestWaypoint(getOrigin(), 256.0f, -1);
-				if (iWpt >= 0)
+				// Social detection: if a nearby bot teammate is messing around,
+				// join in with a shorter idle-time requirement (5s vs 15s)
+				if ((engine->Time() - m_fLastHurtTime) > 5.0f)
 				{
-					CWaypoint *pWpt = CWaypoints::getWaypoint(iWpt);
-					if (pWpt && (pWpt->getArea() == 0
-					    || m_pSchedules->isCurrentSchedule(SCHED_DEFEND)
-					    || m_pSchedules->isCurrentSchedule(SCHED_DEFENDPOINT)
-					    || m_pSchedules->hasSchedule(SCHED_DEFEND)
-					    || m_pSchedules->hasSchedule(SCHED_DEFENDPOINT)))
+					for (int i = 1; i <= CBotGlobals::maxClients(); i++)
 					{
-						bBored = true;
-						fMessUtil = 0.6f;
+						edict_t *pEdict = INDEXENT(i);
+						if (pEdict == m_pEdict) continue;
+						if (!CBotGlobals::entityIsValid(pEdict)
+						    || !CBotGlobals::entityIsAlive(pEdict)) continue;
+						if (CClassInterface::getTeam(pEdict) != getTeam()) continue;
+
+						CBot *pOther = CBots::getBotPointer(pEdict);
+						if (pOther && pOther->getSchedule()
+						    && pOther->getSchedule()->isCurrentSchedule(SCHED_MESSAROUND))
+						{
+							if (distanceFrom(pEdict) < 400.0f)
+							{
+								bSocialInvite = true;
+								break;
+							}
+						}
+					}
+				}
+
+				if ((engine->Time() - m_fLastHurtTime) > 15.0f || bSocialInvite)
+				{
+					// Near spawn or on guard/defense duty
+					int iWpt = CWaypointLocations::NearestWaypoint(getOrigin(), 256.0f, -1);
+					if (iWpt >= 0)
+					{
+						CWaypoint *pWpt = CWaypoints::getWaypoint(iWpt);
+						if (pWpt && (pWpt->getArea() == 0
+						    || m_pSchedules->isCurrentSchedule(SCHED_DEFEND)
+						    || m_pSchedules->isCurrentSchedule(SCHED_DEFENDPOINT)
+						    || m_pSchedules->hasSchedule(SCHED_DEFEND)
+						    || m_pSchedules->hasSchedule(SCHED_DEFENDPOINT)))
+						{
+							bBored = true;
+							fMessUtil = bSocialInvite ? 0.85f : 0.6f;
+						}
 					}
 				}
 			}
