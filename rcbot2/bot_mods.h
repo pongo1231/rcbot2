@@ -1314,6 +1314,23 @@ class CTeamFortress2Mod : public CBotMod
 		}
 	}
 
+	static Vector m_vTeamKnownSentryPositions[8];
+	static float  m_fTeamKnownSentryTimes[8];
+
+	static inline void addTeamKnownSentry(Vector vPos)
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			if (m_fTeamKnownSentryTimes[i] < engine->Time()
+			    || (m_vTeamKnownSentryPositions[i] - vPos).Length() < 200.0f)
+			{
+				m_vTeamKnownSentryPositions[i]   = vPos;
+				m_fTeamKnownSentryTimes[i] = engine->Time() + 30.0f;
+				return;
+			}
+		}
+	}
+
   private:
 	static float TF2_GetClassSpeed(int iClass);
 

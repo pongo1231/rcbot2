@@ -609,9 +609,34 @@ bool CBotFortress::setVisible(edict_t *pEntity, bool bVisible)
 										// not healing -- what am I doing?
 										m_pSchedules->freeMemory();
 										m_pSchedules->addFront(new CBotTF2HealSched(m_pHeal));
-									}
-								}
-							}
+			}
+		}
+
+		// Also avoid known sentry positions we're not actively engaging
+		if (!m_pSchedules->hasSchedule(SCHED_ATTACK_SENTRY_GUN)
+		    && !m_pSchedules->isCurrentSchedule(SCHED_ATTACK_SENTRY_GUN))
+		{
+			for (auto &h : m_KnownSentries)
+			{
+				edict_t *pKnown = h.get();
+				if (!pKnown || !CBotGlobals::entityIsValid(pKnown)
+				    || !CBotGlobals::entityIsAlive(pKnown)) continue;
+				float fDist = distanceFrom(pKnown);
+				if (fDist < TF2_MAX_SENTRYGUN_RANGE)
+				{
+					Vector vPos = CBotGlobals::entityOrigin(pKnown);
+					Vector vAway = getOrigin() - vPos;
+					vAway.z = 0;
+					if (vAway.Length() > 0.1f)
+					{
+						vAway = vAway / vAway.Length();
+						setMoveTo(getOrigin() + (vAway * 384.0f));
+						break;
+					}
+				}
+			}
+		}
+	}
 							else
 							{
 								m_fHealFactor = fFactor;
@@ -2239,13 +2264,11 @@ void CBotTF2::died(edict_t *pKiller, const char *pszWeapon)
 			m_pNavigator->belief(CBotGlobals::entityOrigin(pKiller), getEyePosition(), bot_beliefmulti.GetFloat(),
 			                     distanceFrom(pKiller), BELIEF_DANGER);
 
-			if (!strncmp(pszWeapon, "obj_sentrygun", 13) || !strncmp(pszWeapon, "obj_minisentry", 14))
-			{
-				m_pLastEnemySentry = CTeamFortress2Mod::getMySentryGun(pKiller);
-				edict_t *pSentry = CTeamFortress2Mod::getMySentryGun(pKiller);
-				if (pSentry)
-					addKnownSentry(pSentry);
-			}
+		if (!strncmp(pszWeapon, "obj_sentrygun", 13) || !strncmp(pszWeapon, "obj_minisentry", 14))
+		{
+			m_pLastEnemySentry = pKiller;
+			addKnownSentry(pKiller);
+		}
 		}
 	}
 }
@@ -2403,9 +2426,8 @@ void CBotTF2::seeFriendlyDie(edict_t *pDied, edict_t *pKiller, CWeapon *pWeapon)
 			m_fCurrentDanger += 100.0f;
 			m_pLastEnemySentry = CTeamFortress2Mod::getMySentryGun(pKiller);
 			m_vLastDiedOrigin  = CBotGlobals::entityOrigin(pDied);
-			m_pLastEnemySentry = pKiller;
 
-			addKnownSentry(pKiller);
+			addKnownSentry(m_pLastEnemySentry.get());
 			if (CTeamFortress2Mod::getMySentryGun(pKiller))
 				addKnownSentry(CTeamFortress2Mod::getMySentryGun(pKiller));
 
@@ -2469,6 +2491,9 @@ void CBotTF2::addKnownSentry(edict_t *pSentry)
 		return;
 
 	m_KnownSentries.push_back(MyEHandle(pSentry));
+
+	// Share the sentry position team-wide
+	CTeamFortress2Mod::addTeamKnownSentry(CBotGlobals::entityOrigin(pSentry));
 }
 
 void CBotTF2::addKnownEnemyTeleporter(edict_t *pTele)
@@ -4140,6 +4165,33 @@ void CBotTF2::modThink()
 				{
 					vAway = vAway / vAway.Length();
 					setMoveTo(getOrigin() + (vAway * 384.0f));
+				}
+			}
+		}
+	}
+
+	// Also avoid known sentry positions (team-memory or personal memory)
+	if (!(m_iClass == TF_CLASS_SPY && (isDisguised() || isCloaked()))
+	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
+	    && !m_pSchedules->hasSchedule(SCHED_ATTACK_SENTRY_GUN)
+	    && !m_pSchedules->isCurrentSchedule(SCHED_ATTACK_SENTRY_GUN))
+	{
+		for (auto &h : m_KnownSentries)
+		{
+			edict_t *pKnown = h.get();
+			if (!pKnown || !CBotGlobals::entityIsValid(pKnown)
+			    || !CBotGlobals::entityIsAlive(pKnown)) continue;
+			float fDist = distanceFrom(pKnown);
+			if (fDist < (TF2_MAX_SENTRYGUN_RANGE + 128.0f))
+			{
+				Vector vPos = CBotGlobals::entityOrigin(pKnown);
+				Vector vAway = getOrigin() - vPos;
+				vAway.z = 0;
+				if (vAway.Length() > 0.1f)
+				{
+					vAway = vAway / vAway.Length();
+					setMoveTo(getOrigin() + (vAway * 384.0f));
+					break;
 				}
 			}
 		}
@@ -7124,12 +7176,51 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	ADD_UTILITY(BOT_UTIL_FIND_MEDIC_FOR_HEALTH,
 	            (m_iClass != TF_CLASS_MEDIC) && !bHasFlag && bNeedHealth && m_pLastSeeMedic.hasSeen(30.0f), 1.0f);
 
-	if ((m_pNearestEnemySentry.get() != nullptr) && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
+	// Pick a sentry target: visible first, then known, then team-shared
+	edict_t *pSentryTarget = m_pNearestEnemySentry.get();
+
+	if (!pSentryTarget && !m_KnownSentries.empty())
+	{
+		float fBestDist = 9999.0f;
+		for (auto &h : m_KnownSentries)
+		{
+			edict_t *pKnown = h.get();
+			if (pKnown && CBotGlobals::entityIsValid(pKnown)
+			    && CBotGlobals::entityIsAlive(pKnown))
+			{
+				float fD = distanceFrom(pKnown);
+				if (fD < fBestDist && fD < 2000.0f)
+				{
+					fBestDist     = fD;
+					pSentryTarget = pKnown;
+				}
+			}
+		}
+	}
+
+	if (!pSentryTarget)
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			if (CTeamFortress2Mod::m_fTeamKnownSentryTimes[i] > engine->Time())
+			{
+				float fD = (CTeamFortress2Mod::m_vTeamKnownSentryPositions[i] - getOrigin()).Length();
+				if (fD < 2000.0f)
+				{
+					// Team has intel on a sentry nearby -- use position as target
+					// (handleAttack will check visibility when it reaches the area)
+				}
+			}
+		}
+	}
+
+	if ((pSentryTarget != nullptr) && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
 	{
 		CBotWeapon *pWeapon = m_pWeapons->getPrimaryWeapon();
 
 		// Count teammates near the sentry for coordination
 		int iNearbyTeam = 0;
+		edict_t *pCountTarget = pSentryTarget;
 		for (int t = 1; t <= gpGlobals->maxClients; t++)
 		{
 			edict_t *pT = INDEXENT(t);
@@ -7137,17 +7228,36 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
 			if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
 			if ((CBotGlobals::entityOrigin(pT)
-			     - CBotGlobals::entityOrigin(m_pNearestEnemySentry.get())).Length() < 512.0f)
+			     - CBotGlobals::entityOrigin(pCountTarget)).Length() < 512.0f)
 				iNearbyTeam++;
 		}
 
 		float fSentryUtil = 0.7f + iNearbyTeam * 0.1f;
 		if (iNearbyTeam == 0) fSentryUtil *= 0.5f;
 
-		ADD_UTILITY_DATA(BOT_UTIL_ATTACK_SENTRY,
-		                 (m_iClass != TF_CLASS_SPY) && pWeapon && !pWeapon->outOfAmmo(this)
-		                     && pWeapon->primaryGreaterThanRange(TF2_MAX_SENTRYGUN_RANGE + 32.0f),
-		                 fSentryUtil, ENTINDEX(m_pNearestEnemySentry.get()));
+		// Critical override: if sentry is near our objective path, boost utility
+		if (fSentryUtil < 0.6f)
+		{
+			Vector vObj;
+			if (CTeamFortress2Mod::getFlagLocation(m_iTeam, &vObj)
+			    || CTeamFortress2Mod::getMVMCapturePoint(&vObj))
+			{
+				float fSentryToObj = (CBotGlobals::entityOrigin(pSentryTarget) - vObj).Length();
+				if (fSentryToObj < TF2_MAX_SENTRYGUN_RANGE)
+					fSentryUtil = 0.65f;
+			}
+		}
+
+		// Two-tier weapon range check: long-range (1056+) or short-range (256+, not melee)
+		bool bCanLongRange = pWeapon && !pWeapon->outOfAmmo(this)
+		    && pWeapon->primaryGreaterThanRange(TF2_MAX_SENTRYGUN_RANGE + 32.0f);
+		bool bCanShortRange = pWeapon && !pWeapon->outOfAmmo(this)
+		    && !pWeapon->isMelee() && pWeapon->primaryGreaterThanRange(256.0f);
+		bool bCanAttack = (m_iClass != TF_CLASS_SPY) && (bCanLongRange || bCanShortRange);
+		float fRangeFactor = bCanLongRange ? 1.0f : 0.6f;
+
+		ADD_UTILITY_DATA(BOT_UTIL_ATTACK_SENTRY, bCanAttack, fSentryUtil * fRangeFactor,
+		                 ENTINDEX(pSentryTarget));
 
 		// Nest destruction: attack known enemy teleporters near our vital points
 		if (!m_KnownEnemyTeleporters.empty())
