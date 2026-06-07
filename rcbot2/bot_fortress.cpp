@@ -8662,6 +8662,93 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			memset(m_iSpySeenClassCount, 0, sizeof(m_iSpySeenClassCount));
 		}
 
+		// --- Natural lurk: either cloak (if not Dead Ringer + enough meter) or blend in ---
+		// Check for Dead Ringer (item 59) — can't voluntarily cloak
+		bool bDeadRinger = false;
+		CBaseHandle *pWeapList = CClassInterface::getWeaponList(m_pEdict);
+		if (pWeapList)
+		{
+			for (int w = 0; w < MAX_WEAPONS; w++)
+			{
+				if (!pWeapList[w].IsValid()) continue;
+				edict_t *pWep = INDEXENT(pWeapList[w].GetEntryIndex());
+				if (pWep && !pWep->IsFree()
+				    && CClassInterface::TF2_getItemDefinitionIndex(pWep) == 59)
+				{
+					bDeadRinger = true;
+					break;
+				}
+			}
+		}
+
+		float fCloakMeter = CClassInterface::getTF2SpyCloakMeter(m_pEdict);
+
+		// Cloaked observer: safe to lurk invisibly
+		if (!bDeadRinger && fCloakMeter > 50.0f && !isCloaked()
+		    && (engine->Time() - m_fSpyLurkStart) > 0.5f)
+		{
+			spyCloak();
+		}
+
+		// Blend-in: look natural while disguised
+		if (!isCloaked() && isDisguised())
+		{
+			int iDClass, iDTeam, iDIndex, iDHealth;
+			CClassInterface::getTF2SpyDisguised(m_pEdict, &iDClass, &iDTeam, &iDIndex, &iDHealth);
+
+			setLookAtTask(LOOK_AROUND); // never stare directly at enemies
+
+			// Class-appropriate idle posture
+			switch (iDClass)
+			{
+			case TF_CLASS_ENGINEER:
+				if (m_pNearestEnemySentry.get())
+				{
+					setLookVector(CBotGlobals::entityOrigin(m_pNearestEnemySentry));
+					setLookAtTask(LOOK_VECTOR);
+				}
+				break;
+			case TF_CLASS_SNIPER:
+			case TF_CLASS_HWGUY:
+				// Stand still, look around naturally
+				break;
+			case TF_CLASS_SCOUT:
+				if (randomInt(0, 4) == 0) jump();
+				break;
+			case TF_CLASS_MEDIC:
+			{
+				// Stay near a nearby enemy teammate
+				for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+				{
+					edict_t *pEd = INDEXENT(i);
+					if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+					if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam) continue;
+					float fD = distanceFrom(pEd);
+					if (fD < 250.0f && fD > 60.0f)
+						setMoveTo(CBotGlobals::entityOrigin(pEd));
+				}
+			}
+			break;
+			case TF_CLASS_SOLDIER:
+			case TF_CLASS_DEMOMAN:
+			case TF_CLASS_PYRO:
+				// Look toward objective direction periodically
+				Vector vObj;
+				if (CTeamFortress2Mod::getFlagLocation(m_iTeam, &vObj)
+				    || CTeamFortress2Mod::getMVMCapturePoint(&vObj))
+					setLookVector(vObj);
+				break;
+			default:
+				break;
+			}
+		}
+
+		// Decloak if cloak meter running too low during lurk
+		if (isCloaked() && !bDeadRinger && fCloakMeter < 20.0f)
+		{
+			spyUnCloak();
+		}
+
 		// Record enemy class frequencies while lurking
 		for (int i = 1; i <= CBotGlobals::maxClients(); i++)
 		{
