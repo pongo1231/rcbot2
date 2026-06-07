@@ -890,6 +890,13 @@ class CBotFortress : public CBot
 
 	float m_fLastSentryEnemyTime;
 
+	// per-player flare/rocket/grenade reflect count by enemy Pyros
+	int m_iReflectCount[MAX_PLAYERS];
+	float m_fNextPyroShotTime[MAX_PLAYERS];
+	TF_Class m_iLastKnownEnemyClass[MAX_PLAYERS];
+	int m_iLastReflectedRocket;
+	int m_iLastReflectedGrenade;
+
 	static float m_fAFKIdleSince[MAX_PLAYERS + 1];
 	static bool m_bAFKStarted[MAX_PLAYERS + 1];
 

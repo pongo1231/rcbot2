@@ -1020,6 +1020,12 @@ void CBotFortress::spawnInit()
 	memset(m_fSpyAttackedList, 0, sizeof(float) * MAX_PLAYERS);
 	memset(m_fSpyLastUncloakedList, 0, sizeof(float) * MAX_PLAYERS);
 
+	memset(m_iReflectCount, 0, sizeof(m_iReflectCount));
+	memset(m_fNextPyroShotTime, 0, sizeof(m_fNextPyroShotTime));
+	memset(m_iLastKnownEnemyClass, 0, sizeof(m_iLastKnownEnemyClass));
+	m_iLastReflectedRocket  = 0;
+	m_iLastReflectedGrenade = 0;
+
 	m_fTaunting                = 0.0f; // bots not moving FIX
 
 	m_fMedicUpdatePosTime      = 0.0f;
@@ -3878,6 +3884,46 @@ void CBotTF2::modThink()
 		}
 		if (bHasObj)
 			CTeamFortress2Mod::UpdateEnemyApproachDir(CBotGlobals::entityOrigin(m_pEnemy), vObj, m_iTeam);
+	}
+
+	// Count reflected projectiles by enemy Pyros for firing-pattern adaptation
+	{
+		edict_t *pReflected = m_NearestEnemyRocket.get();
+		if (!pReflected) pReflected = m_pNearestPipeGren.get();
+
+		if (pReflected && CBotGlobals::entityIsValid(pReflected)
+		    && (!m_iLastReflectedRocket || ENTINDEX(pReflected) != m_iLastReflectedRocket)
+		    && (!m_iLastReflectedGrenade || ENTINDEX(pReflected) != m_iLastReflectedGrenade)
+		    && incomingRocket(800.0f))
+		{
+			// Find nearest visible enemy Pyro within 800u
+			edict_t *pPyro = nullptr;
+			for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+			{
+				edict_t *pEd = INDEXENT(i);
+				if (!CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+				if (CClassInterface::getTF2Class(pEd) != TF_CLASS_PYRO) continue;
+				if (CClassInterface::getTeam(pEd) == getTeam()) continue;
+				float fDist = distanceFrom(pEd);
+				if (fDist < 800.0f)
+				{
+					pPyro = pEd;
+					break;
+				}
+			}
+
+			if (pPyro)
+			{
+				int iIdx = ENTINDEX(pPyro) - 1;
+				if (iIdx >= 0 && iIdx < MAX_PLAYERS)
+					m_iReflectCount[iIdx]++;
+			}
+
+			if (pReflected == m_NearestEnemyRocket.get())
+				m_iLastReflectedRocket  = ENTINDEX(pReflected);
+			else
+				m_iLastReflectedGrenade = ENTINDEX(pReflected);
+		}
 	}
 
 	// Per-frame projectile dodge: works even when not in active combat,
@@ -10962,6 +11008,43 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 		{
 			bool bHandled = false;
 
+			// --- Pyro reflection adaptation: randomize firing delay at close range ---
+			if (pEnemy && pWeapon->isExplosive()
+			    && CClassInterface::getTF2Class(pEnemy) == TF_CLASS_PYRO
+			    && distanceFrom(pEnemy) < 600.0f)
+			{
+				int iIdx = ENTINDEX(pEnemy) - 1;
+				if (iIdx >= 0 && iIdx < MAX_PLAYERS)
+				{
+					// Reset on class change
+					TF_Class iCur = (TF_Class)CClassInterface::getTF2Class(pEnemy);
+					if (iCur != m_iLastKnownEnemyClass[iIdx])
+					{
+						m_iReflectCount[iIdx] = 0;
+						m_fNextPyroShotTime[iIdx] = 0;
+						m_iLastKnownEnemyClass[iIdx] = iCur;
+					}
+
+					// Only delay if Pyro has reflected before AND has ammo to airblast
+					if (m_iReflectCount[iIdx] > 0)
+					{
+						edict_t *pPyroWep = CClassInterface::getCurrentWeapon(pEnemy);
+						bool bHasFlame = false;
+						bool bHasAmmo  = false;
+						if (pPyroWep)
+						{
+							const char *szClass = pPyroWep->GetClassName();
+							bHasFlame = (strstr(szClass, "flame") != nullptr);
+							int *pAmmo = CClassInterface::getWeaponClip1Pointer(pPyroWep);
+							bHasAmmo  = (pAmmo && *pAmmo >= 20);
+						}
+
+						if (bHasFlame && bHasAmmo && m_fNextPyroShotTime[iIdx] > engine->Time())
+							bHandled = true;
+					}
+				}
+			}
+
 			// --- Beggar's Bazooka (730): hold to load, release at 3 rockets ---
 			if (m_iClass == TF_CLASS_SOLDIER)
 			{
@@ -10982,6 +11065,20 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 					primaryAttack(true);
 				else
 					primaryAttack();
+			}
+
+			// After firing at Pyro: schedule next firing delay
+			if (!bHandled && pEnemy && pWeapon->isExplosive()
+			    && CClassInterface::getTF2Class(pEnemy) == TF_CLASS_PYRO
+			    && distanceFrom(pEnemy) < 600.0f)
+			{
+				int iIdx = ENTINDEX(pEnemy) - 1;
+				if (iIdx >= 0 && iIdx < MAX_PLAYERS && m_iReflectCount[iIdx] > 0)
+				{
+					float fDelay = 0.3f + (m_iReflectCount[iIdx] - 1) * 0.2f;
+					if (fDelay > 1.5f) fDelay = 1.5f;
+					m_fNextPyroShotTime[iIdx] = engine->Time() + randomFloat(0.0f, fDelay);
+				}
 			}
 		}
 		else
