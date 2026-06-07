@@ -887,6 +887,7 @@ class CBotFortress : public CBot
 	static std::vector<MyEHandle> m_SappedRobots;
 	MyEHandle m_NearestEnemyRocket;
 	MyEHandle m_NearestEnemyGrenade;
+	MyEHandle m_pMessAroundInviter;
 
 	float m_fLastSentryEnemyTime;
 

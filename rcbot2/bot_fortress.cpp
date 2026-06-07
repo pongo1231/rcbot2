@@ -1035,6 +1035,8 @@ void CBotFortress::spawnInit()
 	m_pHeal                = MyEHandle(nullptr);
 	m_pNearestPipeGren     = MyEHandle(nullptr);
 
+	m_pMessAroundInviter   = MyEHandle(nullptr);
+
 	// m_bWantToZoom = false;
 
 	memset(m_fCallMedicTime, 0, sizeof(float) * MAX_PLAYERS);
@@ -7740,6 +7742,9 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		bool bBored         = false;
 		bool bSocialInvite  = false;
 
+		// Reset social inviter each frame; it gets set below if an invite is detected
+		m_pMessAroundInviter = MyEHandle(nullptr);
+
 		if (!bInSetup && CTeamFortress2Mod::hasRoundStarted() && wantToShoot())
 		{
 			if (!m_pEnemy
@@ -7763,7 +7768,8 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 						{
 							if (distanceFrom(pEdict) < 400.0f)
 							{
-								bSocialInvite = true;
+								bSocialInvite          = true;
+								m_pMessAroundInviter   = pEdict;
 								break;
 							}
 						}
@@ -7776,14 +7782,16 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 							// Within melee/spam range -- direct interaction with this bot
 							if (fDist < 100.0f)
 							{
-								bSocialInvite = true;
+								bSocialInvite          = true;
+								m_pMessAroundInviter   = pEdict;
 								break;
 							}
 							// Crouching nearby -- idle/friendly behavior
 							if (fDist < 200.0f
 							    && (CClassInterface::getPlayerFlags(pEdict) & FL_DUCKING))
 							{
-								bSocialInvite = true;
+								bSocialInvite          = true;
+								m_pMessAroundInviter   = pEdict;
 								break;
 							}
 						}
@@ -9530,10 +9538,24 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 	break;
 	case BOT_UTIL_MESSAROUND:
 	{
-		// find a nearby friendly
+		// Prefer the player/bot who invited us to mess around
+		edict_t *pNearby = m_pMessAroundInviter.get();
+		if (pNearby && CBotGlobals::entityIsValid(pNearby)
+		    && CBotGlobals::entityIsAlive(pNearby) && isVisible(pNearby))
+		{
+			m_pMessAroundInviter = MyEHandle(nullptr);
+		}
+		else
+		{
+			// Fall back to finding a random nearby teammate
+			pNearby = nullptr;
+		}
+
+		if (!pNearby)
+		{
+			// find a nearby friendly
 		int i = 0;
 		edict_t *pEdict;
-		edict_t *pNearby   = nullptr;
 		edict_t *pFallback = nullptr;
 		float fMaxDistance = 800;
 		float fFallbackDist = 800;
@@ -9571,6 +9593,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 
 		if (!pNearby)
 			pNearby = pFallback;
+		}
 
 		if (pNearby)
 		{
