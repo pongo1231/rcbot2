@@ -7611,6 +7611,26 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 								break;
 							}
 						}
+
+						// Also detect human players who appear to be messing around:
+						// crouching nearby or within melee range of this bot
+						if (!pOther)
+						{
+							float fDist = distanceFrom(pEdict);
+							// Within melee/spam range -- direct interaction with this bot
+							if (fDist < 100.0f)
+							{
+								bSocialInvite = true;
+								break;
+							}
+							// Crouching nearby -- idle/friendly behavior
+							if (fDist < 200.0f
+							    && (CClassInterface::getPlayerFlags(pEdict) & FL_DUCKING))
+							{
+								bSocialInvite = true;
+								break;
+							}
+						}
 					}
 				}
 
