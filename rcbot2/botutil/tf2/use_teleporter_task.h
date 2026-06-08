@@ -13,5 +13,7 @@ class CBotTFUseTeleporter : public CBotTask
   private:
 	MyEHandle m_pTele;
 	float m_fTime;
+	float m_fStateEval;
+	int   m_iState;
 	Vector m_vLastOrigin;
 };

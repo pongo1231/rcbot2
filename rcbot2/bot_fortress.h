@@ -620,6 +620,8 @@ class CBotFortress : public CBot
 	}
 
 	bool isTeleporterUseful(edict_t *pTele);
+	bool teleporterWalkVsWaitTime(edict_t *pTele, float *fWaitSec, float *fRunSec);
+	void clearTeleporterQueueState();
 
 	bool waitForFlag(Vector *vOrigin, float *fWait, bool bFindFlag);
 
@@ -826,6 +828,11 @@ class CBotFortress : public CBot
 
 	float m_fUpdateClass;
 	float m_fUseTeleporterTime;
+
+	// Teleporter queue state
+	bool      m_bInTeleporterQueue;
+	float     m_fQueueReEvalTime;
+	MyEHandle m_hQueuedTeleporter;
 
 	bool m_bHasFlag;
 	float m_fSnipeAttackTime;

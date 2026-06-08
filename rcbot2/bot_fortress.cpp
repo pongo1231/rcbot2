@@ -1556,14 +1556,24 @@ void CBotFortress::modThink()
 	{
 		if (isTeleporterUseful(m_pNearestTeleEntrance))
 		{
-			if (!m_pSchedules->isCurrentSchedule(SCHED_USE_TELE))
+			if (!m_pSchedules->isCurrentSchedule(SCHED_USE_TELE) && !m_bInTeleporterQueue)
 			{
-				m_pSchedules->freeMemory();
-				// m_pSchedules->removeSchedule(SCHED_USE_TELE);
-				m_pSchedules->addFront(new CBotUseTeleSched(m_pNearestTeleEntrance));
+				Vector vEntrance = CBotGlobals::entityOrigin(m_pNearestTeleEntrance.get());
+				int pos = CBotGlobals::countTeamMatesNearOrigin(vEntrance, 50.0f, m_iTeam, m_pEdict);
 
+				if (pos == 0)
+				{
+					m_pSchedules->freeMemory();
+					m_pSchedules->addFront(new CBotUseTeleSched(m_pNearestTeleEntrance));
+					m_fUseTeleporterTime = engine->Time() + randomFloat(25.0f, 35.0f);
+					return;
+				}
+
+				// Queue is occupied — mark as waiting, stay on current schedule
+				m_bInTeleporterQueue = true;
+				m_hQueuedTeleporter  = m_pNearestTeleEntrance;
+				m_fQueueReEvalTime   = engine->Time() + 2.0f;
 				m_fUseTeleporterTime = engine->Time() + randomFloat(25.0f, 35.0f);
-				return;
 			}
 		}
 	}
@@ -1611,6 +1621,39 @@ void CBotFortress::modThink()
 			CGotoHideSpotSched *pSchedule = new CGotoHideSpotSched(this, m_pNearestPipeGren.get(), true);
 
 			m_pSchedules->addFront(pSchedule);
+		}
+	}
+
+	// Teleporter queue: re-evaluate while waiting, advance when it's our turn
+	if (m_bInTeleporterQueue && m_fQueueReEvalTime < engine->Time())
+	{
+		m_fQueueReEvalTime = engine->Time() + 2.0f;
+
+		edict_t *pTele = m_hQueuedTeleporter.get();
+		if (!pTele || !CBotGlobals::entityIsValid(pTele))
+		{
+			clearTeleporterQueueState();
+		}
+		else
+		{
+			float fWait, fRun;
+			if (teleporterWalkVsWaitTime(pTele, &fWait, &fRun))
+			{
+				// Check if we're first in line (no other teammates on the entrance)
+				Vector vEntrance = CBotGlobals::entityOrigin(pTele);
+				if (CBotGlobals::countTeamMatesNearOrigin(vEntrance, 50.0f, m_iTeam, m_pEdict) == 0
+				    && !m_pSchedules->isCurrentSchedule(SCHED_USE_TELE))
+				{
+					m_pSchedules->freeMemory();
+					m_pSchedules->addFront(new CBotUseTeleSched(pTele));
+					return;
+				}
+			}
+			else
+			{
+		// Walking is faster — leave queue
+		clearTeleporterQueueState();
+			}
 		}
 	}
 
@@ -1683,6 +1726,62 @@ bool CBotFortress::isTeleporterUseful(edict_t *pTele)
 	}
 
 	return false;
+}
+
+bool CBotFortress::teleporterWalkVsWaitTime(edict_t *pTele, float *fWaitSec, float *fRunSec)
+{
+	edict_t *pExit = CTeamFortress2Mod::getTeleporterExit(pTele);
+
+	if (!pExit || CTeamFortress2Mod::isTeleporterSapped(pTele)
+	    || CTeamFortress2Mod::isTeleporterSapped(pExit)
+	    || CClassInterface::isObjectBeingBuilt(pExit)
+	    || CClassInterface::isObjectBeingBuilt(pTele))
+	{
+		*fWaitSec = *fRunSec = 0.0f;
+		return false;
+	}
+
+	float fEntranceDist = distanceFrom(pTele);
+	Vector vExit        = CBotGlobals::entityOrigin(pExit);
+	Vector vEntrance    = CBotGlobals::entityOrigin(pTele);
+
+	int iCurWpt = (m_pNavigator->getCurrentWaypointID() == -1)
+	                ? CWaypointLocations::NearestWaypoint(getOrigin(), 200.0f, -1, true)
+	                : m_pNavigator->getCurrentWaypointID();
+	int iTeleWpt = CTeamFortress2Mod::getTeleporterWaypoint(pExit);
+	int iGoalId  = m_pNavigator->getCurrentGoalID();
+
+	float fGoalDistance = ((iCurWpt == -1) || (iGoalId == -1))
+	                        ? ((m_vGoal - vEntrance).Length() + fEntranceDist)
+	                        : CWaypointDistances::getDistance(iCurWpt, iGoalId);
+	float fTeleDistance = ((iTeleWpt == -1) || (iGoalId == -1))
+	                        ? ((m_vGoal - vExit).Length() + fEntranceDist)
+	                        : CWaypointDistances::getDistance(iTeleWpt, iGoalId);
+
+	// Teleporter must actually shorten the path
+	if ((fEntranceDist + fTeleDistance) >= fGoalDistance)
+	{
+		*fWaitSec = *fRunSec = 0.0f;
+		return false;
+	}
+
+	float fMaxSpeed = CClassInterface::getMaxSpeed(m_pEdict);
+	float fDuration = CClassInterface::getTF2TeleRechargeDuration(pTele);
+	int queuePos    = CBotGlobals::countTeamMatesNearOrigin(vEntrance, 50.0f, m_iTeam, m_pEdict);
+
+	// Walk time to entrance + queue wait for recharge cycles
+	*fWaitSec = (fEntranceDist / fMaxSpeed) + (queuePos + 1) * fDuration;
+
+	// Time to just walk to the goal directly
+	*fRunSec = fGoalDistance / fMaxSpeed;
+
+	return (*fWaitSec < *fRunSec);
+}
+
+void CBotFortress::clearTeleporterQueueState()
+{
+	m_bInTeleporterQueue = false;
+	m_hQueuedTeleporter  = nullptr;
 }
 
 void CBotFortress::selectTeam()
@@ -1958,7 +2057,10 @@ void CBotTF2::spawnInit()
 
 	m_fDoubleJumpTime         = 0.0f;
 	m_fFrenzyTime             = 0.0f;
-	m_fUseTeleporterTime      = 0.0f;
+	m_fUseTeleporterTime        = 0.0f;
+	m_bInTeleporterQueue         = false;
+	m_fQueueReEvalTime           = 0.0f;
+	m_hQueuedTeleporter          = MyEHandle(nullptr);
 	m_fSpySapTime             = 0.0f;
 
 	m_pDefendPayloadBomb      = nullptr;
