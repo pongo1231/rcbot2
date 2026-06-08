@@ -104,6 +104,7 @@ Vector CTeamFortress2Mod::m_vTeamKnownTeleporters[8];
 float CTeamFortress2Mod::m_fTeamKnownTeleporterTimes[8]      = { 0.0f };
 Vector CTeamFortress2Mod::m_vTeamKnownSentryPositions[8];
 float  CTeamFortress2Mod::m_fTeamKnownSentryTimes[8]         = { 0.0f };
+CTeamFortress2Mod::TeamFocusPoint CTeamFortress2Mod::m_FocusPoints[MAX_FOCUS_POINTS];
 MyEHandle CTeamFortress2Mod::m_pNearestTankBoss            = nullptr;
 float CTeamFortress2Mod::m_fNearestTankDistance            = 0.0f;
 Vector CTeamFortress2Mod::m_vNearestTankLocation           = Vector(0, 0, 0);
@@ -131,11 +132,118 @@ bool CTeamFortress2Mod::isMedievalMode()
 	return CClassInterface::TF2_IsMedievalMode(GetGameRules());
 }
 
+int CTeamFortress2Mod::countActiveFocusPoints()
+{
+	int n = 0;
+	for (int i = 0; i < MAX_FOCUS_POINTS; i++)
+		if (m_FocusPoints[i].fExpires > engine->Time()) n++;
+	return n;
+}
+
+CTeamFortress2Mod::TeamFocusPoint *CTeamFortress2Mod::getNearestFocusPoint(const Vector &vPos, float fMaxDist)
+{
+	TeamFocusPoint *pBest = nullptr;
+	float fBestSqr = fMaxDist * fMaxDist;
+	for (int i = 0; i < MAX_FOCUS_POINTS; i++)
+	{
+		if (m_FocusPoints[i].fExpires <= engine->Time())
+			continue;
+		float fSqr = (m_FocusPoints[i].vPos - vPos).LengthSqr();
+		if (fSqr < fBestSqr)
+		{
+			fBestSqr = fSqr;
+			pBest    = &m_FocusPoints[i];
+		}
+	}
+	return pBest;
+}
+
+CTeamFortress2Mod::TeamFocusPoint *CTeamFortress2Mod::findOrCreateFocusPoint(const Vector &vPos)
+{
+	// Try to merge with existing point within 400 units
+	for (int i = 0; i < MAX_FOCUS_POINTS; i++)
+	{
+		if (m_FocusPoints[i].fExpires > engine->Time()
+		    && (m_FocusPoints[i].vPos - vPos).LengthSqr() < 160000.0f) // 400²
+			return &m_FocusPoints[i];
+	}
+
+	// Find expired or empty slot
+	for (int i = 0; i < MAX_FOCUS_POINTS; i++)
+	{
+		if (m_FocusPoints[i].fExpires <= engine->Time())
+		{
+			memset(&m_FocusPoints[i], 0, sizeof(TeamFocusPoint));
+			m_FocusPoints[i].vPos     = vPos;
+			m_FocusPoints[i].fCreated = engine->Time();
+			return &m_FocusPoints[i];
+		}
+	}
+
+	// All slots active — reclaim the oldest
+	int iOldest = 0;
+	float fOldest = m_FocusPoints[0].fCreated;
+	for (int i = 1; i < MAX_FOCUS_POINTS; i++)
+	{
+		if (m_FocusPoints[i].fCreated < fOldest)
+		{
+			fOldest = m_FocusPoints[i].fCreated;
+			iOldest = i;
+		}
+	}
+	memset(&m_FocusPoints[iOldest], 0, sizeof(TeamFocusPoint));
+	m_FocusPoints[iOldest].vPos     = vPos;
+	m_FocusPoints[iOldest].fCreated = engine->Time();
+	return &m_FocusPoints[iOldest];
+}
+
+void CTeamFortress2Mod::updateFocusPoint(const Vector &vPos, bool bSentrySeen, bool bDeath)
+{
+	TeamFocusPoint *pF = findOrCreateFocusPoint(vPos);
+	if (!pF) return;
+
+	if (bSentrySeen)
+	{
+		pF->iSentryCount++;
+		pF->bSapNeeded = true;
+	}
+	if (bDeath)
+		pF->iDeathCount++;
+
+	pF->fExpires = engine->Time() + 60.0f;
+}
+
+void CTeamFortress2Mod::onSapAtFocusPoint(const Vector &vPos)
+{
+	TeamFocusPoint *pF = getNearestFocusPoint(vPos, 400.0f);
+	if (!pF) return;
+
+	if (pF->iSentryCount > 0)
+		pF->iSentryCount--;
+
+	if (pF->iSentryCount <= 0)
+	{
+		pF->bSapComplete = true;
+		pF->fExpires     = engine->Time() + 15.0f; // push window
+	}
+}
+
+void CTeamFortress2Mod::expireFocusPoints()
+{
+	for (int i = 0; i < MAX_FOCUS_POINTS; i++)
+	{
+		if (m_FocusPoints[i].fExpires > 0.0f && m_FocusPoints[i].fExpires < engine->Time())
+			memset(&m_FocusPoints[i], 0, sizeof(TeamFocusPoint));
+	}
+}
+
 void CTeamFortress2Mod::computeTeamDominance()
 {
 	if (m_fNextDominanceCompute > engine->Time())
 		return;
 	m_fNextDominanceCompute = engine->Time() + 1.0f;
+
+	expireFocusPoints();
 
 	for (int t = 0; t < 2; t++)
 	{

@@ -1331,6 +1331,28 @@ class CTeamFortress2Mod : public CBotMod
 		}
 	}
 
+	// Team-shared focus points for coordinated pushes against sentry nests
+	static const int MAX_FOCUS_POINTS = 4;
+
+	struct TeamFocusPoint
+	{
+		Vector vPos;
+		float  fCreated;
+		float  fExpires;
+		int    iSentryCount;
+		int    iDeathCount;
+		bool   bSapNeeded;
+		bool   bSapComplete;
+	};
+
+	static TeamFocusPoint m_FocusPoints[MAX_FOCUS_POINTS];
+	static int countActiveFocusPoints();
+	static TeamFocusPoint *getNearestFocusPoint(const Vector &vPos, float fMaxDist);
+	static TeamFocusPoint *findOrCreateFocusPoint(const Vector &vPos);
+	static void updateFocusPoint(const Vector &vPos, bool bSentrySeen, bool bDeath);
+	static void onSapAtFocusPoint(const Vector &vPos);
+	static void expireFocusPoints();
+
   private:
 	static float TF2_GetClassSpeed(int iClass);
 
