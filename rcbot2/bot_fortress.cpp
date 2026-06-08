@@ -5367,14 +5367,19 @@ void CBotTF2::modThink()
 			    || !CBotGlobals::entityIsAlive(pEd)) continue;
 			if (CTeamFortress2Mod::getTeam(pEd) != getTeam()) continue;
 			float fDist = distanceFrom(pEd);
-			if (fDist < 80.0f && fDist > 0.1f)
+			if (fDist < 60.0f && fDist > 0.1f && m_fStrafeTime < engine->Time())
 			{
 				Vector vAway = getOrigin() - CBotGlobals::entityOrigin(pEd);
 				vAway.z = 0;
 				if (vAway.Length() > 0.1f)
 				{
 					vAway = vAway / vAway.Length();
-					setMoveTo(getOrigin() + vAway * 128.0f);
+					// Gentle lateral nudge — don't override main move target
+					Vector vRight;
+					AngleVectors(eyeAngles(), nullptr, &vRight, nullptr);
+					float fSide = (vAway.Dot(vRight) > 0.0f) ? -1.0f : 1.0f;
+					m_fSideSpeed  = fSide * m_fIdealMoveSpeed * 0.3f;
+					m_fStrafeTime = engine->Time() + 0.3f;
 				}
 				break;
 			}
