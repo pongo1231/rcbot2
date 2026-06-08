@@ -37,13 +37,13 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-20.04
+          - ubuntu-latest
           - windows-latest
         include:
           - meta_branch: "1.10-dev"
             sm_branch: "1.10-dev"
 
-          - os: ubuntu-20.04
+          - os: ubuntu-latest
             os_short: linux
             package_ext: tar.gz
             dbg_ext: dbg
