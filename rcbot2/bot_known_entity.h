@@ -41,7 +41,7 @@ class CKnownEntity
 	inline void markLost()
 	{
 		m_fWhenLastKnown      = engine->Time();
-		m_bPositionConfirmed  = true; // was confirmed before losing sight
+		m_bPositionConfirmed  = false;
 	}
 
 	MyEHandle m_who;

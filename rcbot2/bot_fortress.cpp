@@ -5632,6 +5632,7 @@ void CBotTF2::checkStuckonSpy(void)
 				else if (m_SpyAwareness[iIdx].eLevel == SpyAwareness::SUSPECTED)
 				{
 					m_SpyAwareness[iIdx].iBumpCount++;
+					m_SpyAwareness[iIdx].fWhenLastBumped = fNow;
 
 					// Escalate to KNOWN after 3 bumps
 					if (m_SpyAwareness[iIdx].iBumpCount >= 3)

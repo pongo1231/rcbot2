@@ -641,7 +641,7 @@ bool CBot::checkImmobile()
 	float fDist = (getOrigin() - m_vImmobileAnchorPos).Length();
 	if (fDist < 30.0f)
 	{
-		m_fImmobileDuration += (fTime - m_fImmobileAnchorTime + 2.0f);
+		m_fImmobileDuration += (fTime - m_fImmobileAnchorTime);
 		if (m_fImmobileDuration > 0.5f && !m_pSchedules->isCurrentSchedule(SCHED_GOOD_HIDE_SPOT))
 		{
 			m_bIsImmobile = true;
@@ -653,8 +653,10 @@ bool CBot::checkImmobile()
 				m_fSideSpeed  = (randomInt(0, 1) ? 1.0f : -1.0f) * m_fIdealMoveSpeed / 2;
 				m_fStrafeTime = fTime + 1.5f;
 			}
+			m_vImmobileAnchorPos  = getOrigin();
 			m_fImmobileAnchorTime = fTime + 4.0f;
 			m_fImmobileDuration   = 0.0f;
+			return true;
 		}
 	}
 	else
