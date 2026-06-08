@@ -95,6 +95,10 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 	bool bOverhealed  = pBot->getHealthPercent() > 1.3f;
 	bool bHurtBySentry = pBot->recentlyHurt(1.0f) && bTakingFire;
 
+	// Retreat if taking too much damage
+	if (bTakingFire && pBot->getHealthPercent() < 0.4f)
+		fail();
+
 	// Hide when reloading, taking fire (unless overhealed or out of range), or recently hurt by sentry
 	if (m_pWeapon->needToReload(pBot)
 	    || (bTakingFire && !bOverhealed && !bOutOfRange)

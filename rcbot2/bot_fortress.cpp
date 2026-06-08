@@ -647,15 +647,14 @@ bool CBotFortress::setVisible(edict_t *pEntity, bool bVisible)
 			}
 		}
 
-		// Also avoid known sentry positions we're not actively engaging
-		if (!m_pSchedules->hasSchedule(SCHED_ATTACK_SENTRY_GUN)
-		    && !m_pSchedules->isCurrentSchedule(SCHED_ATTACK_SENTRY_GUN))
+		// Also avoid known sentry positions (skip the one we're actively engaging)
 		{
 			for (auto &h : m_KnownSentries)
 			{
 				edict_t *pKnown = h.get();
 				if (!pKnown || !CBotGlobals::entityIsValid(pKnown)
 				    || !CBotGlobals::entityIsAlive(pKnown)) continue;
+				if (pKnown == m_pAttackingEnemy.get()) continue;
 				float fDist = distanceFrom(pKnown);
 				if (fDist < TF2_MAX_SENTRYGUN_RANGE)
 				{
@@ -4570,8 +4569,7 @@ void CBotTF2::modThink()
 		edict_t *pSentry = m_pNearestEnemySentry.get();
 		if (CBotGlobals::entityIsValid(pSentry) && CBotGlobals::entityIsAlive(pSentry)
 		    && isVisible(pSentry)
-		    && !m_pSchedules->hasSchedule(SCHED_ATTACK_SENTRY_GUN)
-		    && !m_pSchedules->isCurrentSchedule(SCHED_ATTACK_SENTRY_GUN))
+		    && pSentry != m_pAttackingEnemy.get())
 		{
 			float fDist = distanceFrom(pSentry);
 			if (fDist < (TF2_MAX_SENTRYGUN_RANGE + 128.0f))
@@ -4590,15 +4588,14 @@ void CBotTF2::modThink()
 
 	// Also avoid known sentry positions (team-memory or personal memory)
 	if (!(m_iClass == TF_CLASS_SPY && (isDisguised() || isCloaked()))
-	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
-	    && !m_pSchedules->hasSchedule(SCHED_ATTACK_SENTRY_GUN)
-	    && !m_pSchedules->isCurrentSchedule(SCHED_ATTACK_SENTRY_GUN))
+	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
 	{
 		for (auto &h : m_KnownSentries)
 		{
 			edict_t *pKnown = h.get();
 			if (!pKnown || !CBotGlobals::entityIsValid(pKnown)
 			    || !CBotGlobals::entityIsAlive(pKnown)) continue;
+			if (pKnown == m_pAttackingEnemy.get()) continue;
 			float fDist = distanceFrom(pKnown);
 			if (fDist < (TF2_MAX_SENTRYGUN_RANGE + 128.0f))
 			{
@@ -8078,11 +8075,26 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		{
 			if (CTeamFortress2Mod::m_fTeamKnownSentryTimes[i] > engine->Time())
 			{
-				float fD = (CTeamFortress2Mod::m_vTeamKnownSentryPositions[i] - getOrigin()).Length();
+				Vector vKnown = CTeamFortress2Mod::m_vTeamKnownSentryPositions[i];
+				float fD = (vKnown - getOrigin()).Length();
 				if (fD < 2000.0f)
 				{
-					// Team has intel on a sentry nearby -- use position as target
-					// (handleAttack will check visibility when it reaches the area)
+					int iEnemy = CTeamFortress2Mod::getEnemyTeam(m_iTeam);
+					for (int j = 0; j < MAX_PLAYERS; j++)
+					{
+						edict_t *pCheck = CTeamFortress2Mod::getSentryGun(j);
+						if (pCheck && CBotGlobals::entityIsValid(pCheck)
+						    && CBotGlobals::entityIsAlive(pCheck)
+						    && CTeamFortress2Mod::getTeam(pCheck) == iEnemy)
+						{
+							if ((CBotGlobals::entityOrigin(pCheck) - vKnown).Length() < 400.0f)
+							{
+								pSentryTarget = pCheck;
+								break;
+							}
+						}
+					}
+					if (pSentryTarget) break;
 				}
 			}
 		}
@@ -9440,6 +9452,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 
 		edict_t *pSentry    = INDEXENT(util->getIntData());
 
+		m_pAttackingEnemy = pSentry;
 		m_pSchedules->add(new CBotTF2AttackSentryGun(pSentry, pWeapon));
 	}
 	break;
@@ -11681,8 +11694,8 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 		    && CBotGlobals::entityIsAlive(pDangerSentry) && isVisible(pDangerSentry))
 		{
 			float fSentryDist = distanceFrom(pDangerSentry);
-			if (fSentryDist < TF2_MAX_SENTRYGUN_RANGE && !m_pSchedules->hasSchedule(SCHED_ATTACK_SENTRY_GUN)
-			    && !m_pSchedules->isCurrentSchedule(SCHED_ATTACK_SENTRY_GUN))
+			if (fSentryDist < TF2_MAX_SENTRYGUN_RANGE
+			    && pDangerSentry != m_pAttackingEnemy.get())
 			{
 				CBotWeapon *pCheckRanged = m_pWeapons->getBestWeapon(pDangerSentry, false, false);
 				if (pCheckRanged && !pCheckRanged->isMelee() && !pCheckRanged->outOfAmmo(this))
