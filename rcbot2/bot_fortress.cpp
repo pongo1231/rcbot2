@@ -2283,7 +2283,8 @@ void CBotTF2::collectSentrySpots(const Vector &vCentroid, std::vector<CWaypoint 
 		// Skip jump/crouch/ladder/lift/fall waypoints -- not suitable for building
 		int f = pW->getFlags();
 		if (f & (CWaypointTypes::W_FL_JUMP | CWaypointTypes::W_FL_CROUCH | CWaypointTypes::W_FL_LADDER
-		         | CWaypointTypes::W_FL_LIFT | CWaypointTypes::W_FL_FALL | CWaypointTypes::W_FL_UNREACHABLE))
+		         | CWaypointTypes::W_FL_LIFT | CWaypointTypes::W_FL_FALL | CWaypointTypes::W_FL_UNREACHABLE
+		         | CWaypointTypes::W_FL_ROCKET_JUMP | CWaypointTypes::W_FL_DOUBLEJUMP))
 			continue;
 
 		Vector vOrigin = pW->getOrigin();
