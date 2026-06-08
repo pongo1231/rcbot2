@@ -8496,7 +8496,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			float fInfiltrateUtil = 0.7f;
 			CTeamFortress2Mod::TeamFocusPoint *pF =
 			    CTeamFortress2Mod::getNearestFocusPoint(getOrigin(), 4000.0f);
-			if (pF && !pF->bSapComplete && pF->iSentryCount > 0)
+			if (pF && pF->bSapNeeded && pF->fExpires > engine->Time())
 				fInfiltrateUtil = 1.0f;
 			ADD_UTILITY(BOT_UTIL_SPY_INFILTRATE, true, fInfiltrateUtil);
 		}
@@ -9724,7 +9724,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 				CTeamFortress2Mod::TeamFocusPoint *pF =
 				    CTeamFortress2Mod::getFocusPoint(j);
 				if (pF && pF->fExpires > engine->Time()
-				    && !pF->bSapComplete && pF->iSentryCount > 0
+				    && pF->bSapNeeded
 				    && (vWpt - pF->vPos).LengthSqr() < 1000000.0f) // 1000²
 				{
 					fDist += 500.0f;
