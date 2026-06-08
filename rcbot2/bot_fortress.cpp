@@ -3514,22 +3514,37 @@ void CBotTF2::handleSpecialAbilities()
 			helpers->ClientCommand(m_pEdict, "taunt");
 	}
 
-	// --- Wrangler variants (140/1086/30668): hold secondary fire for shield ---
+	// --- Wrangler variants (140/1086/30668): only useful when sentry can actually fire ---
 	if ((iActiveItem == 140 || iActiveItem == 1086 || iActiveItem == 30668)
-	    && m_pSentryGun.get() && CBotGlobals::entityIsAlive(m_pSentryGun.get()))
+	    && iActiveSlot == TF2_SLOT_SCNDR)
 	{
-		if (iActiveSlot == TF2_SLOT_SCNDR && bInDanger)
-			secondaryAttack();
-	}
+		edict_t *pSentry = m_pSentryGun.get();
+		bool bShouldHold = false;
 
-	// --- Wrangler: unequip if no sentry or too far from it ---
-	if ((iActiveItem == 140 || iActiveItem == 1086 || iActiveItem == 30668)
-	    && iActiveSlot == TF2_SLOT_SCNDR
-	    && (!m_pSentryGun.get() || !CBotGlobals::entityIsAlive(m_pSentryGun.get())
-	        || distanceFrom(m_pSentryGun.get()) > 256.0f))
-	{
-		if (randomInt(0, 1) == 0)
+		if (pSentry && CBotGlobals::entityIsValid(pSentry)
+		    && CBotGlobals::entityIsAlive(pSentry)
+		    && distanceFrom(pSentry) <= 256.0f
+		    && bInDanger)
 		{
+			// Only hold the Wrangler if the sentry can actually shoot something
+			bool bSentryCanFire = (CClassInterface::getTF2SentryShells(pSentry) > 0
+			                       || CClassInterface::getTF2SentryRockets(pSentry) > 0);
+			edict_t *pSentryEnemy = CClassInterface::getSentryEnemy(pSentry);
+			bool bSentryHasTarget = pSentryEnemy
+			    && CBotGlobals::isAlivePlayer(pSentryEnemy)
+			    && (CBotGlobals::entityOrigin(pSentry)
+			        - CBotGlobals::entityOrigin(pSentryEnemy)).Length() < (float)TF2_MAX_SENTRYGUN_RANGE;
+
+			if (bSentryCanFire && bSentryHasTarget)
+				bShouldHold = true;
+		}
+
+		if (bShouldHold)
+			secondaryAttack(true); // continuous hold for shield + manual fire
+		else
+		{
+			// No point holding the Wrangler — unequip and release the button
+			m_pButtons->letGo(IN_ATTACK2);
 			CBotWeapon *pWrench = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_WRENCH));
 			if (pWrench && pWrench->hasWeapon())
 				select_CWeapon(pWrench->getWeaponInfo());
