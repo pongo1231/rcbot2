@@ -3023,6 +3023,12 @@ void CBot::jump()
 	}
 }
 
+void CBot::idleJump()
+{
+	if (m_pButtons->canPressButton(IN_JUMP))
+		m_pButtons->holdButton(IN_JUMP, 0, 0.4f, 1.2f);
+}
+
 void CBot::duck(bool hold)
 {
 	if (hold || m_pButtons->canPressButton(IN_DUCK))

@@ -141,7 +141,7 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 	case 3: // random buttons, aimless wandering
 	{
 		if (randomInt(0, 1))
-			pBot->jump();
+			pBot->idleJump();
 		else if (pBot->isTF2())
 		{
 			if (((CBotTF2 *)pBot)->getClass() == TF_CLASS_HWGUY)
