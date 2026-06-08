@@ -7730,6 +7730,12 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 
 		// Need: 2 base + 1 extra per 2 enemies nearby
 		int iNeeded = 2 + iEnemiesNear / 2;
+		// Clamp: never demand more than half the team on defense
+		int iTeammates = CBotGlobals::countTeamMatesNearOrigin(Vector(0,0,0), 99999.0f,
+		                                                       m_iTeam, m_pEdict) + 1;
+		int iMaxDefenders = iTeammates / 2;
+		if (iMaxDefenders < 1) iMaxDefenders = 1;
+		if (iNeeded > iMaxDefenders) iNeeded = iMaxDefenders;
 		if (iDefenders >= iNeeded && iNeeded > 0)
 			fDefendFlagUtility *= 0.3f;   // enough defenders — skip
 		else if (iNeeded > 0)
