@@ -122,6 +122,8 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 			    && pBot->distanceFrom(pBot->getEnemy()) < 500.0f)
 			{
 				pBot->getSchedule()->add(new CBotBackstabSched(pBot->getEnemy()));
+				complete();
+				return;
 			}
 
 			// Continue moving away briefly after completing

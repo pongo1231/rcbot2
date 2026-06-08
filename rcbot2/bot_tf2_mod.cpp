@@ -205,7 +205,8 @@ void CTeamFortress2Mod::updateFocusPoint(const Vector &vPos, bool bSentrySeen, b
 	if (bSentrySeen)
 	{
 		pF->iSentryCount++;
-		pF->bSapNeeded = true;
+		pF->bSapNeeded    = true;
+		pF->bSapComplete  = false;
 	}
 	if (bDeath)
 		pF->iDeathCount++;
