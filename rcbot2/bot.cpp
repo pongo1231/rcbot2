@@ -249,7 +249,18 @@ bool CBot::startGame()
 bool CBot::walkingTowardsWaypoint(CWaypoint *pWaypoint, bool *bOffsetApplied, Vector &vOffset)
 {
 	if (pWaypoint->hasFlag(CWaypointTypes::W_FL_CROUCH))
+	{
 		duck(true);
+
+		// Preemptive crouch-jump when approaching an elevated crouch waypoint
+		if (pWaypoint->getOrigin().z > getOrigin().z + 24.0f
+		    && (pWaypoint->getOrigin() - getOrigin()).Length2D() < 100.0f
+		    && m_fNextCrouchJumpTime < engine->Time())
+		{
+			jump();
+			m_fNextCrouchJumpTime = engine->Time() + 1.0f;
+		}
+	}
 
 	if (pWaypoint->hasFlag(CWaypointTypes::W_FL_LIFT))
 		updateCondition(CONDITION_LIFT);
@@ -1567,6 +1578,7 @@ void CBot::spawnInit()
 	m_fUpSpeed                = 0;
 	m_iConditions             = 0;
 	m_fStrafeTime             = 0;
+	m_fNextCrouchJumpTime      = 0;
 	m_fStuckStartTime         = 0.0f;
 
 	m_bInitAlive              = true;

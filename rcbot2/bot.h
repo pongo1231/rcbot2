@@ -1097,6 +1097,7 @@ class CBot
 	float m_fNextUpdateStuckConstants;
 
 	float m_fStrafeTime;
+	float m_fNextCrouchJumpTime;
 	float m_fLastSeeEnemy;
 	float m_fLastUpdateLastSeeEnemy;
 
