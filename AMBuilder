@@ -31,6 +31,7 @@ sourceFiles = [
   "rcbot2/bot_perceptron.cpp",
   "rcbot2/bot_profile.cpp",
   "rcbot2/bot_profiling.cpp",
+  "rcbot2/bot_stubs.cpp",
   "rcbot2/bot_tf2_points.cpp",
   "rcbot2/bot_som.cpp",
   "rcbot2/bot_squads.cpp",

@@ -240,8 +240,8 @@ class MMSConfig(object):
       if cxx.family == 'gcc':
         cxx.linkflags += ['-static-libgcc']
 
-      # Plugin loaded by host process -- allow unresolved symbols
-      cxx.linkflags += [ '-Wl,--unresolved-symbols=ignore-all' ]
+      # catch link errors at compile time
+      cxx.linkflags += [ '-Wl,-no-undefined' ]
     elif self.platform == 'mac':
       cxx.defines += [
         'POSIX',
