@@ -626,6 +626,7 @@ bool CBot::checkStuck()
 bool CBot::checkImmobile()
 {
 	if (!CBotGlobals::entityIsAlive(m_pEdict)) return false;
+	if (hasEnemy()) return false;
 
 	float fTime = engine->Time();
 	if (m_fImmobileAnchorTime == 0.0f)
@@ -645,7 +646,9 @@ bool CBot::checkImmobile()
 	if (fDist < 30.0f)
 	{
 		m_fImmobileDuration += (fTime - m_fImmobileAnchorTime);
-		if (m_fImmobileDuration > 0.5f && !m_pSchedules->isCurrentSchedule(SCHED_GOOD_HIDE_SPOT))
+		bool bStationary = m_pSchedules->isCurrentSchedule(SCHED_GOOD_HIDE_SPOT)
+		                || m_pSchedules->isCurrentSchedule(SCHED_SNIPE);
+		if (m_fImmobileDuration > 0.5f && !bStationary)
 		{
 			m_bIsImmobile = true;
 			jump();
