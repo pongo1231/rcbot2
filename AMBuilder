@@ -27,6 +27,7 @@ sourceFiles = [
   "rcbot2/bot_mods.cpp",
   "rcbot2/bot_mtrand.cpp",
   "rcbot2/bot_navmesh.cpp",
+  "rcbot2/bot_navmesh_util.cpp",
   "rcbot2/bot_perceptron.cpp",
   "rcbot2/bot_profile.cpp",
   "rcbot2/bot_profiling.cpp",

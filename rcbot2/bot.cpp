@@ -50,6 +50,7 @@
 #include "bot_hldm_bot.h"
 #include "bot_mtrand.h"
 #include "bot_navigator.h"
+#include "bot_navmesh_util.h"
 #include "bot_profile.h"
 #include "bot_profiling.h"
 #include "bot_squads.h"
@@ -470,6 +471,14 @@ bool CBot::checkStuck()
 	if (hasEnemy())
 		return false;
 
+	if (!NavMeshUtil::IsOnWalkableGround(getOrigin()))
+	{
+		m_fStuckStartTime = (m_fStuckStartTime > 0.0f) ? m_fStuckStartTime
+		                                                : engine->Time() - 15.0f;
+		m_bThinkStuck = true;
+		return true;
+	}
+
 	fTime = engine->Time();
 
 	// Fast stuck check: if barely moved in 0.5s, look at what's blocking
@@ -627,6 +636,14 @@ bool CBot::checkImmobile()
 {
 	if (!CBotGlobals::entityIsAlive(m_pEdict)) return false;
 	if (hasEnemy()) return false;
+
+	if (!NavMeshUtil::IsOnWalkableGround(getOrigin()))
+	{
+		m_bIsImmobile        = false;
+		m_fImmobileDuration  = 0.0f;
+		m_fImmobileAnchorTime = 0.0f;
+		return false;
+	}
 
 	float fTime = engine->Time();
 	if (m_fImmobileAnchorTime == 0.0f)
