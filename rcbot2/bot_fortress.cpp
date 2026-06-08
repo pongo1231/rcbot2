@@ -185,17 +185,50 @@ void CBotTF2::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 	}
 		break;
 	case TF_VC_HELP:
+		{
+			if (distanceFrom(pPlayer) > 1024 || !isVisible(pPlayer)) break;
+			setLookAt(CBotGlobals::entityOrigin(pPlayer));
+			setLookAtTask(LOOK_VECTOR, 0.5f);
+			if (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
+				m_pSchedules->addFront(new CBotGotoOriginSched(pPlayer));
+		}
+		break;
+	case TF_VC_THANKS:
+	case TF_VC_NICESHOT:
+	case TF_VC_GOODJOB:
+	case TF_VC_CHEERS:
+	case TF_VC_POSITIVE:
+		if (isVisible(pPlayer) && distanceFrom(pPlayer) < 800.0f
+		    && randomFloat(0.0f, 1.0f) > 0.6f)
+			addVoiceCommand(TF_VC_POSITIVE);
+		break;
+	case TF_VC_JEERS:
+	case TF_VC_NEGATIVE:
+		if (isVisible(pPlayer) && distanceFrom(pPlayer) < 800.0f
+		    && randomFloat(0.0f, 1.0f) > 0.7f)
+			addVoiceCommand(TF_VC_NEGATIVE);
 		break;
 	case TF_VC_GOGOGO:
-		// if bot is nesting, or waiting for something, it will go
-		if (distanceFrom(pPlayer) > 512)
-			return;
+		{
+			if (distanceFrom(pPlayer) > 1024 || !isVisible(pPlayer))
+				return;
 
-		updateCondition(CONDITION_PUSH);
+			IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pPlayer);
+			bool bHuman = pInfo && !pInfo->IsFakeClient();
 
-		if (randomFloat(0, 1.0) > 0.75f)
-			m_nextVoicecmd = TF_VC_YES;
+			updateCondition(CONDITION_PUSH);
 
+			if (randomFloat(0, 1.0) > (bHuman ? 0.25f : 0.75f))
+				m_nextVoicecmd = TF_VC_YES;
+
+			// Human nearby: treat as informal squad leader so they can lead
+			if (bHuman && distanceFrom(pPlayer) < 512.0f
+			    && !hasEnemy() && !hasSomeConditions(CONDITION_DEFENSIVE)
+			    && !inSquad())
+			{
+				setSquad(CBotSquads::AddSquadMember(pPlayer, m_pEdict));
+			}
+		}
 		// don't break // flow down to uber if medic
 	case TF_VC_ACTIVATEUBER:
 		if (CTeamFortress2Mod::hasRoundStarted() && (getClass() == TF_CLASS_MEDIC))
@@ -210,15 +243,17 @@ void CBotTF2::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 		}
 		break;
 	case TF_VC_MOVEUP:
+		{
+			if (distanceFrom(pPlayer) > 1000) return;
 
-		if (distanceFrom(pPlayer) > 1000)
-			return;
+			IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pPlayer);
+			bool bHuman = pInfo && !pInfo->IsFakeClient();
 
-		updateCondition(CONDITION_PUSH);
+			updateCondition(CONDITION_PUSH);
 
-		if (randomFloat(0, 1.0) > 0.75f)
-			m_nextVoicecmd = TF_VC_YES;
-
+			if (randomFloat(0, 1.0) > (bHuman ? 0.25f : 0.75f))
+				m_nextVoicecmd = TF_VC_YES;
+		}
 		break;
 	default:
 		break;
@@ -5056,9 +5091,9 @@ void CBotTF2::modThink()
 						if (CClassInterface::getTF2Class(pT) != TF_CLASS_ENGINEER) continue;
 						if (distanceFrom(pT) < 256.0f && isVisible(pT))
 						{
-							setLookAt(CBotGlobals::entityOrigin(pT));
-							m_fLookSetTime = engine->Time() + 1.0f;
-							addVoiceCommand(TF_VC_THANKS);
+						setLookAt(CBotGlobals::entityOrigin(pT));
+						m_fLookSetTime = engine->Time() + 0.3f;
+						addVoiceCommand(TF_VC_THANKS);
 							m_fThanksTime = engine->Time() + randomFloat(20.0f, 40.0f);
 							break;
 						}

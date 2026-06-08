@@ -20,6 +20,13 @@ CMessAround::CMessAround(edict_t *pFriendly, int iMaxVoiceCmd)
 
 void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
+	// Snap out of mess-around immediately if threatened
+	if (((CBotFortress *)pBot)->hasEnemy() || pBot->recentlyHurt(2.0f))
+	{
+		fail();
+		return;
+	}
+
 	if (!m_pFriendly || !CBotGlobals::entityIsValid(m_pFriendly))
 	{
 		// Find a new random teammate
