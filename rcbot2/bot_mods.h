@@ -1346,6 +1346,10 @@ class CTeamFortress2Mod : public CBotMod
 	};
 
 	static TeamFocusPoint m_FocusPoints[MAX_FOCUS_POINTS];
+	static TeamFocusPoint *getFocusPoint(int i)
+	{
+		return (i >= 0 && i < MAX_FOCUS_POINTS) ? &m_FocusPoints[i] : nullptr;
+	}
 	static int countActiveFocusPoints();
 	static TeamFocusPoint *getNearestFocusPoint(const Vector &vPos, float fMaxDist);
 	static TeamFocusPoint *findOrCreateFocusPoint(const Vector &vPos);

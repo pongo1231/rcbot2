@@ -4119,7 +4119,8 @@ void CBotFortress::chooseClass()
 		else if (CTeamFortress2Mod::isMapType(TF_MAP_CP))
 			fClassFitness[TF_CLASS_SCOUT] *= 1.2f;
 
-		if (m_pLastEnemySentry.get() != nullptr || !m_KnownSentries.empty())
+		if (m_pLastEnemySentry.get() != nullptr || !m_KnownSentries.empty()
+	    || CTeamFortress2Mod::countActiveFocusPoints() > 0)
 		{
 			fClassFitness[TF_CLASS_SPY] *= 1.25;
 			fClassFitness[TF_CLASS_DEMOMAN] *= 1.3;
@@ -7627,6 +7628,10 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			default:
 				break;
 			}
+
+			// RED on A/D: hold the newly cleared area
+			if (CTeamFortress2Mod::isAttackDefendMap() && m_iTeam == TF2_TEAM_RED)
+				fDefendFlagUtility *= 1.5f;
 		}
 	}
 
@@ -8163,6 +8168,8 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			    || pOther->getSchedule()->isCurrentSchedule(SCHED_DEFENDPOINT)
 			    || pOther->getSchedule()->hasSchedule(SCHED_RETURN_TO_INTEL)))
 			{
+				if ((CBotGlobals::entityOrigin(pP) - getOrigin()).Length2D() > 2000.0f)
+					continue;
 				iDefenders++;
 				if (iDefenders >= 3) { bAlreadyDefended = true; break; }
 			}
@@ -8376,6 +8383,19 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 				fSapBoost = 1.5f;
 		}
 
+		// Spy awareness: KNOWN spies are less effective at sabotage
+		{
+			for (int k = 0; k < MAX_PLAYERS; k++)
+			{
+				if (m_SpyAwareness[k].eLevel == SpyAwareness::KNOWN
+				    && m_SpyAwareness[k].fWhenBecameKnown + 10.0f > engine->Time())
+				{
+					fSapBoost *= 0.7f;
+					break;
+				}
+			}
+		}
+
 		ADD_UTILITY(BOT_UTIL_SAP_ENEMY_SENTRY,
 		            m_pEnemy && CTeamFortress2Mod::isSentry(m_pEnemy, CTeamFortress2Mod::getEnemyTeam(iTeam))
 		                && !CTeamFortress2Mod::isSentrySapped(m_pEnemy),
@@ -8424,14 +8444,20 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		                && !CTeamFortress2Mod::isDispenserSapped(m_pLastEnemy),
 		            fGetFlagUtility + (getHealthPercent() / 7));
 
-		// Spy infiltrate: move deep into enemy territory
+		// Spy infiltrate: move deep into enemy territory,
+		// boosted toward focus points needing sap
 		if (m_fSpyInfiltrateTime < engine->Time()
 		    && isDisguised() && !hasEnemy()
 		    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING)
 		    && !m_pSchedules->isCurrentSchedule(SCHED_BACKSTAB)
 		    && CClassInterface::getTF2SpyCloakMeter(m_pEdict) > 50.0f)
 		{
-			ADD_UTILITY(BOT_UTIL_SPY_INFILTRATE, true, 0.7f);
+			float fInfiltrateUtil = 0.7f;
+			CTeamFortress2Mod::TeamFocusPoint *pF =
+			    CTeamFortress2Mod::getNearestFocusPoint(getOrigin(), 4000.0f);
+			if (pF && !pF->bSapComplete && pF->iSentryCount > 0)
+				fInfiltrateUtil = 1.0f;
+			ADD_UTILITY(BOT_UTIL_SPY_INFILTRATE, true, fInfiltrateUtil);
 		}
 
 		// Spy lurk: wait in enemy backline, watch for opportunities
@@ -9650,6 +9676,21 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			float fDistSqr = (vWpt - getOrigin()).LengthSqr();
 			if (fDistSqr > 4000.0f * 4000.0f) continue;
 			float fDist = sqrtf(fDistSqr);
+
+			// Bias toward waypoints near active focus points needing sap
+			for (int j = 0; j < CTeamFortress2Mod::MAX_FOCUS_POINTS; j++)
+			{
+				CTeamFortress2Mod::TeamFocusPoint *pF =
+				    CTeamFortress2Mod::getFocusPoint(j);
+				if (pF && pF->fExpires > engine->Time()
+				    && !pF->bSapComplete && pF->iSentryCount > 0
+				    && (vWpt - pF->vPos).LengthSqr() < 1000000.0f) // 1000²
+				{
+					fDist += 500.0f;
+					break;
+				}
+			}
+
 			if (fDist > fBestDist)
 			{
 				// Prefer waypoints with higher traversal counts

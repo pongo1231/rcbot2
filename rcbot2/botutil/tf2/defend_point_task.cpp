@@ -50,7 +50,11 @@ void CBotTF2DefendPoint::execute(CBot *pBot, CBotSchedule *pSchedule)
 			CBot *pOther = CBots::getBotPointer(pPlayer);
 			if (pOther && (pOther->getSchedule()->isCurrentSchedule(SCHED_DEFEND)
 			    || pOther->getSchedule()->isCurrentSchedule(SCHED_DEFENDPOINT)))
+			{
+				if ((CBotGlobals::entityOrigin(pPlayer) - m_vOrigin).Length2D() > 2000.0f)
+					continue;
 				iDefendersHere++;
+			}
 		}
 
 		// If crowded, bail so getTasks() can pick a different area
