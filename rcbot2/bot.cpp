@@ -623,6 +623,50 @@ bool CBot::checkStuck()
 	return m_bThinkStuck;
 }
 
+bool CBot::checkImmobile()
+{
+	if (!CBotGlobals::entityIsAlive(m_pEdict)) return false;
+
+	float fTime = engine->Time();
+	if (m_fImmobileAnchorTime == 0.0f)
+	{
+		m_vImmobileAnchorPos  = getOrigin();
+		m_fImmobileAnchorTime = fTime + 2.0f;
+		return false;
+	}
+
+	if (m_fImmobileAnchorTime > fTime)
+		return false;
+
+	float fDist = (getOrigin() - m_vImmobileAnchorPos).Length();
+	if (fDist < 30.0f)
+	{
+		m_fImmobileDuration += (fTime - m_fImmobileAnchorTime + 2.0f);
+		if (m_fImmobileDuration > 0.5f && !m_pSchedules->isCurrentSchedule(SCHED_GOOD_HIDE_SPOT))
+		{
+			m_bIsImmobile = true;
+			jump();
+			duck(randomFloat(0.2f, 0.4f));
+			if (m_fStrafeTime < fTime)
+			{
+				reduceTouchDistance();
+				m_fSideSpeed  = (randomInt(0, 1) ? 1.0f : -1.0f) * m_fIdealMoveSpeed / 2;
+				m_fStrafeTime = fTime + 1.5f;
+			}
+			m_fImmobileAnchorTime = fTime + 4.0f;
+			m_fImmobileDuration   = 0.0f;
+		}
+	}
+	else
+	{
+		m_bIsImmobile       = false;
+		m_fImmobileDuration = 0.0f;
+	}
+	m_vImmobileAnchorPos  = getOrigin();
+	m_fImmobileAnchorTime = fTime + 2.0f;
+	return m_bIsImmobile;
+}
+
 bool CBot::isVisible(edict_t *pEdict)
 {
 	return m_pVisibles->isVisible(pEdict);
@@ -731,7 +775,7 @@ bool CBot::isHoldingPrimaryAttack()
 
 void CBot::debugMsg(int iLev, const char *szMsg)
 {
-	if (CClients::clientsDebugging())
+	if (CClients::clientsDebugging(iLev))
 	{
 		char szMsg2[512];
 
@@ -739,6 +783,20 @@ void CBot::debugMsg(int iLev, const char *szMsg)
 
 		CClients::clientDebugMsg(iLev, szMsg2, this);
 	}
+}
+
+void CBot::debugMsg(const char *szCategory, const char *szMsg)
+{
+	for (int i = 0; i < 15; i++)
+	{
+		if (strcmp(g_szDebugTags[i], szCategory) == 0)
+		{
+			debugMsg(i, szMsg);
+			return;
+		}
+	}
+	// Unknown category — default to level 0
+	debugMsg(0, szMsg);
 }
 
 void CBot::SquadInPosition()
@@ -877,6 +935,8 @@ void CBot::think()
 		}
 		else
 			m_fStuckStartTime = 0.0f;
+
+		checkImmobile();
 #ifdef _DEBUG
 	}
 #endif
@@ -1403,6 +1463,10 @@ void CBot::spawnInit()
 	m_fPercentMoved           = 1.0f;
 	m_fFastStuckTime          = 0.0f;
 	m_vFastStuckPos           = Vector(0, 0, 0);
+	m_vImmobileAnchorPos       = Vector(0, 0, 0);
+	m_fImmobileAnchorTime      = 0.0f;
+	m_fImmobileDuration        = 0.0f;
+	m_bIsImmobile              = false;
 
 	for (register short int i = 0; i < BOT_UTIL_MAX; i++)
 		m_fUtilTimes[i] = 0;

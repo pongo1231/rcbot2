@@ -517,6 +517,8 @@ class CClient
 	float m_fMonitorHighFiveTime;
 };
 
+extern const char *g_szDebugTags[15];
+
 class CClients
 {
   public:

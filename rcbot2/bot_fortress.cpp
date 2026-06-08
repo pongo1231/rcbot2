@@ -1047,6 +1047,7 @@ void CBotFortress::spawnInit()
 
 	memset(m_fSpyAttackedList, 0, sizeof(float) * MAX_PLAYERS);
 	memset(m_fSpyLastUncloakedList, 0, sizeof(float) * MAX_PLAYERS);
+	memset(m_SpyAwareness, 0, sizeof(m_SpyAwareness));
 
 	memset(m_iReflectCount, 0, sizeof(m_iReflectCount));
 	memset(m_fNextPyroShotTime, 0, sizeof(m_fNextPyroShotTime));
@@ -1370,6 +1371,17 @@ void CBotFortress::setClass(TF_Class _class)
 
 bool CBotFortress::thinkSpyIsEnemy(edict_t *pEdict, TF_Class iDisguise)
 {
+	int iIdx = ENTINDEX(pEdict) - 1;
+
+	// SUSPECTED spies are not yet confirmed enemies
+	if (iIdx >= 0 && iIdx < MAX_PLAYERS && m_SpyAwareness[iIdx].eLevel == SpyAwareness::SUSPECTED)
+		return false;
+
+	// KNOWN awareness via bump escalation
+	if (iIdx >= 0 && iIdx < MAX_PLAYERS && m_SpyAwareness[iIdx].eLevel == SpyAwareness::KNOWN
+	    && ((engine->Time() - m_SpyAwareness[iIdx].fWhenBecameKnown) < 10.0f))
+		return true;
+
 	return ((m_fSeeSpyTime > engine->Time()) && // if bot is in spy check mode
 	        (m_pPrevSpy == pEdict) &&           // and its the last spy we saw
 	        // and its the same disguise or we last saw the spy just a couple of seconds ago
@@ -1381,6 +1393,32 @@ bool CBotTF2::thinkSpyIsEnemy(edict_t *pEdict, TF_Class iDisguise)
 	return CBotFortress::thinkSpyIsEnemy(pEdict, iDisguise)
 	    || (m_pCloakedSpy && (m_pCloakedSpy == pEdict)
 	        && !CTeamFortress2Mod::TF2_IsPlayerCloaked(m_pCloakedSpy)); // maybe i put him on fire
+}
+
+void CBotFortress::decaySpyAwareness()
+{
+	float fNow = engine->Time();
+
+	for (int i = 0; i < MAX_PLAYERS; i++)
+	{
+		if (m_SpyAwareness[i].eLevel == SpyAwareness::NONE)
+			continue;
+
+		// KNOWN decays to SUSPECTED after 10s without confirmation
+		if (m_SpyAwareness[i].eLevel == SpyAwareness::KNOWN
+		    && (fNow - m_SpyAwareness[i].fWhenBecameKnown) > 10.0f)
+		{
+			m_SpyAwareness[i].eLevel = SpyAwareness::SUSPECTED;
+			m_SpyAwareness[i].fWhenBecameSuspected = fNow;
+		}
+
+		// SUSPECTED decays to NONE after 15s without new bumps
+		if (m_SpyAwareness[i].eLevel == SpyAwareness::SUSPECTED
+		    && (fNow - m_SpyAwareness[i].fWhenBecameSuspected) > 15.0f)
+		{
+			m_SpyAwareness[i].eLevel = SpyAwareness::NONE;
+		}
+	}
 }
 
 bool CBotFortress::isEnemy(edict_t *pEdict, bool bCheckWeapons)
@@ -1566,6 +1604,8 @@ void CBotFortress::modThink()
 			m_pSchedules->addFront(pSchedule);
 		}
 	}
+
+	decaySpyAwareness();
 }
 
 bool CBotFortress::isTeleporterUseful(edict_t *pTele)
@@ -1729,7 +1769,14 @@ void CBotFortress::foundSpy(edict_t *pEdict, TF_Class iDisguise)
 	if (iDisguise && (m_iPrevSpyDisguise != iDisguise))
 		m_iPrevSpyDisguise = iDisguise;
 
-	// m_fFirstSeeSpy = engine->Time(); // to do, add delayed action
+	// Escalate to KNOWN awareness
+	int iIdx = ENTINDEX(pEdict) - 1;
+	if (iIdx >= 0 && iIdx < MAX_PLAYERS)
+	{
+		m_SpyAwareness[iIdx].eLevel              = SpyAwareness::KNOWN;
+		m_SpyAwareness[iIdx].fWhenBecameKnown     = engine->Time();
+		m_SpyAwareness[iIdx].iSuspectDisguise      = iDisguise;
+	}
 };
 
 // got shot by someone
@@ -5573,9 +5620,40 @@ void CBotTF2::checkStuckonSpy(void)
 		// (0.5s initial stuck detection + 0.5s extra)
 		if (CClassInterface::getTF2Class(pStuck) == TF_CLASS_SPY)
 		{
+			int iIdx       = ENTINDEX(pStuck) - 1;
+			float fNow     = engine->Time();
+
+			if (iIdx >= 0 && iIdx < MAX_PLAYERS)
+			{
+				if (m_SpyAwareness[iIdx].eLevel == SpyAwareness::KNOWN)
+				{
+					// Already known — skip escalation
+				}
+				else if (m_SpyAwareness[iIdx].eLevel == SpyAwareness::SUSPECTED)
+				{
+					m_SpyAwareness[iIdx].iBumpCount++;
+
+					// Escalate to KNOWN after 3 bumps
+					if (m_SpyAwareness[iIdx].iBumpCount >= 3)
+					{
+						m_SpyAwareness[iIdx].eLevel          = SpyAwareness::KNOWN;
+						m_SpyAwareness[iIdx].fWhenBecameKnown = fNow;
+					}
+				}
+				else
+				{
+					// First bump — mark as SUSPECTED
+					m_SpyAwareness[iIdx].eLevel                = SpyAwareness::SUSPECTED;
+					m_SpyAwareness[iIdx].fWhenBecameSuspected   = fNow;
+					m_SpyAwareness[iIdx].fWhenLastBumped        = fNow;
+					m_SpyAwareness[iIdx].iBumpCount             = 1;
+					m_SpyAwareness[iIdx].iSuspectDisguise        = CTeamFortress2Mod::getSpyDisguise(pStuck);
+				}
+			}
+
 			if (m_fStuckSpyTime == 0.0f)
-				m_fStuckSpyTime = engine->Time();
-			else if ((m_fStuckSpyTime + 0.5f) < engine->Time())
+				m_fStuckSpyTime = fNow;
+			else if ((m_fStuckSpyTime + 0.5f) < fNow)
 			{
 				foundSpy(pStuck, CTeamFortress2Mod::getSpyDisguise(pStuck));
 				m_pEnemy       = pStuck;

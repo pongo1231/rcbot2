@@ -328,6 +328,7 @@ class CBot
 	}
 
 	void debugMsg(int iLev, const char *szMsg);
+	void debugMsg(const char *szCategory, const char *szMsg);
 
 	virtual unsigned int maxEntityIndex()
 	{
@@ -468,6 +469,7 @@ class CBot
 	virtual bool startGame();
 
 	virtual bool checkStuck();
+	virtual bool checkImmobile();
 
 	virtual void currentlyDead();
 
@@ -1157,6 +1159,12 @@ class CBot
 	float m_fPercentMoved;
 	float m_fFastStuckTime;
 	Vector m_vFastStuckPos;
+
+	// Immobile detection: separate from waypoint-based stuck detection
+	Vector m_vImmobileAnchorPos;
+	float  m_fImmobileAnchorTime;
+	float  m_fImmobileDuration;
+	bool   m_bIsImmobile;
 
 	/////////////////////////////////
 

@@ -870,6 +870,22 @@ class CBotFortress : public CBot
 	float m_fTeleporterExtPlacedTime;
 	unsigned m_iTeleportedPlayers;
 
+	// Spy awareness levels: NONE (unknown), SUSPECTED (bumped/odd behavior), KNOWN (confirmed spy)
+	enum class SpyAwareness { NONE = 0, SUSPECTED = 1, KNOWN = 2 };
+
+	struct SpyTrackEntry
+	{
+		SpyAwareness eLevel;
+		float fWhenBecameSuspected;
+		float fWhenBecameKnown;
+		float fWhenLastBumped;
+		int   iBumpCount;
+		TF_Class iSuspectDisguise;
+	};
+
+	SpyTrackEntry m_SpyAwareness[MAX_PLAYERS];
+	void decaySpyAwareness();
+
 	// List of spies who I saw were attacked by my team-mates recently
 	// for use with spy checking
 	float m_fSpyAttackedList[MAX_PLAYERS];
