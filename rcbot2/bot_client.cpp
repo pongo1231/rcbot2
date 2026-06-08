@@ -1087,6 +1087,13 @@ void CClients::clientDisconnected(edict_t *pPlayer)
 	CClient *pClient = &m_Clients[slotOfEdict(pPlayer)];
 
 	pClient->clientDisconnected();
+
+	for (int b = 0; b < MAX_PLAYERS; b++)
+	{
+		CBot *pBot = CBots::getBot(b);
+		if (pBot && pBot->inUse())
+			pBot->onPlayerDisconnected(pPlayer);
+	}
 }
 
 void CClients::clientThink()

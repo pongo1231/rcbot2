@@ -885,6 +885,7 @@ class CBotFortress : public CBot
 
 	SpyTrackEntry m_SpyAwareness[MAX_PLAYERS];
 	void decaySpyAwareness();
+	void onPlayerDisconnected(edict_t *pPlayer) override;
 
 	// List of spies who I saw were attacked by my team-mates recently
 	// for use with spy checking

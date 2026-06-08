@@ -470,6 +470,7 @@ class CBot
 
 	virtual bool checkStuck();
 	virtual bool checkImmobile();
+	virtual void onPlayerDisconnected(edict_t *pPlayer) {}
 
 	virtual void currentlyDead();
 

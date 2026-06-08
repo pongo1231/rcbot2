@@ -939,6 +939,8 @@ void CBot::think()
 			m_fStuckStartTime = 0.0f;
 
 		checkImmobile();
+		if (m_bIsImmobile)
+			setLookAtTask(LOOK_WAYPOINT, randomFloat(2.0f, 4.0f));
 #ifdef _DEBUG
 	}
 #endif
@@ -954,7 +956,8 @@ void CBot::think()
 		if (rcbot_debug_iglev.GetInt() != 5)
 		{
 #endif
-			getTasks();
+			if (!m_bIsImmobile)
+				getTasks();
 		}
 #ifdef _DEBUG
 	}

@@ -1416,9 +1416,18 @@ void CBotFortress::decaySpyAwareness()
 		if (m_SpyAwareness[i].eLevel == SpyAwareness::SUSPECTED
 		    && (fNow - m_SpyAwareness[i].fWhenBecameSuspected) > 15.0f)
 		{
-			m_SpyAwareness[i].eLevel = SpyAwareness::NONE;
+			m_SpyAwareness[i].eLevel           = SpyAwareness::NONE;
+			m_SpyAwareness[i].iBumpCount        = 0;
+			m_SpyAwareness[i].fWhenLastBumped    = 0.0f;
 		}
 	}
+}
+
+void CBotFortress::onPlayerDisconnected(edict_t *pPlayer)
+{
+	int iIdx = ENTINDEX(pPlayer) - 1;
+	if (iIdx >= 0 && iIdx < MAX_PLAYERS)
+		memset(&m_SpyAwareness[iIdx], 0, sizeof(SpyTrackEntry));
 }
 
 bool CBotFortress::isEnemy(edict_t *pEdict, bool bCheckWeapons)
@@ -5632,7 +5641,8 @@ void CBotTF2::checkStuckonSpy(void)
 				else if (m_SpyAwareness[iIdx].eLevel == SpyAwareness::SUSPECTED)
 				{
 					m_SpyAwareness[iIdx].iBumpCount++;
-					m_SpyAwareness[iIdx].fWhenLastBumped = fNow;
+					m_SpyAwareness[iIdx].fWhenLastBumped       = fNow;
+					m_SpyAwareness[iIdx].fWhenBecameSuspected   = fNow;
 
 					// Escalate to KNOWN after 3 bumps
 					if (m_SpyAwareness[iIdx].iBumpCount >= 3)
