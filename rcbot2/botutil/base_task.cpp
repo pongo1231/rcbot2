@@ -13,7 +13,7 @@ CBotTask::CBotTask()
 
 bool CBotTask::timedOut()
 {
-	return (this->m_fTimeOut != 0) && (engine->Time() < this->m_fTimeOut);
+	return (this->m_fTimeOut != 0) && (engine->Time() > this->m_fTimeOut);
 }
 
 eTaskState CBotTask::isInterrupted(CBot *pBot)

@@ -227,11 +227,20 @@ class CBotSchedules
 		if (isEmpty())
 			return;
 
+		m_bExecuting = true;
+
 		CBotSchedule *pSched = m_Schedules.front().get();
 		pSched->execute(pBot);
 
 		if (pSched->isComplete() || pSched->hasFailed())
 			removeTop();
+
+		m_bExecuting = false;
+		if (m_bDeferredFree)
+		{
+			m_bDeferredFree = false;
+			m_Schedules.clear();
+		}
 	}
 
 	void removeTop()
@@ -241,6 +250,11 @@ class CBotSchedules
 
 	void freeMemory()
 	{
+		if (m_bExecuting)
+		{
+			m_bDeferredFree = true;
+			return;
+		}
 		m_Schedules.clear();
 	}
 
@@ -279,4 +293,6 @@ class CBotSchedules
 
   private:
 	std::deque<std::unique_ptr<CBotSchedule> > m_Schedules;
+	bool m_bExecuting   = false;
+	bool m_bDeferredFree = false;
 };

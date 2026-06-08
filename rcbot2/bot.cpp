@@ -566,8 +566,9 @@ bool CBot::checkStuck()
 				else
 					m_fSideSpeed = -(m_fIdealMoveSpeed / 2);
 
-				/*
-				CTraceFilterWorldAndPropsOnly filter;
+			m_fStrafeTime = engine->Time() + 2.0f;
+/*
+			CTraceFilterWorldAndPropsOnly filter;
 				Vector vOrigin = getOrigin();
 				QAngle v_eyeangles;
 				Vector vForward;
@@ -2320,7 +2321,7 @@ void CBot::doMove()
 			}
 		}
 
-		if ((!onLadder() && !m_pNavigator->nextPointIsOnLadder()) && (fDist < 8.0f))
+		if ((!onLadder() && !m_pNavigator->nextPointIsOnLadder()) && (fDist < 4.0f))
 		{
 			m_fForwardSpeed = 0.0f;
 			m_fSideSpeed    = 0.0f;

@@ -317,12 +317,12 @@ int CWaypointNavigator::getPathFlags(int iPath)
 
 bool CWaypointNavigator::nextPointIsOnLadder()
 {
-	if (m_iCurrentWaypoint != -1)
+	if (!m_currentRoute.empty())
 	{
-		CWaypoint *pWaypoint;
-
-		if ((pWaypoint = CWaypoints::getWaypoint(m_iCurrentWaypoint)) != nullptr)
-			return pWaypoint->hasFlag(CWaypointTypes::W_FL_LADDER);
+		int iNextWpt = m_currentRoute.top();
+		CWaypoint *pWpt = CWaypoints::getWaypoint(iNextWpt);
+		if (pWpt)
+			return pWpt->hasFlag(CWaypointTypes::W_FL_LADDER);
 	}
 
 	return false;
@@ -2018,7 +2018,6 @@ void CWaypoint::init()
 	m_thePaths.clear();
 	m_iArea                = 0;
 	m_fRadius              = 0;
-	m_bUsed                = true;
 	m_fNextCheckGroundTime = 0;
 	m_bHasGround           = false;
 	m_fRadius              = 0;

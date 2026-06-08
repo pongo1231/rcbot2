@@ -10766,7 +10766,7 @@ void CBotTF2::modAim(edict_t *pEntity, Vector &v_origin, Vector *v_desired_offse
 
 				if ((sv_gravity.IsValid()) && bIsGrenade)
 					v_desired_offset->z +=
-					    ((pow(2, fTime) - 1.0f) * (sv_gravity.GetFloat() * 0.1f)); // - (getOrigin().z - v_origin.z);
+					    (0.5f * sv_gravity.GetFloat() * fTime * fTime); // - (getOrigin().z - v_origin.z);
 
 				/*if ((pWp->getID() == TF2_WEAPON_GRENADELAUNCHER) && hasSomeConditions(CONDITION_SEE_ENEMY_GROUND))
 				    v_desired_offset->z -= randomFloat(8.0f, 32.0f); // aim for ground - with grenade launcher
