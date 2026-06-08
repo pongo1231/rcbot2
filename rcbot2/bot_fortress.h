@@ -1201,6 +1201,8 @@ class CBotTF2 : public CBotFortress
 	void collectSentrySpots(const Vector &vCentroid, std::vector<CWaypoint *> &candidates);
 	float scoreSentrySpot(CWaypoint *pWpt, const Vector &vCentroid);
 
+	std::vector<CWaypoint *> m_SentryCandidates;
+
 	void handleSpecialAbilities();
 
 	float MvmTargetPriority(edict_t *pEnemy);

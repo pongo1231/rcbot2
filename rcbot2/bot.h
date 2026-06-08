@@ -361,6 +361,16 @@ class CBot
 		Vector vMe = getOrigin();
 		return (vOrigin - vMe).Length();
 	}
+	inline float distanceFromSqr(Vector vOrigin)
+	{
+		Vector vMe = getOrigin();
+		return (vOrigin - vMe).LengthSqr();
+	}
+	inline float distanceFromSqr2D(Vector vOrigin)
+	{
+		Vector vMe = getOrigin();
+		return (vOrigin - vMe).Length2DSqr();
+	}
 	inline float distanceFrom(edict_t *pEntity)
 	{
 		if (!pEntity) return 9999.0f;

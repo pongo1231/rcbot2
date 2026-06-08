@@ -2270,6 +2270,7 @@ void CBotTF2::collectSentrySpots(const Vector &vCentroid, std::vector<CWaypoint 
 	static const float TOO_FAR_BELOW     = 150.0f;
 	static const float RANGE_TOLERANCE   = 1.1f;
 	static const float MAX_SENTRY_RANGE  = (float)TF2_MAX_SENTRYGUN_RANGE * RANGE_TOLERANCE;
+	static const float MAX_SENTRY_RANGE_SQR = MAX_SENTRY_RANGE * MAX_SENTRY_RANGE;
 
 	CTraceFilterWorldAndPropsOnly filter;
 	candidates.clear();
@@ -2298,8 +2299,8 @@ void CBotTF2::collectSentrySpots(const Vector &vCentroid, std::vector<CWaypoint 
 			continue;
 
 		// Range gate: within sentry range of the point
-		float fDist = (vOrigin - vCentroid).Length();
-		if (fDist > MAX_SENTRY_RANGE)
+		float fDistSqr = (vOrigin - vCentroid).LengthSqr();
+		if (fDistSqr > MAX_SENTRY_RANGE_SQR)
 			continue;
 
 		// Line-of-fire trace: can the sentry see the point?
@@ -9228,14 +9229,13 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			Vector vCentroid;
 			if (getObjectiveCentroid(&vCentroid))
 			{
-				std::vector<CWaypoint *> candidates;
-				collectSentrySpots(vCentroid, candidates);
+				collectSentrySpots(vCentroid, m_SentryCandidates);
 
-				if (!candidates.empty())
+				if (!m_SentryCandidates.empty())
 				{
 					CWaypoint *pBest = nullptr;
 					float fBest      = 0.0f;
-					for (auto *pW : candidates)
+					for (auto *pW : m_SentryCandidates)
 					{
 						float fScore = scoreSentrySpot(pW, vCentroid);
 						if (fScore > fBest) { fBest = fScore; pBest = pW; }
@@ -9375,9 +9375,10 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			CWaypoint *pWpt = CWaypoints::getWaypoint(i);
 			if (!pWpt || !pWpt->isUsed()) continue;
 			Vector vWpt = pWpt->getOrigin();
-			float fDot = (vWpt - getOrigin()).Dot(getOrigin()); // crude "enemy direction"
-			float fDist = (vWpt - getOrigin()).Length();
-			if (fDist > fBestDist && fDist < 4000.0f)
+			float fDistSqr = (vWpt - getOrigin()).LengthSqr();
+			if (fDistSqr > 4000.0f * 4000.0f) continue;
+			float fDist = sqrtf(fDistSqr);
+			if (fDist > fBestDist)
 			{
 				// Prefer waypoints with higher traversal counts
 				fBestDist = fDist + pWpt->getTraversalCount() * 10.0f;
@@ -9489,11 +9490,11 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 					if (!pE2 || pE2 == pEd || !CBotGlobals::entityIsValid(pE2)
 					    || !CBotGlobals::entityIsAlive(pE2)) continue;
 					if (CTeamFortress2Mod::getTeam(pE2) != CTeamFortress2Mod::getTeam(pEd)) continue;
-					float fD2 = (CBotGlobals::entityOrigin(pE2) - CBotGlobals::entityOrigin(pEd)).Length();
-					if (fD2 < 500.0f)
+					float fD2Sqr = (CBotGlobals::entityOrigin(pE2) - CBotGlobals::entityOrigin(pEd)).LengthSqr();
+					if (fD2Sqr < 250000.0f) // 500²
 					{
 						bIsolated = false;
-						if (fD2 < 300.0f) bDistracted = true;
+						if (fD2Sqr < 90000.0f) bDistracted = true; // 300²
 					}
 				}
 
