@@ -636,6 +636,7 @@ bool CBot::checkImmobile()
 {
 	if (!CBotGlobals::entityIsAlive(m_pEdict)) return false;
 	if (hasEnemy()) return false;
+	if (!moveToIsValid()) return false;
 
 	if (!NavMeshUtil::IsOnWalkableGround(getOrigin()))
 	{
