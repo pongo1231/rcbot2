@@ -1649,11 +1649,11 @@ void CBotFortress::modThink()
 					return;
 				}
 			}
-			else
-			{
-		// Walking is faster — leave queue
-		clearTeleporterQueueState();
-			}
+		else
+		{
+			// Walking is faster — leave queue
+			clearTeleporterQueueState();
+		}
 		}
 	}
 
@@ -1735,7 +1735,9 @@ bool CBotFortress::teleporterWalkVsWaitTime(edict_t *pTele, float *fWaitSec, flo
 	if (!pExit || CTeamFortress2Mod::isTeleporterSapped(pTele)
 	    || CTeamFortress2Mod::isTeleporterSapped(pExit)
 	    || CClassInterface::isObjectBeingBuilt(pExit)
-	    || CClassInterface::isObjectBeingBuilt(pTele))
+	    || CClassInterface::isObjectBeingBuilt(pTele)
+	    || CClassInterface::isObjectCarried(pExit)
+	    || CClassInterface::isObjectCarried(pTele))
 	{
 		*fWaitSec = *fRunSec = 0.0f;
 		return false;
