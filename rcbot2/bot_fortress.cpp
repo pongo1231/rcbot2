@@ -11955,10 +11955,10 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 					bool bNoPrimary = !pGrenadeLauncher || !pGrenadeLauncher->hasWeapon()
 					                  || pGrenadeLauncher->outOfAmmo(this);
 
-					if (bNoPrimary
+				if (bNoPrimary && pStickyLauncher && pStickyLauncher->hasWeapon()
 					    && fDistance > 128.0f
 					    && fDistance < pStickyLauncher->getPrimaryMaxRange())
-						handleStickyCombat(pStickyLauncher, pGrenadeLauncher, fDistance, false);
+					handleStickyCombat(pStickyLauncher, pGrenadeLauncher, fDistance, false);
 				}
 			}
 			else if (m_iClass == TF_CLASS_PYRO)
@@ -12220,7 +12220,7 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 				}
 			}
 			// Fallback: grenade launcher is dry, use sticky as primary
-			else if (bNoPrimary && !pWeapon->isMelee()
+			else if (bNoPrimary && bStickyReady && !pWeapon->isMelee()
 			    && fDistance > 128.0f
 			    && fDistance < pStickyLauncher->getPrimaryMaxRange())
 			{
