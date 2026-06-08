@@ -4767,15 +4767,33 @@ void CBotTF2::modThink()
 		{
 			if (rcbot_tf2_debug_spies_cloakdisguise.GetBool() && (m_fSpyDisguiseTime < engine->Time()))
 			{
-				// if previously detected or isn't disguised
-				if ((m_fDisguiseTime == 0.0f) || !isDisguised())
-				{
-					int iteam = CTeamFortress2Mod::getEnemyTeam(getTeam());
+			// if previously detected or isn't disguised -- redisguise out of sight
+			if ((m_fDisguiseTime == 0.0f) || !isDisguised())
+			{
+				bool bShouldDisguise = true;
 
-					spyDisguise(iteam, getSpyDisguiseClass(iteam));
+				// If detected, only redisguise when no enemies can see
+				if (m_fDisguiseTime == 0.0f)
+				{
+					for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+					{
+						edict_t *pEd = INDEXENT(i);
+						if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+						if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam) continue;
+						if (distanceFrom(pEd) < 800.0f && isVisible(pEd))
+							{ bShouldDisguise = false; break; }
+					}
 				}
 
+			if (bShouldDisguise)
+			{
+				int iteam = CTeamFortress2Mod::getEnemyTeam(getTeam());
+				spyDisguise(iteam, getSpyDisguiseClass(iteam));
 				m_fSpyDisguiseTime = engine->Time() + 5.0f;
+			}
+			else
+				m_fSpyDisguiseTime = engine->Time() + 2.0f; // watched -- recheck soon
+		}
 			}
 
 			bIsCloaked = CTeamFortress2Mod::TF2_IsPlayerCloaked(m_pEdict);
@@ -4996,6 +5014,28 @@ void CBotTF2::modThink()
 			{
 				int iDClass, iDTeam, iDIndex, iDHealth;
 				CClassInterface::getTF2SpyDisguised(m_pEdict, &iDClass, &iDTeam, &iDIndex, &iDHealth);
+
+				// Avoid the specific player we're disguised as -- dead giveaway
+				if (iDIndex > 0 && !CTeamFortress2Mod::isMapType(TF_MAP_MVM))
+				{
+					edict_t *pDisguisedAs = INDEXENT(iDIndex);
+					if (pDisguisedAs && CBotGlobals::entityIsValid(pDisguisedAs)
+					    && CBotGlobals::entityIsAlive(pDisguisedAs))
+					{
+						float fDist = distanceFrom(pDisguisedAs);
+						if (fDist < 400.0f)
+						{
+							Vector vAway = getOrigin() - CBotGlobals::entityOrigin(pDisguisedAs);
+							vAway.z = 0;
+							if (vAway.Length() > 0.1f)
+							{
+								vAway = vAway / vAway.Length();
+								setMoveTo(getOrigin() + vAway * 256.0f);
+							}
+						}
+					}
+				}
+
 				for (int i = 1; i <= CBotGlobals::maxClients(); i++)
 				{
 					edict_t *pEd = INDEXENT(i);
@@ -5047,10 +5087,35 @@ void CBotTF2::modThink()
 					}
 				}
 				break;
-				default:
-					break;
-				}
+			default:
+				break;
+			}
+
+			// Don't walk in a group of friendly bots toward enemies -- gives away the disguise
+			if (!CTeamFortress2Mod::isMapType(TF_MAP_MVM))
+			{
+				int iNearbyFriendlies = 0;
 				for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+				{
+					edict_t *pEd = INDEXENT(i);
+					if (!pEd || pEd == m_pEdict || !CBotGlobals::entityIsValid(pEd)
+					    || !CBotGlobals::entityIsAlive(pEd)) continue;
+					if (CTeamFortress2Mod::getTeam(pEd) != getTeam()) continue;
+					if (distanceFrom(pEd) < 300.0f) iNearbyFriendlies++;
+				}
+				if (iNearbyFriendlies >= 2)
+				{
+					// Break away from the pack -- pick a random perpendicular direction
+					Vector vPerp(randomFloat(-1, 1), randomFloat(-1, 1), 0);
+					if (vPerp.Length() > 0.1f)
+					{
+						vPerp = vPerp / vPerp.Length();
+						setMoveTo(getOrigin() + vPerp * 256.0f);
+					}
+				}
+			}
+
+			for (int i = 1; i <= CBotGlobals::maxClients(); i++)
 				{
 					edict_t *pEd = INDEXENT(i);
 					if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
