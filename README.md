@@ -30,6 +30,12 @@ general RCBot2 support.
 - Organic objective guarding: turn-taking patrols near flags and capture points, theft escalation scaling defense weight after flag steals, flank-route security detecting which exit the thief used, unguarded detection filling gaps when nobody is near the objective
 - Crash stack traces with backtrace and symbol resolution on SIGSEGV/SIGABRT
 - Null guard defenses across entity access and handle comparison code to prevent server crashes
+- Teammate personal space: bots spread out to ~80-unit radius, sidestep away instead of blending into each other during guarding, messing around, and setup
+- Mess-around overhaul: stationary types now wander aimlessly with ring-pattern movement; bots join nearby bots or human players already messing around via social detection; interact primarily with whoever inspired them; clean idle jumps replace glitchy crouch-hopping
+- Projectile dodge improvements: supports multiple simultaneous projectiles, trace-validated dodge destinations to avoid walls, gravity-compensated prediction for arcing pipe grenades, bots no longer dodge their own projectiles
+- Pyro reflection adaptation: bots firing explosives at a close-range Pyro stagger their shots with random delays that escalate as more projectiles get reflected; resets when the Pyro changes class
+- Build system: upgraded to AMBuild 2.2 and adopted hl2sdk-manifests for SDK configuration
+- Pathing and aiming fixes: corrected projectile gravity formula in aim prediction, unsticking strafe now persists, waypoint initialization fixed for runtime addition, ladder waypoint detection corrected, schedule use-after-free guard added, task timeout direction fixed
 
 ### Classes
 
@@ -39,20 +45,31 @@ general RCBot2 support.
 - Ignites friendly sniper bow arrows with a brief flame puff at close range, out of combat
 - Active extinguish: moves toward burning allies, uses manmelter as preference
 
+#### Soldier
+- Beggar's Bazooka: clip-aware load/release cycle watches actual loaded rockets and fires at 3, preventing overload self-damage regardless of reload speed attributes
+
 #### Engineer
 - Rescue Ranger remote repair and ranged sentry pickup with correct timing
 - Frontline-aware building placement near the bomb path
 - Sentry engagement and awareness: overheal aggression, team broadcast of sentry positions
 - Responds to player voice commands for dispenser, teleporter, and sentry placement
+- Gunslinger: mini sentries now correctly tracked; aggressive forward placement with heavier proximity weighting and lower metal threshold; always buildable regardless of team dominance
+- Wrangler: only activates when the sentry has ammo and a valid target in range; uses continuous hold for sustained shield instead of flickering tap; unequips when useless
+- Sentry intel: team-wide sentry position sharing with 30-second expiry; bots avoid known sentry positions even without line-of-sight; any ranged weapon can now attack sentries
 
 #### Medic
 - Smart positioning: far side of patient from enemies, wall cover, crouching
 - Projectile dodging while healing
 - Crusader's Crossbow: fires healing bolts at distant low-HP teammates with lead prediction
+- Syringe gun medics now use melee at close range via a minimum range gate, matching crossbow behavior
 
 #### Spy
 - Backstab with flank approach positioning, scaled for giant enemies
 - Medic bait: injured disguised spies call medic to lure enemy medics, then backstab
+- Context-aware disguises: picks disguise class based on location context -- backline, near sentry nests, or frontlines; redisguises only when out of enemy sight
+- Blend-in: spies adopt class-appropriate idle posture; sidestep away from the specific player they are disguised as; break away from friendly packs to avoid giving away their disguise; use LOOK_AROUND instead of staring at enemies
+- Infiltrate and lurk: cloaks before pathing into enemy territory; lurks disguised in the backline to observe patterns and strike isolated or distracted high-value targets; cloak is reserved for infiltration, damage escape, and sap tasks -- lurk always stays blended in
+- Opportunistic striking: engineers near buildings prioritized for stabs before sapping; sentries sapped before other buildings; backstabs on high-value isolated targets
 
 ### Gamemodes
 
@@ -99,7 +116,7 @@ functionality to access certain functionality of the RCBot2 plugin via SourceMod
 2. Build the RCBot2 package, or [download the most recent automated build][autobuild].
     - For the latter, `package.tar.gz` is the Linux build; `package.zip` is the Windows build.
     - Automated builds are compiled with support for SourceMod native bindings.
-    - The automated build uses Ubuntu 20.04 LTS as the Linux build runner &mdash; RCBot2 will
+    - The automated build uses Ubuntu latest LTS as the Linux build runner &mdash; RCBot2 will
     fail to load on older Linux distributions with an error resembling
     `` version `GLIBC_2.xx' not found ``.
     - If you get something like `` version `GLIBC_3.4.20' not found `` instead, your game likely
