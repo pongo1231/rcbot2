@@ -2294,6 +2294,11 @@ void CBotTF2::collectSentrySpots(const Vector &vCentroid, std::vector<CWaypoint 
 		if (pW->hasFlag(CWaypointTypes::W_FL_CAPPOINT))
 			continue;
 
+		// Restrict to the bot's current objective areas
+		int iArea = pW->getArea();
+		if (iArea > 0 && iArea != m_iCurrentAttackArea && iArea != m_iCurrentDefendArea)
+			continue;
+
 		// Z-axis filter: don't build too far below the point
 		if (vOrigin.z < vCentroid.z - TOO_FAR_BELOW)
 			continue;
@@ -9233,35 +9238,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 
 		if (pWaypoint == nullptr)
 		{
-			// Auto-compute: scan all waypoints for sentry-viable positions
-			// using line-of-fire traces to the objective point.
-			// Works on maps with no manually placed W_FL_SENTRY waypoints.
-			Vector vCentroid;
-			if (getObjectiveCentroid(&vCentroid))
-			{
-				collectSentrySpots(vCentroid, m_SentryCandidates);
-
-				if (!m_SentryCandidates.empty())
-				{
-					CWaypoint *pBest = nullptr;
-					float fBest      = 0.0f;
-					for (auto *pW : m_SentryCandidates)
-					{
-						float fScore = scoreSentrySpot(pW, vCentroid);
-						if (fScore > fBest) { fBest = fScore; pBest = pW; }
-					}
-
-					if (pBest)
-					{
-						pBest->addFlag(CWaypointTypes::W_FL_SENTRY);
-						pWaypoint = pBest;
-					}
-				}
-			}
-
-			if (pWaypoint == nullptr)
-			{
-				if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
+			if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
 			{
 				pWaypoint = CTeamFortress2Mod::getBestWaypointMVM(this, CWaypointTypes::W_FL_SENTRY);
 				/*
@@ -9298,7 +9275,32 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 					                                           true, WPT_SEARCH_AVOID_SENTRIES, m_iLastFailSentryWpt);
 				}
 			}
-		}
+
+			if (pWaypoint == nullptr)
+			{
+				// Auto-compute fallback: scan all waypoints for sentry-viable
+				// positions using line-of-fire traces to the objective point.
+				// Only runs when the area-filtered W_FL_SENTRY search fails.
+				Vector vCentroid;
+				if (getObjectiveCentroid(&vCentroid))
+				{
+					collectSentrySpots(vCentroid, m_SentryCandidates);
+
+					if (!m_SentryCandidates.empty())
+					{
+						CWaypoint *pBest = nullptr;
+						float fBest      = 0.0f;
+						for (auto *pW : m_SentryCandidates)
+						{
+							float fScore = scoreSentrySpot(pW, vCentroid);
+							if (fScore > fBest) { fBest = fScore; pBest = pW; }
+						}
+
+						if (pBest)
+							pWaypoint = pBest;
+					}
+				}
+			}
 		}
 
 		if (pWaypoint)
