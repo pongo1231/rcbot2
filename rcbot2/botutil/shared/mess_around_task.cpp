@@ -4,8 +4,6 @@
 #include "bot_getprop.h"
 #include "bot_globals.h"
 #include "bot_weapons.h"
-#include "bot_waypoint.h"
-#include "bot_waypoint_locations.h"
 
 CMessAround::CMessAround(edict_t *pFriendly, int iMaxVoiceCmd)
 {
@@ -113,19 +111,14 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			float fMinInterval = 1.0f;
 			float fMaxInterval = 2.0f;
 
-			// At spawn, use longer distances and intervals to break out of tight areas
-			int iNearest = CWaypointLocations::NearestWaypoint(pBot->getOrigin(), 256.0f, -1);
-			if (iNearest >= 0)
-			{
-				CWaypoint *pWpt = CWaypoints::getWaypoint(iNearest);
-				if (pWpt && pWpt->getArea() == 0)
-				{
-					fMinDist     = 400.0f;
-					fMaxDist     = 800.0f;
-					fMinInterval = 3.0f;
-					fMaxInterval = 5.0f;
-				}
-			}
+		// Haven't been hurt recently — safe area, longer wanders to break out of tight clusters
+		if (!pBot->recentlyHurt(30.0f))
+		{
+			fMinDist     = 400.0f;
+			fMaxDist     = 800.0f;
+			fMinInterval = 3.0f;
+			fMaxInterval = 5.0f;
+		}
 
 			float fAngle = randomFloat(0, M_PI * 2);
 			float fDist  = randomFloat(fMinDist, fMaxDist);
@@ -157,19 +150,14 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			float fMinInterval = 1.0f;
 			float fMaxInterval = 2.0f;
 
-			// At spawn, use longer distances and intervals to break out of tight areas
-			int iNearest = CWaypointLocations::NearestWaypoint(pBot->getOrigin(), 256.0f, -1);
-			if (iNearest >= 0)
-			{
-				CWaypoint *pWpt = CWaypoints::getWaypoint(iNearest);
-				if (pWpt && pWpt->getArea() == 0)
-				{
-					fMinDist     = 400.0f;
-					fMaxDist     = 800.0f;
-					fMinInterval = 3.0f;
-					fMaxInterval = 5.0f;
-				}
-			}
+		// Haven't been hurt recently — safe area, longer wanders to break out of tight clusters
+		if (!pBot->recentlyHurt(30.0f))
+		{
+			fMinDist     = 400.0f;
+			fMaxDist     = 800.0f;
+			fMinInterval = 3.0f;
+			fMaxInterval = 5.0f;
+		}
 
 			float fAngle = randomFloat(0, M_PI * 2);
 			float fDist  = randomFloat(fMinDist, fMaxDist);
@@ -205,19 +193,14 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			float fMinInterval = 1.0f;
 			float fMaxInterval = 2.0f;
 
-			// At spawn, use longer distances and intervals to break out of tight areas
-			int iNearest = CWaypointLocations::NearestWaypoint(pBot->getOrigin(), 256.0f, -1);
-			if (iNearest >= 0)
-			{
-				CWaypoint *pWpt = CWaypoints::getWaypoint(iNearest);
-				if (pWpt && pWpt->getArea() == 0)
-				{
-					fMinDist     = 400.0f;
-					fMaxDist     = 800.0f;
-					fMinInterval = 3.0f;
-					fMaxInterval = 5.0f;
-				}
-			}
+		// Haven't been hurt recently — safe area, longer wanders to break out of tight clusters
+		if (!pBot->recentlyHurt(30.0f))
+		{
+			fMinDist     = 400.0f;
+			fMaxDist     = 800.0f;
+			fMinInterval = 3.0f;
+			fMaxInterval = 5.0f;
+		}
 
 			float fAngle = randomFloat(0, M_PI * 2);
 			float fDist  = randomFloat(fMinDist, fMaxDist);
@@ -356,19 +339,14 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			float fMinInterval = 1.0f;
 			float fMaxInterval = 2.0f;
 
-			// At spawn, use longer distances and intervals to break out of tight areas
-			int iNearest = CWaypointLocations::NearestWaypoint(pBot->getOrigin(), 256.0f, -1);
-			if (iNearest >= 0)
-			{
-				CWaypoint *pWpt = CWaypoints::getWaypoint(iNearest);
-				if (pWpt && pWpt->getArea() == 0)
-				{
-					fMinDist     = 400.0f;
-					fMaxDist     = 800.0f;
-					fMinInterval = 3.0f;
-					fMaxInterval = 5.0f;
-				}
-			}
+		// Haven't been hurt recently — safe area, longer wanders to break out of tight clusters
+		if (!pBot->recentlyHurt(30.0f))
+		{
+			fMinDist     = 400.0f;
+			fMaxDist     = 800.0f;
+			fMinInterval = 3.0f;
+			fMaxInterval = 5.0f;
+		}
 
 			float fAngle = randomFloat(0, M_PI * 2);
 			float fDist  = randomFloat(fMinDist, fMaxDist);
@@ -414,19 +392,14 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			float fMinInterval = 1.0f;
 			float fMaxInterval = 2.0f;
 
-			// At spawn, use longer distances and intervals to break out of tight areas
-			int iNearest = CWaypointLocations::NearestWaypoint(pBot->getOrigin(), 256.0f, -1);
-			if (iNearest >= 0)
-			{
-				CWaypoint *pWpt = CWaypoints::getWaypoint(iNearest);
-				if (pWpt && pWpt->getArea() == 0)
-				{
-					fMinDist     = 400.0f;
-					fMaxDist     = 800.0f;
-					fMinInterval = 3.0f;
-					fMaxInterval = 5.0f;
-				}
-			}
+		// Haven't been hurt recently — safe area, longer wanders to break out of tight clusters
+		if (!pBot->recentlyHurt(30.0f))
+		{
+			fMinDist     = 400.0f;
+			fMaxDist     = 800.0f;
+			fMinInterval = 3.0f;
+			fMaxInterval = 5.0f;
+		}
 
 			float fAngle = randomFloat(0, M_PI * 2);
 			float fDist  = randomFloat(fMinDist, fMaxDist);
@@ -471,19 +444,14 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			float fMinInterval = 1.0f;
 			float fMaxInterval = 2.0f;
 
-			// At spawn, use longer distances and intervals to break out of tight areas
-			int iNearest = CWaypointLocations::NearestWaypoint(pBot->getOrigin(), 256.0f, -1);
-			if (iNearest >= 0)
-			{
-				CWaypoint *pWpt = CWaypoints::getWaypoint(iNearest);
-				if (pWpt && pWpt->getArea() == 0)
-				{
-					fMinDist     = 400.0f;
-					fMaxDist     = 800.0f;
-					fMinInterval = 3.0f;
-					fMaxInterval = 5.0f;
-				}
-			}
+		// Haven't been hurt recently — safe area, longer wanders to break out of tight clusters
+		if (!pBot->recentlyHurt(30.0f))
+		{
+			fMinDist     = 400.0f;
+			fMaxDist     = 800.0f;
+			fMinInterval = 3.0f;
+			fMaxInterval = 5.0f;
+		}
 
 			float fAngle = randomFloat(0, M_PI * 2);
 			float fDist  = randomFloat(fMinDist, fMaxDist);

@@ -3546,7 +3546,7 @@ void CBotTF2::handleSpecialAbilities()
 			// No point holding the Wrangler — unequip and release the button
 			m_pButtons->letGo(IN_ATTACK2);
 			CBotWeapon *pWrench = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_WRENCH));
-			if (pWrench && pWrench->hasWeapon())
+			if (pWrench && pWrench->hasWeapon() && getCurrentWeapon() != pWrench)
 				select_CWeapon(pWrench->getWeaponInfo());
 		}
 	}
@@ -4052,10 +4052,12 @@ void CBotTF2::modThink()
 				if ((vDest - vOrigin).Length2D() > 10.0f)
 				{
 					setMoveTo(vDest);
-					m_fStrafeTime = engine->Time() + 0.2f;
-					m_fSideSpeed  = (vDodge.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed;
-				}
-			}
+			m_fStrafeTime = engine->Time() + 0.2f;
+			m_fSideSpeed  = (vDodge.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed;
+		}
+	}
+	else
+		m_fStrafeTime = engine->Time() + 0.3f;
 		}
 	}
 
@@ -4175,7 +4177,7 @@ void CBotTF2::modThink()
 				{
 					CBotWeapon *pWrench = m_pWeapons->getWeapon(
 					    CWeapons::getWeapon(TF2_WEAPON_WRENCH));
-					if (pWrench && pWrench->hasWeapon())
+			if (pWrench && pWrench->hasWeapon() && getCurrentWeapon() != pWrench)
 					{
 						select_CWeapon(pWrench->getWeaponInfo());
 						secondaryAttack();
@@ -4780,7 +4782,7 @@ void CBotTF2::modThink()
 	case TF_CLASS_SPY:
 		if (!hasFlag())
 		{
-			if (rcbot_tf2_debug_spies_cloakdisguise.GetBool() && (m_fSpyDisguiseTime < engine->Time()))
+			if (m_fSpyDisguiseTime < engine->Time())
 			{
 			// if previously detected or isn't disguised -- redisguise out of sight
 			if ((m_fDisguiseTime == 0.0f) || !isDisguised())
@@ -6391,10 +6393,12 @@ bool CBotTF2::healPlayer()
 				}
 
 				setMoveTo(vDest);
-					m_fStrafeTime = engine->Time() + 0.2f;
-					m_fSideSpeed  = (vDodge.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed;
-				}
-			}
+			m_fStrafeTime = engine->Time() + 0.2f;
+			m_fSideSpeed  = (vDodge.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed;
+		}
+	}
+	else
+		m_fStrafeTime = engine->Time() + 0.3f;
 		}
 
 		if (!pWeap || !pWeap->getWeaponInfo())
@@ -11483,10 +11487,12 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 				}
 
 				setMoveTo(vDest);
-					m_fStrafeTime = engine->Time() + 0.2f;
-					m_fSideSpeed  = (vDodge.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed;
-				}
-			}
+			m_fStrafeTime = engine->Time() + 0.2f;
+			m_fSideSpeed  = (vDodge.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed;
+		}
+	}
+	else
+		m_fStrafeTime = engine->Time() + 0.3f;
 		}
 
 		// Demoman: use sticky launcher as combat weapon when grenade launcher is dry
