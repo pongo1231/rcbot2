@@ -2458,6 +2458,8 @@ void CBotTF2::died(edict_t *pKiller, const char *pszWeapon)
 		{
 			m_pLastEnemySentry = pKiller;
 			addKnownSentry(pKiller);
+			CTeamFortress2Mod::updateFocusPoint(
+			    CBotGlobals::entityOrigin(pKiller), false, true);
 		}
 		}
 	}
@@ -2621,6 +2623,9 @@ void CBotTF2::seeFriendlyDie(edict_t *pDied, edict_t *pKiller, CWeapon *pWeapon)
 			if (CTeamFortress2Mod::getMySentryGun(pKiller))
 				addKnownSentry(CTeamFortress2Mod::getMySentryGun(pKiller));
 
+			CTeamFortress2Mod::updateFocusPoint(
+			    CBotGlobals::entityOrigin(pKiller), false, true);
+
 			if ((m_iClass == TF_CLASS_DEMOMAN) || (m_iClass == TF_CLASS_SPY))
 			{
 				// perhaps pipe it!
@@ -2684,6 +2689,10 @@ void CBotTF2::addKnownSentry(edict_t *pSentry)
 
 	// Share the sentry position team-wide
 	CTeamFortress2Mod::addTeamKnownSentry(CBotGlobals::entityOrigin(pSentry));
+
+	// Nest density: feed into focus point system for coordinated pushes
+	CTeamFortress2Mod::updateFocusPoint(
+	    CBotGlobals::entityOrigin(pSentry), true, false);
 }
 
 void CBotTF2::addKnownEnemyTeleporter(edict_t *pTele)
@@ -7478,6 +7487,33 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			fGetFlagUtility = 0.0f;
 	}
 
+	// Push-window class modulation: boost attack utilities near sapped nests
+	{
+		CTeamFortress2Mod::TeamFocusPoint *pF =
+		    CTeamFortress2Mod::getNearestFocusPoint(getOrigin(), 1500.0f);
+		if (pF && pF->bSapComplete)
+		{
+			switch (m_iClass)
+			{
+			case TF_CLASS_DEMOMAN:
+				fGetFlagUtility += 0.2f;
+				break;
+			case TF_CLASS_SOLDIER:
+			case TF_CLASS_HWGUY:
+				fGetFlagUtility *= 1.2f;
+				break;
+			case TF_CLASS_PYRO:
+				fGetFlagUtility *= 1.1f;
+				break;
+			case TF_CLASS_MEDIC:
+				fGetFlagUtility += 0.3f;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
 	fDefendFlagUtility = bot_defrate.GetFloat() / 4;
 
 	if ((m_iClass == TF_CLASS_HWGUY) || (m_iClass == TF_CLASS_DEMOMAN) || (m_iClass == TF_CLASS_SOLDIER)
@@ -7854,7 +7890,18 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		bool bCanAttack = (m_iClass != TF_CLASS_SPY) && (bCanLongRange || bCanShortRange);
 		float fRangeFactor = bCanLongRange ? 1.0f : 0.6f;
 
-		ADD_UTILITY_DATA(BOT_UTIL_ATTACK_SENTRY, bCanAttack, fSentryUtil * fRangeFactor,
+		// Push-window boost: coordinate attack when sentry nest has been sapped
+		float fPushBoost = 1.0f;
+		{
+			CTeamFortress2Mod::TeamFocusPoint *pF =
+			    CTeamFortress2Mod::getNearestFocusPoint(
+			        CBotGlobals::entityOrigin(pSentryTarget), 400.0f);
+			if (pF && pF->bSapComplete)
+				fPushBoost = 1.3f;
+		}
+
+		ADD_UTILITY_DATA(BOT_UTIL_ATTACK_SENTRY, bCanAttack,
+		                 fSentryUtil * fRangeFactor * fPushBoost,
 		                 ENTINDEX(pSentryTarget));
 
 		// Nest destruction: attack known enemy teleporters near our vital points
@@ -8111,27 +8158,43 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		                && ((m_pEnemy && CBotGlobals::isAlivePlayer(m_pEnemy))
 		                    || (m_pLastEnemy && CBotGlobals::isAlivePlayer(m_pLastEnemy))),
 		            fGetFlagUtility + (getHealthPercent() / 10)
-		                + (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
-		                    && CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict) ? 2.0f : 0.0f)
-		                + (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && m_pEnemy
-		                    ? MvmTargetPriority(m_pEnemy) : 0.0f));
+		            + (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && m_pEnemy
+		                ? MvmTargetPriority(m_pEnemy) : 0.0f));
+
+		// Boost sap utility near active focus points (coordinated sabotage)
+		float fSapBoost = 1.0f;
+		{
+			Vector vCheck;
+			if (m_pEnemy && CTeamFortress2Mod::isSentry(m_pEnemy,
+			        CTeamFortress2Mod::getEnemyTeam(m_iTeam)))
+				vCheck = CBotGlobals::entityOrigin(m_pEnemy);
+			else if (m_pNearestEnemySentry.get())
+				vCheck = CBotGlobals::entityOrigin(m_pNearestEnemySentry);
+			else if (m_pLastEnemySentry.get())
+				vCheck = CBotGlobals::entityOrigin(m_pLastEnemySentry);
+
+			CTeamFortress2Mod::TeamFocusPoint *pF =
+			    CTeamFortress2Mod::getNearestFocusPoint(vCheck, 400.0f);
+			if (pF && !pF->bSapComplete)
+				fSapBoost = 1.5f;
+		}
 
 		ADD_UTILITY(BOT_UTIL_SAP_ENEMY_SENTRY,
 		            m_pEnemy && CTeamFortress2Mod::isSentry(m_pEnemy, CTeamFortress2Mod::getEnemyTeam(iTeam))
 		                && !CTeamFortress2Mod::isSentrySapped(m_pEnemy),
-		            fGetFlagUtility + (getHealthPercent() / 5));
+		            (fGetFlagUtility + (getHealthPercent() / 5)) * fSapBoost);
 
 		ADD_UTILITY(BOT_UTIL_SAP_NEAREST_SENTRY,
 		            m_pNearestEnemySentry && !CTeamFortress2Mod::isSentrySapped(m_pNearestEnemySentry),
-		            fGetFlagUtility + (getHealthPercent() / 5));
+		            (fGetFlagUtility + (getHealthPercent() / 5)) * fSapBoost);
 
 		ADD_UTILITY(BOT_UTIL_SAP_LASTENEMY_SENTRY,
 		            m_pLastEnemy && CTeamFortress2Mod::isSentry(m_pLastEnemy, CTeamFortress2Mod::getEnemyTeam(iTeam))
 		                && !CTeamFortress2Mod::isSentrySapped(m_pLastEnemy),
-		            fGetFlagUtility + (getHealthPercent() / 5));
+		            (fGetFlagUtility + (getHealthPercent() / 5)) * fSapBoost);
 
 		ADD_UTILITY(BOT_UTIL_SAP_LASTENEMY_SENTRY, m_pLastEnemySentry.get() != nullptr,
-		            fGetFlagUtility + (getHealthPercent() / 5));
+		            (fGetFlagUtility + (getHealthPercent() / 5)) * fSapBoost);
 		////////////////
 		// sap tele
 		ADD_UTILITY(BOT_UTIL_SAP_ENEMY_TELE,

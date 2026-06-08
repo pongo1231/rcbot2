@@ -190,6 +190,7 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 		// Alert teammates: sentry/building is sapped, push now!
 		((CBotTF2 *)pBot)->addVoiceCommand(TF_VC_GOGOGO);
+		CTeamFortress2Mod::onSapAtFocusPoint(m_vBuildingOrigin);
 		return;
 	}
 

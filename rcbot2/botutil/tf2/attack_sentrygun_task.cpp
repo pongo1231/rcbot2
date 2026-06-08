@@ -70,6 +70,8 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 	else if (m_fTime < engine->Time())
 	{
+		CTeamFortress2Mod::updateFocusPoint(
+		    CBotGlobals::entityOrigin(m_pSentryGun), true, false);
 		complete();
 	}
 
