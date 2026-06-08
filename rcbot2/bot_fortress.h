@@ -1065,6 +1065,8 @@ class CBotTF2 : public CBotFortress
 	void touchedWpt(CWaypoint *pWaypoint, int iNextWaypoint = -1, int iPrevWaypoint = -1);
 
 	bool handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy);
+	bool handleStickyCombat(CBotWeapon *pStickyLauncher, CBotWeapon *pGrenadeLauncher,
+	                        float fDistance, bool bCycledIn);
 
 	void engiBuildSuccess(eEngiBuild iObject, int index);
 

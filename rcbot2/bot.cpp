@@ -1593,6 +1593,10 @@ void CBot::spawnInit()
 	m_fStickyDetTime          = 0.0f;
 	m_fStickyChargeStart      = 0.0f;
 	m_bStickyCharging         = false;
+	m_fNextStickyCycle         = 0.0f;
+	m_iStickyBurstCount        = 0;
+	m_fStickyBurstTime         = 0.0f;
+	m_fNextCombatStickyJump    = 0.0f;
 
 	m_bAvoidRight             = (randomInt(0, 1) == 0);
 	m_bLookBack               = false;

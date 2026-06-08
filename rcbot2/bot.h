@@ -1203,6 +1203,10 @@ class CBot
 	float m_fStickyDetTime;
 	float m_fStickyChargeStart;
 	bool m_bStickyCharging;
+	float m_fNextStickyCycle;
+	int   m_iStickyBurstCount;
+	float m_fStickyBurstTime;
+	float m_fNextCombatStickyJump;
 	float m_fHealClickTime;
 
 	unsigned int m_iSpecialVisibleId;
