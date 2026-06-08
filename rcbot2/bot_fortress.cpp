@@ -5168,6 +5168,29 @@ void CBotTF2::modThink()
 	// Handle special weapon abilities (charge shots, auto-taunt, etc.)
 	handleSpecialAbilities();
 
+	// Maintain personal space from nearby teammates
+	{
+		for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+		{
+			edict_t *pEd = INDEXENT(i);
+			if (!pEd || pEd == m_pEdict || !CBotGlobals::entityIsValid(pEd)
+			    || !CBotGlobals::entityIsAlive(pEd)) continue;
+			if (CTeamFortress2Mod::getTeam(pEd) != getTeam()) continue;
+			float fDist = distanceFrom(pEd);
+			if (fDist < 80.0f && fDist > 0.1f)
+			{
+				Vector vAway = getOrigin() - CBotGlobals::entityOrigin(pEd);
+				vAway.z = 0;
+				if (vAway.Length() > 0.1f)
+				{
+					vAway = vAway / vAway.Length();
+					setMoveTo(getOrigin() + vAway * 128.0f);
+				}
+				break;
+			}
+		}
+	}
+
 	// Prevent weapon switching while Thermal Thruster state machine is pending (travel only)
 	bool bInDanger = (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot());
 	if (m_bThrusterSwitchPending && !bInDanger)
