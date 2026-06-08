@@ -5955,6 +5955,16 @@ bool CBotTF2::checkStuck(void)
 	return false;
 }
 
+bool CBotTF2::checkImmobile(void)
+{
+	if (!CTeamFortress2Mod::isAttackDefendMap()
+	    || (CTeamFortress2Mod::hasRoundStarted() || (getTeam() == TF2_TEAM_RED)))
+	{
+		return CBot::checkImmobile();
+	}
+	return false;
+}
+
 void CBotTF2::foundSpy(edict_t *pEdict, TF_Class iDisguise)
 {
 	CBotFortress::foundSpy(pEdict, iDisguise);

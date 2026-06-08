@@ -1175,6 +1175,7 @@ class CBotTF2 : public CBotFortress
 	void checkStuckonSpy(void);
 
 	bool checkStuck(void);
+	bool checkImmobile(void) override;
 
 	void init(bool bVarInit = false);
 
