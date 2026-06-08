@@ -3,6 +3,7 @@
 #include "bot_const.h"
 #include "bot_globals.h"
 #include "bot_mods.h"
+#include "botutil/base_sched.h"
 
 CBotTF2DefendPoint::CBotTF2DefendPoint(int iArea, Vector vOrigin, int iRadius)
 {
@@ -45,9 +46,10 @@ void CBotTF2DefendPoint::execute(CBot *pBot, CBotSchedule *pSchedule)
 			if (!pPlayer || pPlayer == pBot->getEdict()) continue;
 			if (!CBotGlobals::entityIsValid(pPlayer) || !CBotGlobals::entityIsAlive(pPlayer)) continue;
 			if (CTeamFortress2Mod::getTeam(pPlayer) != iTeam) continue;
-				Vector vDiff = CBotGlobals::entityOrigin(pPlayer) - m_vOrigin;
-			vDiff.z = 0;
-			if (vDiff.Length() < 512.0f)
+
+			CBot *pOther = CBots::getBotPointer(pPlayer);
+			if (pOther && (pOther->getSchedule()->isCurrentSchedule(SCHED_DEFEND)
+			    || pOther->getSchedule()->isCurrentSchedule(SCHED_DEFENDPOINT)))
 				iDefendersHere++;
 		}
 

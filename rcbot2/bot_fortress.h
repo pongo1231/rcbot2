@@ -758,6 +758,7 @@ class CBotFortress : public CBot
 	float m_fTaunting;
 	float m_fDefendTime;
 	float m_fNextBowIgnite;
+	float m_fMvmAlarmDefendBoost;
 	bool m_bBowIgnitePending;
 	int m_iLastBowIgniteSniper;
 	float m_fNextCrossbowHeal;

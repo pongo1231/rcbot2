@@ -223,10 +223,23 @@ int CTFObjectiveResource::getRandomValidPointForTeam(int team, ePointAttackDefen
 				else // Otherwise there aren't any playres on or is base and has been attacked recently
 					arr[i].fProbMultiplier = 4.0f;
 			}
-			else if ((getLastCaptureTime(i) + 10.0f) > gpGlobals->curtime)
-				arr[i].fProbMultiplier = 2.0f;
+		else if ((getLastCaptureTime(i) + 10.0f) > gpGlobals->curtime)
+			arr[i].fProbMultiplier = 2.0f;
 
-			fTotal += arr[i].fProb * arr[i].fProbMultiplier;
+		// MVM: prefer defend areas near the bomb's target hatch
+		if (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && type == TF2_POINT_DEFEND
+		    && i >= 0 && i < *m_iNumControlPoints)
+		{
+			Vector vBomb;
+			if (CTeamFortress2Mod::getFlagLocation(TF2_TEAM_BLUE, &vBomb))
+			{
+				Vector &vHatch = GetCPPosition(i);
+				float fDist = (vBomb - vHatch).Length();
+				arr[i].fProbMultiplier *= (2000.0f / (fDist + 2000.0f));
+			}
+		}
+
+		fTotal += arr[i].fProb * arr[i].fProbMultiplier;
 		}
 	}
 

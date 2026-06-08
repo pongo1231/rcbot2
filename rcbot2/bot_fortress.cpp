@@ -2014,7 +2014,8 @@ void CBotTF2::spawnInit()
 	m_pHealer             = nullptr;
 	m_fCallMedic          = engine->Time() + 10.0f;
 	m_fCarryTime          = 0.0f;
-	m_fNextBowIgnite       = 0.0f;
+	m_fNextBowIgnite        = 0.0f;
+	m_fMvmAlarmDefendBoost  = 0.0f;
 	m_bBowIgnitePending    = false;
 	m_iLastBowIgniteSniper = -1;
 	m_fNextCrossbowHeal    = 0.0f;
@@ -7754,6 +7755,21 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		}
 	}
 
+	// MVM alarm boost: support classes get elevated defense priority temporarily
+	if (m_fMvmAlarmDefendBoost > engine->Time())
+		fDefendFlagUtility *= 3.0f;
+
+	// Spy at objective with no target: give minimum defense floor
+	if (m_iClass == TF_CLASS_SPY && fDefendFlagUtility < 0.08f
+	    && m_iCurrentDefendArea > 0)
+	{
+		int iWpt = CWaypointLocations::NearestWaypoint(getOrigin(), 512.0f, -1,
+		                                               false, false, true);
+		CWaypoint *pWpt = (iWpt >= 0) ? CWaypoints::getWaypoint(iWpt) : nullptr;
+		if (pWpt && pWpt->getArea() == m_iCurrentDefendArea)
+			fDefendFlagUtility = 0.08f;
+	}
+
 	if (m_iClass == TF_CLASS_ENGINEER)
 	{
 		if (m_bIsCarryingObj)
@@ -8141,8 +8157,11 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			if (!CBotGlobals::entityIsValid(pP)) continue;
 			if (CTeamFortress2Mod::getTeam(pP) != iTeam) continue;
 			if (!CBotGlobals::isPlayer(pP)) continue;
-			float fD = distanceFrom(pP);
-			if (fD < 256.0f) // another defender nearby
+
+			CBot *pOther = CBots::getBotPointer(pP);
+			if (pOther && (pOther->getSchedule()->isCurrentSchedule(SCHED_DEFEND)
+			    || pOther->getSchedule()->isCurrentSchedule(SCHED_DEFENDPOINT)
+			    || pOther->getSchedule()->hasSchedule(SCHED_RETURN_TO_INTEL)))
 			{
 				iDefenders++;
 				if (iDefenders >= 3) { bAlreadyDefended = true; break; }
@@ -12955,7 +12974,14 @@ void CBotTF2::MannVsMachineAlarmTriggered(Vector vLoc)
 		}
 
 		if (isCarrying())
-			return;
+		return;
+	}
+
+	// Support classes: boost defense utility instead of forcing schedule override
+	if (m_iClass == TF_CLASS_MEDIC || m_iClass == TF_CLASS_SPY || m_iClass == TF_CLASS_SNIPER)
+	{
+		m_fMvmAlarmDefendBoost = engine->Time() + 10.0f;
+		return;
 	}
 
 	float fDefTime         = randomFloat(10.0f, 20.0f);
