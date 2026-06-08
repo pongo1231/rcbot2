@@ -100,7 +100,7 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 		// Init evade timer on first entry
 		if (m_fEvadeTime == 0.0f)
-			m_fEvadeTime = engine->Time() + randomFloat(0.5f, 1.0f);
+			m_fEvadeTime = engine->Time() + randomFloat(2.5f, 3.5f);
 
 		// Complete after evade period -- let utility evaluation pick next action
 		if (m_fEvadeTime < engine->Time())
@@ -112,6 +112,16 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 				pBot->getSchedule()->add(new CBotBackstabSched(pBuilding));
 				complete();
 				return;
+			}
+
+			// Chain into backstab if any visible enemy is nearby
+			if (m_id != ENGI_ROBOT
+			    && pBot->getEnemy()
+			    && pBot->hasSomeConditions(CONDITION_SEE_CUR_ENEMY)
+			    && CBotGlobals::isAlivePlayer(pBot->getEnemy())
+			    && pBot->distanceFrom(pBot->getEnemy()) < 500.0f)
+			{
+				pBot->getSchedule()->add(new CBotBackstabSched(pBot->getEnemy()));
 			}
 
 			// Continue moving away briefly after completing
@@ -129,7 +139,9 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 		// If engineer is alone and sentry is sapped, let backstab utility take over
 		if (pBot->getEnemy() && pBot->hasSomeConditions(CONDITION_SEE_CUR_ENEMY)
 		    && CBotGlobals::isAlivePlayer(pBot->getEnemy())
-		    && CClassInterface::getTF2Class(pBot->getEnemy()) == TF_CLASS_ENGINEER)
+		    && (CClassInterface::getTF2Class(pBot->getEnemy()) == TF_CLASS_ENGINEER
+		        || CClassInterface::getTF2Class(pBot->getEnemy()) == TF_CLASS_MEDIC
+		        || CClassInterface::getTF2Class(pBot->getEnemy()) == TF_CLASS_SNIPER))
 		{
 			pBot->updateCondition(CONDITION_CHANGED);
 			complete();
