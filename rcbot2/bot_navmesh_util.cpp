@@ -9,7 +9,8 @@ bool NavMeshUtil::IsOnWalkableGround(const Vector &pos)
 	Vector vDown = pos;
 	vDown.z -= MAX_FALL_DISTANCE;
 
-	CBotGlobals::traceLine(pos, vDown, MASK_PLAYERSOLID, nullptr);
+	CTraceFilterWorldAndPropsOnly filter;
+	CBotGlobals::traceLine(pos, vDown, MASK_PLAYERSOLID, &filter);
 
 	trace_t *pTrace = CBotGlobals::getTraceResult();
 	if (pTrace->fraction >= 1.0f)
