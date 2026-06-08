@@ -2624,7 +2624,7 @@ void CBotTF2::seeFriendlyDie(edict_t *pDied, edict_t *pKiller, CWeapon *pWeapon)
 				addKnownSentry(CTeamFortress2Mod::getMySentryGun(pKiller));
 
 			CTeamFortress2Mod::updateFocusPoint(
-			    CBotGlobals::entityOrigin(pKiller), false, true);
+			    CBotGlobals::entityOrigin(m_pLastEnemySentry.get()), false, true);
 
 			if ((m_iClass == TF_CLASS_DEMOMAN) || (m_iClass == TF_CLASS_SPY))
 			{
