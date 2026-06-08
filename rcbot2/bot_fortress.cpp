@@ -2219,6 +2219,122 @@ float CBotTF2::evaluateTeleExitSpot(CWaypoint *pWpt)
 	return evaluateBuildSpot(pWpt, 0);
 }
 
+bool CBotTF2::getObjectiveCentroid(Vector *vCentroid)
+{
+	// CTF: use the enemy flag location or flag waypoints
+	if (CTeamFortress2Mod::isMapType(TF_MAP_CTF))
+	{
+		int iEnemyTeam = CTeamFortress2Mod::getEnemyTeam(m_iTeam);
+		if (CTeamFortress2Mod::getFlagLocation(iEnemyTeam, vCentroid))
+			return true;
+
+		CWaypoint *pWpt = CWaypoints::randomWaypointGoal(CWaypointTypes::W_FL_FLAG, iEnemyTeam,
+		                                                 m_iCurrentAttackArea, true, this, false);
+		if (pWpt)
+		{
+			*vCentroid = pWpt->getOrigin();
+			return true;
+		}
+	}
+
+	// MVM: use the bomb capture point
+	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
+	{
+		if (CTeamFortress2Mod::getMVMCapturePoint(vCentroid))
+			return true;
+	}
+
+	// CP / KOTH / Payload / general: use the nearest control-point waypoint
+	int iArea = (m_iCurrentAttackArea > 0) ? m_iCurrentAttackArea : m_iCurrentDefendArea;
+	int iWpt  = CWaypointLocations::NearestWaypoint(getOrigin(), 4096.0f, -1, false, false, true, nullptr, false,
+	                                                 m_iTeam, true, false, Vector(0, 0, 0),
+	                                                 CWaypointTypes::W_FL_CAPPOINT);
+
+	if (iWpt >= 0)
+	{
+		CWaypoint *pObjWpt = CWaypoints::getWaypoint(iWpt);
+		if (pObjWpt && (pObjWpt->getArea() == iArea || iArea == 0))
+		{
+			*vCentroid = pObjWpt->getOrigin();
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void CBotTF2::collectSentrySpots(const Vector &vCentroid, std::vector<CWaypoint *> &candidates)
+{
+	static const float SENTRY_EYE_HEIGHT = 60.0f;
+	static const float POINT_FLAG_HEIGHT = 70.0f;
+	static const float TOO_FAR_BELOW     = 150.0f;
+	static const float RANGE_TOLERANCE   = 1.1f;
+	static const float MAX_SENTRY_RANGE  = (float)TF2_MAX_SENTRYGUN_RANGE * RANGE_TOLERANCE;
+
+	CTraceFilterWorldAndPropsOnly filter;
+	candidates.clear();
+
+	for (int w = 0; w < CWaypoints::numWaypoints(); w++)
+	{
+		CWaypoint *pW = CWaypoints::getWaypoint(w);
+		if (!pW || !pW->isUsed() || !pW->forTeam(m_iTeam))
+			continue;
+
+		// Skip jump/crouch/ladder/lift/fall waypoints -- not suitable for building
+		int f = pW->getFlags();
+		if (f & (CWaypointTypes::W_FL_JUMP | CWaypointTypes::W_FL_CROUCH | CWaypointTypes::W_FL_LADDER
+		         | CWaypointTypes::W_FL_LIFT | CWaypointTypes::W_FL_FALL | CWaypointTypes::W_FL_UNREACHABLE))
+			continue;
+
+		Vector vOrigin = pW->getOrigin();
+
+		// Don't build directly on the control point
+		if (pW->hasFlag(CWaypointTypes::W_FL_CAPPOINT))
+			continue;
+
+		// Z-axis filter: don't build too far below the point
+		if (vOrigin.z < vCentroid.z - TOO_FAR_BELOW)
+			continue;
+
+		// Range gate: within sentry range of the point
+		float fDist = (vOrigin - vCentroid).Length();
+		if (fDist > MAX_SENTRY_RANGE)
+			continue;
+
+		// Line-of-fire trace: can the sentry see the point?
+		Vector from = vOrigin + Vector(0, 0, SENTRY_EYE_HEIGHT);
+		Vector to   = vCentroid + Vector(0, 0, POINT_FLAG_HEIGHT);
+		CBotGlobals::traceLine(from, to, MASK_SOLID_BRUSHONLY, &filter);
+		if (CBotGlobals::getTraceResult()->fraction < 1.0f)
+			continue;
+
+		candidates.push_back(pW);
+	}
+}
+
+float CBotTF2::scoreSentrySpot(CWaypoint *pWpt, const Vector &vCentroid)
+{
+	if (!pWpt) return 0.0f;
+
+	// Distance component: prefer farther from point (maximizes area coverage)
+	float fDist      = (pWpt->getOrigin() - vCentroid).Length();
+	float fDistScore = fDist / (float)TF2_MAX_SENTRYGUN_RANGE;
+
+	// Obscurity component: prefer less-traveled spots
+	float fTraversal = (float)pWpt->peekTraversalCount();
+	float fObscurity = 1.0f - (fTraversal / (fTraversal + 3.0f));
+
+	// Dominance modifier: more aggressive placement when winning
+	float fDom        = CTeamFortress2Mod::getTeamDominance(m_iTeam);
+	float fDistWeight = 0.6f + fDom * 0.3f;
+	float fObsWeight  = 1.0f - fDistWeight;
+
+	// Building-proximity penalty
+	float fNearby = CTeamFortress2Mod::buildingNearby(m_iTeam, pWpt->getOrigin()) ? 0.3f : 1.0f;
+
+	return (fDistScore * fDistWeight + fObscurity * fObsWeight) * fNearby;
+}
+
 void CBotTF2::checkBuildingsValid(bool bForce) // force check carrying
 {
 	if (m_pSentryGun)
@@ -9105,7 +9221,36 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 
 		if (pWaypoint == nullptr)
 		{
-			if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
+			// Auto-compute: scan all waypoints for sentry-viable positions
+			// using line-of-fire traces to the objective point.
+			// Works on maps with no manually placed W_FL_SENTRY waypoints.
+			Vector vCentroid;
+			if (getObjectiveCentroid(&vCentroid))
+			{
+				std::vector<CWaypoint *> candidates;
+				collectSentrySpots(vCentroid, candidates);
+
+				if (!candidates.empty())
+				{
+					CWaypoint *pBest = nullptr;
+					float fBest      = 0.0f;
+					for (auto *pW : candidates)
+					{
+						float fScore = scoreSentrySpot(pW, vCentroid);
+						if (fScore > fBest) { fBest = fScore; pBest = pW; }
+					}
+
+					if (pBest)
+					{
+						pBest->addFlag(CWaypointTypes::W_FL_SENTRY);
+						pWaypoint = pBest;
+					}
+				}
+			}
+
+			if (pWaypoint == nullptr)
+			{
+				if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
 			{
 				pWaypoint = CTeamFortress2Mod::getBestWaypointMVM(this, CWaypointTypes::W_FL_SENTRY);
 				/*
@@ -9142,6 +9287,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 					                                           true, WPT_SEARCH_AVOID_SENTRIES, m_iLastFailSentryWpt);
 				}
 			}
+		}
 		}
 
 		if (pWaypoint)

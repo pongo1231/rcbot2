@@ -1197,6 +1197,10 @@ class CBotTF2 : public CBotFortress
 	float evaluateBuildSpot(CWaypoint *pWpt, int iBuildingType);
 	bool hasGunslinger();
 
+	bool getObjectiveCentroid(Vector *vCentroid);
+	void collectSentrySpots(const Vector &vCentroid, std::vector<CWaypoint *> &candidates);
+	float scoreSentrySpot(CWaypoint *pWpt, const Vector &vCentroid);
+
 	void handleSpecialAbilities();
 
 	float MvmTargetPriority(edict_t *pEnemy);
