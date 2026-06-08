@@ -636,7 +636,10 @@ bool CBot::checkImmobile()
 	}
 
 	if (m_fImmobileAnchorTime > fTime)
+	{
+		m_bIsImmobile = false;
 		return false;
+	}
 
 	float fDist = (getOrigin() - m_vImmobileAnchorPos).Length();
 	if (fDist < 30.0f)
@@ -658,6 +661,8 @@ bool CBot::checkImmobile()
 			m_fImmobileDuration   = 0.0f;
 			return true;
 		}
+		m_fImmobileAnchorTime = fTime;
+		return m_bIsImmobile;
 	}
 	else
 	{
