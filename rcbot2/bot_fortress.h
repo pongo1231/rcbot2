@@ -937,6 +937,10 @@ class CBotFortress : public CBot
 	static float m_fAFKIdleSince[MAX_PLAYERS + 1];
 	static bool m_bAFKStarted[MAX_PLAYERS + 1];
 
+	float m_fBusterAlertTime;
+	float m_fBusterRescueTime;
+	float m_fPredictiveStrafeTime;
+
 	bool isPlayerAFK(edict_t *pPlayer);
 	static void notePlayerEngaged(edict_t *pPlayer);
 	// bool m_bWantToZoom;

@@ -4397,6 +4397,31 @@ void CBotTF2::modThink()
 
 	checkBeingHealed();
 
+	// Pre-emptive strafe: randomly move left/right to make aiming harder
+	if (hasEnemy() && distanceFrom(m_pEnemy) < 1200.0f
+	    && m_fPredictiveStrafeTime < engine->Time()
+	    && m_fStrafeTime < engine->Time())
+	{
+		if (randomInt(0, 1))
+		{
+			QAngle eyes = eyeAngles();
+			Vector vForward, vRight;
+			AngleVectors(eyes, &vForward, &vRight, nullptr);
+			vRight.z = 0;
+			if (vRight.Length() > 0.1f)
+			{
+				vRight = vRight / vRight.Length();
+				float fDir = randomInt(0, 1) ? 1.0f : -1.0f;
+				Vector vTarget = getOrigin() + vRight * fDir * 64.0f;
+				CTraceFilterWorldAndPropsOnly filter;
+				CBotGlobals::traceLine(getOrigin(), vTarget, MASK_SOLID_BRUSHONLY, &filter);
+				if (CBotGlobals::getTraceResult()->fraction >= 1.0f)
+					setMoveTo(vTarget);
+			}
+		}
+		m_fPredictiveStrafeTime = engine->Time() + randomFloat(0.5f, 1.5f);
+	}
+
 	if (wantToListen())
 	{
 		if ((m_pNearestAllySentry.get() != nullptr)
@@ -4460,9 +4485,11 @@ void CBotTF2::modThink()
 	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
 	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
 	{
-		edict_t *pBuster   = nullptr;
-		float fBusterDist  = 9999.0f;
-		bool bTaunting     = false;
+		edict_t *pBuster    = nullptr;
+		edict_t *pBuster2   = nullptr;
+		float fBusterDist   = 9999.0f;
+		float fBusterDist2  = 9999.0f;
+		bool bTaunting      = false;
 		for (int i = 1; i <= gpGlobals->maxClients; i++)
 		{
 			edict_t *pEnt = INDEXENT(i);
@@ -4477,14 +4504,69 @@ void CBotTF2::modThink()
 			float fDist = distanceFrom(pEnt);
 			if (fDist < fBusterDist)
 			{
-				fBusterDist = fDist;
-				pBuster     = pEnt;
-				int iConds  = CClassInterface::getTF2Conditions(pEnt);
-				bTaunting   = (iConds & (1 << 7)) != 0; // TFCond_Taunting
+				pBuster2     = pBuster;
+				fBusterDist2 = fBusterDist;
+				fBusterDist  = fDist;
+				pBuster      = pEnt;
+				int iConds   = CClassInterface::getTF2Conditions(pEnt);
+				bTaunting    = (iConds & (1 << 7)) != 0; // TFCond_Taunting
+			}
+			else if (fDist < fBusterDist2)
+			{
+				fBusterDist2 = fDist;
+				pBuster2     = pEnt;
 			}
 		}
 
 		const float fBlastRadius = 600.0f;
+
+		// Alert teammates about incoming buster
+		if (pBuster && m_fBusterAlertTime < engine->Time())
+		{
+			addVoiceCommand(TF_VC_SENTRYAHEAD);
+			m_fBusterAlertTime = engine->Time() + 5.0f;
+		}
+
+		// Pre-taunt: start moving away from approaching busters
+		if (pBuster && !bTaunting && fBusterDist < 1200.0f)
+		{
+			if (m_iClass == TF_CLASS_ENGINEER && m_pSentryGun.get()
+			    && CBotGlobals::entityIsValid(m_pSentryGun))
+			{
+				float fDist = distanceFrom(m_pSentryGun);
+				if (fDist > 120.0f)
+					setMoveTo(CBotGlobals::entityOrigin(m_pSentryGun));
+			}
+			else
+			{
+				Vector vAway = getOrigin() - CBotGlobals::entityOrigin(pBuster);
+				vAway.z = 0;
+				// If a second buster is in the escape direction, dodge perpendicular
+				if (pBuster2 && fBusterDist2 < 1200.0f)
+				{
+					Vector vTo2 = getOrigin() - CBotGlobals::entityOrigin(pBuster2);
+					vTo2.z = vAway.z = 0;
+					if (vTo2.Length2D() > 0.1f && vAway.Length2D() > 0.1f)
+					{
+						vTo2 = vTo2 / vTo2.Length2D();
+						vAway = vAway / vAway.Length2D();
+						if (vAway.Dot(vTo2) < -0.5f)
+						{
+							float fTemp = vAway.x;
+							vAway.x = -vAway.y;
+							vAway.y = fTemp;
+						}
+					}
+				}
+				if (vAway.Length() > 0.1f)
+				{
+					vAway = vAway / vAway.Length();
+					setMoveTo(getOrigin() + vAway * 512.0f);
+				}
+			}
+			if (m_fStrafeTime < engine->Time())
+				m_fStrafeTime = engine->Time() + 0.15f;
+		}
 
 		if (pBuster && bTaunting && fBusterDist < fBlastRadius)
 		{
@@ -4499,25 +4581,48 @@ void CBotTF2::modThink()
 				    CWeapons::getWeapon(TF2_WEAPON_SHOTGUN_PRIMARY));
 				edict_t *pRescueEnt = pRescue ? pRescue->getWeaponEntity() : nullptr;
 				if (pRescueEnt && CClassInterface::TF2_getItemDefinitionIndex(pRescueEnt) == 997
-				    && pRescue->getAmmo(this) >= 60)
+				    && pRescue->getAmmo(this) >= 50)
 				{
 					lookAtEdict(m_pSentryGun);
 					select_CWeapon(pRescue->getWeaponInfo());
 					secondaryAttack();
 					doButtons();
 					resetCarryTime();
+					m_fBusterRescueTime = engine->Time() + 15.0f;
 				}
 				else
 				{
-					CBotWeapon *pWrench = m_pWeapons->getWeapon(
-					    CWeapons::getWeapon(TF2_WEAPON_WRENCH));
-			if (pWrench && pWrench->hasWeapon() && getCurrentWeapon() != pWrench)
+					float fDist = distanceFrom(m_pSentryGun);
+					if (fDist > 120.0f)
 					{
-						select_CWeapon(pWrench->getWeaponInfo());
-						secondaryAttack();
-						doButtons();
-						resetCarryTime();
+						setMoveTo(CBotGlobals::entityOrigin(m_pSentryGun));
 					}
+					else
+					{
+						CBotWeapon *pWrench = m_pWeapons->getWeapon(
+						    CWeapons::getWeapon(TF2_WEAPON_WRENCH));
+						if (pWrench && pWrench->hasWeapon())
+						{
+							if (getCurrentWeapon() != pWrench)
+								select_CWeapon(pWrench->getWeaponInfo());
+							secondaryAttack();
+							doButtons();
+							resetCarryTime();
+							m_fBusterRescueTime = engine->Time() + 15.0f;
+						}
+					}
+				}
+			}
+
+			// Pyro: airblast the buster to delay explosion
+			if (m_iClass == TF_CLASS_PYRO && fBusterDist < 200.0f)
+			{
+				CBotWeapon *pFlame = m_pWeapons->getWeapon(
+				    CWeapons::getWeapon(TF2_WEAPON_FLAMETHROWER));
+				if (pFlame && pFlame->hasWeapon() && pFlame->getAmmo(this) >= 20)
+				{
+					lookAtEdict(pBuster);
+					secondaryAttack();
 				}
 			}
 
@@ -6211,9 +6316,10 @@ bool CBotFortress::incomingRocket(float fRange)
 
 		if (fDist < fRange)
 		{
+			float fSpeed = 0.0f;
 			if (CClassInterface::getVelocity(pRocket, &vel))
 			{
-				float fSpeed = vel.Length();
+				fSpeed = vel.Length();
 
 				if (fSpeed > 0.1f)
 				{
@@ -6232,6 +6338,13 @@ bool CBotFortress::incomingRocket(float fRange)
 			else
 				vcomp = vorg;
 
+			Vector vBotVel;
+			if (fSpeed > 0.1f && CClassInterface::getVelocity(m_pEdict, &vBotVel))
+			{
+				float fTimeToImpact = fDist / fSpeed;
+				Vector vBotFuture = getOrigin() + vBotVel * fTimeToImpact;
+				return ((vcomp - vBotFuture).Length() < BLAST_RADIUS);
+			}
 			return (distanceFrom(vcomp) < BLAST_RADIUS);
 		}
 	}
@@ -6247,9 +6360,10 @@ bool CBotFortress::incomingRocket(float fRange)
 
 		if (fDist < fRange)
 		{
+			float fSpeed = 0.0f;
 			if (CClassInterface::getVelocity(pRocket, &vel))
 			{
-				float fSpeed = vel.Length();
+				fSpeed = vel.Length();
 
 				if (fSpeed > 0.1f)
 				{
@@ -6271,6 +6385,13 @@ bool CBotFortress::incomingRocket(float fRange)
 			else
 				vcomp = vorg;
 
+			Vector vBotVel;
+			if (fSpeed > 0.1f && CClassInterface::getVelocity(m_pEdict, &vBotVel))
+			{
+				float fTimeToImpact = fDist / fSpeed;
+				Vector vBotFuture = getOrigin() + vBotVel * fTimeToImpact;
+				return ((vcomp - vBotFuture).Length() < BLAST_RADIUS);
+			}
 			return (distanceFrom(vcomp) < BLAST_RADIUS);
 		}
 	}
@@ -7374,8 +7495,10 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 
 		fSentryUtil = 0.8 + (((float)((int)bNeedAmmo)) * 0.1) + (((float)(int)bNeedHealth) * 0.1);
 
+		float fPlaceUtil = (m_fBusterRescueTime > engine->Time()) ? 1.25f :
+		                   (needHealth() ? 0.4f : 0.8f);
 		ADD_UTILITY(BOT_UTIL_PLACE_BUILDING, m_bIsCarryingObj,
-		            1.0f); // something went wrong moving this- I still have it!!!
+		            fPlaceUtil); // something went wrong moving this- I still have it!!!
 
 		// destroy and build anew
 		ADD_UTILITY(BOT_UTIL_ENGI_DESTROY_SENTRY,
@@ -11342,10 +11465,26 @@ void CBotTF2::modAim(edict_t *pEntity, Vector &v_origin, Vector *v_desired_offse
 
 			if (fProjectileSpeed > 0.f)
 			{
-				if (bIsGrenade)
-					fTime = fDist2D / (fProjectileSpeed * 0.707);
+				Vector vToEnemy = (v_origin - getEyePosition());
+				float fDistToEnemy = vToEnemy.Length();
+				if (fDistToEnemy > 0.1f)
+				{
+					Vector vDir = vToEnemy / fDistToEnemy;
+					float fCloseSpeed = fProjectileSpeed - vVelocity.Dot(vDir);
+					if (fCloseSpeed < fProjectileSpeed * 0.1f)
+						fCloseSpeed = fProjectileSpeed * 0.1f;
+					if (bIsGrenade)
+						fTime = fDist2D / (fCloseSpeed * 0.707);
+					else
+						fTime = fDist / fCloseSpeed;
+				}
 				else
-					fTime = fDist / fProjectileSpeed;
+				{
+					if (bIsGrenade)
+						fTime = fDist2D / (fProjectileSpeed * 0.707);
+					else
+						fTime = fDist / fProjectileSpeed;
+				}
 
 				// Record enemy movement for statistical prediction
 				recordEnemyMovement(pEntity);
