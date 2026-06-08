@@ -2565,6 +2565,12 @@ void CBotTF2::died(edict_t *pKiller, const char *pszWeapon)
 			CTeamFortress2Mod::updateFocusPoint(
 			    CBotGlobals::entityOrigin(pKiller), false, true);
 		}
+		else
+		{
+			// Combat hotspot: register any death location for intensity tracking
+			CTeamFortress2Mod::updateFocusPoint(
+			    getOrigin(), false, true);
+		}
 		}
 	}
 }
@@ -7635,12 +7641,6 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	else if (m_iClass == TF_CLASS_ENGINEER)
 		fDefendFlagUtility = m_pSentryGun ? 0.05f : 0.15f; // build instead of camp
 
-	if (hasSomeConditions(CONDITION_PUSH) || CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
-	{
-		fGetFlagUtility *= 2;
-		fDefendFlagUtility *= 2;
-	}
-
 	// recently saw an enemy go near the point
 	if (hasSomeConditions(CONDITION_DEFENSIVE) && (m_pLastEnemy.get() != nullptr)
 	    && CBotGlobals::entityIsAlive(m_pLastEnemy.get()) && (m_fLastSeeEnemy > 0))
@@ -7661,11 +7661,54 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			fDefendFlagUtility *= 2.0f;
 	}
 
-	// Guard turn-taking: rotate which bots are on guard duty every 10s
+	// Need-based defender counting: replace time-slot rotation with
+	// dynamic allocation based on enemies near the objective.
 	{
-		int iActiveSlot = ((int)(engine->Time() / 10.0f)) % 4;
-		if (m_iGuardSlot != iActiveSlot && numplayersonteam_alive >= 4)
-			fDefendFlagUtility *= 0.4f;
+		int iEnemyTeam = CTeamFortress2Mod::getEnemyTeam(m_iTeam);
+		int iDefenders  = 0;
+		int iEnemiesNear = 0;
+
+		// Count enemies and defenders near our objective area
+		for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+		{
+			edict_t *pEd = INDEXENT(i);
+			if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+			float fDist = distanceFrom(pEd);
+			if (fDist > 2000.0f) continue;
+
+			if (CTeamFortress2Mod::getTeam(pEd) == iEnemyTeam)
+				iEnemiesNear++;
+			else if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam)
+			{
+				CBot *pOther = CBots::getBotPointer(pEd);
+				if (pOther && (pOther->getSchedule()->isCurrentSchedule(SCHED_DEFEND)
+				    || pOther->getSchedule()->isCurrentSchedule(SCHED_DEFENDPOINT)))
+					iDefenders++;
+			}
+		}
+
+		// Need: 2 base + 1 extra per 2 enemies nearby
+		int iNeeded = 2 + iEnemiesNear / 2;
+		if (iDefenders >= iNeeded && iNeeded > 0)
+			fDefendFlagUtility *= 0.3f;   // enough defenders — skip
+		else if (iNeeded > 0)
+			fDefendFlagUtility *= 1.5f;   // not enough — boost
+	}
+
+	// Team-size ratio: lean more defensive when outnumbered
+	{
+		int iTeammates = CBotGlobals::countTeamMatesNearOrigin(Vector(0,0,0), 99999.0f,
+		                                                       m_iTeam, m_pEdict) + 1;
+		int iEnemies = CBotGlobals::countTeamMatesNearOrigin(Vector(0,0,0), 99999.0f,
+		                                                     CTeamFortress2Mod::getEnemyTeam(m_iTeam), m_pEdict);
+		if (iEnemies > 0)
+		{
+			float fRatio = (float)iTeammates / (float)iEnemies;
+			if (fRatio < 1.0f)
+				fDefendFlagUtility *= (2.0f - fRatio);  // up to 1.75x when outnumbered 1:4
+			if (fRatio > 1.5f)
+				fGetFlagUtility *= fmin(fRatio, 1.5f);    // up to 1.5x when 2:1+ advantage
+		}
 	}
 
 	// Team dominance: shift posture between defense and aggression
@@ -7679,9 +7722,35 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		}
 		else
 		{
-			fDefendFlagUtility *= (1.0f - fDom * 0.7f);
+			// RED on A/D: winning means holding ground — don't abandon defense
+			if (CTeamFortress2Mod::isAttackDefendMap() && m_iTeam == TF2_TEAM_RED)
+			{
+				fGetFlagUtility *= (1.0f + fDom * 0.3f);
+			}
+			else
+			{
+				fDefendFlagUtility *= (1.0f - fDom * 0.7f);
+				fGetFlagUtility   *= (1.0f + fDom);
+			}
 			if (fDefendFlagUtility < 0.01f) fDefendFlagUtility = 0.01f;
-			fGetFlagUtility *= (1.0f + fDom);
+		}
+	}
+
+	// CONDITION_PUSH: directional by map type and role
+	if (hasSomeConditions(CONDITION_PUSH) || CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
+	{
+		if (CTeamFortress2Mod::isMapType(TF_MAP_CART)
+		    || CTeamFortress2Mod::isMapType(TF_MAP_CARTRACE))
+		{
+			if (CTeamFortress2Mod::isAttackDefendMap() && m_iTeam == TF2_TEAM_RED)
+				fDefendFlagUtility *= 2.0f;   // RED: hold the cart
+			else
+				fGetFlagUtility   *= 2.0f;   // BLU: push the cart
+		}
+		else
+		{
+			fGetFlagUtility   *= 2.0f;       // attack doubled
+			fDefendFlagUtility *= 1.2f;       // defense modestly boosted
 		}
 	}
 
