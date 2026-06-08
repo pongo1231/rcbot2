@@ -1,3 +1,6 @@
+// KeyValuesSystem stub only needed on Linux — vstdlib.dll exports it on Windows
+#ifndef _WIN32
+
 #include <vstdlib/IKeyValuesSystem.h>
 #include <map>
 #include <string>
@@ -69,3 +72,5 @@ IKeyValuesSystem *KeyValuesSystem()
 {
 	return &g_KeyValuesSystem;
 }
+
+#endif // _WIN32
