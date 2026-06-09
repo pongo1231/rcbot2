@@ -9920,7 +9920,6 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 	case BOT_UTIL_ENGI_DESTROY_ENTRANCE: // destroy and rebuild sentry elsewhere
 		engineerBuild(ENGI_ENTRANCE, ENGI_DESTROY);
 		updateCondition(CONDITION_CHANGED);
-		return true;
 	case BOT_UTIL_BUILDTELENT:
 		pWaypoint = CWaypoints::getWaypoint(CWaypointLocations::NearestWaypoint(
 		    m_vTeleportEntrance, 300, -1, true, false, true, nullptr, false, getTeam(), true));
@@ -9978,7 +9977,6 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 	case BOT_UTIL_ENGI_DESTROY_EXIT: // destroy and rebuild sentry elsewhere
 		engineerBuild(ENGI_EXIT, ENGI_DESTROY);
 		updateCondition(CONDITION_CHANGED);
-		return true;
 	case BOT_UTIL_BUILDTELEXT:
 
 		if (m_bTeleportExitVectorValid)
@@ -10088,7 +10086,6 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 	case BOT_UTIL_ENGI_DESTROY_SENTRY: // destroy and rebuild sentry elsewhere
 		engineerBuild(ENGI_SENTRY, ENGI_DESTROY);
 		updateCondition(CONDITION_CHANGED);
-		return true;
 	case BOT_UTIL_BUILDSENTRY:
 
 		pWaypoint = nullptr;
@@ -10468,7 +10465,6 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 	case BOT_UTIL_ENGI_DESTROY_DISP:
 		engineerBuild(ENGI_DISP, ENGI_DESTROY);
 		updateCondition(CONDITION_CHANGED);
-		return true;
 	case BOT_UTIL_BUILDDISP:
 		pWaypoint = nullptr;
 		if (m_bDispenserVectorValid)
