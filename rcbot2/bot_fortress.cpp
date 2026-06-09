@@ -1123,6 +1123,8 @@ void CBotFortress::spawnInit()
 	m_bSentryGunVectorValid    = false;
 	m_bDispenserVectorValid    = false;
 	m_bTeleportExitVectorValid = false;
+	m_iLastBuiltSentryWpt      = -1;
+	m_RecentFailSentries.clear();
 
 	m_pSentryGun               = nullptr;
 	m_pDispenser               = nullptr;
@@ -2347,6 +2349,65 @@ float CBotTF2::evaluateBuildSpot(CWaypoint *pWpt, int iBuildingType)
 	if (fDom > 0.0f)
 		fScore = fObscurity * (fObsWeight - fDom * 0.3f) + fProximity * (fProxWeight + fDom * 0.3f);
 
+	// Height bonus: prefer elevated positions for better sightlines
+	float fHeightBonus = (pWpt->getOrigin().z - vFlag.z) / 150.0f;
+	if (fHeightBonus > 1.0f) fHeightBonus = 1.0f;
+	if (fHeightBonus < 0.0f) fHeightBonus = 0.0f;
+	fScore *= (1.0f + fHeightBonus * 0.15f);
+
+	// Cross-fire bonus: reward spots that cover different angles from existing sentries
+	if (iBuildingType == 1)
+	{
+		float fCrossFireBonus = 1.0f;
+		QAngle myAng = QAngle(0, pWpt->getAimYaw(), 0);
+		Vector vMyFace;
+		AngleVectors(myAng, &vMyFace);
+		vMyFace.z = 0;
+		if (vMyFace.Length() > 0.1f)
+		{
+			vMyFace = vMyFace / vMyFace.Length();
+			for (int j = 0; j < MAX_PLAYERS; j++)
+			{
+				edict_t *pOther = CTeamFortress2Mod::getSentryGun(j);
+				if (!pOther || !CBotGlobals::entityIsValid(pOther)
+				    || !CBotGlobals::entityIsAlive(pOther)) continue;
+				if (CTeamFortress2Mod::getTeam(pOther) != m_iTeam) continue;
+				Vector vOther = CBotGlobals::entityOrigin(pOther);
+				float fOtherDist = (pWpt->getOrigin() - vOther).Length();
+				if (fOtherDist > 800.0f || fOtherDist < 50.0f) continue;
+				int iOtherWpt = CWaypointLocations::NearestWaypoint(vOther, 150, -1);
+				if (iOtherWpt < 0) continue;
+				CWaypoint *pOtherWpt = CWaypoints::getWaypoint(iOtherWpt);
+				if (!pOtherWpt) continue;
+				QAngle otherAng = QAngle(0, pOtherWpt->getAimYaw(), 0);
+				Vector vTheirFace;
+				AngleVectors(otherAng, &vTheirFace);
+				vTheirFace.z = 0;
+				if (vTheirFace.Length() > 0.1f)
+				{
+					vTheirFace = vTheirFace / vTheirFace.Length();
+					float fDot = vMyFace.Dot(vTheirFace);
+					if (fDot > 0.9f) fCrossFireBonus *= 0.7f;
+					else if (fDot < -0.5f) fCrossFireBonus *= 1.2f;
+				}
+			}
+		}
+		fScore *= fCrossFireBonus;
+	}
+
+	// Failure memory: penalize spots where sentries recently died
+	if (iBuildingType == 1)
+	{
+		for (auto &r : m_RecentFailSentries)
+		{
+			if (r.iWpt == CWaypoints::getWaypointIndex(pWpt))
+			{
+				fScore *= 0.4f;
+				break;
+			}
+		}
+	}
+
 	if (CTeamFortress2Mod::buildingNearby(m_iTeam, pWpt->getOrigin()))
 		fScore *= 0.3f;
 
@@ -2355,7 +2416,21 @@ float CBotTF2::evaluateBuildSpot(CWaypoint *pWpt, int iBuildingType)
 
 float CBotTF2::evaluateTeleExitSpot(CWaypoint *pWpt)
 {
-	return evaluateBuildSpot(pWpt, 0);
+	float fBase = evaluateBuildSpot(pWpt, 0);
+
+	float fDistScore = 1.0f;
+	if (m_bEntranceVectorValid)
+	{
+		float fEntDist = (pWpt->getOrigin() - m_vTeleportEntrance).Length();
+		if (fEntDist > 4000.0f)      fDistScore = 0.7f;
+		else if (fEntDist < 1500.0f) fDistScore = 1.2f;
+	}
+
+	float fFlankBonus = 1.0f;
+	if (pWpt->getArea() == m_iCurrentAttackArea)
+		fFlankBonus = 1.3f;
+
+	return fBase * fDistScore * fFlankBonus;
 }
 
 bool CBotTF2::getObjectiveCentroid(Vector *vCentroid)
@@ -2488,9 +2563,39 @@ void CBotTF2::checkBuildingsValid(bool bForce) // force check carrying
 		if (!CBotGlobals::entityIsValid(m_pSentryGun) || !CBotGlobals::entityIsAlive(m_pSentryGun)
 		    || !CTeamFortress2Mod::isSentry(m_pSentryGun, m_iTeam))
 		{
-			m_pSentryGun       = nullptr;
-			m_prevSentryHealth = 0;
-			m_iSentryArea      = 0;
+			m_pSentryGun              = nullptr;
+			m_prevSentryHealth        = 0;
+			m_iSentryArea             = 0;
+			m_bSentryGunVectorValid   = false;
+
+			// Record failure if sentry died shortly after placement
+			if (m_iLastBuiltSentryWpt >= 0
+			    && m_fSentryPlaceTime + 60.0f > engine->Time())
+			{
+				for (size_t k = 0; k < m_RecentFailSentries.size(); )
+				{
+					if (m_RecentFailSentries[k].fTime < engine->Time())
+						m_RecentFailSentries.erase(m_RecentFailSentries.begin() + k);
+					else k++;
+				}
+				bool bFound = false;
+				for (auto &r : m_RecentFailSentries)
+				{
+					if (r.iWpt == m_iLastBuiltSentryWpt)
+					{
+						r.fTime = engine->Time() + 120.0f;
+						bFound  = true;
+						break;
+					}
+				}
+				if (!bFound)
+				{
+					if (m_RecentFailSentries.size() >= 3)
+						m_RecentFailSentries.erase(m_RecentFailSentries.begin());
+					m_RecentFailSentries.push_back(
+					    { m_iLastBuiltSentryWpt, engine->Time() + 120.0f });
+				}
+			}
 		}
 		else if (CClassInterface::getSentryEnemy(m_pSentryGun) != nullptr)
 			m_fLastSentryEnemyTime = engine->Time();
@@ -2899,6 +3004,11 @@ void CBotTF2::engiBuildSuccess(eEngiBuild iBuilding, int index)
 	{
 		m_fSentryPlaceTime = engine->Time();
 		m_iSentryKills     = 0;
+		// Clear failure record for this spot on successful build
+		int iWpt = CWaypointLocations::NearestWaypoint(m_vSentryGun, 150, -1);
+		for (size_t k = 0; k < m_RecentFailSentries.size(); k++)
+			if (m_RecentFailSentries[k].iWpt == iWpt)
+				m_RecentFailSentries.erase(m_RecentFailSentries.begin() + k--);
 	}
 	else if (iBuilding == ENGI_DISP)
 	{
@@ -3589,9 +3699,12 @@ void CBotTF2::handleBuildRequest(eEngiBuild iBuilding, int iWaypointFlag, edict_
 		return;
 	}
 
-	// Find a suitable waypoint near the caller
-	int iWpt = CWaypointLocations::NearestWaypoint(vCallerOrigin, 800, -1, true, false, true,
+	// Find a suitable waypoint near the caller — try close first, then wider
+	int iWpt = CWaypointLocations::NearestWaypoint(vCallerOrigin, 400, -1, true, false, true,
 		nullptr, false, getTeam(), true, false, Vector(0, 0, 0), iWaypointFlag);
+	if (iWpt == -1)
+		iWpt = CWaypointLocations::NearestWaypoint(vCallerOrigin, 800, -1, true, false, true,
+			nullptr, false, getTeam(), true, false, Vector(0, 0, 0), iWaypointFlag);
 
 	if (iWpt == -1)
 	{
@@ -7521,6 +7634,11 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			ADD_UTILITY(BOT_UTIL_BUILDSENTRY, !m_bIsCarryingObj && !bHasFlag && !m_pSentryGun
 			    && (iMetal >= (hasGunslinger() ? 100 : 130)),
 			            CTeamFortress2Mod::isMapType(TF_MAP_MVM) ? 0.95f : 0.9f);
+			ADD_UTILITY(BOT_UTIL_BUILDSENTRY_COMBAT,
+			            hasGunslinger() && hasEnemy() && recentlyHurt(2.0f)
+			                && !m_bIsCarryingObj && !m_pSentryGun && (iMetal >= 100)
+			                && !m_pSchedules->hasSchedule(SCHED_TF_BUILD),
+			            0.92f);
 		ADD_UTILITY(BOT_UTIL_BUILDDISP,
 		            !m_bIsCarryingObj && !bHasFlag && m_pSentryGun
 		                && (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
@@ -9678,6 +9796,22 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		}
 
 		break;
+	case BOT_UTIL_BUILDSENTRY_COMBAT:
+	{
+		int iWpt = CWaypointLocations::NearestWaypoint(
+		    getOrigin(), 64, -1, true, false, true, nullptr, false, getTeam(),
+		    true, false, Vector(0, 0, 0), 0);
+		if (iWpt >= 0)
+		{
+			CWaypoint *pWpt = CWaypoints::getWaypoint(iWpt);
+			if (pWpt && !pWpt->hasFlag(CWaypointTypes::W_FL_CAPPOINT))
+			{
+				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_SENTRY, pWpt));
+				return true;
+			}
+		}
+		return false;
+	}
 	case BOT_UTIL_ENGI_DESTROY_SENTRY: // destroy and rebuild sentry elsewhere
 		engineerBuild(ENGI_SENTRY, ENGI_DESTROY);
 	case BOT_UTIL_BUILDSENTRY:
@@ -9789,6 +9923,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			}
 
 			m_iLastFailSentryWpt    = CWaypoints::getWaypointIndex(pWaypoint);
+			m_iLastBuiltSentryWpt   = m_iLastFailSentryWpt;
 			m_vSentryGun            = pWaypoint->getOrigin() + pWaypoint->applyRadius();
 			m_bSentryGunVectorValid = true;
 			updateCondition(CONDITION_COVERT); // sneak around to get there
@@ -10077,8 +10212,26 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
 				pWaypoint = CTeamFortress2Mod::getBestWaypointMVM(this, CWaypointTypes::W_FL_SENTRY);
 			if (pWaypoint == nullptr)
-				pWaypoint = CWaypoints::getWaypoint(CWaypointLocations::NearestWaypoint(
-				    CBotGlobals::entityOrigin(m_pSentryGun), 150, -1, true, false, true, nullptr, false, getTeam(), true));
+			{
+				Vector vSentry = CBotGlobals::entityOrigin(m_pSentryGun);
+				float fBest    = 0.0f;
+				int iBest      = -1;
+				for (int w = 0; w < CWaypoints::numWaypoints(); w++)
+				{
+					CWaypoint *pW = CWaypoints::getWaypoint(w);
+					if (!pW || !pW->isUsed() || !pW->forTeam(getTeam())) continue;
+					int f = pW->getFlags();
+					if (f & (CWaypointTypes::W_FL_JUMP | CWaypointTypes::W_FL_CROUCH
+					         | CWaypointTypes::W_FL_LADDER | CWaypointTypes::W_FL_LIFT))
+						continue;
+					float fD = (pW->getOrigin() - vSentry).Length();
+					if (fD > 400.0f) continue;
+					float fScore = evaluateBuildSpot(pW, 2);
+					if (fScore > fBest) { fBest = fScore; iBest = w; }
+				}
+				if (iBest >= 0)
+					pWaypoint = CWaypoints::getWaypoint(iBest);
+			}
 		}
 
 		if (pWaypoint)
@@ -12732,6 +12885,8 @@ void CBotTF2::roundWon(int iTeam, bool bFullRound)
 	removeCondition(CONDITION_PARANOID);
 	removeCondition(CONDITION_BUILDING_SAPPED);
 	removeCondition(CONDITION_COVERT);
+	m_iLastBuiltSentryWpt = -1;
+	m_RecentFailSentries.clear();
 }
 
 void CBotTF2::waitRemoveSap()

@@ -152,6 +152,7 @@ const std::unordered_map<int, const char *> g_szUtils = {
 	UTIL(BOT_UTIL_SPY_REDISGUISE),
 	UTIL(BOT_UTIL_SPY_INFILTRATE),
 	UTIL(BOT_UTIL_SPY_LURK),
+	UTIL(BOT_UTIL_BUILDSENTRY_COMBAT),
 	UTIL(BOT_UTIL_MAX),
 };
 #undef UTIL

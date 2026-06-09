@@ -910,6 +910,10 @@ class CBotFortress : public CBot
 
 	int m_iLastFailSentryWpt;
 	int m_iLastFailTeleExitWpt;
+	int m_iLastBuiltSentryWpt;
+
+	struct SpotFailRecord { int iWpt; float fTime; };
+	std::vector<SpotFailRecord> m_RecentFailSentries; // max 3
 
 	MyEHandle m_pHealer;
 
