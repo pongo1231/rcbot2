@@ -257,6 +257,38 @@ void CBotTF2::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 				m_nextVoicecmd = TF_VC_YES;
 		}
 		break;
+	case TF_VC_INCOMING:
+		if (isVisible(pPlayer) && distanceFrom(pPlayer) < 1024.0f)
+		{
+			m_pSchedules->addFront(new CBotGotoOriginSched(pPlayer));
+			if (hasSomeConditions(CONDITION_DEFENSIVE))
+				updateCondition(CONDITION_CHANGED);
+		}
+		break;
+	case TF_VC_UBERREADY:
+		if (getClass() != TF_CLASS_MEDIC)
+		{
+			updateCondition(CONDITION_PUSH);
+			if (distanceFrom(pPlayer) < 800.0f && isVisible(pPlayer))
+				m_pSchedules->addFront(new CBotGotoOriginSched(pPlayer));
+		}
+		break;
+	case TF_VC_GOLEFT:
+		{
+			Vector vRight;
+			AngleVectors(eyeAngles(), nullptr, &vRight, nullptr);
+			Vector vTarget = getOrigin() + vRight * -256.0f;
+			setMoveTo(vTarget);
+		}
+		break;
+	case TF_VC_GORIGHT:
+		{
+			Vector vRight;
+			AngleVectors(eyeAngles(), nullptr, &vRight, nullptr);
+			Vector vTarget = getOrigin() + vRight * 256.0f;
+			setMoveTo(vTarget);
+		}
+		break;
 	default:
 		break;
 	}
@@ -278,6 +310,9 @@ void CBroadcastRoundStart::execute(CBot *pBot)
 CBotFortress::CBotFortress()
 {
 	CBot();
+
+	m_fPeriodicReEvalTime     = 0.0f;
+	m_fLastUtility            = 0.0f;
 
 	m_iLastFailSentryWpt      = -1;
 	m_iLastFailTeleExitWpt    = -1;
@@ -313,6 +348,9 @@ CBotFortress::CBotFortress()
 	m_bIsBeingHealed          = false;
 	m_bCanBeUbered            = false;
 	m_bRevived                = false;
+	m_fHealRotationTime       = 0.0f;
+	m_fHealStartTime          = 0.0f;
+	m_fHealeeStartHealthPct   = 0.0f;
 }
 
 void CBotFortress::checkDependantEntities()
@@ -2045,6 +2083,12 @@ void CBotTF2::spawnInit()
 {
 	CBotFortress::spawnInit();
 
+	m_fPeriodicReEvalTime = engine->Time() + randomFloat(2.0f, 4.0f);
+	m_fLastUtility        = 0.0f;
+	m_fHealRotationTime   = 0.0f;
+	m_fHealStartTime      = 0.0f;
+	m_fHealeeStartHealthPct = 0.0f;
+
 	m_iDesiredResistType  = 0;
 	m_fUseBuffItemTime    = 0.0f;
 	// m_bHatEquipped = false;
@@ -2769,7 +2813,18 @@ void CBotTF2::killed(edict_t *pVictim, char *weapon)
 		removeCondition(CONDITION_PARANOID);
 	}
 
-	taunt();
+	// Only taunt if safe -- no visible enemies within 800u
+	bool bEnemiesNearby = false;
+	for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+	{
+		edict_t *pT = INDEXENT(i);
+		if (!pT || pT == m_pEdict) continue;
+		if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+		if (CTeamFortress2Mod::getTeam(pT) == m_iTeam) continue;
+		if (distanceFrom(pT) < 800.0f && FVisible(pT)) { bEnemiesNearby = true; break; }
+	}
+	if (!bEnemiesNearby)
+		taunt();
 }
 
 void CBotTF2::capturedFlag()
@@ -5208,6 +5263,45 @@ void CBotTF2::modThink()
 
 			if (bHealTargetNeedsHP)
 			{
+				// Track when we started healing this target
+				if (m_fHealStartTime == 0.0f || m_pHeal != m_pLastHeal.get())
+				{
+					m_fHealStartTime        = engine->Time();
+					m_pLastHeal             = m_pHeal;
+					IPlayerInfo *pInfo      = playerinfomanager->GetPlayerInfo(m_pHeal);
+					m_fHealeeStartHealthPct = pInfo ? ((float)pInfo->GetHealth() / pInfo->GetMaxHealth()) : 0.0f;
+				}
+
+				// Rotation check every 2-3s: switch if target is healed enough
+				if (engine->Time() > m_fHealRotationTime)
+				{
+					m_fHealRotationTime = engine->Time() + randomFloat(2.0f, 3.0f);
+
+					IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(m_pHeal);
+					float fCurrentHPct = pInfo ? ((float)pInfo->GetHealth() / pInfo->GetMaxHealth()) : 1.0f;
+
+					if (fCurrentHPct > 0.75f)
+					{
+						edict_t *pBetter = nullptr;
+						float fBest = getHealFactor(m_pHeal) * 0.9f;
+						for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+						{
+							edict_t *pEd = INDEXENT(i);
+							if (!pEd || pEd == m_pEdict || pEd == m_pHeal.get()) continue;
+							if (!CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+							if (CTeamFortress2Mod::getTeam(pEd) != m_iTeam) continue;
+							float fFactor = getHealFactor(pEd);
+							if (fFactor > fBest) { fBest = fFactor; pBetter = pEd; }
+						}
+						if (pBetter)
+						{
+							m_pHeal           = pBetter;
+							m_fHealStartTime  = 0.0f;
+							m_pSchedules->freeMemory();
+						}
+					}
+				}
+
 				if (!m_pSchedules->hasSchedule(SCHED_HEAL))
 				{
 					m_pSchedules->freeMemory();
@@ -5240,7 +5334,9 @@ void CBotTF2::modThink()
 				{
 					if (m_fCurrentDanger >= TF2_HWGUY_REV_BELIEF)
 					{
-						if (pWeapon->getAmmo(this) > 100)
+						bool bEnemyInRange = (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY)
+						                     && distanceFrom(m_pEnemy) < 1200.0f);
+						if (bEnemyInRange && pWeapon->getAmmo(this) > 100)
 							bRevMiniGun = true;
 					}
 				}
@@ -5295,7 +5391,10 @@ void CBotTF2::modThink()
 		{
 			CBotWeapon *pWrench = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_WRENCH));
 			if (pWrench && pWrench->getAmmo(this) >= (hasGunslinger() ? 100 : 130)
-			    && m_pSchedules->hasSchedule(SCHED_DEFENDPOINT))
+			    && (m_pSchedules->hasSchedule(SCHED_DEFENDPOINT)
+			        || m_pSchedules->hasSchedule(SCHED_LOOKAFTERSENTRY)
+			        || m_pSchedules->hasSchedule(SCHED_TF_BUILD)
+			        || m_pSchedules->isCurrentSchedule(SCHED_ATTACK)))
 			{
 				m_pSchedules->freeMemory();
 				updateCondition(CONDITION_CHANGED);
@@ -5545,7 +5644,12 @@ void CBotTF2::modThink()
 				{
 					CBotWeapon *pKnife = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_KNIFE));
 					if (pKnife && pKnife->hasWeapon())
+					{
 						select_CWeapon(pKnife->getWeaponInfo());
+						m_pSchedules->freeMemory();
+						m_pSchedules->add(new CBotBackstabSched(pBaitTarget));
+						m_bSpyLurking = false;
+					}
 				}
 				else
 				{
@@ -5709,9 +5813,9 @@ void CBotTF2::modThink()
 							}
 						}
 					}
-				}
-				break;
-			default:
+		}
+		break;
+	default:
 				break;
 			}
 
@@ -7376,16 +7480,22 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		}
 	}
 
-	// Force re-evaluation if bot hasn't moved recently (stuck detection)
+	// Force re-evaluation: stuck detection OR periodic check
+	bool bPeriodicCheck = false;
 	if (!hasSomeConditions(CONDITION_CHANGED) && !m_pSchedules->isEmpty())
 	{
-		Vector vDelta = getOrigin() - m_vLastReEvalPos;
-		float fHysteresisDelay = 0.5f;
-		if (m_pSchedules->hasSchedule(SCHED_TF_BUILD) || m_pSchedules->hasSchedule(SCHED_UPGRADE)
-		    || m_pSchedules->hasSchedule(SCHED_TF2_ENGI_MOVE_BUILDING))
-			fHysteresisDelay = 2.0f;
-		if (vDelta.Length2D() > 32.0f || engine->Time() < (m_fReEvalTime + fHysteresisDelay))
-			return;
+		bPeriodicCheck = (engine->Time() > m_fPeriodicReEvalTime);
+
+		if (!bPeriodicCheck)
+		{
+			Vector vDelta = getOrigin() - m_vLastReEvalPos;
+			float fHysteresisDelay = 0.5f;
+			if (m_pSchedules->hasSchedule(SCHED_TF_BUILD) || m_pSchedules->hasSchedule(SCHED_UPGRADE)
+			    || m_pSchedules->hasSchedule(SCHED_TF2_ENGI_MOVE_BUILDING))
+				fHysteresisDelay = 2.0f;
+			if (vDelta.Length2D() > 32.0f || engine->Time() < (m_fReEvalTime + fHysteresisDelay))
+				return;
+		}
 	}
 
 	removeCondition(CONDITION_CHANGED);
@@ -7398,6 +7508,14 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	{
 		// keep attacking enemy -- no change to task
 		return;
+	}
+
+	// Last alive: shift to survival mode
+	bool bIsLastAlive = false;
+	if (CTeamFortress2Mod::hasRoundStarted())
+	{
+		int iAliveTeammates = CBotGlobals::numPlayersOnTeam(iTeam, true);
+		bIsLastAlive = (iAliveTeammates <= 1);
 	}
 
 	bCheckCurrent          = true; // important for checking the current schedule if not empty
@@ -7418,6 +7536,43 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 
 	numplayersonteam       = CBotGlobals::numPlayersOnTeam(iTeam, false);
 	numplayersonteam_alive = CBotGlobals::numPlayersOnTeam(iTeam, true);
+
+	// Dynamic role allocation: scan what other bots are doing
+	int iCurrentAttackers = 0;
+	int iCurrentDefenders = 0;
+	for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+	{
+		edict_t *pEd = INDEXENT(i);
+		if (!pEd || pEd == m_pEdict) continue;
+		if (!CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+		if (CTeamFortress2Mod::getTeam(pEd) != m_iTeam) continue;
+		CBot *pOther = CBots::getBotPointer(pEd);
+		if (!pOther) continue;
+		if (!pOther->getSchedule() || pOther->getSchedule()->isEmpty()) continue;
+		eBotAction a = pOther->getCurrentUtil();
+		if (a == BOT_UTIL_ATTACK_POINT)               iCurrentAttackers++;
+		else if (a == BOT_UTIL_DEFEND_POINT
+		         || a == BOT_UTIL_DEFEND_FLAG)         iCurrentDefenders++;
+	}
+
+	float fAttackBias = 1.0f;
+	float fDefendBias = 1.0f;
+	if (iCurrentAttackers + iCurrentDefenders >= 2)
+	{
+		float fDom     = CTeamFortress2Mod::getTeamDominance(m_iTeam);
+		int iTotalObj  = iCurrentAttackers + iCurrentDefenders;
+		int iTargetA, iTargetD;
+		if (fDom > 0.5f)       { iTargetA = (iTotalObj * 0.7f < 1.0f) ? 1 : (int)(iTotalObj * 0.7f); }
+		else if (fDom < -0.3f) { iTargetA = (iTotalObj * 0.3f < 1.0f) ? 1 : (int)(iTotalObj * 0.3f); }
+		else                   { iTargetA = (iTotalObj * 0.5f < 1.0f) ? 1 : (int)(iTotalObj * 0.5f); }
+		iTargetD = iTotalObj - iTargetA;
+		if (iTargetD < 1) iTargetD = 1;
+
+		fAttackBias = 1.0f - 0.5f * ((float)(iCurrentAttackers - iTargetA) / (float)iTargetA);
+		fDefendBias = 1.0f - 0.5f * ((float)(iCurrentDefenders - iTargetD) / (float)iTargetD);
+		fAttackBias = (fAttackBias < 0.3f) ? 0.3f : ((fAttackBias > 1.2f) ? 1.2f : fAttackBias);
+		fDefendBias = (fDefendBias < 0.3f) ? 0.3f : ((fDefendBias > 1.2f) ? 1.2f : fDefendBias);
+	}
 
 	// UNUSED
 	// Shadow/Time must be Floating point
@@ -7980,6 +8135,15 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		fDefendFlagUtility = 0.0f;
 	else if (m_iClass == TF_CLASS_ENGINEER)
 		fDefendFlagUtility = m_pSentryGun ? 0.05f : 0.15f; // build instead of camp
+
+	if (bIsLastAlive)
+	{
+		fGetFlagUtility    *= 0.05f;
+		fDefendFlagUtility *= 2.5f;
+	}
+
+	fGetFlagUtility    *= fAttackBias;
+	fDefendFlagUtility *= fDefendBias;
 
 	// recently saw an enemy go near the point
 	if (hasSomeConditions(CONDITION_DEFENSIVE) && (m_pLastEnemy.get() != nullptr)
@@ -9121,7 +9285,11 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		if (!m_pSchedules->isEmpty() && bCheckCurrent)
 		{
 			if (m_CurrentUtil != next->getId())
+			{
+				if (bPeriodicCheck && next->getUtility() < m_fLastUtility * 1.2f)
+					break;
 				m_pSchedules->freeMemory();
+			}
 			else
 				break;
 		}
@@ -9131,8 +9299,10 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		if (executeAction(next)) //>getId(),pWaypointResupply,pWaypointHealth,pWaypointAmmo) )
 		{
 			m_CurrentUtil               = next->getId();
+			m_fLastUtility              = next->getUtility();
 			// avoid trying to do same thing again and again if it fails
 			m_fUtilTimes[m_CurrentUtil] = engine->Time() + 0.5f;
+			m_fPeriodicReEvalTime       = engine->Time() + randomFloat(2.0f, 4.0f);
 
 			if (CClients::clientsDebugging(BOT_DEBUG_UTIL))
 			{
@@ -9250,7 +9420,8 @@ bool CBotTF2::deployStickies(eDemoTrapType type, Vector vStand, Vector vLocation
 				m_iTrapCPIndex = CTeamFortress2Mod::m_ObjectiveResource.m_WaypointAreaToIndexTranslation[wptindex];
 			else
 				m_iTrapCPIndex = -1;
-			m_vStickyLocation = vLocation;
+			m_vStickyLocation  = vLocation;
+			m_fStickyDeployTime = engine->Time();
 
 			// complete
 			return true;
@@ -9262,12 +9433,25 @@ bool CBotTF2::deployStickies(eDemoTrapType type, Vector vStand, Vector vLocation
 
 void CBotTF2::detonateStickies(bool isJumping)
 {
+	// Check arm time -- unarmed stickies detonate uselessly
+	CBotWeapon *pSticky = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_PIPEBOMBS));
+	float fArmTime = 0.7f; // default sticky launcher
+	if (pSticky)
+	{
+		edict_t *pEnt = pSticky->getWeaponEntity();
+		if (pEnt && CClassInterface::TF2_getItemDefinitionIndex(pEnt) == 130)
+			fArmTime = 1.6f; // Scottish Resistance
+	}
+	if (m_fStickyDeployTime > 0.0f && (engine->Time() - m_fStickyDeployTime) < fArmTime)
+		return;
+
 	// don't try to blow myself up unless i'm jumping
 	if (isJumping || (distanceFrom(m_vStickyLocation) > (BLAST_RADIUS / 2)))
 	{
 		secondaryAttack();
-		m_iTrapType    = TF_TRAP_TYPE_NONE;
-		m_iTrapCPIndex = -1;
+		m_iTrapType          = TF_TRAP_TYPE_NONE;
+		m_iTrapCPIndex       = -1;
+		m_fStickyDeployTime  = 0.0f;
 	}
 }
 
@@ -9751,6 +9935,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		break;
 	case BOT_UTIL_ENGI_DESTROY_ENTRANCE: // destroy and rebuild sentry elsewhere
 		engineerBuild(ENGI_ENTRANCE, ENGI_DESTROY);
+		return true;
 	case BOT_UTIL_BUILDTELENT:
 		pWaypoint = CWaypoints::getWaypoint(CWaypointLocations::NearestWaypoint(
 		    m_vTeleportEntrance, 300, -1, true, false, true, nullptr, false, getTeam(), true));
@@ -9807,6 +9992,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 	break;
 	case BOT_UTIL_ENGI_DESTROY_EXIT: // destroy and rebuild sentry elsewhere
 		engineerBuild(ENGI_EXIT, ENGI_DESTROY);
+		return true;
 	case BOT_UTIL_BUILDTELEXT:
 
 		if (m_bTeleportExitVectorValid)
@@ -9915,6 +10101,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 	}
 	case BOT_UTIL_ENGI_DESTROY_SENTRY: // destroy and rebuild sentry elsewhere
 		engineerBuild(ENGI_SENTRY, ENGI_DESTROY);
+		return true;
 	case BOT_UTIL_BUILDSENTRY:
 
 		pWaypoint = nullptr;
@@ -10106,9 +10293,13 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 
 			if (fDist > fBestDist)
 			{
-				// Prefer waypoints with higher traversal counts
-				fBestDist = fDist + pWpt->getTraversalCount() * 10.0f;
-				iBestWpt = i;
+				// Prefer low-traffic waypoints for stealth
+				float fPreference = fDist - pWpt->getTraversalCount() * 5.0f + 10.0f;
+				if (fPreference > fBestDist)
+				{
+					fBestDist = fPreference;
+					iBestWpt  = i;
+				}
 			}
 		}
 
@@ -10289,6 +10480,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		break;
 	case BOT_UTIL_ENGI_DESTROY_DISP:
 		engineerBuild(ENGI_DISP, ENGI_DESTROY);
+		return true;
 	case BOT_UTIL_BUILDDISP:
 		pWaypoint = nullptr;
 		if (m_bDispenserVectorValid)
@@ -12727,7 +12919,23 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 				}
 
 				if (pProj && fProjDist > 80.0f && fProjDist < 400.0f)
+				{
+					Vector vProjVelocity = CBotGlobals::getVelocity(pProj);
+					if (vProjVelocity.Length2D() > 100.0f)
+					{
+						Vector vProjOrigin = CBotGlobals::entityOrigin(pProj);
+						Vector vIntercept  = vProjOrigin + vProjVelocity * 0.1f;
+						vIntercept.z       = getOrigin().z;
+						Vector vMove       = vIntercept - getOrigin();
+						vMove.z            = 0;
+						if (vMove.Length2D() > 10.0f)
+						{
+							vMove = vMove / vMove.Length2D() * m_fIdealMoveSpeed * 0.6f;
+							setMoveTo(getOrigin() + vMove);
+						}
+					}
 					bSecAttack = true;
+				}
 			}
 		}
 
@@ -13699,6 +13907,7 @@ CBotTF2::CBotTF2()
 	m_pBluePayloadBomb         = nullptr;
 
 	m_iTrapType                = TF_TRAP_TYPE_NONE;
+	m_fStickyDeployTime        = 0.0f;
 	m_pLastEnemySentry         = MyEHandle(nullptr);
 	m_prevSentryHealth         = 0;
 	m_prevDispHealth           = 0;

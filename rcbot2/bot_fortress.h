@@ -918,6 +918,9 @@ class CBotFortress : public CBot
 	MyEHandle m_pHealer;
 
 	float m_fHealingMoveTime;
+	float m_fHealRotationTime;
+	float m_fHealStartTime;
+	float m_fHealeeStartHealthPct;
 
 	MyEHandle m_pLastEnemySentry;
 	std::vector<MyEHandle> m_KnownSentries;
@@ -944,6 +947,8 @@ class CBotFortress : public CBot
 	float m_fBusterAlertTime;
 	float m_fBusterRescueTime;
 	float m_fPredictiveStrafeTime;
+	float m_fPeriodicReEvalTime;
+	float m_fLastUtility;
 
 	bool isPlayerAFK(edict_t *pPlayer);
 	static void notePlayerEngaged(edict_t *pPlayer);
@@ -1271,6 +1276,7 @@ class CBotTF2 : public CBotFortress
 	// bool m_bDeployedStickies;
 	eDemoTrapType m_iTrapType;
 	int m_iTrapCPIndex;
+	float m_fStickyDeployTime;
 	Vector m_vStickyLocation;
 	float m_fRemoveSapTime;
 	float m_fRevMiniGunTime;
