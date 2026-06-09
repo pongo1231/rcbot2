@@ -43,6 +43,7 @@ CGameRulesObject *g_pGameRules_Obj                                     = nullptr
 CCreateGameRulesObject *g_pGameRules_Create_Obj                        = nullptr;
 CDisableCurrencyPackBotCheckPatch *g_pDisableCurrencyPackBotCheckPatch = nullptr;
 CReviveMarkerBotCheckPatch *g_pReviveMarkerBotCheckPatch                = nullptr;
+CPartnerTauntBotCheckPatch *g_pPartnerTauntBotCheckPatch                = nullptr;
 
 void **g_pGameRules                                                    = nullptr;
 
@@ -348,4 +349,46 @@ void CReviveMarkerBotCheckPatch::setEnabled(bool bEnable)
 
 	internalPatch(bEnable);
 	m_bPatched = bEnable;
+}
+
+CPartnerTauntBotCheckPatch::CPartnerTauntBotCheckPatch(CRCBotKeyValueList &list, void *pAddrBase)
+{
+	findFunc(list, "partner_taunt_bot_check_sig", pAddrBase,
+	         "\\x56"
+	         "\\xFF\\x90\\x20\\x07\\x00\\x00"
+	         "\\x83\\xC4\\x10"
+	         "\\x84\\xC0"
+	         "\\x74\\x13"
+	         "\\x8B\\x07"
+	         "\\x83\\xEC\\x0C"
+	         "\\x57"
+	         "\\xFF\\x90\\x20\\x07\\x00\\x00"
+	         "\\x83\\xC4\\x10"
+	         "\\x84\\xC0"
+	         "\\x75");
+}
+
+void CPartnerTauntBotCheckPatch::patchMyTouch()
+{
+	if (!m_func)
+		return;
+
+#ifdef _WIN32
+	DWORD dOld;
+	VirtualProtect(m_func, 33, PAGE_EXECUTE_READWRITE, &dOld);
+#elif POSIX
+	mprotect(reinterpret_cast<void *>(PAGE_ALIGN_DOWN(reinterpret_cast<intptr_t>(m_func))), PAGE_SIZE,
+	         PROT_READ | PROT_WRITE | PROT_EXEC);
+#endif
+
+	static const unsigned char teamGate[] = {
+	    0x8B, 0x86, 0x44, 0x02, 0x00, 0x00, // MOV EAX,[ESI+0x244] — candidate m_iTeamNum
+	    0x83, 0xC4, 0x0C,                     // ADD ESP,0xC — balance SUB at 0x58FE
+	    0x83, 0xF8, 0x03,                     // CMP EAX,3 — TF_TEAM_PVE_INVADERS
+	    0x0F, 0x84, 0xCD, 0xFF, 0xFF, 0xFF,  // JE -0x33 → skip (stack balanced)
+	    0x90, 0x90, 0x90, 0x90, 0x90,         // NOP pad (15 bytes)
+	    0x90, 0x90, 0x90, 0x90, 0x90,
+	    0x90, 0x90, 0x90, 0x90, 0x90,
+	};
+	V_memcpy(m_func, teamGate, 33);
 }

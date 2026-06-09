@@ -614,6 +614,13 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 		META_LOG(g_PLAPI, "WARNING: Revive marker bot-check signature not found. "
 		                   "Update revive_marker_bot_check_sig in hookinfo.ini.");
 
+	g_pPartnerTauntBotCheckPatch = new CPartnerTauntBotCheckPatch(kvl, gameServerFactory);
+	if (g_pPartnerTauntBotCheckPatch->found())
+		g_pPartnerTauntBotCheckPatch->patchMyTouch();
+	else
+		META_LOG(g_PLAPI, "WARNING: Partner taunt bot-check signature not found. "
+		                   "Update partner_taunt_bot_check_sig in hookinfo.ini.");
+
 	rcbot_mvm_revive_markers.InstallChangeCallback(onReviveMarkersChanged);
 #endif
 

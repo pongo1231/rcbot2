@@ -103,5 +103,19 @@ class CReviveMarkerBotCheckPatch : public CSignatureFunction
 };
 extern CReviveMarkerBotCheckPatch *g_pReviveMarkerBotCheckPatch;
 
+class CPartnerTauntBotCheckPatch : public CSignatureFunction
+{
+  public:
+	CPartnerTauntBotCheckPatch(CRCBotKeyValueList &list, void *pAddrBase);
+
+	bool found()
+	{
+		return m_func != nullptr;
+	}
+
+	void patchMyTouch();
+};
+extern CPartnerTauntBotCheckPatch *g_pPartnerTauntBotCheckPatch;
+
 void *GetGameRules();
 #endif
