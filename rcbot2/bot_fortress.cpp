@@ -13601,7 +13601,8 @@ bool CBotTF2::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 				if (pFEnt && CClassInterface::TF2_getItemDefinitionIndex(pFEnt) == 594)
 					return false;
 			}
-			else if (bIsBoss && pWeapon->isMelee() && !pWeapon->isSpecial())
+			else if (bIsBoss && !CTeamFortress2Mod::isTankBoss(pEdict)
+			         && pWeapon->isMelee() && !pWeapon->isSpecial())
 				return false;
 		}
 
