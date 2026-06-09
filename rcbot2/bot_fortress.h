@@ -947,6 +947,8 @@ class CBotFortress : public CBot
 	float m_fBusterAlertTime;
 	float m_fBusterRescueTime;
 	float m_fPredictiveStrafeTime;
+	float m_fPeriodicReEvalTime;
+	float m_fLastUtility;
 
 	bool isPlayerAFK(edict_t *pPlayer);
 	static void notePlayerEngaged(edict_t *pPlayer);
