@@ -5410,7 +5410,6 @@ void CBotTF2::modThink()
 			if (pWrench && pWrench->getAmmo(this) >= (hasGunslinger() ? 100 : 130)
 			    && (m_pSchedules->hasSchedule(SCHED_DEFENDPOINT)
 			        || m_pSchedules->hasSchedule(SCHED_LOOKAFTERSENTRY)
-			        || m_pSchedules->hasSchedule(SCHED_TF_BUILD)
 			        || m_pSchedules->isCurrentSchedule(SCHED_ATTACK)))
 			{
 				m_pSchedules->freeMemory();
