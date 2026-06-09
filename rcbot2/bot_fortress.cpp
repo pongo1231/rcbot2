@@ -9309,8 +9309,8 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 					    || m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
 						break;
 
-					if (m_fLastUtility > 0.0f
-					    && next->getUtility() < m_fLastUtility * 1.5f)
+				if (m_fLastUtility > 0.0f
+				    && next->getUtility() < m_fLastUtility * 1.2f)
 						break;
 				}
 				m_pSchedules->freeMemory();
