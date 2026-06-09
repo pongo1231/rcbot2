@@ -556,6 +556,8 @@ class CBot
 
 	virtual bool canAvoid(edict_t *pEntity);
 
+	virtual float getClassPathCostFactor() const { return 1.0f; }
+
 	inline bool hasEnemy()
 	{
 		return m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY);
@@ -1005,6 +1007,7 @@ class CBot
 
 	int m_iLastDeathArea;
 	float m_fLastDeathTime;
+	int m_iDeathCountByArea[64] = {};
 
   protected:
 	inline void setLookAt(Vector vNew)

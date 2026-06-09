@@ -51,6 +51,7 @@
 #include "bot_weapons.h"
 #include "bot_wpt_dist.h"
 #include "botutil/shared/tasks.h"
+#include "botutil/shared/crouch_hide_task.h"
 #include "botutil/tf2/tasks.h"
 
 #include <in_buttons.h>
@@ -141,6 +142,7 @@ void CBotTF2::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 		{
 			m_vLastSeeSpy = CBotGlobals::entityOrigin(pPlayer);
 			m_fSeeSpyTime = engine->Time() + randomFloat(3.0f, 6.0f);
+			updateCondition(CONDITION_PARANOID);
 			// m_pPrevSpy = pPlayer; // HACK
 		}
 		break;
@@ -2411,6 +2413,22 @@ float CBotTF2::evaluateBuildSpot(CWaypoint *pWpt, int iBuildingType)
 	if (CTeamFortress2Mod::buildingNearby(m_iTeam, pWpt->getOrigin()))
 		fScore *= 0.3f;
 
+	// Team memory: penalize spots within range of team-known enemy sentries
+	if (iBuildingType == 1)
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			if (CTeamFortress2Mod::m_fTeamKnownSentryTimes[i] > engine->Time())
+			{
+				float fD = (CTeamFortress2Mod::m_vTeamKnownSentryPositions[i] - pWpt->getOrigin()).Length();
+				if (fD < 800.0f)
+					fScore *= 0.5f + 0.5f * (fD / 800.0f);
+			}
+		}
+	}
+
+	fScore += randomFloat(-0.1f, 0.1f);
+
 	return fScore;
 }
 
@@ -2688,6 +2706,9 @@ void CBotTF2::died(edict_t *pKiller, const char *pszWeapon)
 		{
 			m_iLastDeathArea = pWpt->getArea();
 			m_fLastDeathTime = engine->Time();
+			int iArea = pWpt->getArea();
+			if (iArea >= 0 && iArea < 64)
+				m_iDeathCountByArea[iArea]++;
 		}
 	}
 
@@ -2830,6 +2851,17 @@ void CBotTF2::updateClass()
 TF_Class CBotTF2::getClass()
 {
 	return m_iClass;
+}
+
+float CBotTF2::getClassPathCostFactor() const
+{
+	switch (m_iClass)
+	{
+	case TF_CLASS_SCOUT:   return 0.7f;
+	case TF_CLASS_SOLDIER:  return 1.1f;
+	case TF_CLASS_HWGUY:    return 1.3f;
+	default:                return 1.0f;
+	}
 }
 
 void CBotTF2::setup()
@@ -4426,6 +4458,31 @@ void CBotTF2::modThink()
 
 	// Per-frame projectile dodge: works even when not in active combat,
 	// e.g. while pathing, retreating, or repositioning
+
+	// Predictive pre-dodge: if enemy player is a projectile class facing us,
+	// anticipate their shot and dodge early
+	if (m_pEnemy.get() && CBotGlobals::isPlayer(m_pEnemy)
+	    && CBotGlobals::isAlivePlayer(m_pEnemy))
+	{
+		int iClass = CClassInterface::getTF2Class(m_pEnemy);
+		if (iClass == TF_CLASS_SOLDIER || iClass == TF_CLASS_DEMOMAN)
+		{
+			Vector vToEnemy = CBotGlobals::entityOrigin(m_pEnemy) - getOrigin();
+			float fToLen = vToEnemy.Length();
+			if (fToLen > 1.0f)
+			{
+				Vector vEnemyDir = vToEnemy / fToLen;
+				if (CBotGlobals::DotProductFromOrigin(m_pEnemy, getOrigin()) > 0.5f)
+				{
+					Vector vPred = predictEnemyOffset(m_pEnemy, 0.3f,
+					                                  m_pProfile->m_fAimSkill);
+					if (vPred.Length2D() > 50.0f)
+						m_fStrafeTime = 0.0f; // force early dodge
+				}
+			}
+		}
+	}
+
 	if (m_fStrafeTime < engine->Time())
 	{
 		edict_t *pIncoming = m_NearestEnemyRocket.get();
@@ -7323,7 +7380,11 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	if (!hasSomeConditions(CONDITION_CHANGED) && !m_pSchedules->isEmpty())
 	{
 		Vector vDelta = getOrigin() - m_vLastReEvalPos;
-		if (vDelta.Length2D() > 32.0f || engine->Time() < (m_fReEvalTime + 0.5f))
+		float fHysteresisDelay = 0.5f;
+		if (m_pSchedules->hasSchedule(SCHED_TF_BUILD) || m_pSchedules->hasSchedule(SCHED_UPGRADE)
+		    || m_pSchedules->hasSchedule(SCHED_TF2_ENGI_MOVE_BUILDING))
+			fHysteresisDelay = 2.0f;
+		if (vDelta.Length2D() > 32.0f || engine->Time() < (m_fReEvalTime + fHysteresisDelay))
 			return;
 	}
 
@@ -8021,6 +8082,19 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		}
 	}
 
+	// Focus-point defense: engineer with sentry near an active nest digs in harder
+	if (m_iClass == TF_CLASS_ENGINEER && m_pSentryGun.get() && fDefendFlagUtility > 0)
+	{
+		CTeamFortress2Mod::TeamFocusPoint *pF =
+		    CTeamFortress2Mod::getNearestFocusPoint(getOrigin(), 1500.0f);
+		if (pF && pF->iSentryCount > 0)
+		{
+			fDefendFlagUtility *= 1.3f;
+			if (distanceFrom(m_pSentryGun) < 400.0f)
+				updateCondition(CONDITION_COVERT);
+		}
+	}
+
 	// CONDITION_PUSH: directional by map type and role
 	if (hasSomeConditions(CONDITION_PUSH) || CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
 	{
@@ -8036,6 +8110,23 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		{
 			fGetFlagUtility   *= 2.0f;       // attack doubled
 			fDefendFlagUtility *= 1.2f;       // defense modestly boosted
+		}
+
+		// Progressive push: ramp aggression as round timer runs out
+		if (CTeamFortress2Mod::withinEndOfRound(15.0f))
+		{
+			fGetFlagUtility   *= 2.0f;
+			fDefendFlagUtility *= 1.5f;
+		}
+		else if (CTeamFortress2Mod::withinEndOfRound(30.0f))
+		{
+			fGetFlagUtility   *= 1.5f;
+			fDefendFlagUtility *= 1.3f;
+		}
+		else if (CTeamFortress2Mod::withinEndOfRound(60.0f))
+		{
+			fGetFlagUtility   *= 1.3f;
+			fDefendFlagUtility *= 1.1f;
 		}
 	}
 
@@ -9199,7 +9290,17 @@ bool CBotTF2::lookAfterBuildings(float *fTime)
 	if (m_pSentryGun)
 	{
 		if (m_prevSentryHealth > CClassInterface::getSentryHealth(m_pSentryGun))
-			return true;
+		{
+			float fHP = CClassInterface::getSentryHealth(m_pSentryGun)
+			            / CClassInterface::getTF2GetBuildingMaxHealth(m_pSentryGun);
+			int iSentryLevel = CTeamFortress2Mod::getSentryLevel(m_pSentryGun);
+			int iUpgradeMetal = CClassInterface::getTF2SentryUpgradeMetal(m_pSentryGun);
+			bool bSapped = CTeamFortress2Mod::isSentrySapped(m_pSentryGun);
+			if (!bSapped && iSentryLevel < 3 && fHP > 0.9f && iUpgradeMetal > 100)
+				; // minor damage, close to level-up — finish upgrading
+			else
+				return true;
+		}
 
 		m_prevSentryHealth = CClassInterface::getSentryHealth(m_pSentryGun);
 
@@ -10277,6 +10378,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		pSchedule->addTask(new CFindGoodHideSpot(vOrigin));
 		pSchedule->addTask(pHideGoalPoint);
 		pSchedule->addTask(new CBotNest());
+		pSchedule->addTask(new CCrouchHideTask(m_pEnemy.get()));
 
 		// no interrupts, should be a quick waypoint path anyway
 		pHideGoalPoint->setNoInterruptions();
@@ -10646,6 +10748,27 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 				    CWaypointLocations::NearestWaypoint(CBotGlobals::entityOrigin(m_pDefendPayloadBomb), 400, -1, true,
 				                                        false, true, 0, false, getTeam(), true));
 				iDemoTrapType = TF_TRAP_TYPE_PL;
+			}
+
+			if (pWaypoint && pWaypoint->numPaths() > 0)
+			{
+				int iBestPath  = CWaypoints::getWaypointIndex(pWaypoint);
+				float fBestTrav = pWaypoint->peekTraversalCount();
+				for (int p = 0; p < pWaypoint->numPaths() && p < 6; p++)
+				{
+					CWaypoint *pPathWpt = CWaypoints::getWaypoint(pWaypoint->getPath(p));
+					if (pPathWpt && pPathWpt->isUsed())
+					{
+						float fTrav = pPathWpt->peekTraversalCount();
+						if (fTrav > fBestTrav)
+						{
+							fBestTrav = fTrav;
+							iBestPath = pWaypoint->getPath(p);
+						}
+					}
+				}
+				if (fBestTrav > 3.0f && iBestPath != CWaypoints::getWaypointIndex(pWaypoint))
+					pWaypoint = CWaypoints::getWaypoint(iBestPath);
 			}
 
 			if (pWaypoint)

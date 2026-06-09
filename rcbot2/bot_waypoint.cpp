@@ -453,6 +453,9 @@ CWaypoint *CWaypointNavigator::chooseBestFromBelief(std::vector<CWaypoint *> &go
 			{
 				for (int j = 1; j <= gpGlobals->maxClients; j++)
 				{
+					if (CClassInterface::getTeam(INDEXENT(j)) == iTeam)
+						continue;
+
 					edict_t *pSentry = CTeamFortress2Mod::getSentryGun(j - 1);
 
 					if (pSentry != nullptr)
@@ -513,7 +516,9 @@ CWaypoint *CWaypointNavigator::chooseBestFromBelief(std::vector<CWaypoint *> &go
 			    && goals[i]->getArea() == m_pBot->m_iLastDeathArea)
 			{
 				float fDom = CTeamFortress2Mod::getTeamDominance(m_pBot->getTeam());
-				float fPenalty = (fDom > 0.0f) ? 0.3f + fDom * 0.3f : 0.3f;
+				int iArea = (goals[i] ? goals[i]->getArea() : 0);
+				int iDeaths = (iArea >= 0 && iArea < 64) ? m_pBot->m_iDeathCountByArea[iArea] : 0;
+				float fPenalty = (fDom > 0.0f) ? (0.3f + fDom * 0.3f) / (1.0f + iDeaths) : 0.3f / (1.0f + iDeaths);
 				bBeliefFactor *= fPenalty;
 			}
 
@@ -597,7 +602,9 @@ CWaypoint *CWaypointNavigator::chooseBestFromBelief(std::vector<CWaypoint *> &go
 			    && goals[i]->getArea() == m_pBot->m_iLastDeathArea)
 			{
 				float fDom = CTeamFortress2Mod::getTeamDominance(m_pBot->getTeam());
-				float fPenalty = (fDom > 0.0f) ? 0.3f + fDom * 0.3f : 0.3f;
+				int iArea = (goals[i] ? goals[i]->getArea() : 0);
+				int iDeaths = (iArea >= 0 && iArea < 64) ? m_pBot->m_iDeathCountByArea[iArea] : 0;
+				float fPenalty = (fDom > 0.0f) ? (0.3f + fDom * 0.3f) / (1.0f + iDeaths) : 0.3f / (1.0f + iDeaths);
 				bBeliefFactor *= fPenalty;
 			}
 
@@ -1092,8 +1099,8 @@ bool CWaypointNavigator::workRoute(Vector vFrom, Vector vTo, bool *bFail, bool b
 			else if (succWpt->hasFlag(CWaypointTypes::W_FL_TELEPORT_CHEAT))
 				fCost = succWpt->distanceFrom(vOrigin);
 			else
-				fCost = curr->getCost() + (succWpt->distanceFrom(vOrigin))
-				    + (succWpt->peekTraversalCount() * 40.0f);
+			fCost = curr->getCost() + (succWpt->distanceFrom(vOrigin))
+			    + (succWpt->peekTraversalCount() * 40.0f * m_pBot->getClassPathCostFactor());
 
 			if (!CWaypointDistances::isSet(m_iCurrentWaypoint, iSucc)
 			    || (CWaypointDistances::getDistance(m_iCurrentWaypoint, iSucc) > fCost))
@@ -3105,7 +3112,7 @@ bool CWaypoint::addPathTo(int iWaypointIndex)
 Vector CWaypoint::applyRadius()
 {
 	if (m_fRadius > 0)
-		return Vector(randomFloat(-m_fRadius, m_fRadius), randomFloat(m_fRadius, m_fRadius), 0);
+		return Vector(randomFloat(-m_fRadius, m_fRadius), randomFloat(-m_fRadius, m_fRadius), 0);
 
 	return Vector(0, 0, 0);
 }

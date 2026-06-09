@@ -222,7 +222,8 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 		CBotTF2 *pTF2Bot = (CBotTF2 *)pBot;
 		pTF2Bot->resetAttackingEnemy();
 		// attack
-		pBot->handleAttack(m_pWeapon, m_pSentryGun);
+		if (!pBot->handleAttack(m_pWeapon, m_pSentryGun))
+			complete();
 	}
 }
 

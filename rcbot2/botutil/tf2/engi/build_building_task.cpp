@@ -2,6 +2,7 @@
 
 #include "bot_globals.h"
 #include "bot_mods.h"
+#include "bot_waypoint_locations.h"
 
 CBotTFEngiBuildTask::CBotTFEngiBuildTask(eEngiBuild iObject, CWaypoint *pWaypoint)
 {
@@ -18,6 +19,7 @@ CBotTFEngiBuildTask::CBotTFEngiBuildTask(eEngiBuild iObject, CWaypoint *pWaypoin
 	m_iArea         = pWaypoint->getArea();
 	m_vBaseOrigin   = m_vOrigin;
 	m_fRadius       = pWaypoint->getRadius();
+	m_iWaypointIndex = CWaypoints::getWaypointIndex(pWaypoint);
 }
 
 void CBotTFEngiBuildTask::execute(CBot *pBot, CBotSchedule *pSchedule)
@@ -151,6 +153,33 @@ void CBotTFEngiBuildTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 			fail();
 		else if (state == 3) // failed , try again
 		{
+			if (m_iTries >= 2)
+			{
+				int iNewWpt = CWaypointLocations::NearestWaypoint(
+				    m_vBaseOrigin, 400.0f, m_iWaypointIndex,
+				    true, false, true, nullptr, false, 0, true, false,
+				    Vector(0, 0, 0), CWaypointTypes::W_FL_SENTRY);
+				if (iNewWpt >= 0 && iNewWpt != m_iWaypointIndex)
+				{
+					CWaypoint *pNewWpt = CWaypoints::getWaypoint(iNewWpt);
+					if (pNewWpt)
+					{
+						m_vOrigin       = pNewWpt->getOrigin() + pNewWpt->applyRadius();
+						m_vBaseOrigin   = m_vOrigin;
+						m_fRadius       = pNewWpt->getRadius();
+						m_iWaypointIndex = iNewWpt;
+						m_iArea         = pNewWpt->getArea();
+						QAngle ang      = QAngle(0, pNewWpt->getAimYaw(), 0);
+						Vector vForward;
+						AngleVectors(ang, &vForward);
+						m_vAimingVector = m_vOrigin + (vForward * 100.0f);
+						m_iState        = 0;
+						m_iTries        = 0;
+						return;
+					}
+				}
+			}
+
 			if (m_fRadius > 0.0f)
 				m_vOrigin =
 				    m_vBaseOrigin + Vector(randomFloat(-m_fRadius, m_fRadius), randomFloat(-m_fRadius, m_fRadius), 0);

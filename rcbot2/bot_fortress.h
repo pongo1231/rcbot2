@@ -1147,6 +1147,8 @@ class CBotTF2 : public CBotFortress
 
 	TF_Class getClass();
 
+	float getClassPathCostFactor() const;
+
 	void updateClass();
 
 	bool healPlayer();

@@ -28,4 +28,5 @@ class CBotTFEngiBuildTask : public CBotTask
 	int m_iArea;
 	Vector m_vBaseOrigin;
 	float m_fRadius;
+	int m_iWaypointIndex;
 };
