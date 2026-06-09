@@ -9022,6 +9022,17 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		                && !CTeamFortress2Mod::isDispenserSapped(m_pLastEnemy),
 		            fGetFlagUtility + (getHealthPercent() / 7));
 
+		// Use enemy dispenser while disguised — heal/rearm before sapping
+		if (m_iClass == TF_CLASS_SPY && isDisguised()
+		    && m_pNearestEnemyDisp && !CTeamFortress2Mod::isDispenserSapped(m_pNearestEnemyDisp)
+		    && !CClassInterface::isObjectBeingBuilt(m_pNearestEnemyDisp)
+		    && (bNeedAmmo || bNeedHealth)
+		    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
+		{
+			ADD_UTILITY(BOT_UTIL_SPY_USE_ENEMY_DISP, true,
+			    (1000.0f / distanceFrom(m_pNearestEnemyDisp)) + (bNeedHealth ? 0.5f : 0.15f));
+		}
+
 		// Spy infiltrate: move deep into enemy territory,
 		// boosted toward focus points needing sap
 		if (m_fSpyInfiltrateTime < engine->Time()
@@ -11078,6 +11089,12 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		return true;
 	case BOT_UTIL_SAP_LASTENEMY_DISP:
 		m_pSchedules->add(new CBotSpySapBuildingSched(m_pLastEnemy, ENGI_DISP));
+		return true;
+	// Use enemy dispenser while disguised — heal before sapping
+	case BOT_UTIL_SPY_USE_ENEMY_DISP:
+		m_pSchedules->removeSchedule(SCHED_USE_DISPENSER);
+		m_pSchedules->addFront(new CBotUseDispSched(this, m_pNearestEnemyDisp));
+		m_fPickupTime = engine->Time() + randomFloat(6.0f, 20.0f);
 		return true;
 		// Teleporter
 	case BOT_UTIL_SAP_NEAREST_TELE:
