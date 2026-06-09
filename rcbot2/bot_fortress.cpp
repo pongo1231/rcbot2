@@ -6052,8 +6052,9 @@ void CBotTF2::handleWeapons()
 
 		m_pAttackingEnemy = nullptr;
 
-		if (m_bWantToChangeWeapon && (pWeapon != nullptr) && (pWeapon != getCurrentWeapon())
-		    && pWeapon->getWeaponIndex())
+		bool bDemoBurstActive = (m_iClass == TF_CLASS_DEMOMAN && m_iStickyBurstCount > 0);
+		if (m_bWantToChangeWeapon && !bDemoBurstActive && (pWeapon != nullptr)
+		    && (pWeapon != getCurrentWeapon()) && pWeapon->getWeaponIndex())
 		{
 			select_CWeapon(pWeapon->getWeaponInfo());
 			// selectWeapon(pWeapon->getWeaponIndex());
@@ -12785,9 +12786,10 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 				// Start a burst: fire 3 stickies in quick succession, then detonate
 				if (m_iStickyBurstCount == 0)
 				{
-					m_iStickyBurstCount = 3;
-					m_fStickyBurstTime  = 0.0f;
-					m_fNextStickyCycle  = engine->Time() + randomFloat(6.0f, 10.0f);
+					m_iStickyBurstCount  = 3;
+					m_fStickyBurstTime   = 0.0f;
+					m_fNextStickyCycle   = engine->Time() + randomFloat(6.0f, 10.0f);
+					m_fStickyDeployTime  = engine->Time();
 				}
 
 				if (m_iStickyBurstCount > 0 && m_fStickyBurstTime < engine->Time()
