@@ -44,6 +44,7 @@ CCreateGameRulesObject *g_pGameRules_Create_Obj                        = nullptr
 CDisableCurrencyPackBotCheckPatch *g_pDisableCurrencyPackBotCheckPatch = nullptr;
 CReviveMarkerBotCheckPatch *g_pReviveMarkerBotCheckPatch                = nullptr;
 CPartnerTauntBotCheckPatch *g_pPartnerTauntBotCheckPatch                = nullptr;
+CMvMRobotSapBotCheckPatch *g_pMvMRobotSapBotCheckPatch                   = nullptr;
 
 void **g_pGameRules                                                    = nullptr;
 
@@ -391,4 +392,39 @@ void CPartnerTauntBotCheckPatch::patchMyTouch()
 	    0x90, 0x90, 0x90, 0x90, 0x90,
 	};
 	V_memcpy(m_func, teamGate, 33);
+}
+
+CMvMRobotSapBotCheckPatch::CMvMRobotSapBotCheckPatch(CRCBotKeyValueList &list, void *pAddrBase)
+{
+	findFunc(list, "mvm_robot_sap_bot_check_sig", pAddrBase,
+	         "\\x83\\xF8\\x03"
+	         "\\x75\\x1A"
+	         "\\x8B\\x01"
+	         "\\x51"
+	         "\\xFF\\x90\\x20\\x07\\x00\\x00"
+	         "\\x83\\xC4\\x10"
+	         "\\x84\\xC0"
+	         "\\x0F\\x84");
+}
+
+void CMvMRobotSapBotCheckPatch::patchMyTouch()
+{
+	if (!m_func)
+		return;
+
+	// JZ +0x161 → JMP +0x162 (unconditional: always enter robot-search section)
+	// 19-byte signature matches CMP EAX,3 (saver type) through JZ
+	byte *patchAddr = (byte *)m_func + 17;
+
+#ifdef _WIN32
+	DWORD dOld;
+	VirtualProtect(patchAddr, 6, PAGE_EXECUTE_READWRITE, &dOld);
+#elif POSIX
+	mprotect(reinterpret_cast<void *>(PAGE_ALIGN_DOWN(reinterpret_cast<intptr_t>(patchAddr))), PAGE_SIZE,
+	         PROT_READ | PROT_WRITE | PROT_EXEC);
+#endif
+
+	patchAddr[0] = 0xE9; // JMP rel32 opcode
+	patchAddr[1] = 0x62; // offset low byte (0x162 vs old 0x161)
+	patchAddr[5] = 0x90; // NOP pad
 }

@@ -259,6 +259,7 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 		else if (m_fSapRetryTime < engine->Time())
 		{
 			pBot->tapButton(IN_ATTACK);
+			m_bSapperPlaced = true;
 			m_fSapRetryTime = engine->Time() + 0.5f;
 			m_iSapAttempts++;
 		}

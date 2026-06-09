@@ -621,6 +621,13 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 		META_LOG(g_PLAPI, "WARNING: Partner taunt bot-check signature not found. "
 		                   "Update partner_taunt_bot_check_sig in hookinfo.ini.");
 
+	g_pMvMRobotSapBotCheckPatch = new CMvMRobotSapBotCheckPatch(kvl, gameServerFactory);
+	if (g_pMvMRobotSapBotCheckPatch->found())
+		g_pMvMRobotSapBotCheckPatch->patchMyTouch();
+	else
+		META_LOG(g_PLAPI, "WARNING: MvM robot sap bot-check signature not found. "
+		                   "Update mvm_robot_sap_bot_check_sig in hookinfo.ini.");
+
 	rcbot_mvm_revive_markers.InstallChangeCallback(onReviveMarkersChanged);
 #endif
 

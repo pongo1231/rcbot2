@@ -117,5 +117,19 @@ class CPartnerTauntBotCheckPatch : public CSignatureFunction
 };
 extern CPartnerTauntBotCheckPatch *g_pPartnerTauntBotCheckPatch;
 
+class CMvMRobotSapBotCheckPatch : public CSignatureFunction
+{
+  public:
+	CMvMRobotSapBotCheckPatch(CRCBotKeyValueList &list, void *pAddrBase);
+
+	bool found()
+	{
+		return m_func != nullptr;
+	}
+
+	void patchMyTouch();
+};
+extern CMvMRobotSapBotCheckPatch *g_pMvMRobotSapBotCheckPatch;
+
 void *GetGameRules();
 #endif
