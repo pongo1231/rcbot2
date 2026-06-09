@@ -171,3 +171,6 @@ void RCBOT2_Cvar_setup(ICvar *cvar)
 		}
 	}
 }
+
+ConVar rcbot_mvm_revive_markers("rcbot_mvm_revive_markers", "1", 0,
+                                 "Enable revive markers for RED team bots in MvM (0=off, 1=on)");

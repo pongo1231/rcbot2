@@ -103,6 +103,8 @@ extern ConVarRef sv_tags;
 extern ConVarRef mp_friendlyfire;
 extern ConVarRef mp_stalemate_enable;
 
+extern ConVar rcbot_mvm_revive_markers;
+
 void RCBOT2_Cvar_setup(ICvar *cvar);
 
 #endif

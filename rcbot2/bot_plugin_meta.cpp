@@ -489,6 +489,14 @@ class BaseAccessor : public IConCommandBaseAccessor
 	}
 } s_BaseAccessor;
 
+#if SOURCE_ENGINE == SE_TF2
+static void onReviveMarkersChanged(IConVar *var, const char *pOldValue, float flOldValue)
+{
+	if (g_pReviveMarkerBotCheckPatch)
+		g_pReviveMarkerBotCheckPatch->setEnabled(((ConVar *)var)->GetBool());
+}
+#endif
+
 bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
 	extern MTRand_int32 irand;
@@ -598,6 +606,15 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 	g_pDisableCurrencyPackBotCheckPatch = new CDisableCurrencyPackBotCheckPatch(kvl, gameServerFactory);
 	if (g_pDisableCurrencyPackBotCheckPatch->found())
 		g_pDisableCurrencyPackBotCheckPatch->patchMyTouch();
+
+	g_pReviveMarkerBotCheckPatch = new CReviveMarkerBotCheckPatch(kvl, gameServerFactory);
+	if (g_pReviveMarkerBotCheckPatch->found())
+		g_pReviveMarkerBotCheckPatch->setEnabled(rcbot_mvm_revive_markers.GetBool());
+	else
+		META_LOG(g_PLAPI, "WARNING: Revive marker bot-check signature not found. "
+		                   "Update revive_marker_bot_check_sig in hookinfo.ini.");
+
+	rcbot_mvm_revive_markers.InstallChangeCallback(onReviveMarkersChanged);
 #endif
 
 	if (fp)

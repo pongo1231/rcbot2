@@ -42,6 +42,7 @@
 CGameRulesObject *g_pGameRules_Obj                                     = nullptr;
 CCreateGameRulesObject *g_pGameRules_Create_Obj                        = nullptr;
 CDisableCurrencyPackBotCheckPatch *g_pDisableCurrencyPackBotCheckPatch = nullptr;
+CReviveMarkerBotCheckPatch *g_pReviveMarkerBotCheckPatch                = nullptr;
 
 void **g_pGameRules                                                    = nullptr;
 
@@ -297,4 +298,54 @@ void CDisableCurrencyPackBotCheckPatch::patchMyTouch()
 #endif
 
 	V_memset(m_func, 0x90, 4);
+}
+
+CReviveMarkerBotCheckPatch::CReviveMarkerBotCheckPatch(CRCBotKeyValueList &list, void *pAddrBase)
+{
+	m_bPatched = false;
+	findFunc(list, "revive_marker_bot_check_sig", pAddrBase,
+	         "\\x0F\\x85\\x7F\\x04\\x00\\x00"
+	         "\\x8B\\x07\\x83\\xEC\\x0C\\x57"
+	         "\\xFF\\x90\\x20\\x07\\x00\\x00"
+	         "\\x83\\xC4\\x10\\x84\\xC0"
+	         "\\x0F\\x85\\x58\\xDB\\xFF\\xFF");
+	if (m_func)
+		V_memcpy(m_original, m_func, 29);
+}
+
+void CReviveMarkerBotCheckPatch::internalPatch(bool bEnable)
+{
+	if (!m_func)
+		return;
+
+#ifdef _WIN32
+	DWORD dOld;
+	VirtualProtect(m_func, 29, PAGE_EXECUTE_READWRITE, &dOld);
+#elif POSIX
+	mprotect(reinterpret_cast<void *>(PAGE_ALIGN_DOWN(reinterpret_cast<intptr_t>(m_func))), PAGE_SIZE,
+	         PROT_READ | PROT_WRITE | PROT_EXEC);
+#endif
+
+	static const unsigned char teamGate[] = {
+	    0x8B, 0x87, 0x44, 0x02, 0x00, 0x00, // MOV EAX, [EDI+0x244] — m_iTeamNum
+	    0x83, 0xF8, 0x03,                     // CMP EAX, 3 — TF_TEAM_PVE_INVADERS
+	    0x0F, 0x84, 0x66, 0xDB, 0xFF, 0xFF,  // JE -0x249A → skip to 0x00d11CAE
+	    0x90, 0x90, 0x90, 0x90, 0x90,         // NOP pad (14 bytes)
+	    0x90, 0x90, 0x90, 0x90, 0x90,
+	    0x90, 0x90, 0x90, 0x90,
+	};
+
+	if (bEnable)
+		V_memcpy(m_func, teamGate, 29);
+	else
+		V_memcpy(m_func, m_original, 29);
+}
+
+void CReviveMarkerBotCheckPatch::setEnabled(bool bEnable)
+{
+	if (bEnable == m_bPatched || !m_func)
+		return;
+
+	internalPatch(bEnable);
+	m_bPatched = bEnable;
 }

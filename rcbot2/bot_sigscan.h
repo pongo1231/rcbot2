@@ -79,5 +79,29 @@ class CDisableCurrencyPackBotCheckPatch : public CSignatureFunction
 };
 extern CDisableCurrencyPackBotCheckPatch *g_pDisableCurrencyPackBotCheckPatch;
 
+class CReviveMarkerBotCheckPatch : public CSignatureFunction
+{
+  public:
+	CReviveMarkerBotCheckPatch(CRCBotKeyValueList &list, void *pAddrBase);
+
+	bool found()
+	{
+		return m_func != nullptr;
+	}
+
+	void setEnabled(bool bEnable);
+	bool isEnabled()
+	{
+		return m_bPatched;
+	}
+
+  private:
+	void internalPatch(bool bEnable);
+
+	unsigned char m_original[29];
+	bool m_bPatched;
+};
+extern CReviveMarkerBotCheckPatch *g_pReviveMarkerBotCheckPatch;
+
 void *GetGameRules();
 #endif
