@@ -31,6 +31,12 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 		return;
 	}
 
+	if (m_pWeapon == nullptr || !m_pWeapon->hasWeapon())
+	{
+		fail();
+		return;
+	}
+
 	if (m_fTime == 0.0f)
 	{
 		float fMinDist = 9999;
