@@ -5269,7 +5269,7 @@ void CBotTF2::modThink()
 					m_fHealStartTime        = engine->Time();
 					m_pLastHeal             = m_pHeal;
 					edict_t *pHealE         = m_pHeal.get();
-					if (pHealE && CBotGlobals::entityIsValid(pHealE))
+					if (pHealE && CBotGlobals::entityIsValid(pHealE) && CBotGlobals::isPlayer(pHealE))
 					{
 						IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pHealE);
 						if (pInfo)
