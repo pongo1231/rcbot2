@@ -311,9 +311,6 @@ CBotFortress::CBotFortress()
 {
 	CBot();
 
-	m_fPeriodicReEvalTime     = 0.0f;
-	m_fLastUtility            = 0.0f;
-
 	m_iLastFailSentryWpt      = -1;
 	m_iLastFailTeleExitWpt    = -1;
 
@@ -2083,10 +2080,8 @@ void CBotTF2::spawnInit()
 {
 	CBotFortress::spawnInit();
 
-	m_fPeriodicReEvalTime = engine->Time() + randomFloat(2.0f, 4.0f);
-	m_fLastUtility        = 0.0f;
-	m_fHealRotationTime   = 0.0f;
-	m_fHealStartTime      = 0.0f;
+	m_fHealRotationTime     = 0.0f;
+	m_fHealStartTime        = 0.0f;
 	m_fHealeeStartHealthPct = 0.0f;
 
 	m_iDesiredResistType  = 0;
@@ -7481,22 +7476,16 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		}
 	}
 
-	// Force re-evaluation: stuck detection OR periodic check
-	bool bPeriodicCheck = false;
+	// Force re-evaluation if bot hasn't moved recently (stuck detection)
 	if (!hasSomeConditions(CONDITION_CHANGED) && !m_pSchedules->isEmpty())
 	{
-		bPeriodicCheck = (engine->Time() > m_fPeriodicReEvalTime);
-
-		if (!bPeriodicCheck)
-		{
-			Vector vDelta = getOrigin() - m_vLastReEvalPos;
-			float fHysteresisDelay = 0.5f;
-			if (m_pSchedules->hasSchedule(SCHED_TF_BUILD) || m_pSchedules->hasSchedule(SCHED_UPGRADE)
-			    || m_pSchedules->hasSchedule(SCHED_TF2_ENGI_MOVE_BUILDING))
-				fHysteresisDelay = 2.0f;
-			if (vDelta.Length2D() > 32.0f || engine->Time() < (m_fReEvalTime + fHysteresisDelay))
-				return;
-		}
+		Vector vDelta = getOrigin() - m_vLastReEvalPos;
+		float fHysteresisDelay = 0.5f;
+		if (m_pSchedules->hasSchedule(SCHED_TF_BUILD) || m_pSchedules->hasSchedule(SCHED_UPGRADE)
+		    || m_pSchedules->hasSchedule(SCHED_TF2_ENGI_MOVE_BUILDING))
+			fHysteresisDelay = 2.0f;
+		if (vDelta.Length2D() > 32.0f || engine->Time() < (m_fReEvalTime + fHysteresisDelay))
+			return;
 	}
 
 	removeCondition(CONDITION_CHANGED);
@@ -9286,11 +9275,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		if (!m_pSchedules->isEmpty() && bCheckCurrent)
 		{
 			if (m_CurrentUtil != next->getId())
-			{
-				if (bPeriodicCheck && next->getUtility() < m_fLastUtility * 1.2f)
-					break;
 				m_pSchedules->freeMemory();
-			}
 			else
 				break;
 		}
@@ -9300,10 +9285,8 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		if (executeAction(next)) //>getId(),pWaypointResupply,pWaypointHealth,pWaypointAmmo) )
 		{
 			m_CurrentUtil               = next->getId();
-			m_fLastUtility              = next->getUtility();
 			// avoid trying to do same thing again and again if it fails
 			m_fUtilTimes[m_CurrentUtil] = engine->Time() + 0.5f;
-			m_fPeriodicReEvalTime       = engine->Time() + randomFloat(2.0f, 4.0f);
 
 			if (CClients::clientsDebugging(BOT_DEBUG_UTIL))
 			{
