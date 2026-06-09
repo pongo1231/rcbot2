@@ -756,6 +756,7 @@ class CBotFortress : public CBot
 	float m_fCallMedic;
 	float m_fTauntTime;
 	float m_fTaunting;
+	float m_fLastHighFiveTime;
 	float m_fDefendTime;
 	float m_fNextBowIgnite;
 	float m_fMvmAlarmDefendBoost;
@@ -1021,6 +1022,7 @@ class CBotTF2 : public CBotFortress
 	bool sentryRecentlyHadEnemy();
 
 	void highFivePlayer(edict_t *pPlayer, float fYaw);
+	void partnerTaunt();
 
 	virtual bool hurt(edict_t *pAttacker, int iHealthNow, bool bDontHide = false);
 

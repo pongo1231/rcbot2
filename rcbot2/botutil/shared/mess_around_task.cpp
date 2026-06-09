@@ -80,25 +80,36 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 	break;
 
-	case 1: // taunt at teammate
+	case 1: // partner taunt with teammate
 	{
 		Vector origin = CBotGlobals::entityOrigin(m_pFriendly);
-		bool ok       = true;
+
+		if (pBot->distanceFrom(m_pFriendly) > 100.0f)
+		{
+			pBot->setMoveTo(origin);
+		}
+		else if (pBot->isTF2())
+		{
+			CBotTF2 *pTF2Bot = static_cast<CBotTF2 *>(pBot);
+
+			// If partner is already ready, join them
+			if (CClassInterface::getTF2HighFiveReady(m_pFriendly.get())
+			    && !CClassInterface::getHighFivePartner(m_pFriendly.get()))
+			{
+				pTF2Bot->highFivePlayer(m_pFriendly,
+				                        CClassInterface::getTF2TauntYaw(m_pFriendly));
+			}
+			// Signal readiness — partner taunt request
+			else if (!CClassInterface::getTF2HighFiveReady(pBot->getEdict())
+			         && !CTeamFortress2Mod::TF2_IsPlayerTaunting(pBot->getEdict()))
+			{
+				pTF2Bot->partnerTaunt();
+			}
+		}
+
 		pBot->setLookVector(origin);
 		pBot->setLookAtTask(LOOK_VECTOR);
 
-		if (!pBot->FInViewCone(m_pFriendly))
-			ok = false;
-		if (pBot->distanceFrom(m_pFriendly) > 100)
-		{
-			pBot->setMoveTo(origin);
-			ok = false;
-		}
-		if (ok)
-		{
-			if (pBot->isTF2())
-				((CBotTF2 *)pBot)->taunt(true);
-		}
 		if (!m_fTime)
 			m_fTime = engine->Time() + randomFloat(3.5f, 6.5f);
 	}

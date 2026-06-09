@@ -2,6 +2,7 @@
 
 #include "bot_fortress.h"
 #include "bot_getprop.h"
+#include "bot_mods.h"
 #include "bot_mtrand.h"
 
 void CTF2_TauntTask::init()
@@ -90,14 +91,30 @@ void CTF2_TauntTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 		        pBot->secondaryAttack(true);
 		}*/
 
-		// Chase player if the taunt allows movement
-		if (pBot->distanceFrom(vPlayerOrigin) > m_fDist * 2)
-		{
-			vPlayerOrigin.x += randomFloat(-m_fDist * 2.f, m_fDist * 2.f);
-			vPlayerOrigin.y += randomFloat(-m_fDist * 2.f, m_fDist * 2.f);
-			pBot->setMoveTo(vPlayerOrigin);
-		}
+		// Live position tracking -- face partner and adjust to their movement
+		float fPartnerYaw = CClassInterface::getTF2TauntYaw(m_pPlayer.get());
+		QAngle partnerAngles = QAngle(0, fPartnerYaw, 0);
+		Vector forward;
+		AngleVectors(partnerAngles, &forward);
+		Vector vTarget = vPlayerOrigin + forward * 60.0f;
 
+		if (pBot->distanceFrom(vTarget) > 10.0f)
+			pBot->setMoveTo(vTarget);
+
+		return;
+	}
+
+	// Partner taunt ended naturally -- both participants done
+	edict_t *pPartner      = CClassInterface::getHighFivePartner(m_pPlayer.get());
+	edict_t *pMyPartner     = CClassInterface::getHighFivePartner(pBot->getEdict());
+
+	if (!pPartner && !pMyPartner
+	    && !CClassInterface::getTF2HighFiveReady(m_pPlayer.get())
+	    && !CTeamFortress2Mod::TF2_IsPlayerTaunting(m_pPlayer.get())
+	    && !CTeamFortress2Mod::TF2_IsPlayerTaunting(pBot->getEdict())
+	    && fTime > m_fTauntUntil)
+	{
+		complete();
 		return;
 	}
 

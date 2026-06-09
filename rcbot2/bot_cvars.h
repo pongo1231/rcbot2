@@ -56,6 +56,7 @@ extern ConVar rcbot_shoot_breakable_dist;
 extern ConVar rcbot_shoot_breakable_cos;
 extern ConVar rcbot_move_obj;
 extern ConVar rcbot_taunt;
+extern ConVar bot_highfive;
 extern ConVar rcbot_notarget;
 extern ConVar rcbot_nocapturing;
 extern ConVar rcbot_jump_obst_dist;

@@ -92,6 +92,7 @@ ConVar rcbot_shoot_breakable_cos(
     "The cosine of the angle bots should worry about breaking objects at (default = 0.9) ~= 25 degrees");
 ConVar rcbot_move_obj("rcbot_move_obj", "1", 0, "if 1 rcbot engineers will move objects around");
 ConVar rcbot_taunt("rcbot_taunt", "0", 0, "enable/disable bots taunting");
+ConVar bot_highfive("rcbot_highfive", "1", 0, "enable/disable bots doing high-five / partner taunts");
 ConVar rcbot_notarget("rcbot_notarget", "0", 0, "bots don't shoot the host!");
 ConVar rcbot_nocapturing("rcbot_dontcapture", "0", 0, "bots don't capture flags in DOD:S");
 ConVar rcbot_jump_obst_dist("rcbot_jump_obst_dist", "80", 0, "the distance from an obstacle the bot will jump");

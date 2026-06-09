@@ -1127,6 +1127,7 @@ void CBotFortress::spawnInit()
 	m_iLastReflectedGrenade = 0;
 
 	m_fTaunting                = 0.0f; // bots not moving FIX
+	m_fLastHighFiveTime        = 0.0f;
 
 	m_fMedicUpdatePosTime      = 0.0f;
 	m_bShouldCrouchCover       = false;
@@ -2176,8 +2177,23 @@ void CBotTF2::setClass(TF_Class _class)
 
 void CBotTF2::highFivePlayer(edict_t *pPlayer, float fYaw)
 {
-	if (!m_pSchedules->isCurrentSchedule(SCHED_TAUNT))
+	if (!m_pSchedules->isCurrentSchedule(SCHED_TAUNT)
+	    && m_fLastHighFiveTime < engine->Time()
+	    && !hasSomeConditions(CONDITION_SEE_CUR_ENEMY)
+	    && !CTeamFortress2Mod::TF2_IsPlayerTaunting(m_pEdict))
+	{
 		m_pSchedules->addFront(new CBotTauntSchedule(pPlayer, fYaw));
+		m_fLastHighFiveTime = engine->Time() + randomFloat(10.0f, 20.0f);
+	}
+}
+
+void CBotTF2::partnerTaunt()
+{
+	helpers->ClientCommand(m_pEdict, "+use_action_slot_item");
+	helpers->ClientCommand(m_pEdict, "-use_action_slot_item");
+
+	m_fTauntTime = engine->Time() + randomFloat(40.0f, 100.0f);
+	m_fTaunting  = engine->Time() + 5.0f;
 }
 
 // bOverride will be true in messaround mode
@@ -9284,6 +9300,28 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		                && ((iTeam == TF2_TEAM_BLUE) || (!CTeamFortress2Mod::isAttackDefendMap()))
 		                && !(iClass == TF_CLASS_ENGINEER && !m_pSentryGun),
 		            fMessUtil);
+	}
+
+	// Monitor bot teammates for high-five readiness — join partner taunts
+	if (bot_highfive.GetBool() && !m_pSchedules->isCurrentSchedule(SCHED_TAUNT)
+	    && !hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && !m_bHasFlag
+	    && m_fLastHighFiveTime < engine->Time())
+	{
+		for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+		{
+			edict_t *pEdict = INDEXENT(i);
+			if (pEdict == m_pEdict) continue;
+			if (!CBotGlobals::entityIsValid(pEdict) || !CBotGlobals::entityIsAlive(pEdict)) continue;
+			if (CClassInterface::getTeam(pEdict) != getTeam()) continue;
+
+			if (CClassInterface::getTF2HighFiveReady(pEdict)
+			    && !CClassInterface::getHighFivePartner(pEdict)
+			    && isVisible(pEdict) && distanceFrom(pEdict) < 200.0f)
+			{
+				highFivePlayer(pEdict, CClassInterface::getTF2TauntYaw(pEdict));
+				break;
+			}
+		}
 	}
 	//}
 
