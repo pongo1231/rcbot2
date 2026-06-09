@@ -5290,27 +5290,36 @@ void CBotTF2::modThink()
 				{
 					m_fHealRotationTime = engine->Time() + randomFloat(2.0f, 3.0f);
 
-					IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(m_pHeal);
-					float fCurrentHPct = pInfo ? ((float)pInfo->GetHealth() / pInfo->GetMaxHealth()) : 1.0f;
-
-					if (fCurrentHPct > 0.75f)
+					edict_t *pHealE = m_pHeal.get();
+					if (pHealE && CBotGlobals::isPlayer(pHealE))
 					{
-						edict_t *pBetter = nullptr;
-						float fBest = getHealFactor(m_pHeal) * 0.9f;
-						for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+						IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pHealE);
+						if (pInfo)
 						{
-							edict_t *pEd = INDEXENT(i);
-							if (!pEd || pEd == m_pEdict || pEd == m_pHeal.get()) continue;
-							if (!CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
-							if (CTeamFortress2Mod::getTeam(pEd) != m_iTeam) continue;
-							float fFactor = getHealFactor(pEd);
-							if (fFactor > fBest) { fBest = fFactor; pBetter = pEd; }
-						}
-						if (pBetter)
-						{
-							m_pHeal           = pBetter;
-							m_fHealStartTime  = 0.0f;
-							m_pSchedules->freeMemory();
+							int iMaxHp = pInfo->GetMaxHealth();
+							float fCurrentHPct = (iMaxHp > 0)
+							    ? ((float)pInfo->GetHealth() / (float)iMaxHp) : 0.0f;
+
+							if (fCurrentHPct > 0.75f)
+							{
+								edict_t *pBetter = nullptr;
+								float fBest = getHealFactor(m_pHeal) * 0.9f;
+								for (int i = 1; i <= CBotGlobals::maxClients(); i++)
+								{
+									edict_t *pEd = INDEXENT(i);
+									if (!pEd || pEd == m_pEdict || pEd == m_pHeal.get()) continue;
+									if (!CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+									if (CTeamFortress2Mod::getTeam(pEd) != m_iTeam) continue;
+									float fFactor = getHealFactor(pEd);
+									if (fFactor > fBest) { fBest = fFactor; pBetter = pEd; }
+								}
+								if (pBetter)
+								{
+									m_pHeal           = pBetter;
+									m_fHealStartTime  = 0.0f;
+									m_pSchedules->freeMemory();
+								}
+							}
 						}
 					}
 				}
