@@ -9293,7 +9293,8 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 
 		ADD_UTILITY(BOT_UTIL_MESSAROUND,
 		            bMedicOk && (bInSetup || bBored)
-		                && ((iTeam == TF2_TEAM_BLUE) || (!CTeamFortress2Mod::isAttackDefendMap())),
+		                && ((iTeam == TF2_TEAM_BLUE) || (!CTeamFortress2Mod::isAttackDefendMap()))
+		                && !(iClass == TF_CLASS_ENGINEER && !m_pSentryGun),
 		            fMessUtil);
 	}
 	//}
