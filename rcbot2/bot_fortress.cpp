@@ -5263,8 +5263,21 @@ void CBotTF2::modThink()
 				{
 					m_fHealStartTime        = engine->Time();
 					m_pLastHeal             = m_pHeal;
-					IPlayerInfo *pInfo      = playerinfomanager->GetPlayerInfo(m_pHeal);
-					m_fHealeeStartHealthPct = pInfo ? ((float)pInfo->GetHealth() / pInfo->GetMaxHealth()) : 0.0f;
+					edict_t *pHealE         = m_pHeal.get();
+					if (pHealE && CBotGlobals::entityIsValid(pHealE))
+					{
+						IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pHealE);
+						if (pInfo)
+						{
+							int iMaxHp = pInfo->GetMaxHealth();
+							m_fHealeeStartHealthPct = (iMaxHp > 0)
+							    ? ((float)pInfo->GetHealth() / (float)iMaxHp) : 0.0f;
+						}
+						else
+							m_fHealeeStartHealthPct = 0.0f;
+					}
+					else
+						m_fHealeeStartHealthPct = 0.0f;
 				}
 
 				// Rotation check every 2-3s: switch if target is healed enough
