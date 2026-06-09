@@ -23,6 +23,11 @@ class CBotTF2AttackSentryGunTask : public CBotTask
 	int m_iSentryWaypoint;
 	Vector m_vStart;
 	Vector m_vHide;
+	Vector m_vLastPos;
+	Vector m_vPerpDir;
+	bool m_bStrafeRight;
 	float m_fDist;
 	float m_fTime;
+	float m_fFiringWindowTime;
+	int m_iStallFrames;
 };
