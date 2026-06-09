@@ -776,6 +776,12 @@ class CClassInterface
 	{
 		return g_GetProps[GETPROP_TF2_HIGHFIVE].getBool(edict, false);
 	}
+	inline static void setTF2HighFiveReady(edict_t *edict, bool bReady)
+	{
+		bool *pb = g_GetProps[GETPROP_TF2_HIGHFIVE].getBoolPointer(edict);
+		if (pb)
+			*pb = bReady;
+	}
 	inline static edict_t *getHighFivePartner(edict_t *edict)
 	{
 		return g_GetProps[GETPROP_TF2_HIGHFIVE_PARTNER].getEntity(edict);

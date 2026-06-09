@@ -2189,8 +2189,10 @@ void CBotTF2::highFivePlayer(edict_t *pPlayer, float fYaw)
 
 void CBotTF2::partnerTaunt()
 {
-	helpers->ClientCommand(m_pEdict, "+use_action_slot_item");
-	helpers->ClientCommand(m_pEdict, "-use_action_slot_item");
+	// Set m_bIsReadyToHighFive directly — ClientCommand "+use_action_slot_item"
+	// doesn't work for bots (button-state commands go through usercmd pipeline,
+	// not console command handler). Direct property write bypasses this.
+	CClassInterface::setTF2HighFiveReady(m_pEdict, true);
 
 	m_fTauntTime = engine->Time() + randomFloat(40.0f, 100.0f);
 	m_fTaunting  = engine->Time() + 5.0f;
