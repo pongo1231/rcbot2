@@ -398,9 +398,9 @@ CMvMRobotSapBotCheckPatch::CMvMRobotSapBotCheckPatch(CRCBotKeyValueList &list, v
 {
 	findFunc(list, "mvm_robot_sap_bot_check_sig", pAddrBase,
 	         "\\x83\\xF8\\x03"
-	         "\\x75\\x1A"
-	         "\\x8B\\x01"
-	         "\\x51"
+	         "\\x2A\\x2A"
+	         "\\x2A\\x2A"
+	         "\\x2A"
 	         "\\xFF\\x90\\x20\\x07\\x00\\x00"
 	         "\\x83\\xC4\\x10"
 	         "\\x84\\xC0"
