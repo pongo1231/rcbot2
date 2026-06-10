@@ -397,11 +397,12 @@ void CPartnerTauntBotCheckPatch::patchMyTouch()
 CMvMRobotSapBotCheckPatch::CMvMRobotSapBotCheckPatch(CRCBotKeyValueList &list, void *pAddrBase)
 {
 	findFunc(list, "mvm_robot_sap_bot_check_sig", pAddrBase,
-	         "\\x83\\xF8\\x03"
+	         "\\x83\\x2A\\x03"
 	         "\\x2A\\x2A"
 	         "\\x2A\\x2A"
 	         "\\x2A"
-	         "\\xFF\\x90\\x20\\x07\\x00\\x00"
+	         "\\xFF\\x90"
+	         "\\x2A\\x2A\\x2A\\x2A"
 	         "\\x83\\xC4\\x10"
 	         "\\x84\\xC0"
 	         "\\x0F\\x84");
