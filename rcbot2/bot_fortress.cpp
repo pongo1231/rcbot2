@@ -12487,31 +12487,42 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 				m_bAvoidRight      = !m_bAvoidRight;
 			}
 
-			Vector vToEnemy     = vEnemyOrigin - getOrigin();
-			vToEnemy.z          = 0;
-			float flDistToEnemy = vToEnemy.Length();
+			// Don't override dodge movement when a projectile is heading at us
+			edict_t *pIncoming = m_NearestEnemyRocket.get();
+			if (!pIncoming)
+				pIncoming = m_pNearestPipeGren.get();
+			bool bIsDodging = (pIncoming && CBotGlobals::entityIsValid(pIncoming)
+			                   && CBotGlobals::entityIsAlive(pIncoming)
+			                   && incomingRocket(800.0f));
 
-			if (flDistToEnemy > 64.0f)
+			if (!bIsDodging)
 			{
-				// Approach from alternating sides to make it harder for enemy to hit us
-				if (flDistToEnemy > 0.1f)
+				Vector vToEnemy     = vEnemyOrigin - getOrigin();
+				vToEnemy.z          = 0;
+				float flDistToEnemy = vToEnemy.Length();
+
+				if (flDistToEnemy > 64.0f)
 				{
-					Vector vToEnemyNorm = vToEnemy / flDistToEnemy;
-					Vector vLeft        = vToEnemyNorm.Cross(Vector(0, 0, 1));
-					if (vLeft.Length() > 0.1f)
+					// Approach from alternating sides to make it harder for enemy to hit us
+					if (flDistToEnemy > 0.1f)
 					{
-						vLeft           = vLeft / vLeft.Length();
-						float fStrafeOff = bot_avoid_strength.GetFloat();
-						if (m_bAvoidRight)
-							setMoveTo(vEnemyOrigin + (vLeft * fStrafeOff));
-						else
-							setMoveTo(vEnemyOrigin - (vLeft * fStrafeOff));
+						Vector vToEnemyNorm = vToEnemy / flDistToEnemy;
+						Vector vLeft        = vToEnemyNorm.Cross(Vector(0, 0, 1));
+						if (vLeft.Length() > 0.1f)
+						{
+							vLeft           = vLeft / vLeft.Length();
+							float fStrafeOff = bot_avoid_strength.GetFloat();
+							if (m_bAvoidRight)
+								setMoveTo(vEnemyOrigin + (vLeft * fStrafeOff));
+							else
+								setMoveTo(vEnemyOrigin - (vLeft * fStrafeOff));
+						}
 					}
 				}
-			}
-			else
-			{
-				setMoveTo(vEnemyOrigin);
+				else
+				{
+					setMoveTo(vEnemyOrigin);
+				}
 			}
 
 			// setLookAt(m_vAimVector);
