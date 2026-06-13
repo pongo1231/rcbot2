@@ -60,7 +60,7 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 		m_vStart = pBot->getOrigin();
 
 		if (m_pWeapon->primaryMaxRange() > TF2_MAX_SENTRYGUN_RANGE + 100
-		    && pBot->distanceFrom(m_pSentryGun) < TF2_MAX_SENTRYGUN_RANGE)
+		    && pBot->distanceFrom(m_pSentryGun) < TF2_MAX_SENTRYGUN_RANGE + 200.0f)
 		{
 			Vector vAway = pBot->getOrigin() - CBotGlobals::entityOrigin(m_pSentryGun);
 			vAway.z = 0;

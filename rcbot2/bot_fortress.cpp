@@ -4931,7 +4931,8 @@ void CBotTF2::modThink()
 
 	// Also avoid known sentry positions (team-memory or personal memory)
 	if (!(m_iClass == TF_CLASS_SPY && (isDisguised() || isCloaked()))
-	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
+	    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
+	    && !m_pSchedules->isCurrentSchedule(SCHED_ATTACK_SENTRY_GUN))
 	{
 		for (auto &h : m_KnownSentries)
 		{
@@ -4940,7 +4941,7 @@ void CBotTF2::modThink()
 			    || !CBotGlobals::entityIsAlive(pKnown)) continue;
 			if (pKnown == m_pAttackingEnemy.get()) continue;
 			float fDist = distanceFrom(pKnown);
-			if (fDist < (TF2_MAX_SENTRYGUN_RANGE + 128.0f))
+			if (fDist < (TF2_MAX_SENTRYGUN_RANGE + 256.0f))
 			{
 				Vector vPos = CBotGlobals::entityOrigin(pKnown);
 				Vector vAway = getOrigin() - vPos;
@@ -4948,7 +4949,7 @@ void CBotTF2::modThink()
 				if (vAway.Length() > 0.1f)
 				{
 					vAway = vAway / vAway.Length();
-					setMoveTo(getOrigin() + (vAway * 384.0f));
+					setMoveTo(getOrigin() + (vAway * 512.0f));
 					break;
 				}
 			}
@@ -8676,6 +8677,21 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			if (pF && pF->bSapComplete)
 				fPushBoost = 1.3f;
 		}
+
+		// Class-based sentry effectiveness: penalize hitscan classes at >1000u
+		static const float fSentryClassEff[] = {
+		    0.3f, // CIVILIAN (unused)
+		    0.3f, // SCOUT — scattergun spread at range
+		    1.0f, // SNIPER — rifle excellent at any range
+		    1.0f, // SOLDIER — RL splash works at any distance
+		    0.9f, // DEMOMAN — GL arc challenge at range
+		    0.2f, // MEDIC — should be healing, syringe weak at range
+		    0.5f, // HWGUY — minigun spread at 1152u
+		    0.2f, // PYRO — flamethrower can't reach sentry at this distance
+		    0.5f, // SPY — revolver at range, prefer sapping
+		    0.3f, // ENGINEER — shotgun spread at range
+		};
+		fSentryUtil *= fSentryClassEff[m_iClass];
 
 		ADD_UTILITY_DATA(BOT_UTIL_ATTACK_SENTRY, bCanAttack,
 		                 fSentryUtil * fRangeFactor * fPushBoost,
