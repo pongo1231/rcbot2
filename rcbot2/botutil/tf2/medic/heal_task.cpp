@@ -31,7 +31,7 @@ void CBotTF2MedicHeal::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 	pHeal   = pBotTF2->getHealingEntity();
 
-	if (pHeal && !m_bHealerJumped)
+	if (pHeal && CBotGlobals::isPlayer(pHeal) && !m_bHealerJumped)
 	{
 		Vector vVelocity;
 
