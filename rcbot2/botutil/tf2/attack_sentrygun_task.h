@@ -30,4 +30,11 @@ class CBotTF2AttackSentryGunTask : public CBotTask
 	float m_fTime;
 	float m_fFiringWindowTime;
 	int m_iStallFrames;
+	// Corner-peek: indirect fire from behind cover for explosive weapons
+	bool m_bUsePeek;
+	int m_iPeekWpt;
+	int m_iAimWpt;
+	int m_iItemDefIdx;
+	int m_iPeekShots;
+	float m_fPeekRetreatTime;
 };

@@ -15,6 +15,12 @@ CBotTF2AttackSentryGunTask::CBotTF2AttackSentryGunTask(edict_t *pSentryGun, CBot
 	m_fFiringWindowTime = 0.0f;
 	m_iStallFrames      = 0;
 	m_bStrafeRight      = false;
+	m_bUsePeek          = false;
+	m_iPeekWpt          = -1;
+	m_iAimWpt           = -1;
+	m_iItemDefIdx       = 0;
+	m_iPeekShots        = 0;
+	m_fPeekRetreatTime  = 0.0f;
 }
 
 void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
@@ -100,6 +106,36 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 				}
 
 				pWpt->getPath(i);
+			}
+		}
+
+		// Corner-peek: find indirect fire position for explosive weapons
+		if ((m_pWeapon->isExplosive() || m_pWeapon->isProjectile())
+		    && m_pWeapon->hasWeapon())
+		{
+			edict_t *pWepEnt = m_pWeapon->getWeaponEntity();
+			m_iItemDefIdx = pWepEnt ? CClassInterface::TF2_getItemDefinitionIndex(pWepEnt) : 0;
+
+			// Skip Beggar's Bazooka (730) — complex clip mechanics
+			if (m_iItemDefIdx != 730)
+			{
+				int iAimWpt = -1;
+				CWaypoint *pPeekWpt = CWaypoints::nearestPipeWaypoint(
+				    CBotGlobals::entityOrigin(m_pSentryGun), pBot->getOrigin(), &iAimWpt);
+
+				if (pPeekWpt && iAimWpt >= 0)
+				{
+					CWaypoint *pAimWpt = CWaypoints::getWaypoint(iAimWpt);
+					if (pAimWpt
+					    && pPeekWpt->distanceFrom(pAimWpt->getOrigin()) <= m_pWeapon->primaryMaxRange())
+					{
+						m_bUsePeek = true;
+						m_iPeekWpt = CWaypoints::getWaypointIndex(pPeekWpt);
+						m_iAimWpt  = iAimWpt;
+						m_vStart   = pPeekWpt->getOrigin();
+						m_vHide    = pPeekWpt->getOrigin(); // peek position IS a hide position
+					}
+				}
 			}
 		}
 
@@ -195,7 +231,15 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 	{
 		m_iStallFrames = 0;
 
-		if (fDistToStart > fStartThreshold)
+		if (m_bUsePeek)
+		{
+			// Stay at peek position — no strafing
+			if (fDistToStart > fStartThreshold)
+				pBot->setMoveTo(m_vStart);
+			else
+				pBot->stopMoving();
+		}
+		else if (fDistToStart > fStartThreshold)
 		{
 			pBot->setMoveTo(m_vStart);
 		}
@@ -220,7 +264,46 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 			pBot->setMoveTo(m_vStart);
 	}
 
-	if (pBot->isVisible(m_pSentryGun))
+	// Corner-peek: fire indirectly from behind cover
+	if (m_bUsePeek && fDistToStart < fStartThreshold
+	    && m_fPeekRetreatTime < engine->Time())
+	{
+		pBot->wantToShoot(false); // prevent handleWeapons from overriding aim
+
+		CWaypoint *pAimWpt = CWaypoints::getWaypoint(m_iAimWpt);
+		Vector vAim = pAimWpt ? pAimWpt->getOrigin()
+		                      : CBotGlobals::entityOrigin(m_pSentryGun);
+		vAim.z = CBotGlobals::entityOrigin(m_pSentryGun).z;
+
+		// Weapon-specific aim adjustments for pipe arc
+		if (m_pWeapon->getID() == TF2_WEAPON_GRENADELAUNCHER)
+		{
+			if (m_iItemDefIdx == 1151) // Iron Bomber — low bounce
+				vAim.z += 48.0f;
+			else if (m_iItemDefIdx != 308) // Not Loch-n-Load (stock GL)
+				vAim.z += 64.0f;
+		}
+
+		// Self-damage safety: ensure splash won't hit us
+		if (pBot->distanceFrom(vAim) > BLAST_RADIUS * 1.2f)
+		{
+			pBot->setLookVector(vAim);
+			pBot->setLookAtTask(LOOK_VECTOR);
+
+			if (!m_pWeapon->needToReload(pBot))
+			{
+				pBot->primaryAttack();
+				m_iPeekShots++;
+				if (m_iPeekShots >= 2)
+				{
+					m_fPeekRetreatTime = engine->Time()
+					    + randomFloat(0.5f, 1.5f);
+					m_iPeekShots = 0;
+				}
+			}
+		}
+	}
+	else if (pBot->isVisible(m_pSentryGun))
 	{
 		// use this shooting method below
 		pBot->wantToShoot(false);
