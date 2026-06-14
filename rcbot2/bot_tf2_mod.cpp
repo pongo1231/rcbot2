@@ -1284,25 +1284,25 @@ bool CTeamFortress2Mod::buildingNearby(int iTeam, Vector vOrigin)
 
 		if (m_SentryGuns[sentryIndex].sentry.get())
 		{
-			if ((vOrigin - CBotGlobals::entityOrigin(m_SentryGuns[sentryIndex].sentry.get())).Length() < 100)
+			if ((vOrigin - CBotGlobals::entityOrigin(m_SentryGuns[sentryIndex].sentry.get())).Length() < 400)
 				return true;
 		}
 
 		if (m_Dispensers[sentryIndex].disp.get())
 		{
-			if ((vOrigin - CBotGlobals::entityOrigin(m_Dispensers[sentryIndex].disp.get())).Length() < 100)
+			if ((vOrigin - CBotGlobals::entityOrigin(m_Dispensers[sentryIndex].disp.get())).Length() < 400)
 				return true;
 		}
 
 		if (m_Teleporters[sentryIndex].entrance.get())
 		{
-			if ((vOrigin - CBotGlobals::entityOrigin(m_Teleporters[sentryIndex].entrance.get())).Length() < 100)
+			if ((vOrigin - CBotGlobals::entityOrigin(m_Teleporters[sentryIndex].entrance.get())).Length() < 400)
 				return true;
 		}
 
 		if (m_Teleporters[sentryIndex].exit.get())
 		{
-			if ((vOrigin - CBotGlobals::entityOrigin(m_Teleporters[sentryIndex].exit.get())).Length() < 100)
+			if ((vOrigin - CBotGlobals::entityOrigin(m_Teleporters[sentryIndex].exit.get())).Length() < 400)
 				return true;
 		}
 	}

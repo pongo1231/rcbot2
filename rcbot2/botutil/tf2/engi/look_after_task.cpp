@@ -10,12 +10,12 @@ void CBotTF2EngiLookAfter::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 	if (!m_fTime)
 	{
-		m_fTime      = engine->Time() + randomFloat(21.0f, 60.0f);
+		m_fTime      = engine->Time() + randomFloat(12.0f, 20.0f);
 		m_fHitSentry = engine->Time() + randomFloat(1.0f, 3.0f);
 	}
 	else if (m_fTime < engine->Time())
 	{
-		tfBot->nextLookAfterSentryTime(engine->Time() + randomFloat(20.0f, 50.0f));
+		tfBot->nextLookAfterSentryTime(engine->Time() + randomFloat(10.0f, 25.0f));
 		complete();
 	}
 	else

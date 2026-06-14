@@ -1546,7 +1546,7 @@ bool CBotTF2::needAmmo()
 			if ((m_pSentryGun.get() == nullptr) || (CClassInterface::getTF2UpgradeLevel(m_pSentryGun) < 3))
 				return (iMetal < 200); // need 200 to upgrade sentry
 			else
-				return iMetal < 125; // need 125 for other stuff (e.g. teleporters)
+				return iMetal < 150; // keep a buffer for wrench repairs
 		}
 	}
 	else if (getClass() == TF_CLASS_SOLDIER)
@@ -5583,6 +5583,16 @@ void CBotTF2::modThink()
 				m_pSchedules->add(new CBotRemoveSapperSched(m_pTeleExit, ENGI_EXIT));
 				updateCondition(CONDITION_PARANOID);
 			}
+			// Own teleporter entrance sapper check
+			else if ((m_fRemoveSapTime < engine->Time()) && m_pTeleEntrance
+			         && CBotGlobals::entityIsValid(m_pTeleEntrance)
+			         && CTeamFortress2Mod::isTeleporterSapped(m_pTeleEntrance)
+			         && distanceFrom(m_pTeleEntrance) < fMaxDist)
+			{
+				m_pSchedules->freeMemory();
+				m_pSchedules->add(new CBotRemoveSapperSched(m_pTeleEntrance, ENGI_ENTRANCE));
+				updateCondition(CONDITION_PARANOID);
+			}
 			// Ally buildings -- helpful but lower priority
 			else if ((m_fRemoveSapTime < engine->Time()) && m_pNearestAllySentry
 			    && CBotGlobals::entityIsValid(m_pNearestAllySentry)
@@ -7931,7 +7941,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			                && (m_pNearestDisp != m_pDispenser)
 			                && (iMetal >= (200 - CClassInterface::getTF2SentryUpgradeMetal(m_pNearestDisp)))
 			                && ((iAllyDispLevel < 3) || (fAllyDispenserHealthPercent < 1.0f)),
-			            0.88 + ((1.0f - fAllyDispenserHealthPercent) * 0.12));
+			            0.75 + ((1.0f - fAllyDispenserHealthPercent) * 0.12));
 
 			// Help build / repair / speed up ally teleporter construction
 			int iAllyTeleLevel = 0;
@@ -7946,7 +7956,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 				            !m_bIsCarryingObj && (m_fRemoveSapTime < engine->Time()) && m_pNearestTeleEntrance
 				                && (iMetal >= (200 - CClassInterface::getTF2SentryUpgradeMetal(m_pNearestTeleEntrance)))
 				                && ((iAllyTeleLevel < 3) || (fAllyTeleHealthPercent < 0.99f)),
-				            0.85 + ((1.0f - fAllyTeleHealthPercent) * 0.15));
+				            0.72 + ((1.0f - fAllyTeleHealthPercent) * 0.15));
 			}
 		}
 
@@ -7968,7 +7978,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			                && (iMetal >= (200 - CClassInterface::getTF2SentryUpgradeMetal(m_pNearestAllySentry)))
 			                && ((iAllySentryLevel < 3) || (fAllySentryHealthPercent < 0.99f)
 			                    || (CClassInterface::getTF2SentryShells(m_pNearestAllySentry) < 50)),
-			            0.88 + ((1.0f - fAllySentryHealthPercent) * 0.12));
+			            0.75 + ((1.0f - fAllySentryHealthPercent) * 0.12));
 		}
 
 		fSentryUtil = 0.8 + (((float)((int)bNeedAmmo)) * 0.1) + (((float)(int)bNeedHealth) * 0.1);
