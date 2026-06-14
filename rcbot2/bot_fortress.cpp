@@ -6031,6 +6031,7 @@ void CBotTF2::modThink()
 	handleSpecialAbilities();
 
 	// Maintain personal space from nearby teammates
+	if (!m_pSchedules->isCurrentSchedule(SCHED_MESSAROUND))
 	{
 		for (int i = 1; i <= CBotGlobals::maxClients(); i++)
 		{

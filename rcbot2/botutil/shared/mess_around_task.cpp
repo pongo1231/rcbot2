@@ -3,6 +3,7 @@
 #include "bot_fortress.h"
 #include "bot_getprop.h"
 #include "bot_globals.h"
+#include "bot_waypoint_locations.h"
 #include "bot_weapons.h"
 
 CMessAround::CMessAround(edict_t *pFriendly, int iMaxVoiceCmd)
@@ -11,7 +12,7 @@ CMessAround::CMessAround(edict_t *pFriendly, int iMaxVoiceCmd)
 	m_fSubTime     = 0.0f;
 	m_fWanderTime  = 0.0f;
 	m_pFriendly    = pFriendly;
-	m_iType        = randomInt(0, 11);
+	m_iType        = randomInt(0, 10);
 	m_iMaxVoiceCmd = iMaxVoiceCmd;
 	m_iVoiceCmd    = randomInt(0, iMaxVoiceCmd - 1);
 	m_iSubState    = 0;
@@ -50,8 +51,8 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			m_pFriendly = pNew;
 		else
 		{
-			fail();
-			return;
+			// No friendly available — fallback to neutral wander type
+			m_iType = 2;
 		}
 	}
 
@@ -143,7 +144,11 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			Vector vWander = pBot->getOrigin();
 			vWander.x     += cos(fAngle) * fDist;
 			vWander.y     += sin(fAngle) * fDist;
-			pBot->setMoveTo(vWander);
+			int iWpt = CWaypointLocations::NearestWaypoint(vWander, fDist * 0.7f, -1, true, false, true, nullptr, false, pBot->getTeam());
+			if (iWpt >= 0)
+				pBot->setMoveTo(CWaypoints::getWaypoint(iWpt)->getOrigin());
+			else
+				pBot->setMoveTo(vWander);
 			m_fWanderTime = engine->Time() + randomFloat(fMinInterval, fMaxInterval);
 		}
 	}
@@ -182,7 +187,11 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			Vector vWander = pBot->getOrigin();
 			vWander.x     += cos(fAngle) * fDist;
 			vWander.y     += sin(fAngle) * fDist;
-			pBot->setMoveTo(vWander);
+			int iWpt = CWaypointLocations::NearestWaypoint(vWander, fDist * 0.7f, -1, true, false, true, nullptr, false, pBot->getTeam());
+			if (iWpt >= 0)
+				pBot->setMoveTo(CWaypoints::getWaypoint(iWpt)->getOrigin());
+			else
+				pBot->setMoveTo(vWander);
 			m_fWanderTime = engine->Time() + randomFloat(fMinInterval, fMaxInterval);
 		}
 	}
@@ -225,7 +234,11 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			Vector vWander = pBot->getOrigin();
 			vWander.x     += cos(fAngle) * fDist;
 			vWander.y     += sin(fAngle) * fDist;
-			pBot->setMoveTo(vWander);
+			int iWpt = CWaypointLocations::NearestWaypoint(vWander, fDist * 0.7f, -1, true, false, true, nullptr, false, pBot->getTeam());
+			if (iWpt >= 0)
+				pBot->setMoveTo(CWaypoints::getWaypoint(iWpt)->getOrigin());
+			else
+				pBot->setMoveTo(vWander);
 			m_fWanderTime = engine->Time() + randomFloat(fMinInterval, fMaxInterval);
 		}
 	}
@@ -371,7 +384,11 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			Vector vWander = pBot->getOrigin();
 			vWander.x     += cos(fAngle) * fDist;
 			vWander.y     += sin(fAngle) * fDist;
-			pBot->setMoveTo(vWander);
+			int iWpt = CWaypointLocations::NearestWaypoint(vWander, fDist * 0.7f, -1, true, false, true, nullptr, false, pBot->getTeam());
+			if (iWpt >= 0)
+				pBot->setMoveTo(CWaypoints::getWaypoint(iWpt)->getOrigin());
+			else
+				pBot->setMoveTo(vWander);
 			m_fWanderTime = engine->Time() + randomFloat(fMinInterval, fMaxInterval);
 		}
 
@@ -392,14 +409,17 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 		if (m_fSubTime < engine->Time())
 		{
-			// Cycle through slots randomly
-			int iSlot  = randomInt(0, 3);
-			int iWeap  = 0;
-			if (iSlot == 0) iWeap = TF2_WEAPON_SCATTERGUN;
-			else if (iSlot == 1) iWeap = TF2_WEAPON_PISTOL;
-			else iWeap = TF2_WEAPON_BAT;
-
-			pBot->select_CWeapon(CWeapons::getWeapon(iWeap));
+			// Cycle through bot's actual weapon inventory
+			int iMode = randomInt(0, 2);
+			CBotWeapon *pRandom = nullptr;
+			if (iMode == 0)
+				pRandom = pBot->getBestWeapon(nullptr, false, false);
+			else if (iMode == 1)
+				pRandom = pBot->getBestWeapon(nullptr, true, true);
+			else
+				pRandom = pBot->getBestWeapon(nullptr, false, true);
+			if (pRandom)
+				pBot->selectBotWeapon(pRandom);
 			m_fSubTime = engine->Time() + randomFloat(0.3f, 0.6f);
 		}
 
@@ -424,7 +444,11 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			Vector vWander = pBot->getOrigin();
 			vWander.x     += cos(fAngle) * fDist;
 			vWander.y     += sin(fAngle) * fDist;
-			pBot->setMoveTo(vWander);
+			int iWpt = CWaypointLocations::NearestWaypoint(vWander, fDist * 0.7f, -1, true, false, true, nullptr, false, pBot->getTeam());
+			if (iWpt >= 0)
+				pBot->setMoveTo(CWaypoints::getWaypoint(iWpt)->getOrigin());
+			else
+				pBot->setMoveTo(vWander);
 			m_fWanderTime = engine->Time() + randomFloat(fMinInterval, fMaxInterval);
 		}
 	}
@@ -476,7 +500,11 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			Vector vWander = pBot->getOrigin();
 			vWander.x     += cos(fAngle) * fDist;
 			vWander.y     += sin(fAngle) * fDist;
-			pBot->setMoveTo(vWander);
+			int iWpt = CWaypointLocations::NearestWaypoint(vWander, fDist * 0.7f, -1, true, false, true, nullptr, false, pBot->getTeam());
+			if (iWpt >= 0)
+				pBot->setMoveTo(CWaypoints::getWaypoint(iWpt)->getOrigin());
+			else
+				pBot->setMoveTo(vWander);
 			m_fWanderTime = engine->Time() + randomFloat(fMinInterval, fMaxInterval);
 		}
 	}
@@ -515,6 +543,13 @@ void CMessAround::execute(CBot *pBot, CBotSchedule *pSchedule)
 			}
 			if (pFound)
 				m_pFriendly = pFound;
+			else if (!m_pFriendly.get()
+			         || CClassInterface::getTF2Class(m_pFriendly) != TF_CLASS_MEDIC)
+			{
+				// No medic buddy available — skip this type
+				fail();
+				return;
+			}
 		}
 
 		edict_t *pMedicBuddy = m_pFriendly.get();
