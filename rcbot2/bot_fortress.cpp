@@ -1529,8 +1529,19 @@ bool CBotFortress::needAmmo()
 bool CBotFortress::needHealth()
 {
 	// don't need health if I'm being ubered or healed
+	float fThreshold = 0.7f;
+
+	// Adjust threshold based on combat context
+	if (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
+	{
+		if (m_fCurrentDanger > 40.0f)
+			fThreshold = 0.85f; // losing — retreat earlier
+		else if (m_fCurrentDanger < 10.0f)
+			fThreshold = 0.35f; // winning — fight to the death
+	}
+
 	return !m_bIsBeingHealed && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
-	    && ((getHealthPercent() < 0.7) || CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict));
+	    && ((getHealthPercent() < fThreshold) || CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict));
 }
 
 bool CBotTF2::needAmmo()
@@ -2841,6 +2852,10 @@ void CBotTF2::killed(edict_t *pVictim, char *weapon)
 	}
 	if (!bEnemiesNearby)
 		taunt();
+
+	// Rally teammates after a kill if friendlies are nearby
+	if (nearbyFriendlies(512.0f) > 0)
+		addVoiceCommand(TF_VC_GOGOGO);
 }
 
 void CBotTF2::capturedFlag()
@@ -5259,6 +5274,26 @@ void CBotTF2::modThink()
 		}
 	}
 
+	// Call for help when significantly outnumbered (throttled to 2s intervals)
+	static float fOutnumberedCheckTime = 0.0f;
+	if (fOutnumberedCheckTime < engine->Time())
+	{
+		int iEnemies = 0, iFriendlies = 0;
+		for (int i = 1; i <= gpGlobals->maxClients; i++)
+		{
+			edict_t *pEd = INDEXENT(i);
+			if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+			if (distanceFrom(pEd) > 800.0f || !isVisible(pEd)) continue;
+			if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam)
+				iFriendlies++;
+			else
+				iEnemies++;
+		}
+		if (iEnemies > iFriendlies + 1)
+			addVoiceCommand(TF_VC_HELP);
+		fOutnumberedCheckTime = engine->Time() + 2.0f;
+	}
+
 	switch (m_iClass)
 	{
 	case TF_CLASS_SCOUT:
@@ -5463,6 +5498,20 @@ void CBotTF2::modThink()
 		}
 
 		tryCrossbowHeal();
+
+		// Proactive uber: pop when charge is ready and we have a push opportunity
+		if (m_pHeal && hasSomeConditions(CONDITION_SEE_CUR_ENEMY)
+		    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
+		    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pHeal))
+		{
+			edict_t *pMg = CTeamFortress2Mod::getMediGun(m_pEdict);
+			if (pMg && CClassInterface::getUberChargeLevel(pMg) > 90.0f
+			    && nearbyFriendlies(512.0f) >= 2)
+			{
+				secondaryAttack();
+				addVoiceCommand(TF_VC_GOGOGO);
+			}
+		}
 
 		break;
 	case TF_CLASS_HWGUY:
@@ -6600,6 +6649,25 @@ bool CBotTF2::wantToFollowEnemy()
 	    }
 	}*/
 
+	// Don't chase if the enemy has backup nearby
+	if (m_pLastEnemy && CBotGlobals::entityIsValid(m_pLastEnemy)
+	    && CBotGlobals::isPlayer(m_pLastEnemy))
+	{
+		int iBackup = 0;
+		Vector vTarget = CBotGlobals::entityOrigin(m_pLastEnemy);
+		for (int i = 1; i <= gpGlobals->maxClients; i++)
+		{
+			edict_t *pEd = INDEXENT(i);
+			if (!pEd || pEd == m_pEdict || pEd == m_pLastEnemy.get()) continue;
+			if (!CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+			if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam) continue;
+			if ((CBotGlobals::entityOrigin(pEd) - vTarget).Length() < 800.0f)
+				iBackup++;
+		}
+		if (iBackup > 1) // more than just me + target → too risky
+			return false;
+	}
+
 	return CBotFortress::wantToFollowEnemy();
 }
 
@@ -6612,6 +6680,12 @@ bool CBotFortress::wantToFollowEnemy()
 	if (!CTeamFortress2Mod::hasRoundStarted())
 		return false;
 	if (!m_pLastEnemy)
+		return false;
+	// Don't chase enemies more than ~10 seconds away
+	if (distanceFrom(m_pLastEnemy) > 3000.0f)
+		return false;
+	// Don't chase when losing the fight
+	if (getHealthPercent() < 0.4f && recentlyHurt(2.0f))
 		return false;
 	if (hasFlag())
 		return false;

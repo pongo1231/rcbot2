@@ -1770,6 +1770,7 @@ bool CBot::hurt(edict_t *pAttacker, int iHealthNow, bool bDontHide)
 		{
 			m_pSchedules->removeSchedule(SCHED_GOOD_HIDE_SPOT);
 			m_pSchedules->addFront(new CGotoHideSpotSched(this, m_vHurtOrigin));
+			m_fStrafeTime = 0.0f; // trigger dodge while retreating
 		}
 
 		m_iAccumulatedDamage = 0;
