@@ -204,7 +204,7 @@ WeaponsData_t TF2Weaps[] = {
 	{ TF2_SLOT_SCNDR, TF2_WEAPON_LUNCHBOX_DRINK, "tf_weapon_lunchbox_drink", WEAP_FL_NONE, 0, 180, 0, 1, 0 },
 	{ TF2_SLOT_PRMRY, TF2_WEAPON_BOW, "tf_weapon_compound_bow",
 	  WEAP_FL_SCOPE | WEAP_FL_PRIM_ATTACK | WEAP_FL_PROJECTILE, 400, 2500, 1, 3, 1875 },
-	{ TF2_SLOT_SCNDR, TF2_WEAPON_JAR, "tf_weapon_jar", WEAP_FL_NONE, 0, 180, 0, 1, 0 },
+	{ TF2_SLOT_SCNDR, TF2_WEAPON_JAR, "tf_weapon_jar", WEAP_FL_PROJECTILE | WEAP_FL_PRIM_ATTACK | WEAP_FL_GRENADE, 64.0f, 1500.0f, 0, 1, 1014.0f },
 	{ TF2_SLOT_MELEE, TF2_WEAPON_BAT_FISH, "tf_weapon_bat_fish",
 	  WEAP_FL_PRIM_ATTACK | WEAP_FL_MELEE | WEAP_FL_UNDERWATER, 0, 180, 0, 1, 0 },
 	{ TF2_SLOT_PRMRY, TF2_WEAPON_DIRECTHIT, "tf_weapon_rocketlauncher_directhit",
