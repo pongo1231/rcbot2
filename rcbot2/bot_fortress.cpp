@@ -3546,6 +3546,103 @@ bool CBotTF2::tryExtinguishTeammates()
 	return false;
 }
 
+// Scout Mad Milk / Sniper Jarate extinguish: throw jar at burning
+// teammates or oneself to put out afterburn. Only outside combat.
+bool CBotTF2::tryJarExtinguishTeammates()
+{
+	// Scout with Mad Milk or Sniper with Jarate only
+	if (m_iClass != TF_CLASS_SCOUT && m_iClass != TF_CLASS_SNIPER)
+		return false;
+
+	// Cooldown to prevent spam
+	if (m_fExtinguishTime > engine->Time())
+		return false;
+
+	// Detect jar weapon in secondary slot
+	CBotWeapon *pJar = m_pWeapons->getCurrentWeaponInSlot(TF2_SLOT_SCNDR);
+	if (!pJar || !pJar->hasWeapon())
+		return false;
+
+	edict_t *pJarEnt = pJar->getWeaponEntity();
+	if (!pJarEnt)
+		return false;
+	int iItem = CClassInterface::TF2_getItemDefinitionIndex(pJarEnt);
+
+	// Gate: Scout needs Mad Milk, Sniper needs Jarate
+	bool bHasMilk = (iItem == 222 || iItem == 1121);
+	bool bHasJar  = (iItem == 58 || iItem == 1083 || iItem == 1105);
+	if (m_iClass == TF_CLASS_SCOUT && !bHasMilk)
+		return false;
+	if (m_iClass == TF_CLASS_SNIPER && !bHasJar)
+		return false;
+
+	// --- Priority 1: Self-extinguish ---
+	if (CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict))
+	{
+		Vector vSelf = getOrigin();
+		setLookVector(Vector(vSelf.x, vSelf.y, vSelf.z + 32.0f));
+		setLookAtTask(LOOK_VECTOR);
+
+		if (getCurrentWeapon() != pJar)
+		{
+			CWeapon *pWeapInfo = CWeapons::getWeapon(TF2_WEAPON_JAR);
+			if (!pWeapInfo || !select_CWeapon(pWeapInfo))
+				return false;
+		}
+
+		primaryAttack();
+		m_fExtinguishTime = engine->Time() + 0.5f;
+		return true;
+	}
+
+	// --- Priority 2: Extinguish burning teammate ---
+	edict_t *pBest   = nullptr;
+	float fBestDist  = 600.0f;
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		edict_t *pT = INDEXENT(i);
+		if (!pT || pT == m_pEdict) continue;
+		if (!CBotGlobals::entityIsValid(pT) || !CBotGlobals::entityIsAlive(pT)) continue;
+		if (CTeamFortress2Mod::getTeam(pT) != m_iTeam) continue;
+		if (!CTeamFortress2Mod::TF2_IsPlayerOnFire(pT)) continue;
+
+		float fDist = distanceFrom(pT);
+		if (fDist < fBestDist && FVisible(pT))
+		{
+			fBestDist = fDist;
+			pBest     = pT;
+		}
+	}
+
+	if (!pBest)
+		return false;
+
+	// Within throw range: extinguish now
+	if (fBestDist < 600.0f)
+	{
+		Vector vTarget = CBotGlobals::entityOrigin(pBest);
+		setLookVector(vTarget + Vector(0, 0, 32.0f));
+		setLookAtTask(LOOK_VECTOR);
+
+		if (getCurrentWeapon() != pJar)
+		{
+			CWeapon *pWeapInfo = CWeapons::getWeapon(TF2_WEAPON_JAR);
+			if (!pWeapInfo || !select_CWeapon(pWeapInfo))
+				return false;
+		}
+
+		primaryAttack();
+		m_fExtinguishTime = engine->Time() + 0.5f;
+		return true;
+	}
+
+	// In pursuit range: move toward burning teammate
+	setMoveTo(CBotGlobals::entityOrigin(pBest));
+	setLookVector(CBotGlobals::entityOrigin(pBest));
+	setLookAtTask(LOOK_VECTOR);
+	return false;
+}
+
 bool CBotTF2::tryIgniteSniperBow()
 {
 	if (m_iClass != TF_CLASS_PYRO)
@@ -5246,6 +5343,10 @@ void CBotTF2::modThink()
 		}
 		else
 			m_fFov = BOT_DEFAULT_FOV;
+
+		// Extinguish burning allies (and self) with Mad Milk / Jarate
+		if (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
+			tryJarExtinguishTeammates();
 
 		break;
 	case TF_CLASS_SOLDIER:

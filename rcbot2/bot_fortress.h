@@ -1218,6 +1218,7 @@ class CBotTF2 : public CBotFortress
 	void spyUnCloak();
 
 	bool tryExtinguishTeammates();
+	bool tryJarExtinguishTeammates();
 	bool tryIgniteSniperBow();
 	bool tryCrossbowHeal();
 	float evaluateTeleExitSpot(CWaypoint *pWpt);
