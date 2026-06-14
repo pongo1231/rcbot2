@@ -602,6 +602,7 @@ class CBotFortress : public CBot
 	inline void droppedFlag()
 	{
 		m_bHasFlag = false;
+		updateCondition(CONDITION_CHANGED);
 	}
 
 	void medicCalled(edict_t *pPlayer);

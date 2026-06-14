@@ -175,7 +175,7 @@ void CBotSchedule::_init()
 	iPass      = 0;
 	fPass      = 0;
 	vPass      = Vector(0, 0, 0);
-	pPass      = 0;
+	m_pPass    = nullptr;
 
 	init();
 }
@@ -197,7 +197,7 @@ void CBotSchedule::passVector(Vector v)
 }
 void CBotSchedule::passEdict(edict_t *p)
 {
-	pPass = p;
+	m_pPass = p;
 	m_bitsPass |= BITS_SCHED_PASS_EDICT;
 }
 ////////////////////

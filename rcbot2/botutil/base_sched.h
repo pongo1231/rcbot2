@@ -145,7 +145,7 @@ class CBotSchedule
 	}
 	inline edict_t *passedEdict()
 	{
-		return pPass;
+		return m_pPass.get();
 	}
 	inline bool isID(eBotSchedule iId)
 	{
@@ -183,7 +183,7 @@ class CBotSchedule
 	int iPass;
 	float fPass;
 	Vector vPass;
-	edict_t *pPass;
+	MyEHandle m_pPass;
 
 	int m_bitsPass;
 };

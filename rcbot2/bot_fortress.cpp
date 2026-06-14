@@ -149,6 +149,8 @@ void CBotTF2::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 	// somebody shouted "MEDIC!"
 	case TF_VC_MEDIC:
 		medicCalled(pPlayer);
+		if (getClass() == TF_CLASS_MEDIC && !m_pSchedules->hasSchedule(SCHED_HEAL))
+			updateCondition(CONDITION_CHANGED);
 		break;
 	case TF_VC_SENTRYHERE: // hear 'put sentry here'
 		// Also handles non-carrying case via handleBuildRequest
@@ -413,6 +415,7 @@ void CBotFortress::pickedUpFlag()
 	m_bHasFlag = true;
 	// clear tasks
 	m_pSchedules->freeMemory();
+	updateCondition(CONDITION_CHANGED);
 }
 
 void CBotFortress::checkHealingValid()
@@ -4449,6 +4452,16 @@ void CBotTF2::modThink()
 	bNeedHealth = hasSomeConditions(CONDITION_NEED_HEALTH);
 	bNeedAmmo   = hasSomeConditions(CONDITION_NEED_AMMO);
 
+	// Re-eval when HP drops critically low and not already fleeing
+	static float fLowHPReEvalTime = 0.0f;
+	if (bNeedHealth && getHealthPercent() < 0.4f
+	    && !hasSomeConditions(CONDITION_SEE_CUR_ENEMY)
+	    && fLowHPReEvalTime < engine->Time())
+	{
+		updateCondition(CONDITION_CHANGED);
+		fLowHPReEvalTime = engine->Time() + 5.0f;
+	}
+
 	// mod specific think code here
 	CBotFortress::modThink();
 
@@ -6118,6 +6131,10 @@ void CBotTF2::enemyFound(edict_t *pEnemy)
 			updateCondition(CONDITION_CHANGED);
 		}
 	}
+
+	// Re-eval when new enemy appears while not already in combat
+	if (!hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
+		updateCondition(CONDITION_CHANGED);
 }
 
 bool CBotFortress::canAvoid(edict_t *pEntity)
@@ -13421,6 +13438,9 @@ void CBotTF2::pointsUpdated()
 		// rethink everything
 		updateCondition(CONDITION_CHANGED);
 	}
+	// Trigger re-eval for all classes when objectives change
+	else
+		updateCondition(CONDITION_CHANGED);
 }
 
 void CBotTF2::updateAttackPoints()
