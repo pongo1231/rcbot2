@@ -9073,7 +9073,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		                && (m_fBackstabTime < engine->Time()) && (m_iClass == TF_CLASS_SPY)
 		                && ((m_pEnemy && CBotGlobals::isAlivePlayer(m_pEnemy))
 		                    || (m_pLastEnemy && CBotGlobals::isAlivePlayer(m_pLastEnemy))),
-		            fGetFlagUtility + (getHealthPercent() / 10)
+		            fGetFlagUtility + 0.2f + (getHealthPercent() / 10)
 		            + (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && m_pEnemy
 		                ? MvmTargetPriority(m_pEnemy) : 0.0f));
 
@@ -9102,7 +9102,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 				if (m_SpyAwareness[k].eLevel == SpyAwareness::KNOWN
 				    && m_SpyAwareness[k].fWhenBecameKnown + 10.0f > engine->Time())
 				{
-					fSapBoost *= 0.7f;
+					fSapBoost *= 0.85f;
 					break;
 				}
 			}
@@ -9164,7 +9164,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING))
 		{
 			ADD_UTILITY(BOT_UTIL_SPY_USE_ENEMY_DISP, true,
-			    (1000.0f / distanceFrom(m_pNearestEnemyDisp)) + (bNeedHealth ? 0.5f : 0.15f));
+			    (400.0f / distanceFrom(m_pNearestEnemyDisp)) + (bNeedHealth ? 0.5f : 0.15f));
 		}
 
 		// Spy infiltrate: move deep into enemy territory,
@@ -9175,11 +9175,11 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		    && !m_pSchedules->isCurrentSchedule(SCHED_BACKSTAB)
 		    && CClassInterface::getTF2SpyCloakMeter(m_pEdict) > 50.0f)
 		{
-			float fInfiltrateUtil = 0.7f;
+			float fInfiltrateUtil = 0.5f;
 			CTeamFortress2Mod::TeamFocusPoint *pF =
 			    CTeamFortress2Mod::getNearestFocusPoint(getOrigin(), 4000.0f);
 			if (pF && pF->bSapNeeded && pF->fExpires > engine->Time())
-				fInfiltrateUtil = 1.0f;
+				fInfiltrateUtil = 0.8f;
 			ADD_UTILITY(BOT_UTIL_SPY_INFILTRATE, true, fInfiltrateUtil);
 		}
 
@@ -9188,7 +9188,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		    && !m_pSchedules->hasSchedule(SCHED_SPY_SAP_BUILDING)
 		    && !m_pSchedules->isCurrentSchedule(SCHED_BACKSTAB)))
 		{
-			ADD_UTILITY(BOT_UTIL_SPY_LURK, true, m_bSpyLurking ? 0.7f : 0.55f);
+			ADD_UTILITY(BOT_UTIL_SPY_LURK, true, m_bSpyLurking ? 0.6f : 0.4f);
 		}
 	}
 
@@ -9348,6 +9348,11 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			edict_t *pMg = CTeamFortress2Mod::getMediGun(m_pEdict);
 			bMedicOk    = (pMg && CClassInterface::getUberChargeLevel(pMg) > 99);
 			fMessUtil   = 0.95f;
+		}
+		// Spies: never waste time messing around — infiltrate or attack instead
+		else if (getClass() == TF_CLASS_SPY)
+		{
+			fMessUtil = 0.5f;
 		}
 
 		// Mess around during setup or whenever bots can't shoot (setup phase, round end, etc.)
