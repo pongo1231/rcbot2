@@ -1534,10 +1534,15 @@ bool CBotFortress::needHealth()
 	// Adjust threshold based on combat context
 	if (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
 	{
-		if (m_fCurrentDanger > 40.0f)
-			fThreshold = 0.85f; // losing — retreat earlier
-		else if (m_fCurrentDanger < 10.0f)
-			fThreshold = 0.35f; // winning — fight to the death
+		// Smooth gradient: danger 0→35%, danger 30→60%, danger 60→85%
+		float fDanger = m_fCurrentDanger;
+		if (fDanger <= 60.0f)
+			fThreshold = 0.35f + (fDanger / 60.0f) * 0.50f;
+		else
+			fThreshold = 0.85f;
+
+		// Braveness shift: brave bots have lower thresholds (less retreat)
+		fThreshold -= (m_pProfile->m_fBraveness - 0.5f) * 0.15f;
 	}
 
 	return !m_bIsBeingHealed && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
@@ -2131,6 +2136,7 @@ void CBotTF2::spawnInit()
 	m_fAttackPointTime    = 0.0f;
 	m_fNextRevMiniGunTime = 0.0f;
 	m_fRevMiniGunTime     = 0.0f;
+	m_fLastRevEnemyTime   = 0.0f;
 
 	m_pCloakedSpy         = nullptr;
 
@@ -2856,6 +2862,11 @@ void CBotTF2::killed(edict_t *pVictim, char *weapon)
 	// Rally teammates after a kill if friendlies are nearby
 	if (nearbyFriendlies(512.0f) > 0)
 		addVoiceCommand(TF_VC_GOGOGO);
+
+	// Kill reduces personal danger — I'm winning this fight
+	m_fCurrentDanger *= 0.7f;
+	if (m_fCurrentDanger < 0.0f)
+		m_fCurrentDanger = 0.0f;
 }
 
 void CBotTF2::capturedFlag()
@@ -4626,6 +4637,13 @@ void CBotTF2::modThink()
 	bNeedHealth = hasSomeConditions(CONDITION_NEED_HEALTH);
 	bNeedAmmo   = hasSomeConditions(CONDITION_NEED_AMMO);
 
+	// MvM: slowly decay danger between waves so bots don't become permanently cautious
+	if (CTeamFortress2Mod::isMapType(TF_MAP_MVM) && CTeamFortress2Mod::hasRoundStarted()
+	    && !m_pEnemy && m_fCurrentDanger > 0.0f)
+	{
+		m_fCurrentDanger *= 0.9985f;
+	}
+
 	// Re-eval when HP drops critically low and not already fleeing
 	static float fLowHPReEvalTime = 0.0f;
 	if (bNeedHealth && getHealthPercent() < 0.4f
@@ -5598,11 +5616,18 @@ void CBotTF2::modThink()
 						bool bEnemyInRange = (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY)
 						                     && distanceFrom(m_pEnemy) < 1200.0f);
 						if (bEnemyInRange && pWeapon->getAmmo(this) > 100)
+						{
 							bRevMiniGun = true;
+							m_fLastRevEnemyTime = engine->Time(); // hysteresis timestamp
+						}
 					}
 				}
 			}
 		}
+
+		// Hysteresis: stay revved for 1s after enemy lost (smooths PVS pop oscillation)
+		if (!bRevMiniGun && (m_fLastRevEnemyTime + 1.0f) > engine->Time())
+			bRevMiniGun = true;
 
 		// Rev the minigun
 		if (bRevMiniGun)

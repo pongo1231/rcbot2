@@ -1295,6 +1295,7 @@ class CBotTF2 : public CBotFortress
 	float m_fRemoveSapTime;
 	float m_fRevMiniGunTime;
 	float m_fNextRevMiniGunTime;
+	float m_fLastRevEnemyTime;
 
 	float m_fRevMiniGunBelief;
 	float m_fCloakBelief;

@@ -1779,6 +1779,16 @@ bool CBot::hurt(edict_t *pAttacker, int iHealthNow, bool bDontHide)
 		return true;
 	}
 
+	// High danger + hurt: force retreat even if per-batch damage is below threshold
+	if (!bDontHide && m_fCurrentDanger > 70.0f && getHealthPercent() < 0.5f)
+	{
+		m_pSchedules->removeSchedule(SCHED_GOOD_HIDE_SPOT);
+		m_pSchedules->addFront(new CGotoHideSpotSched(this, m_vHurtOrigin));
+		m_fStrafeTime = 0.0f;
+		m_iAccumulatedDamage = 0;
+		return true;
+	}
+
 	return false;
 }
 
