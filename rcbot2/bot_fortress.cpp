@@ -7093,6 +7093,13 @@ bool CBotTF2::setVisible(edict_t *pEntity, bool bVisible)
 			addKnownEnemyTeleporter(pEntity);
 		else if (CTeamFortress2Mod::isDispenser(pEntity, CTeamFortress2Mod::getEnemyTeam(m_iTeam)))
 			addKnownEnemyDispenser(pEntity);
+		else if (CTeamFortress2Mod::isSentry(pEntity, CTeamFortress2Mod::getEnemyTeam(m_iTeam))
+		    && !CClassInterface::isObjectCarried(pEntity)
+		    && pEntity != m_pLastAddedKnownSentry.get())
+		{
+			addKnownSentry(pEntity);
+			m_pLastAddedKnownSentry = pEntity;
+		}
 	}
 
 	if (bValid)

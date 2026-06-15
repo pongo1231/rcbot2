@@ -934,6 +934,7 @@ class CBotFortress : public CBot
 	float m_fHealeeStartHealthPct;
 
 	MyEHandle m_pLastEnemySentry;
+	MyEHandle m_pLastAddedKnownSentry;
 	std::vector<MyEHandle> m_KnownSentries;
 	std::vector<MyEHandle> m_KnownEnemyTeleporters;
 	std::vector<MyEHandle> m_KnownEnemyDispensers;
