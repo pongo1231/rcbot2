@@ -4329,7 +4329,11 @@ void CBotTF2::handleSpecialAbilities()
 	{
 		CBotWeapon *pSec = m_pWeapons->getCurrentWeaponInSlot(TF2_SLOT_SCNDR);
 		if (!pSec && randomInt(0, 1) == 0)
+		{
+			if (m_pEnemy)
+				setLookAtTask(LOOK_ENEMY);
 			secondaryAttack();
+		}
 	}
 
 	// --- Medic Amputator (304): taunt for AoE heal when low HP and not in danger ---
@@ -5485,8 +5489,20 @@ void CBotTF2::modThink()
 		{
 			if (m_pEnemy)
 			{
-				if ((CBotGlobals::entityOrigin(m_pEnemy) - m_vStickyLocation).Length() < BLAST_RADIUS)
+				if ((CBotGlobals::entityOrigin(m_pEnemy) - m_vStickyLocation).Length()
+				    < BLAST_RADIUS * 1.5f)
+				{
+					// Scottish Resistance: aim before detonating for selective blast
+					CBotWeapon *pSticky = m_pWeapons->getWeapon(
+					    CWeapons::getWeapon(TF2_WEAPON_PIPEBOMBS));
+					if (pSticky)
+					{
+						edict_t *pEnt = pSticky->getWeaponEntity();
+						if (pEnt && CClassInterface::TF2_getItemDefinitionIndex(pEnt) == 130)
+							setLookVector(CBotGlobals::entityOrigin(m_pEnemy));
+					}
 					detonateStickies();
+				}
 			}
 		}
 		break;
@@ -6389,6 +6405,17 @@ void CBotTF2::handleWeapons()
 		pWeapon = m_pWeapons->getBestWeapon(m_pEnemy, !hasFlag(), !hasFlag(), rcbot_melee_only.GetBool(), false,
 		                                    CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
 		                                        || CTeamFortress2Mod::TF2_IsPlayerCritBoosted(m_pEdict));
+
+		// Demoman: occasionally use sticky launcher instead of grenades (human-like alternation)
+		if (m_iClass == TF_CLASS_DEMOMAN && pWeapon
+		    && pWeapon->getID() == TF2_WEAPON_GRENADELAUNCHER)
+		{
+			CBotWeapon *pSticky = m_pWeapons->getWeapon(
+			    CWeapons::getWeapon(TF2_WEAPON_PIPEBOMBS));
+			if (pSticky && pSticky->hasWeapon() && !pSticky->outOfAmmo(this)
+			    && randomFloat(0.0f, 1.0f) < 0.3f)
+				pWeapon = pSticky;
+		}
 
 		setLookAtTask(LOOK_ENEMY);
 
@@ -9849,7 +9876,7 @@ void CBotTF2::detonateStickies(bool isJumping)
 {
 	// Check arm time -- unarmed stickies detonate uselessly
 	CBotWeapon *pSticky = m_pWeapons->getWeapon(CWeapons::getWeapon(TF2_WEAPON_PIPEBOMBS));
-	float fArmTime = 0.7f; // default sticky launcher
+	float fArmTime = 0.8f; // default sticky launcher
 	if (pSticky)
 	{
 		edict_t *pEnt = pSticky->getWeaponEntity();
@@ -12677,6 +12704,11 @@ bool CBotTF2::handleStickyCombat(CBotWeapon *pStickyLauncher, CBotWeapon *pGrena
 		if (fCharge < 0.03f) fCharge = 0.03f;
 		if (fCharge > 2.0f) fCharge  = 2.0f;
 
+		// Quickiebomb (item 1150): charges ~2.5x faster than stock
+		edict_t *pStickyEnt = pStickyLauncher->getWeaponEntity();
+		if (pStickyEnt && CClassInterface::TF2_getItemDefinitionIndex(pStickyEnt) == 1150)
+			fCharge *= 0.4f;
+
 		float fElapsed = engine->Time() - m_fStickyChargeStart;
 		if (fDistance <= 200.0f || fElapsed >= fCharge)
 		{
@@ -13022,9 +13054,14 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 					bool bNoPrimary = !pGrenadeLauncher || !pGrenadeLauncher->hasWeapon()
 					                  || pGrenadeLauncher->outOfAmmo(this);
 
-				if (bNoPrimary && pStickyLauncher && pStickyLauncher->hasWeapon()
-					    && fDistance > 128.0f
-					    && fDistance < pStickyLauncher->getPrimaryMaxRange())
+				// Fire charged sticky whenever sticky launcher is the active weapon
+				if (pStickyLauncher && pStickyLauncher->hasWeapon()
+				    && !pStickyLauncher->outOfAmmo(this) && pStickyLauncher->getClip1(this) > 0
+				    && getCurrentWeapon() == pStickyLauncher
+				    && !m_bStickyCharging && m_fStickyDetTime == 0.0f
+				    && m_iStickyBurstCount == 0
+				    && fDistance > 128.0f
+				    && fDistance < pStickyLauncher->getPrimaryMaxRange())
 					handleStickyCombat(pStickyLauncher, pGrenadeLauncher, fDistance, false);
 				}
 			}
@@ -13236,13 +13273,14 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 					jump();
 				}
 			}
-			// Cycle sticky launcher into combat every 6-10s when both weapons available
-			else if (!bNoPrimary && bStickyReady && fDistance > 128.0f
+			// Cycle sticky launcher into combat every 6-10s (burst mode)
+			else if (bStickyReady && pStickyLauncher->getClip1(this) >= 3
+			    && fDistance >= 300.0f
 			    && fDistance < pStickyLauncher->getPrimaryMaxRange()
 			    && m_fNextStickyCycle < engine->Time()
 			    && !m_bStickyCharging && m_fStickyDetTime == 0.0f)
 			{
-				// Start a burst: fire 3 stickies in quick succession, then detonate
+				// Start a burst: fire 3 charged stickies in quick succession, then detonate
 				if (m_iStickyBurstCount == 0)
 				{
 					m_iStickyBurstCount  = 3;
@@ -13251,23 +13289,51 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 					m_fStickyDeployTime  = engine->Time();
 				}
 
+				// Release charged burst sticky when charge duration expires
+				static bool bBurstReleased = false;
+				if (m_bStickyCharging && m_fStickyBurstChargeEnd < engine->Time() && !bBurstReleased)
+				{
+					m_pButtons->letGo(IN_ATTACK);
+					m_bStickyCharging = false;
+					bBurstReleased = true;
+				}
+
 				if (m_iStickyBurstCount > 0 && m_fStickyBurstTime < engine->Time()
 				    && getCurrentWeapon() == pStickyLauncher)
 				{
-					primaryAttack();
+					// Compute charge proportional to distance, QB-aware
+					edict_t *pStickyEnt = pStickyLauncher->getWeaponEntity();
+					int iItem = pStickyEnt
+					    ? CClassInterface::TF2_getItemDefinitionIndex(pStickyEnt) : 0;
+					float fBurstCharge = max(0.15f,
+					    (fDistance / pStickyLauncher->getPrimaryMaxRange()) * 0.8f);
+					if (iItem == 1150) // Quickiebomb charges faster
+						fBurstCharge *= 0.4f;
+
+					primaryAttack(true); // hold to charge
+					m_bStickyCharging = true;
+					m_fStickyBurstChargeEnd = engine->Time() + fBurstCharge;
+					m_fStickyBurstTime = engine->Time() + fBurstCharge + 0.1f;
+					bBurstReleased = false;
 					m_iStickyBurstCount--;
-					m_fStickyBurstTime = engine->Time() + 0.4f;
 
 					if (m_iStickyBurstCount == 0)
 					{
-						edict_t *pStickyEnt = pStickyLauncher->getWeaponEntity();
-						int iItem = pStickyEnt
-						    ? CClassInterface::TF2_getItemDefinitionIndex(pStickyEnt) : 0;
 						float fArmTime = 0.8f;
 						if (iItem == 1150)       fArmTime = 0.6f;
 						else if (iItem == 130)   fArmTime = 1.6f;
 						m_fStickyDetTime  = engine->Time() + 0.4f + fArmTime;
-						m_vStickyLocation = CBotGlobals::entityOrigin(m_pEnemy.get());
+						// Track where the stickies actually land
+						Vector vAim = CBotGlobals::entityOrigin(m_pEnemy.get()) - getOrigin();
+						if (vAim.Length2D() > 0.1f)
+						{
+							vAim.z = 0;
+							vAim.NormalizeInPlace();
+							m_vStickyLocation = getOrigin()
+							    + vAim * (700.0f * fBurstCharge);
+						}
+						else
+							m_vStickyLocation = CBotGlobals::entityOrigin(m_pEnemy.get());
 					}
 				}
 				else if (m_iStickyBurstCount > 0)
@@ -13281,7 +13347,10 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 					{
 						tapButton(IN_ATTACK2);
 						m_fStickyDetTime = 0.0f;
-						select_CWeapon(pGrenadeLauncher->getWeaponInfo());
+						if (pGrenadeLauncher && pGrenadeLauncher->hasWeapon()
+						    && !pGrenadeLauncher->outOfAmmo(this)
+						    && getCurrentWeapon() != pGrenadeLauncher)
+							select_CWeapon(pGrenadeLauncher->getWeaponInfo());
 					}
 					else
 						m_fStickyDetTime = engine->Time() + 0.1f;

@@ -1291,6 +1291,7 @@ class CBotTF2 : public CBotFortress
 	eDemoTrapType m_iTrapType;
 	int m_iTrapCPIndex;
 	float m_fStickyDeployTime;
+	float m_fStickyBurstChargeEnd;
 	Vector m_vStickyLocation;
 	float m_fRemoveSapTime;
 	float m_fRevMiniGunTime;
