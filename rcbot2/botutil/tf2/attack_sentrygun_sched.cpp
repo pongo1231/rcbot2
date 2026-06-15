@@ -18,8 +18,11 @@ CBotTF2AttackSentryGun::CBotTF2AttackSentryGun(edict_t *pSentry, CBotWeapon *pWe
 	{
 		if (pWeapon->primaryMaxRange() > TF2_MAX_SENTRYGUN_RANGE + 100)
 		{
-			path->setRange(fmin(pWeapon->primaryMaxRange() - 100.0f,
-			                    (float)TF2_MAX_SENTRYGUN_RANGE + 128.0f));
+			if (pWeapon->primaryMaxRange() > 4000.0f)
+				path->setRange(pWeapon->primaryMaxRange() - 100.0f);
+			else
+				path->setRange(fmin(pWeapon->primaryMaxRange() - 100.0f,
+				                    (float)TF2_MAX_SENTRYGUN_RANGE + 128.0f));
 			path->dontGoToEdict();
 		}
 		else

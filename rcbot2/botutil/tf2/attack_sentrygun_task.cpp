@@ -166,6 +166,35 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 	bool bTakingFire  = (CClassInterface::getSentryEnemy(m_pSentryGun) == pBot->getEdict());
 	bool bOutOfRange  = pBot->distanceFrom(m_pSentryGun) > TF2_MAX_SENTRYGUN_RANGE;
 	bool bOverhealed  = pBot->getHealthPercent() > 1.3f;
+
+	// Also detect crossfire from OTHER visible sentries, not just the attack target
+	if (!bTakingFire)
+	{
+		// Check the per-frame nearest enemy sentry (may not be in known list yet)
+		edict_t *pVisSentry = ((CBotTF2 *)pBot)->getNearestEnemySentry();
+		if (pVisSentry && pVisSentry != m_pSentryGun.get()
+		    && CBotGlobals::entityIsValid(pVisSentry)
+		    && CBotGlobals::entityIsAlive(pVisSentry)
+		    && pBot->isVisible(pVisSentry)
+		    && CClassInterface::getSentryEnemy(pVisSentry) == pBot->getEdict())
+			bTakingFire = true;
+
+		// Check known sentries (team-memory list)
+		if (!bTakingFire)
+		{
+			for (auto &h : ((CBotTF2 *)pBot)->getKnownSentries())
+			{
+				edict_t *pOther = h.get();
+				if (!pOther || pOther == m_pSentryGun.get()
+				    || !CBotGlobals::entityIsValid(pOther)
+				    || !CBotGlobals::entityIsAlive(pOther)) continue;
+				if (!pBot->isVisible(pOther)) continue;
+				if (CClassInterface::getSentryEnemy(pOther) == pBot->getEdict())
+					{ bTakingFire = true; break; }
+			}
+		}
+	}
+
 	bool bHurtBySentry = pBot->recentlyHurt(1.0f) && bTakingFire;
 
 	float fSentryHealth    = CClassInterface::getSentryHealth(m_pSentryGun);

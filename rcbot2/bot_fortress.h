@@ -1118,6 +1118,9 @@ class CBotTF2 : public CBotFortress
 	bool isDeadRinger();
 	bool isCloakAndDagger();
 
+	inline std::vector<MyEHandle> &getKnownSentries() { return m_KnownSentries; }
+	inline edict_t *getNearestEnemySentry() { return m_pNearestEnemySentry.get(); }
+
 	void checkBuildingsValid(bool bForce = false);
 
 	edict_t *findEngineerBuiltObject(eEngiBuild iBuilding, int index);
