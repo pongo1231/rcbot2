@@ -527,6 +527,14 @@ class CBotFortress : public CBot
 	{
 		return false;
 	}
+	virtual bool isDeadRinger()
+	{
+		return false;
+	}
+	virtual bool isCloakAndDagger()
+	{
+		return false;
+	}
 
 	virtual CBotWeapon *getCurrentWeapon()
 	{
@@ -868,6 +876,7 @@ class CBotFortress : public CBot
 	// Spy context-aware disguise / infiltration / lurking
 	float m_fSpyRedisguiseTime;
 	float m_fSpyInfiltrateTime;
+	int   m_iInfiltrateRetries;
 	float m_fSpyLurkStart;
 	bool  m_bSpyLurking;
 	bool  m_bSpyOpportunisticStrike;
@@ -1105,6 +1114,9 @@ class CBotTF2 : public CBotFortress
 	void setClass(TF_Class _class);
 
 	bool isDisguised();
+
+	bool isDeadRinger();
+	bool isCloakAndDagger();
 
 	void checkBuildingsValid(bool bForce = false);
 

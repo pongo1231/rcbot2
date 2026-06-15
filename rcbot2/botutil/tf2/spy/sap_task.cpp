@@ -247,6 +247,23 @@ void CBotTF2SpySap::execute(CBot *pBot, CBotSchedule *pSchedule)
 	}
 	else
 	{
+		// Check for engineers guarding the building before uncloaking
+		bool bEngieNear = false;
+		for (int i = 1; i <= gpGlobals->maxClients; i++)
+		{
+			edict_t *pEd = INDEXENT(i);
+			if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+			if (CClassInterface::getTF2Class(pEd) != TF_CLASS_ENGINEER) continue;
+			if (CTeamFortress2Mod::getTeam(pEd) == pBot->getTeam()) continue;
+			if ((CBotGlobals::entityOrigin(pEd) - m_vBuildingOrigin).Length() < 300.0f)
+			{
+				bEngieNear = true;
+				break;
+			}
+		}
+		if (bEngieNear && m_iSapAttempts < 3)
+			return; // wait cloaked for engineer to leave
+
 		if (CTeamFortress2Mod::TF2_IsPlayerCloaked(pBot->getEdict()))
 		{
 			if (m_fDecloakTime < engine->Time())

@@ -2902,6 +2902,22 @@ bool CBotTF2::isDisguised()
 	return false;
 }
 
+bool CBotTF2::isDeadRinger()
+{
+	CBotWeapon *pPDA = m_pWeapons->getCurrentWeaponInSlot(TF2_SLOT_PDA);
+	if (!pPDA || !pPDA->getWeaponEntity()) return false;
+	int iItem = CClassInterface::TF2_getItemDefinitionIndex(pPDA->getWeaponEntity());
+	return (iItem == 59); // Dead Ringer
+}
+
+bool CBotTF2::isCloakAndDagger()
+{
+	CBotWeapon *pPDA = m_pWeapons->getCurrentWeaponInSlot(TF2_SLOT_PDA);
+	if (!pPDA || !pPDA->getWeaponEntity()) return false;
+	int iItem = CClassInterface::TF2_getItemDefinitionIndex(pPDA->getWeaponEntity());
+	return (iItem == 60); // Cloak and Dagger
+}
+
 void CBotTF2::updateClass()
 {
 	if (m_fUpdateClass && (m_fUpdateClass < engine->Time()))
@@ -3403,14 +3419,11 @@ bool CBotFortress::wantToCloak()
 	    && CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict))
 		return false;
 
-	if (rcbot_tf2_debug_spies_cloakdisguise.GetBool())
+	if ((m_fFrenzyTime < engine->Time()) && (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY)))
 	{
-		if ((m_fFrenzyTime < engine->Time()) && (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY)))
-		{
-			return ((!m_bStatsCanUse || (m_StatsCanUse.stats.m_iEnemiesVisible > 0))
-			        && (CClassInterface::getTF2SpyCloakMeter(m_pEdict) > 90.0f)
-			        && (m_fCurrentDanger > TF2_SPY_CLOAK_BELIEF));
-		}
+		// Cloak at any usable level (30%+), even without visible enemies
+		return ((CClassInterface::getTF2SpyCloakMeter(m_pEdict) > 30.0f)
+		        && (m_fCurrentDanger > TF2_SPY_CLOAK_BELIEF));
 	}
 
 	return false;
@@ -3418,14 +3431,62 @@ bool CBotFortress::wantToCloak()
 
 bool CBotFortress::wantToUnCloak()
 {
-	if (wantToShoot() && m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
+	// Never decloak within sentry range
+	if (m_pNearestEnemySentry && CBotGlobals::entityIsValid(m_pNearestEnemySentry)
+	    && CBotGlobals::entityIsAlive(m_pNearestEnemySentry)
+	    && distanceFrom(m_pNearestEnemySentry) < TF2_MAX_SENTRYGUN_RANGE + 128.0f)
+		return false;
+
+	// Check known sentry positions too (team-memory)
+	for (auto &h : m_KnownSentries)
 	{
-		// hopefully the enemy can't see me
-		if (CBotGlobals::isAlivePlayer(m_pEnemy)
-		    && (fabs(CBotGlobals::yawAngleFromEdict(m_pEnemy, getOrigin())) > bot_spyknifefov.GetFloat()))
+		edict_t *pKnown = h.get();
+		if (!pKnown || !CBotGlobals::entityIsValid(pKnown)
+		    || !CBotGlobals::entityIsAlive(pKnown)) continue;
+		if (distanceFrom(pKnown) < TF2_MAX_SENTRYGUN_RANGE + 128.0f)
+			return false;
+	}
+
+	// Dead Ringer: silent decloak — allows closer range
+	bool bHasDR = false;
+	if (m_iClass == TF_CLASS_SPY)
+		bHasDR = ((CBotTF2 *)this)->isDeadRinger();
+	float fMinDecloakDist = bHasDR ? 100.0f : 250.0f;
+
+	// Require minimum distance from ANY enemy
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		edict_t *pEd = INDEXENT(i);
+		if (!pEd || pEd == m_pEdict || pEd == m_pEnemy.get()) continue;
+		if (!CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+		if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam) continue;
+		if (!isVisible(pEd)) continue;
+		if (distanceFrom(pEd) < fMinDecloakDist)
+			return false;
+	}
+
+	// Backstab opportunity: uncloak when no one is watching
+	if (wantToShoot() && m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY)
+	    && CBotGlobals::isAlivePlayer(m_pEnemy))
+	{
+		bool bAnyoneWatching = false;
+		for (int i = 1; i <= gpGlobals->maxClients; i++)
+		{
+			edict_t *pEd = INDEXENT(i);
+			if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+			if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam) continue;
+			if (!isVisible(pEd)) continue;
+			if (distanceFrom(pEd) > 400.0f) continue;
+
+			float fYaw = fabs(CBotGlobals::yawAngleFromEdict(pEd, getOrigin()));
+			if (fYaw <= bot_spyknifefov.GetFloat())
+			{
+				bAnyoneWatching = true;
+				break;
+			}
+		}
+		if (!bAnyoneWatching)
 			return true;
-		else if (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY))
-			return (m_fCurrentDanger < 1.0f);
 	}
 
 	return (m_bStatsCanUse && (m_StatsCanUse.stats.m_iEnemiesVisible == 0));
@@ -3446,9 +3507,10 @@ void CBotTF2::spyCloak()
 {
 	if (!CTeamFortress2Mod::TF2_IsPlayerCloaked(m_pEdict) && (m_fSpyCloakTime < engine->Time()))
 	{
+		// Dead Ringer needs full meter to feign death
+		if (isDeadRinger() && CClassInterface::getTF2SpyCloakMeter(m_pEdict) < 90.0f)
+			return;
 		m_fSpyCloakTime = engine->Time() + randomFloat(2.0f, 4.0f);
-		// m_fSpyUncloakTime = m_fSpyCloakTime;
-
 		secondaryAttack();
 	}
 }
@@ -6020,11 +6082,57 @@ void CBotTF2::modThink()
 								}
 							}
 						}
-					}
+				}
 		}
+
+		// Cloak and Dagger: stand still to recharge when meter is low
+		{
+			if (isCloaked() && isCloakAndDagger()
+			    && !m_pSchedules->isCurrentSchedule(SCHED_SPY_SAP_BUILDING)
+			    && !m_pSchedules->isCurrentSchedule(SCHED_BACKSTAB))
+			{
+				float fMeter = CClassInterface::getTF2SpyCloakMeter(m_pEdict);
+				if (fMeter < 40.0f && !m_pEnemy)
+					stopMoving();
+			}
+		}
+
+		// Low cloak warning: find a safe spot before meter runs out
+		{
+			if (isCloaked() && CClassInterface::getTF2SpyCloakMeter(m_pEdict) < 25.0f
+			    && !m_pSchedules->isCurrentSchedule(SCHED_GOOD_HIDE_SPOT))
+			{
+				Vector vHideFrom = getOrigin();
+				if (m_pEnemy)
+					vHideFrom = CBotGlobals::entityOrigin(m_pEnemy);
+				Vector vHide;
+				if (getNavigator()->getHideSpotPosition(vHideFrom, &vHide))
+				{
+					m_pSchedules->freeMemory();
+					m_pSchedules->addFront(new CGotoHideSpotSched(this, vHide));
+				}
+			}
+		}
+
+		// Don't waste cloak when exposed — enemies see the silhouette
+		{
+			int iConds = CClassInterface::getTF2Conditions(m_pEdict);
+			bool bExposed = CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict)
+			             || (iConds & (1 << 24))  // Jarated
+			             || (iConds & (1 << 25))  // Bleeding
+			             || (iConds & (1 << 27)); // Milked
+			if (bExposed)
+			{
+				// On fire: seek water rather than cloak
+				if (CTeamFortress2Mod::TF2_IsPlayerOnFire(m_pEdict)
+				    && isCloaked() && CClassInterface::getWaterLevel(m_pEdict) < 2)
+					return; // keep cloak, find water
+			}
+		}
+
 		break;
 	default:
-				break;
+			break;
 			}
 
 			// Don't walk in a group of friendly bots toward enemies -- gives away the disguise
@@ -10538,11 +10646,39 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 	}
 	case BOT_UTIL_SPY_INFILTRATE:
 	{
-		// Cloak before moving through dangerous territory
-		if (!isCloaked() && isDisguised()
-		    && CClassInterface::getTF2SpyCloakMeter(m_pEdict) > 50.0f)
+		// Don't cloak if enemies are watching — walk out of view first
+		bool bEnemiesWatching = false;
+		for (int i = 1; i <= gpGlobals->maxClients; i++)
 		{
-			spyCloak();
+			edict_t *pEd = INDEXENT(i);
+			if (!pEd || !CBotGlobals::entityIsValid(pEd) || !CBotGlobals::entityIsAlive(pEd)) continue;
+			if (CTeamFortress2Mod::getTeam(pEd) == m_iTeam) continue;
+			if (!isVisible(pEd)) continue;
+			if (distanceFrom(pEd) < 400.0f)
+				{ bEnemiesWatching = true; break; }
+		}
+
+		if (!bEnemiesWatching)
+		{
+			// Cloak before moving through dangerous territory
+			if (!isCloaked() && isDisguised()
+			    && CClassInterface::getTF2SpyCloakMeter(m_pEdict) > 50.0f)
+			{
+				spyCloak();
+			}
+		}
+		else
+		{
+			// Enemies nearby — wait, retry with shortened cooldown
+			m_iInfiltrateRetries++;
+			if (m_iInfiltrateRetries > 3)
+			{
+				m_iInfiltrateRetries = 0;
+				m_fSpyInfiltrateTime = engine->Time() + randomFloat(10.0f, 20.0f);
+			}
+			else
+				m_fSpyInfiltrateTime = engine->Time() + randomFloat(2.0f, 5.0f);
+			return false;
 		}
 
 		// Find a waypoint deep in enemy territory
@@ -10586,6 +10722,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 
 		if (iBestWpt >= 0)
 		{
+			m_iInfiltrateRetries = 0;
 			CWaypoint *pDst = CWaypoints::getWaypoint(iBestWpt);
 			m_pSchedules->add(new CBotGotoOriginSched(pDst->getOrigin()));
 			m_fSpyInfiltrateTime = engine->Time() + randomFloat(10.0f, 20.0f);
@@ -14241,6 +14378,7 @@ CBotTF2::CBotTF2()
 
 	m_fSpyRedisguiseTime      = 0.0f;
 	m_fSpyInfiltrateTime      = 0.0f;
+	m_iInfiltrateRetries      = 0;
 	m_fSpyLurkStart           = 0.0f;
 	m_bSpyLurking             = false;
 	m_bSpyOpportunisticStrike  = false;
