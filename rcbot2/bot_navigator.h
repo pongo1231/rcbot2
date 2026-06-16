@@ -340,6 +340,10 @@ class AStarOpenList
 	{
 		m_Head = nullptr;
 	}
+	~AStarOpenList()
+	{
+		destroy();
+	}
 
 	bool empty()
 	{

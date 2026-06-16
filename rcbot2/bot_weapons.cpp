@@ -709,6 +709,7 @@ void CWeapons::loadWeapons(const char *szWeaponListName, WeaponsData_t *pDefault
 	if ((szWeaponListName != nullptr) && (szWeaponListName[0] != 0))
 	{
 		KeyValues *kv = new KeyValues("Weapons");
+		KeyValues *root = kv;
 		char szFilename[1024];
 
 		CBotGlobals::buildFileName(szFilename, "weapons", BOT_CONFIG_FOLDER, "ini", false);
@@ -772,7 +773,7 @@ void CWeapons::loadWeapons(const char *szWeaponListName, WeaponsData_t *pDefault
 				}
 			}
 
-			kv->deleteThis();
+			root->deleteThis();
 		}
 	}
 

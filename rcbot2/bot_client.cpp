@@ -447,12 +447,12 @@ void CClient::think()
 			int i;
 			int start = 0;
 
-			if (!m_pPlayerInfo->IsDead())
+			if (m_pPlayerInfo && !m_pPlayerInfo->IsDead())
 				start = 1; // grab one location
 
 			m_fLastAutoWaypointCheckTime = engine->Time() + 0.5f;
 
-			if (!m_pPlayerInfo->IsDead())
+			if (m_pPlayerInfo && !m_pPlayerInfo->IsDead())
 				m_vLastAutoWaypointCheckPos[0].SetVector(getOrigin());
 
 			for (i = start; i < MAX_STORED_AUTOWAYPOINT; i++)

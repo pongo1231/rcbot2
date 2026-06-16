@@ -656,6 +656,7 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 	// Find the RCBOT2 Path from metamod VDF
 	extern IFileSystem *filesystem;
 	KeyValues *mainkv = new KeyValues("metamodplugin");
+	KeyValues *kvroot = mainkv;
 
 	const char *rcbot2path;
 	logger->Log(LogLevel::INFO, "Reading rcbot2 path from VDF...");
@@ -667,7 +668,7 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 	if (mainkv)
 		rcbot2path = mainkv->GetString("rcbot2path", "\0");
 
-	mainkv->deleteThis();
+	kvroot->deleteThis();
 	// eventListener2 = new CRCBotEventListener();
 
 	// Initialize bot variables

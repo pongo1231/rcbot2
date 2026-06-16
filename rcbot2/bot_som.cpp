@@ -57,6 +57,8 @@ CSom::CSom(int iW, int iH, int iIn)
 
 CSom::~CSom()
 {
+	for (auto *n : m_Neurons)
+		delete n;
 	m_Neurons.clear();
 }
 
