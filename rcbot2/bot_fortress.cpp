@@ -7712,6 +7712,13 @@ bool CBotTF2::healPlayer()
 			if (!CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict))
 			{
 				edict_t *pEnemy = m_pEnemy.get();
+				if (!pEnemy || !CBotGlobals::entityIsValid(pEnemy)
+				    || !CBotGlobals::entityIsAlive(pEnemy))
+				{
+					CBot *pPatientBot = CBots::getBotPointer(m_pHeal.get());
+					if (pPatientBot)
+						pEnemy = pPatientBot->getEnemy();
+				}
 				if (pEnemy && CBotGlobals::entityIsValid(pEnemy) && CBotGlobals::entityIsAlive(pEnemy)
 				    && isVisible(pEnemy))
 				{
@@ -7781,6 +7788,47 @@ bool CBotTF2::healPlayer()
 		else if (fSpeed > 100.0f)
 			m_fHealingMoveTime = engine->Time();
 
+		// Sentry-aware positioning: always prefer the far side from a visible sentry,
+		// regardless of whether the patient is actively attacking
+		if (!CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
+		    && m_pNearestEnemySentry.get())
+		{
+			edict_t *pSentry = m_pNearestEnemySentry.get();
+			if (CBotGlobals::entityIsValid(pSentry) && CBotGlobals::entityIsAlive(pSentry)
+			    && isVisible(pSentry))
+			{
+				Vector vSentryPos  = CBotGlobals::entityOrigin(pSentry);
+				Vector vFromSentry = vPatientOrigin - vSentryPos;
+				vFromSentry.z      = 0;
+				float fSLen        = vFromSentry.Length();
+				if (fSLen > 0.1f)
+				{
+					vFromSentry                     = vFromSentry / fSLen;
+					Vector vCandidate               = vPatientOrigin + vFromSentry * 250.0f;
+					CTraceFilterWorldAndPropsOnly sFilter;
+					CBotGlobals::traceLine(vSentryPos, vCandidate, MASK_SOLID_BRUSHONLY, &sFilter);
+					if (CBotGlobals::getTraceResult()->fraction < 1.0f)
+					{
+						vOrigin = CBotGlobals::getTraceResult()->endpos;
+						Vector vToCover = vOrigin - vSentryPos;
+						vToCover.z      = 0;
+						if (vToCover.Length() > 0.1f)
+						{
+							vToCover = vToCover / vToCover.Length();
+							vOrigin  = vOrigin + vToCover * 32.0f;
+						}
+						if (fabs(vOrigin.z - getOrigin().z) < 48.0f)
+							m_bShouldCrouchCover = true;
+					}
+					else
+					{
+						vOrigin                = vPatientOrigin + vFromSentry * 150.0f;
+						m_bShouldCrouchCover = false;
+					}
+				}
+			}
+		}
+
 		if (m_fHealingMoveTime == 0.0f)
 			m_fHealingMoveTime = engine->Time();
 
@@ -7829,6 +7877,34 @@ bool CBotTF2::healPlayer()
 		{
 			if (randomInt(0, 1) == 1)
 				m_pButtons->tap(IN_RELOAD);
+		}
+	}
+
+	// Sentry-LOS check: if sentry has clear sight to our position, push further back
+	if (m_pNearestEnemySentry.get())
+	{
+		edict_t *pSentry = m_pNearestEnemySentry.get();
+		if (CBotGlobals::entityIsValid(pSentry) && CBotGlobals::entityIsAlive(pSentry)
+		    && distanceFrom(pSentry) < TF2_MAX_SENTRYGUN_RANGE + 128.0f)
+		{
+			Vector vSentryPos = CBotGlobals::entityOrigin(pSentry);
+			CTraceFilterWorldAndPropsOnly slosFilter;
+			CBotGlobals::traceLine(vSentryPos, m_vMedicPosition,
+			                       MASK_SOLID_BRUSHONLY, &slosFilter);
+			if (CBotGlobals::getTraceResult()->fraction >= 1.0f)
+			{
+				Vector vAway = m_vMedicPosition - vSentryPos;
+				vAway.z      = 0;
+				if (vAway.Length() > 0.1f)
+				{
+					vAway = vAway / vAway.Length();
+					Vector vPerp       = Vector(-vAway.y, vAway.x, 0);
+					Vector vCandidate  = m_vMedicPosition + vAway * 128.0f
+					                   + vPerp * 64.0f;
+					if ((vCandidate - vPatientOrigin).Length2D() < 400.0f)
+						m_vMedicPosition = vCandidate;
+				}
+			}
 		}
 	}
 
