@@ -12638,7 +12638,7 @@ void EnemyMoveHistory::adjustFromError(const Vector &vPredOffset, float fPredDur
 	fAdjSmooth   = fAdjSmooth * (1.0f - fAlpha) + fErrorRatio * fAlpha;
 	iAdjustCount++;
 
-	if (fAdjSmooth < 0.3f) fAdjSmooth = 0.3f;
+	if (fAdjSmooth < 0.5f) fAdjSmooth = 0.5f;
 	if (fAdjSmooth > 3.0f) fAdjSmooth = 3.0f;
 }
 

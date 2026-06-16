@@ -1151,27 +1151,18 @@ void CBot::think()
 	m_bInitAlive  = false;
 
 	if (!m_pEnemy || m_pEnemy != m_pOldEnemy)
-		m_fEnemyAimLerp = 0.f;
+	{
+		// Cold reset after 5 seconds of no enemies, otherwise carry-over momentum
+		if (!m_pEnemy && m_fEnemyAimLerpTime + 5.0f < engine->Time())
+			m_fEnemyAimLerp = 0.0f;
+		else if (!m_pEnemy || m_pEnemy != m_pOldEnemy)
+			m_fEnemyAimLerp *= 0.5f;
+	}
 	else
 	{
-		Vector vEnemyAimLerpVelocity;
-		CClassInterface::getVelocity(m_pEnemy.get(), &vEnemyAimLerpVelocity);
-
-		float fLerpTimeDelta         = engine->Time() - m_fEnemyAimLerpTime;
-
-		// Reset multiplier if enemy's velocity has changed drastically
-		const float fMaxDifference   = 600.f;
-		float fMaxDifferenceAdjusted = fMaxDifference * fLerpTimeDelta;
-		m_fEnemyAimLerp              = !vEnemyAimLerpVelocity.IsValid() || vEnemyAimLerpVelocity.Length() == 0
-                               || (fabs(vEnemyAimLerpVelocity.x - m_vEnemyAimLerpVelocity.x)
-                                   + fabs(vEnemyAimLerpVelocity.y - m_vEnemyAimLerpVelocity.y)
-                                   + fabs(vEnemyAimLerpVelocity.z - m_vEnemyAimLerpVelocity.z))
-                                          * fLerpTimeDelta
-                                      > fMaxDifferenceAdjusted
-		                                 ? 0.f
-		                                 : std::min(std::max(0.f, m_fEnemyAimLerp + fLerpTimeDelta), 1.f);
-
-		m_vEnemyAimLerpVelocity      = vEnemyAimLerpVelocity;
+		float fLerpTimeDelta = engine->Time() - m_fEnemyAimLerpTime;
+		float fExpAlpha      = fmin(1.0f, fLerpTimeDelta * 4.0f);
+		m_fEnemyAimLerp += (1.0f - m_fEnemyAimLerp) * fExpAlpha;
 	}
 
 	m_fEnemyAimLerpTime = engine->Time();
@@ -2657,7 +2648,8 @@ void CBot::modAim(edict_t *pEntity, Vector &v_origin, Vector *v_desired_offset, 
 	// velocity
 	v_desired_offset->x = randomFloat(-vel.x, vel.x) * fDistFactor * v_size.x;
 	v_desired_offset->y = randomFloat(-vel.y, vel.y) * fDistFactor * v_size.y;
-	v_desired_offset->z = randomFloat(-vel.z, vel.z) * fDistFactor * v_size.z;
+	v_desired_offset->z = randomFloat(-vel.z, vel.z) * fDistFactor * v_size.z
+	                     + randomFloat(-0.5f, 0.5f) * (1.0f - m_pProfile->m_fAimSkill);
 
 	// target
 	v_desired_offset->z +=
@@ -2957,6 +2949,8 @@ void CBot::changeAngles(float fSpeed, float *fIdeal, float *fCurrent, float *fUp
 	if (bot_anglespeed.GetFloat() < 0.01f)
 		bot_anglespeed.SetValue(0.16f);
 
+	float fTurnRate = bot_anglespeed.GetFloat() * (0.5f + m_pProfile->m_fAimSkill);
+
 	// Really not needed for bigger sensitivities
 	// Also this does not take the skill system into account
 	if (fSpeed < 15.f)
@@ -2964,7 +2958,7 @@ void CBot::changeAngles(float fSpeed, float *fIdeal, float *fCurrent, float *fUp
 
 	alphaspeed = fSpeed / 20;
 
-	alpha      = alphaspeed * bot_anglespeed.GetFloat();
+	alpha      = alphaspeed * fTurnRate;
 
 	diff       = ideal - current;
 
