@@ -10382,6 +10382,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 
 							newSched->addTask(path);
 							newSched->addTask(spam);
+							m_pSchedules->add(newSched);
 							return true;
 						}
 						else

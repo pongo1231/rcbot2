@@ -80,7 +80,8 @@ void CBotTF2MedicHeal::execute(CBot *pBot, CBotSchedule *pSchedule)
 		pBot->getNavigator()->rollBackPosition();
 		fail();
 	}
-	else if (pBot->getCurrentWeapon()->getWeaponInfo()->getID() != TF2_WEAPON_MEDIGUN)
+	else if (pBot->getCurrentWeapon() && pBot->getCurrentWeapon()->getWeaponInfo()
+	    && pBot->getCurrentWeapon()->getWeaponInfo()->getID() != TF2_WEAPON_MEDIGUN)
 	{
 		pBot->select_CWeapon(CWeapons::getWeapon(TF2_WEAPON_MEDIGUN));
 	}
