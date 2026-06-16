@@ -12942,16 +12942,23 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 
 			if (m_fAvoidSideSwitch < engine->Time())
 			{
-				m_fAvoidSideSwitch = engine->Time() + randomFloat(0.25f, 0.35f);
+				m_fAvoidSideSwitch = engine->Time() + randomFloat(1.0f, 2.0f);
 				m_bAvoidRight      = !m_bAvoidRight;
 			}
 
-			m_fSideSpeed = m_bAvoidRight ? m_fIdealMoveSpeed : -m_fIdealMoveSpeed;
+			m_fSideSpeed = (m_bAvoidRight ? 1.0f : -1.0f) * m_fIdealMoveSpeed * 0.6f;
 
 			Vector vForward;
 			AngleVectors(m_vViewAngles, &vForward);
 			vForward.z = 0;
-			setMoveTo(getOrigin() + vForward * 128.0f);
+			Vector vMoveTarget = getOrigin() + vForward * 128.0f;
+			CTraceFilterWorldAndPropsOnly filter;
+			CBotGlobals::traceLine(getOrigin(), vMoveTarget, MASK_SOLID_BRUSHONLY,
+			                       &filter);
+			trace_t *tr = CBotGlobals::getTraceResult();
+			if (tr && tr->fraction < 1.0f)
+				vMoveTarget = getOrigin() + vForward * (128.0f * tr->fraction);
+			setMoveTo(vMoveTarget);
 		}
 	}
 

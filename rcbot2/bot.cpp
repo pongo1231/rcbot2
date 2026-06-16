@@ -575,18 +575,15 @@ bool CBot::checkStuck()
 			m_fPercentMoved = 0.1f;
 
 			m_pButtons->jump();
-			m_pButtons->duck(0.25f, randomFloat(0.2f, 0.4f));
+			m_pButtons->duck(randomFloat(0.1f, 0.4f), randomFloat(0.1f, 0.5f));
 
 			if (m_fStrafeTime < engine->Time())
 			{
 				reduceTouchDistance();
 
-				if (CBotGlobals::yawAngleFromEdict(m_pEdict, m_vMoveTo) > 0)
-					m_fSideSpeed = m_fIdealMoveSpeed / 2;
-				else
-					m_fSideSpeed = -(m_fIdealMoveSpeed / 2);
+				m_fSideSpeed = (m_bLookBack ? 1.0f : -1.0f) * m_fIdealMoveSpeed / 2;
 
-			m_fStrafeTime = engine->Time() + 2.0f;
+			m_fStrafeTime = engine->Time() + randomFloat(1.5f, 3.0f);
 /*
 			CTraceFilterWorldAndPropsOnly filter;
 				Vector vOrigin = getOrigin();
@@ -634,7 +631,7 @@ bool CBot::checkStuck()
 */
 			}
 
-			m_fCheckStuckTime = engine->Time() + 2.04f;
+			m_fCheckStuckTime = engine->Time() + randomFloat(1.5f, 3.5f);
 		}
 		else
 			m_bThinkStuck = false;

@@ -21,6 +21,7 @@ CBotTF2AttackSentryGunTask::CBotTF2AttackSentryGunTask(edict_t *pSentryGun, CBot
 	m_iItemDefIdx       = 0;
 	m_iPeekShots        = 0;
 	m_fPeekRetreatTime  = 0.0f;
+	m_fStrafePauseTime  = 0.0f;
 }
 
 void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
@@ -275,9 +276,16 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 		else
 		{
 			Vector vTarget = m_vStart + m_vPerpDir * (m_bStrafeRight ? 150.0f : -150.0f);
-			if (pBot->distanceFrom(vTarget) < 50.0f)
-				m_bStrafeRight = !m_bStrafeRight;
-			pBot->setMoveTo(vTarget);
+			float fDistToTarget = pBot->distanceFrom(vTarget);
+			if (fDistToTarget < randomFloat(60.0f, 100.0f))
+			{
+				m_bStrafeRight       = !m_bStrafeRight;
+				m_fStrafePauseTime   = engine->Time() + randomFloat(0.2f, 0.8f);
+			}
+			if (m_fStrafePauseTime > engine->Time())
+				pBot->stopMoving();
+			else
+				pBot->setMoveTo(vTarget);
 		}
 	}
 
