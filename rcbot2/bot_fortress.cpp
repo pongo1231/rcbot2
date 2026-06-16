@@ -351,6 +351,7 @@ CBotFortress::CBotFortress()
 	m_fHealRotationTime       = 0.0f;
 	m_fHealStartTime          = 0.0f;
 	m_fHealeeStartHealthPct   = 0.0f;
+	m_fLastUberReadyCall      = 0.0f;
 }
 
 void CBotFortress::checkDependantEntities()
@@ -598,6 +599,18 @@ float CBotFortress::getHealFactor(edict_t *pPlayer)
 		bool bInDanger = (m_pEnemy && hasSomeConditions(CONDITION_SEE_CUR_ENEMY) && wantToShoot());
 		if (bInDanger)
 			fFactor *= 2.0f;
+	}
+
+	// Priority boost for patients actively targeting sentries — they need the heals
+	if (m_pNearestEnemySentry.get())
+	{
+		CBot *pOther = CBots::getBotPointer(pPlayer);
+		if (pOther)
+		{
+			edict_t *pOtherEnemy = pOther->getEnemy();
+			if (pOtherEnemy && pOtherEnemy == m_pNearestEnemySentry.get())
+				fFactor += 0.3f;
+		}
 	}
 
 	// When carrying the flag, only heal teammates below max health
@@ -2107,6 +2120,7 @@ void CBotTF2::spawnInit()
 	m_fHealRotationTime     = 0.0f;
 	m_fHealStartTime        = 0.0f;
 	m_fHealeeStartHealthPct = 0.0f;
+	m_fLastUberReadyCall    = 0.0f;
 
 	m_iDesiredResistType  = 0;
 	m_fUseBuffItemTime    = 0.0f;
@@ -5659,11 +5673,47 @@ void CBotTF2::modThink()
 		    && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pHeal))
 		{
 			edict_t *pMg = CTeamFortress2Mod::getMediGun(m_pEdict);
-			if (pMg && CClassInterface::getUberChargeLevel(pMg) > 90.0f
-			    && nearbyFriendlies(512.0f) >= 2)
+			if (pMg)
 			{
-				secondaryAttack();
-				addVoiceCommand(TF_VC_GOGOGO);
+				float fUberCharge = CClassInterface::getUberChargeLevel(pMg);
+				int iItem = CClassInterface::TF2_getItemDefinitionIndex(pMg);
+
+				// Item-aware pop gate
+				float fPopGate = 90.0f;
+				if (iItem == 998) fPopGate = 25.0f;  // Vaccinator: 4 mini-ubers
+				else if (iItem == 411) fPopGate = 80.0f; // Quick-Fix: faster charge
+				// Kritzkrieg (35): crits don't hurt buildings — gate handled below
+
+				// Item-aware ready call gate
+				float fReadyGate = fPopGate - 10.0f;
+				if (iItem == 998) fReadyGate = 20.0f;
+				else if (iItem == 411) fReadyGate = 65.0f;
+
+				// Kritzkrieg: don't pop vs sentries (crits don't affect buildings)
+				if (iItem == 35)
+				{
+					edict_t *pHealEnemy = ((CBotFortress *)m_pHeal.get())->getEnemy();
+					if (pHealEnemy && CTeamFortress2Mod::isSentry(pHealEnemy,
+					    CTeamFortress2Mod::getEnemyTeam(m_iTeam)))
+						fPopGate = 999.0f; // never pop Kritz vs sentry
+					else
+						fPopGate = 95.0f;
+				}
+
+				// Voice-command "Uber Ready" before pop — patient positions
+				if (fUberCharge > fReadyGate && fUberCharge <= fPopGate
+				    && m_fLastUberReadyCall + 10.0f < engine->Time())
+				{
+					addVoiceCommand(TF_VC_UBERREADY);
+					m_fLastUberReadyCall = engine->Time();
+				}
+
+				// Pop the uber
+				if (fUberCharge > fPopGate && nearbyFriendlies(512.0f) >= 2)
+				{
+					secondaryAttack();
+					addVoiceCommand(TF_VC_GOGOGO);
+				}
 			}
 		}
 
@@ -9398,6 +9448,33 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		}
 		if (iNestCount >= 3)
 			fSentryUtil *= 1.5f;
+
+		// Patient-side uber gate: don't rush sentry when medic hasn't charged yet
+		if (m_bIsBeingHealed && m_pHealer.get())
+		{
+			edict_t *pMg = CTeamFortress2Mod::getMediGun(m_pHealer);
+			if (pMg)
+			{
+				float fUberCharge = CClassInterface::getUberChargeLevel(pMg);
+				int iItem = CClassInterface::TF2_getItemDefinitionIndex(pMg);
+
+				float fPopGate = 90.0f;
+				if (iItem == 998) fPopGate = 25.0f;
+				else if (iItem == 411) fPopGate = 80.0f;
+				else if (iItem == 35) fPopGate = 95.0f;
+
+				float fReadyGate = fPopGate - 10.0f;
+				if (iItem == 998) fReadyGate = 20.0f;
+
+				if (fUberCharge < fPopGate)
+				{
+					if (fUberCharge < fReadyGate)
+						fSentryUtil *= 0.2f;
+					else
+						fSentryUtil *= 0.6f;
+				}
+			}
+		}
 
 		ADD_UTILITY_DATA(BOT_UTIL_ATTACK_SENTRY, bCanAttack,
 		                 fSentryUtil * fRangeFactor * fPushBoost,

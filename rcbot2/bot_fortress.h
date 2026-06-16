@@ -938,6 +938,7 @@ class CBotFortress : public CBot
 	float m_fHealRotationTime;
 	float m_fHealStartTime;
 	float m_fHealeeStartHealthPct;
+	float m_fLastUberReadyCall;
 
 	MyEHandle m_pLastEnemySentry;
 	MyEHandle m_pLastAddedKnownSentry;
