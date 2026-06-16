@@ -102,6 +102,8 @@ float CTeamFortress2Mod::m_fTeamDominance[2]                = { 0.0f, 0.0f };
 float CTeamFortress2Mod::m_fNextDominanceCompute             = 0.0f;
 Vector CTeamFortress2Mod::m_vTeamKnownTeleporters[8];
 float CTeamFortress2Mod::m_fTeamKnownTeleporterTimes[8]      = { 0.0f };
+Vector CTeamFortress2Mod::m_vTeamKnownDispensers[8];
+float  CTeamFortress2Mod::m_fTeamKnownDispenserTimes[8]       = { 0.0f };
 Vector CTeamFortress2Mod::m_vTeamKnownSentryPositions[8];
 float  CTeamFortress2Mod::m_fTeamKnownSentryTimes[8]         = { 0.0f };
 CTeamFortress2Mod::TeamFocusPoint CTeamFortress2Mod::m_FocusPoints[MAX_FOCUS_POINTS];

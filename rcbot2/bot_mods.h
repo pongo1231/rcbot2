@@ -1314,6 +1314,23 @@ class CTeamFortress2Mod : public CBotMod
 		}
 	}
 
+	static Vector m_vTeamKnownDispensers[8];
+	static float  m_fTeamKnownDispenserTimes[8];
+
+	static inline void addTeamKnownDispenser(Vector vPos)
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			if (m_fTeamKnownDispenserTimes[i] < engine->Time()
+			    || (m_vTeamKnownDispensers[i] - vPos).Length() < 200.0f)
+			{
+				m_vTeamKnownDispensers[i]   = vPos;
+				m_fTeamKnownDispenserTimes[i] = engine->Time() + 30.0f;
+				return;
+			}
+		}
+	}
+
 	static Vector m_vTeamKnownSentryPositions[8];
 	static float  m_fTeamKnownSentryTimes[8];
 
