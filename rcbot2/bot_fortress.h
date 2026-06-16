@@ -912,6 +912,11 @@ class CBotFortress : public CBot
 	// List of spies I saw cloak in front of me
 	float m_fSpyLastUncloakedList[MAX_PLAYERS];
 
+	// Timer for invisible-spy melee check when stuck (1s cooldown)
+	float m_fInvisSpyCheckTime;
+	// Area suspicion timer — heightens spy-check paranoia after detection or voice call
+	float m_fSpyAreaSuspicion;
+
 	int m_iTeam;
 
 	float m_fWaitTurnSentry; // amount of time to wait before engineer turns their sentry before building

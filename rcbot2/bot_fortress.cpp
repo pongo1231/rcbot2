@@ -142,6 +142,7 @@ void CBotTF2::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 		{
 			m_vLastSeeSpy = CBotGlobals::entityOrigin(pPlayer);
 			m_fSeeSpyTime = engine->Time() + randomFloat(3.0f, 6.0f);
+			m_fSpyAreaSuspicion = engine->Time() + randomFloat(3.0f, 6.0f);
 			updateCondition(CONDITION_PARANOID);
 			// m_pPrevSpy = pPlayer; // HACK
 		}
@@ -1968,7 +1969,7 @@ void CBotFortress::foundSpy(edict_t *pEdict, TF_Class iDisguise)
 	m_pPrevSpy        = pEdict;
 	m_fSeeSpyTime     = engine->Time() + randomFloat(9.0f, 18.0f);
 	m_vLastSeeSpy     = CBotGlobals::entityOrigin(pEdict);
-	m_fLastSeeSpyTime = engine->Time();
+	m_fLastSeeSpyTime = engine->Time() - 5.0f; // head start for spy-check search radius
 	if (iDisguise && (m_iPrevSpyDisguise != iDisguise))
 		m_iPrevSpyDisguise = iDisguise;
 
@@ -1980,6 +1981,9 @@ void CBotFortress::foundSpy(edict_t *pEdict, TF_Class iDisguise)
 		m_SpyAwareness[iIdx].fWhenBecameKnown     = engine->Time();
 		m_SpyAwareness[iIdx].iSuspectDisguise      = iDisguise;
 	}
+
+	// Area suspicion: heightens paranoia for nearby spy-checking
+	m_fSpyAreaSuspicion = engine->Time() + randomFloat(5.0f, 10.0f);
 };
 
 // got shot by someone
@@ -2121,6 +2125,8 @@ void CBotTF2::spawnInit()
 	m_fLastEurekaTeleport  = 0.0f;
 	m_iBestObscureTeleExit = -1;
 	m_iGuardSlot           = ENTINDEX(m_pEdict) % 4;
+	m_fInvisSpyCheckTime   = 0.0f;
+	m_fSpyAreaSuspicion    = 0.0f;
 
 	m_bIsCarryingTeleExit = false;
 	m_bIsCarryingSentry   = false;
@@ -2774,6 +2780,15 @@ edict_t *CBotTF2::findEngineerBuiltObject(eEngiBuild iBuilding, int index)
 void CBotTF2::died(edict_t *pKiller, const char *pszWeapon)
 {
 	CBotFortress::died(pKiller, pszWeapon);
+
+	// Losing my life means I lose some spy awareness
+	for (int i = 0; i < MAX_PLAYERS; i++)
+	{
+		if (m_SpyAwareness[i].eLevel == SpyAwareness::KNOWN)
+			m_SpyAwareness[i].eLevel = SpyAwareness::SUSPECTED;
+		else if (m_SpyAwareness[i].eLevel == SpyAwareness::SUSPECTED)
+			m_SpyAwareness[i].eLevel = SpyAwareness::NONE;
+	}
 
 	int iWpt = CWaypointLocations::NearestWaypoint(getOrigin(), 256.0f, -1);
 	if (iWpt >= 0)
@@ -5234,6 +5249,10 @@ void CBotTF2::modThink()
 			if (m_iClass == TF_CLASS_PYRO)
 				fPossibleDistance += 200.0f;
 
+			// Area suspicion: recently spotted a spy or heard a spy callout
+			if (m_fSpyAreaSuspicion > engine->Time())
+				fPossibleDistance += 800.0f;
+
 			if ((m_vLastSeeSpy - getOrigin()).Length() < fPossibleDistance)
 			{
 				updateCondition(CONDITION_PARANOID);
@@ -6719,7 +6738,25 @@ void CBotTF2::checkStuckonSpy(void)
 		}
 	}
 	else
+	{
 		m_fStuckSpyTime = 0.0f;
+
+		// No visible spy found but bot is stuck — may be blocked by cloaked spy
+		if (m_fStuckTime > 0.0f && (!m_pEnemy || !hasSomeConditions(CONDITION_SEE_CUR_ENEMY)))
+		{
+			if (m_fInvisSpyCheckTime < engine->Time())
+			{
+				CBotWeapon *pMelee = getBestWeapon(nullptr, true, true);
+				if (pMelee && pMelee->isMelee() && pMelee->hasWeapon())
+				{
+					if (getCurrentWeapon() != pMelee)
+						select_CWeapon(pMelee->getWeaponInfo());
+					primaryAttack();
+				}
+				m_fInvisSpyCheckTime = engine->Time() + 1.0f;
+			}
+		}
+	}
 }
 
 bool CBotFortress::isClassOnTeam(int iClass, int iTeam)
@@ -14034,8 +14071,8 @@ bool CBotTF2::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 						// be smart - check if player's health is below 0
 						bValid = true;
 					}
-					// if he is on fire and I saw my team mate shoot him within the last 5 seconds, he's a spy!
-					else if (CTeamFortress2Mod::TF2_IsPlayerOnFire(pEdict) && (fSpyAttackTime < 5.0f))
+					// if he is on fire, I can see his flame silhouette — he's a spy!
+					else if (CTeamFortress2Mod::TF2_IsPlayerOnFire(pEdict))
 					{
 						bValid = true;
 					}
@@ -14486,6 +14523,8 @@ CBotTF2::CBotTF2()
 	m_iSpyContext             = 0;
 	memset(m_iSpySeenClassCount, 0, sizeof(m_iSpySeenClassCount));
 	m_pSpyLurkTarget          = MyEHandle(nullptr);
+	m_fInvisSpyCheckTime      = 0.0f;
+	m_fSpyAreaSuspicion       = 0.0f;
 }
 
 void CBotTF2::init(bool bVarInit)
