@@ -20,6 +20,7 @@ CBotTF2AttackSentryGunTask::CBotTF2AttackSentryGunTask(edict_t *pSentryGun, CBot
 	m_iAimWpt           = -1;
 	m_iItemDefIdx       = 0;
 	m_iPeekShots        = 0;
+	m_iTotalPeekCycles  = 0;
 	m_fPeekRetreatTime  = 0.0f;
 	m_fStrafePauseTime  = 0.0f;
 }
@@ -312,19 +313,36 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 		                      : CBotGlobals::entityOrigin(m_pSentryGun);
 		vAim.z = CBotGlobals::entityOrigin(m_pSentryGun).z;
 
-		// Weapon-specific aim adjustments for pipe arc
-		if (m_pWeapon->getID() == TF2_WEAPON_GRENADELAUNCHER)
+		// Per-cycle aim jitter: spread splash coverage across sentry footprint
+		if (m_iPeekShots == 0)
+			vAim += Vector(randomFloat(-32.0f, 32.0f), randomFloat(-32.0f, 32.0f), 0);
+
+		Vector vEyes = pBot->getEyePosition();
+		CTraceFilterWorldAndPropsOnly filter;
+		CBotGlobals::traceLine(vEyes, vAim, MASK_SOLID_BRUSHONLY, &filter);
+		trace_t *tr = CBotGlobals::getTraceResult();
+		Vector vImpact = (tr && tr->fraction < 1.0f) ? tr->endpos : vAim;
+
+		// Dynamic Z arc: clear geometry obstructing the projectile path (grenade launcher)
+		if (m_pWeapon->getID() == TF2_WEAPON_GRENADELAUNCHER
+		    && tr && tr->fraction < 1.0f && tr->fraction < 0.95f
+		    && tr->endpos.z > vAim.z - 32.0f)
 		{
-			if (m_iItemDefIdx == 1151) // Iron Bomber — low bounce
-				vAim.z += 48.0f;
-			else if (m_iItemDefIdx != 308) // Not Loch-n-Load (stock GL)
-				vAim.z += 64.0f;
+			float fObstacleDist    = (tr->endpos - vEyes).Length();
+			float fTargetDist      = (vAim - vEyes).Length();
+			float fClearanceZ      = tr->endpos.z + 48.0f;
+			float fSlope           = (fClearanceZ - vEyes.z) / fObstacleDist;
+			vAim.z                 = std::max(vAim.z, vEyes.z + fSlope * fTargetDist);
+
+			CBotGlobals::traceLine(vEyes, vAim, MASK_SOLID_BRUSHONLY, &filter);
+			tr      = CBotGlobals::getTraceResult();
+			vImpact = (tr && tr->fraction < 1.0f) ? tr->endpos : vAim;
 		}
 
-		// Self-damage safety: ensure splash won't hit us
-		if (pBot->distanceFrom(vAim) > BLAST_RADIUS * 1.2f)
+		// Self-damage safety: only fire if the actual impact point is far enough
+		if (pBot->distanceFrom(vImpact) > BLAST_RADIUS * 1.2f)
 		{
-			pBot->setLookVector(vAim);
+			pBot->setLookVector(vImpact);
 			pBot->setLookAtTask(LOOK_VECTOR);
 
 			if (!m_pWeapon->needToReload(pBot))
@@ -336,6 +354,9 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 					m_fPeekRetreatTime = engine->Time()
 					    + randomFloat(0.5f, 1.5f);
 					m_iPeekShots = 0;
+					m_iTotalPeekCycles++;
+					if (m_iTotalPeekCycles >= 4)
+						fail();
 				}
 			}
 		}

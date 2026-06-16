@@ -36,6 +36,7 @@ class CBotTF2AttackSentryGunTask : public CBotTask
 	int m_iAimWpt;
 	int m_iItemDefIdx;
 	int m_iPeekShots;
+	int m_iTotalPeekCycles;
 	float m_fPeekRetreatTime;
 	float m_fStrafePauseTime; // pause between pendulum flips
 };
