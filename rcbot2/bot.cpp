@@ -484,8 +484,9 @@ bool CBot::checkStuck()
 
 	if (!NavMeshUtil::IsOnWalkableGround(getOrigin()))
 	{
-		m_fStuckStartTime = (m_fStuckStartTime > 0.0f) ? m_fStuckStartTime
-		                                                : engine->Time() - 15.0f;
+		// Only advance suicide timer if we were already stuck on the ground
+		if (m_fStuckStartTime == 0.0f && m_bThinkStuck)
+			m_fStuckStartTime = engine->Time() - 15.0f;
 		m_bThinkStuck = true;
 		return true;
 	}
