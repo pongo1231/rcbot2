@@ -4098,13 +4098,21 @@ void CBotTF2::handleSpecialAbilities()
 			Vector vDst = m_bMoveToIsValid ? m_vMoveTo
 			    : (getOrigin() + (m_vLookAt - getOrigin()));
 			float fDist = (getOrigin() - vDst).Length2D();
-			if (fDist > 350.0f)
+			if (fDist > 800.0f)
 			{
-				Vector vHead = getOrigin() + Vector(0, 0, 72.0f);
-				CTraceFilterWorldAndPropsOnly filter;
-				CBotGlobals::traceLine(vHead, vHead + Vector(0, 0, 512.0f),
-				    MASK_SOLID_BRUSHONLY, &filter);
-				if (CBotGlobals::getTraceResult()->fraction >= 1.0f)
+				Vector vDir = vDst - getOrigin();
+				vDir.z = 0;
+				float fLen = vDir.Length();
+				if (fLen > 0.1f)
+				{
+					vDir = vDir / fLen;
+					Vector vAim = vDir + Vector(0, 0, 0.8f);
+					vAim = vAim / vAim.Length();
+					Vector vHead = getOrigin() + Vector(0, 0, 72.0f);
+					CTraceFilterWorldAndPropsOnly filter;
+					CBotGlobals::traceLine(vHead, vHead + vAim * 512.0f,
+					                       MASK_SOLID_BRUSHONLY, &filter);
+					if (CBotGlobals::getTraceResult()->fraction >= 1.0f)
 				{
 					if (!m_bThrusterSwitchPending)
 					{
@@ -4117,17 +4125,10 @@ void CBotTF2::handleSpecialAbilities()
 						edict_t *pCurWep = CClassInterface::getCurrentWeapon(m_pEdict);
 						if (pCurWep && CClassInterface::TF2_getItemDefinitionIndex(pCurWep) == 1179)
 						{
-							Vector vDir = vDst - getOrigin();
-							vDir.z = 0;
-							float fLen = vDir.Length();
-							if (fLen > 0.1f)
-							{
-								vDir = vDir / fLen;
-								Vector vAim = vDir + Vector(0, 0, 1.2f);
-								QAngle aimAngles;
-								VectorAngles(vAim, aimAngles);
-								m_vViewAngles = aimAngles;
-							}
+							// direction pre-computed above the trace
+							QAngle aimAngles;
+							VectorAngles(vDir + Vector(0, 0, 1.2f), aimAngles);
+							m_vViewAngles = aimAngles;
 							primaryAttack(true, 0.5f);
 							doButtons();
 							float *pMeterPost = CClassInterface::getItemChargeMeter(m_pEdict);
@@ -4142,13 +4143,14 @@ void CBotTF2::handleSpecialAbilities()
 			}
 		}
 	}
+	}
 
 	// --- Pyro Thermal Thruster (1179): combat launch toward enemy ---
 	if (m_iClass == TF_CLASS_PYRO && bInDanger && m_pEnemy
 	    && m_fThermalThrustTime < engine->Time())
 	{
 		float fEnemyDist = distanceFrom(m_pEnemy);
-		if (fEnemyDist > 600.0f)
+		if (fEnemyDist > 600.0f && fEnemyDist < 1500.0f)
 		{
 			edict_t *pThrustEnt = nullptr;
 			CBaseHandle *pList = CClassInterface::getWeaponList(m_pEdict);
