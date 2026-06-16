@@ -736,6 +736,7 @@ class CBotFortress : public CBot
 	virtual void seeFriendlyHurtEnemy(edict_t *pTeammate, edict_t *pEnemy, CWeapon *pWeapon);
 
 	bool incomingRocket(float fRange);
+	bool dodgeProjectile();
 
 	virtual void hearPlayerAttack(edict_t *pAttacker, int iWeaponID)
 	{
@@ -946,6 +947,7 @@ class CBotFortress : public CBot
 	static std::vector<MyEHandle> m_SappedRobots;
 	MyEHandle m_NearestEnemyRocket;
 	MyEHandle m_SecondNearestEnemyRocket;
+	MyEHandle m_pNonPVSRocket; // non-PVS projectile detected by periodic scan
 	MyEHandle m_NearestEnemyGrenade;
 	MyEHandle m_pMessAroundInviter;
 

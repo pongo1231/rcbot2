@@ -2127,6 +2127,7 @@ void CBotTF2::spawnInit()
 	m_iGuardSlot           = ENTINDEX(m_pEdict) % 4;
 	m_fInvisSpyCheckTime   = 0.0f;
 	m_fSpyAreaSuspicion    = 0.0f;
+	m_pNonPVSRocket        = MyEHandle(nullptr);
 
 	m_bIsCarryingTeleExit = false;
 	m_bIsCarryingSentry   = false;
@@ -4775,87 +4776,36 @@ void CBotTF2::modThink()
 		}
 	}
 
-	if (m_fStrafeTime < engine->Time())
+	// Non-PVS projectile scan: detect rockets/pipes outside PVS (behind bot, etc.)
+	if (m_NearestEnemyRocket == nullptr && m_pNearestPipeGren.get() == nullptr)
 	{
-		edict_t *pIncoming = m_NearestEnemyRocket.get();
-		if (!pIncoming)
-			pIncoming = m_pNearestPipeGren.get();
-
-		if (pIncoming && CBotGlobals::entityIsValid(pIncoming)
-		    && CBotGlobals::entityIsAlive(pIncoming)
-		    && incomingRocket(800.0f))
+		static float fProjScanTime = 0.0f;
+		if (fProjScanTime < engine->Time())
 		{
-			Vector vOrigin  = getOrigin();
-			Vector vProjOrg = CBotGlobals::entityOrigin(pIncoming);
-			Vector vDodge   = vOrigin - vProjOrg;
-
-			// If a second projectile threatens from a different angle,
-			// dodge perpendicular to avoid walking into it
-			edict_t *pSecond = m_SecondNearestEnemyRocket.get();
-			if (pSecond && pSecond != pIncoming
-			    && CBotGlobals::entityIsValid(pSecond)
-			    && CBotGlobals::entityIsAlive(pSecond)
-			    && distanceFrom(pSecond) < 800.0f)
+			Vector vOrigin = getOrigin();
+			static const char *projectiles[] = {
+			    "tf_projectile_rocket", "tf_projectile_sentryrocket",
+			    "tf_projectile_pipe", "tf_projectile_pipe_remote",
+			};
+			for (int i = 0; i < 4; i++)
 			{
-				Vector vProj2Org = CBotGlobals::entityOrigin(pSecond);
-				Vector vToBot2   = vOrigin - vProj2Org;
-				vToBot2.z        = 0;
-				vDodge.z         = 0;
-				if (vToBot2.Length2D() > 0.1f && vDodge.Length2D() > 0.1f)
+				edict_t *pProj = CClassInterface::FindEntityByClassnameNearest(
+				    vOrigin, projectiles[i], 512.0f, nullptr);
+				if (pProj && CBotGlobals::entityIsValid(pProj)
+				    && CTeamFortress2Mod::isHostileProjectile(
+				           pProj, CTeamFortress2Mod::getEnemyTeam(m_iTeam))
+				    && incomingRocket(512.0f))
 				{
-					vToBot2 = vToBot2 / vToBot2.Length2D();
-					vDodge  = vDodge / vDodge.Length2D();
-					// If dodging away from one would move toward the other (angle > 120°)
-					if (vDodge.Dot(vToBot2) < -0.5f)
-					{
-						float fTemp = vDodge.x;
-						vDodge.x    = -vDodge.y;
-						vDodge.y    = fTemp;
-					}
+					m_pNonPVSRocket = pProj;
+					m_fStrafeTime    = 0.0f; // force immediate dodge check
+					break;
 				}
 			}
-
-			vDodge.z        = 0;
-			float fLen      = vDodge.Length2D();
-			if (fLen > 0.1f)
-			{
-				vDodge        = vDodge / fLen;
-				Vector vDest  = vOrigin + vDodge * (BLAST_RADIUS + 128.0f);
-
-			// Trace-validate dodge destination; try lateral alternatives if blocked
-			CTraceFilterWorldAndPropsOnly filter;
-			CBotGlobals::traceLine(vOrigin, vDest, MASK_SOLID_BRUSHONLY, &filter);
-			trace_t *tr = CBotGlobals::getTraceResult();
-			if (tr->fraction < 1.0f)
-			{
-				Vector vAlt1(-vDodge.y, vDodge.x, 0);
-				Vector vAlt2(vDodge.y, -vDodge.x, 0);
-				Vector vDest1 = vOrigin + vAlt1 * (BLAST_RADIUS + 128.0f);
-				Vector vDest2 = vOrigin + vAlt2 * (BLAST_RADIUS + 128.0f);
-
-				CBotGlobals::traceLine(vOrigin, vDest1, MASK_SOLID_BRUSHONLY, &filter);
-				tr = CBotGlobals::getTraceResult();
-				if (tr->fraction < 1.0f)
-				{
-					CBotGlobals::traceLine(vOrigin, vDest2, MASK_SOLID_BRUSHONLY, &filter);
-					tr    = CBotGlobals::getTraceResult();
-					vDest = (tr->fraction >= 1.0f) ? vDest2 : vOrigin;
-				}
-				else
-					vDest = vDest1;
-			}
-
-				if ((vDest - vOrigin).Length2D() > 10.0f)
-				{
-					setMoveTo(vDest);
-			m_fStrafeTime = engine->Time() + 0.2f;
-			m_fSideSpeed  = (vDodge.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed;
+			fProjScanTime = engine->Time() + 0.25f;
 		}
 	}
-	else
-		m_fStrafeTime = engine->Time() + 0.3f;
-		}
-	}
+
+	dodgeProjectile();
 
 	checkBeingHealed();
 
@@ -5680,6 +5630,8 @@ void CBotTF2::modThink()
 			if ((m_fRevMiniGunTime + m_fNextRevMiniGunTime) > engine->Time())
 			{
 				secondaryAttack(true);
+				if (m_fIdealMoveSpeed > 110.0f)
+					m_fIdealMoveSpeed = 110.0f; // human-like revved speed
 				// m_fIdealMoveSpeed = 30.0f; Improve Max Speed here
 
 				if (m_fCurrentDanger < 1)
@@ -6438,6 +6390,16 @@ void CBotTF2::handleWeapons()
 
 		setLookAtTask(LOOK_ENEMY);
 
+		// Self-damage guard: switch explosive to melee when too close
+		if ((m_iClass == TF_CLASS_SOLDIER || m_iClass == TF_CLASS_DEMOMAN)
+		    && pWeapon && pWeapon->isExplosive() && m_pEnemy
+		    && distanceFrom(m_pEnemy) < 128.0f)
+		{
+			CBotWeapon *pMelee = m_pWeapons->getBestWeapon(m_pEnemy, true, true, true);
+			if (pMelee && pMelee->hasWeapon())
+				pWeapon = pMelee;
+		}
+
 		m_pAttackingEnemy = nullptr;
 
 		bool bDemoBurstActive = (m_iClass == TF_CLASS_DEMOMAN && m_iStickyBurstCount > 0);
@@ -6446,6 +6408,32 @@ void CBotTF2::handleWeapons()
 		{
 			select_CWeapon(pWeapon->getWeaponInfo());
 			// selectWeapon(pWeapon->getWeaponIndex());
+		}
+		// Wall self-splash check: don't fire explosives when a wall is too close
+		if (pWeapon && pWeapon->isExplosive() && !pWeapon->isMelee()
+		    && m_pEnemy && distanceFrom(m_pEnemy) < 200.0f)
+		{
+			Vector vEyes   = getEyePosition();
+			Vector vTarget = CBotGlobals::entityOrigin(m_pEnemy.get());
+			Vector vAim    = vTarget - vEyes;
+			float fDist    = vAim.Length();
+			if (fDist > 0.1f)
+			{
+				vAim = vAim / fDist;
+				CTraceFilterWorldAndPropsOnly filter;
+				CBotGlobals::traceLine(vEyes, vEyes + vAim * 200.0f,
+				                       MASK_SOLID_BRUSHONLY, &filter);
+				trace_t *tr = CBotGlobals::getTraceResult();
+				if (tr && tr->fraction < 1.0f)
+				{
+					Vector vAway = getOrigin() - tr->endpos;
+					vAway.z      = 0;
+					if (vAway.Length() > 0.1f)
+						setMoveTo(getOrigin()
+						    + vAway / vAway.Length() * 128.0f);
+					return; // back away, skip firing
+				}
+			}
 		}
 		else if (!handleAttack(pWeapon, m_pEnemy))
 		{
@@ -7041,6 +7029,18 @@ bool CBotFortress::incomingRocket(float fRange)
 						return false;
 
 					vcomp = vorg + vel * fDist;
+
+					// Jarate/Mad Milk arc through the air — apply gravity
+					const char *pszClass = pRocket->GetClassName();
+					if (pszClass
+					    && (strcmp(pszClass, "tf_projectile_jar") == 0
+					        || strcmp(pszClass, "tf_projectile_jar_milk") == 0))
+					{
+						float fTime      = fDist / fSpeed;
+						float fGravity   = sv_gravity.IsValid()
+						    ? sv_gravity.GetFloat() : 800.0f;
+						vcomp.z -= 0.5f * fGravity * fTime * fTime;
+					}
 				}
 				else
 					vcomp = vorg;
@@ -7087,7 +7087,7 @@ bool CBotFortress::incomingRocket(float fRange)
 
 					// Gravity compensation for arcing pipe grenades
 					float fTime = fDist / fSpeed;
-					vcomp.z -= 0.5f * 800.0f * fTime * fTime;
+					vcomp.z -= 0.5f * sv_gravity.GetFloat() * fTime * fTime;
 				}
 				else
 					vcomp = vorg;
@@ -7103,6 +7103,103 @@ bool CBotFortress::incomingRocket(float fRange)
 				return ((vcomp - vBotFuture).Length() < BLAST_RADIUS);
 			}
 			return (distanceFrom(vcomp) < BLAST_RADIUS);
+		}
+	}
+
+	return false;
+}
+
+bool CBotFortress::dodgeProjectile()
+{
+	if (m_fStrafeTime > engine->Time())
+		return false;
+
+	// Spy: don't dodge while cloaked — movement betrays position
+	if (m_iClass == TF_CLASS_SPY && isCloaked())
+	{
+		m_fStrafeTime = engine->Time() + 0.3f;
+		return false;
+	}
+
+	edict_t *pIncoming = m_NearestEnemyRocket.get();
+	if (!pIncoming)
+		pIncoming = m_pNonPVSRocket.get();
+	if (!pIncoming)
+		pIncoming = m_pNearestPipeGren.get();
+
+	if (!pIncoming || !CBotGlobals::entityIsValid(pIncoming)
+	    || !CBotGlobals::entityIsAlive(pIncoming)
+	    || !incomingRocket(800.0f))
+	{
+		m_fStrafeTime = engine->Time() + 0.3f;
+		return false;
+	}
+
+	Vector vOrigin  = getOrigin();
+	Vector vProjOrg = CBotGlobals::entityOrigin(pIncoming);
+	Vector vDodge   = vOrigin - vProjOrg;
+
+	// Crossfire detection: rotate dodge 90° if moving toward a second projectile
+	edict_t *pSecond = m_SecondNearestEnemyRocket.get();
+	if (pSecond && pSecond != pIncoming
+	    && CBotGlobals::entityIsValid(pSecond)
+	    && CBotGlobals::entityIsAlive(pSecond)
+	    && distanceFrom(pSecond) < 800.0f)
+	{
+		Vector vProj2Org = CBotGlobals::entityOrigin(pSecond);
+		Vector vToBot2   = vOrigin - vProj2Org;
+		vToBot2.z        = 0;
+		vDodge.z         = 0;
+		if (vToBot2.Length2D() > 0.1f && vDodge.Length2D() > 0.1f)
+		{
+			vToBot2 = vToBot2 / vToBot2.Length2D();
+			vDodge  = vDodge / vDodge.Length2D();
+			if (vDodge.Dot(vToBot2) < -0.5f) // angle > 120°
+			{
+				float fTemp = vDodge.x;
+				vDodge.x    = -vDodge.y;
+				vDodge.y    = fTemp;
+			}
+		}
+	}
+
+	vDodge.z        = 0;
+	float fLen      = vDodge.Length2D();
+	if (fLen > 0.1f)
+	{
+		vDodge        = vDodge / fLen;
+		Vector vDest  = vOrigin + vDodge * (BLAST_RADIUS + 128.0f);
+
+		CTraceFilterWorldAndPropsOnly filter;
+		CBotGlobals::traceLine(vOrigin, vDest, MASK_SOLID_BRUSHONLY, &filter);
+		trace_t *tr = CBotGlobals::getTraceResult();
+		if (tr->fraction < 1.0f)
+		{
+			Vector vAlt1(-vDodge.y, vDodge.x, 0);
+			Vector vAlt2(vDodge.y, -vDodge.x, 0);
+			Vector vDest1 = vOrigin + vAlt1 * (BLAST_RADIUS + 128.0f);
+			Vector vDest2 = vOrigin + vAlt2 * (BLAST_RADIUS + 128.0f);
+			CBotGlobals::traceLine(vOrigin, vDest1, MASK_SOLID_BRUSHONLY, &filter);
+			tr = CBotGlobals::getTraceResult();
+			if (tr->fraction < 1.0f)
+			{
+				CBotGlobals::traceLine(vOrigin, vDest2, MASK_SOLID_BRUSHONLY, &filter);
+				tr    = CBotGlobals::getTraceResult();
+				vDest = (tr->fraction >= 1.0f) ? vDest2 : vOrigin;
+			}
+			else
+				vDest = vDest1;
+		}
+
+		if ((vDest - vOrigin).Length2D() > 10.0f)
+		{
+			int iOldPrio = m_iMoveLookPriority;
+			setMoveLookPriority(MOVELOOK_EVENT);
+			setMoveTo(vDest);
+			setMoveLookPriority(iOldPrio);
+			m_fStrafeTime = engine->Time() + 0.2f;
+			m_fSideSpeed  = (vDodge.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed;
+			return true;
 		}
 	}
 
@@ -7569,58 +7666,10 @@ bool CBotTF2::healPlayer()
 		m_bShouldCrouchCover = false;
 
 	// Dodge incoming projectiles while healing
-	if (m_fStrafeTime < engine->Time())
-	{
-		edict_t *pIncoming = m_NearestEnemyRocket.get();
-		if (!pIncoming)
-			pIncoming = m_pNearestPipeGren.get();
+	dodgeProjectile();
 
-			if (pIncoming && CBotGlobals::entityIsValid(pIncoming)
-			    && CBotGlobals::entityIsAlive(pIncoming) && incomingRocket(800.0f))
-			{
-				Vector vOrigin  = getOrigin();
-				Vector vProjOrg = CBotGlobals::entityOrigin(pIncoming);
-				Vector vDodge   = vOrigin - vProjOrg;
-				vDodge.z        = 0;
-				float fLen      = vDodge.Length2D();
-				if (fLen > 0.1f)
-				{
-					vDodge = vDodge / fLen;
-					Vector vDest = vOrigin + vDodge * (BLAST_RADIUS + 128.0f);
-
-				// Trace-validate dodge destination; try lateral alternatives if blocked
-				CTraceFilterWorldAndPropsOnly filter;
-				CBotGlobals::traceLine(vOrigin, vDest, MASK_SOLID_BRUSHONLY, &filter);
-				trace_t *tr = CBotGlobals::getTraceResult();
-				if (tr->fraction < 1.0f)
-				{
-					Vector vAlt1(-vDodge.y, vDodge.x, 0);
-					Vector vAlt2(vDodge.y, -vDodge.x, 0);
-					Vector vDest1 = vOrigin + vAlt1 * (BLAST_RADIUS + 128.0f);
-					Vector vDest2 = vOrigin + vAlt2 * (BLAST_RADIUS + 128.0f);
-					CBotGlobals::traceLine(vOrigin, vDest1, MASK_SOLID_BRUSHONLY, &filter);
-					tr = CBotGlobals::getTraceResult();
-					if (tr->fraction < 1.0f)
-					{
-						CBotGlobals::traceLine(vOrigin, vDest2, MASK_SOLID_BRUSHONLY, &filter);
-						tr    = CBotGlobals::getTraceResult();
-						vDest = (tr->fraction >= 1.0f) ? vDest2 : vOrigin;
-					}
-					else
-						vDest = vDest1;
-				}
-
-				setMoveTo(vDest);
-			m_fStrafeTime = engine->Time() + 0.2f;
-			m_fSideSpeed  = (vDodge.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed;
-		}
-	}
-	else
-		m_fStrafeTime = engine->Time() + 0.3f;
-		}
-
-		if (!pWeap || !pWeap->getWeaponInfo())
-		return false;
+	if (!pWeap || !pWeap->getWeaponInfo())
+	return false;
 
 	pWeapon = INDEXENT(pWeap->getWeaponIndex());
 
@@ -13235,55 +13284,7 @@ bool CBotTF2::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 		}
 
 		// Dodge incoming projectiles if one is heading at us
-		if (m_fStrafeTime < engine->Time())
-		{
-			edict_t *pIncoming = m_NearestEnemyRocket.get();
-			if (!pIncoming)
-				pIncoming = m_pNearestPipeGren.get();
-
-			if (pIncoming && CBotGlobals::entityIsValid(pIncoming)
-		    && CBotGlobals::entityIsAlive(pIncoming) && incomingRocket(800.0f))
-			{
-				Vector vOrigin  = getOrigin();
-				Vector vProjOrg = CBotGlobals::entityOrigin(pIncoming);
-				Vector vDodge   = vOrigin - vProjOrg;
-				vDodge.z        = 0;
-				float fLen      = vDodge.Length2D();
-				if (fLen > 0.1f)
-				{
-					vDodge = vDodge / fLen;
-					Vector vDest = vOrigin + vDodge * (BLAST_RADIUS + 128.0f);
-
-				// Trace-validate dodge destination; try lateral alternatives if blocked
-				CTraceFilterWorldAndPropsOnly filter;
-				CBotGlobals::traceLine(vOrigin, vDest, MASK_SOLID_BRUSHONLY, &filter);
-				trace_t *tr = CBotGlobals::getTraceResult();
-				if (tr->fraction < 1.0f)
-				{
-					Vector vAlt1(-vDodge.y, vDodge.x, 0);
-					Vector vAlt2(vDodge.y, -vDodge.x, 0);
-					Vector vDest1 = vOrigin + vAlt1 * (BLAST_RADIUS + 128.0f);
-					Vector vDest2 = vOrigin + vAlt2 * (BLAST_RADIUS + 128.0f);
-					CBotGlobals::traceLine(vOrigin, vDest1, MASK_SOLID_BRUSHONLY, &filter);
-					tr = CBotGlobals::getTraceResult();
-					if (tr->fraction < 1.0f)
-					{
-						CBotGlobals::traceLine(vOrigin, vDest2, MASK_SOLID_BRUSHONLY, &filter);
-						tr    = CBotGlobals::getTraceResult();
-						vDest = (tr->fraction >= 1.0f) ? vDest2 : vOrigin;
-					}
-					else
-						vDest = vDest1;
-				}
-
-				setMoveTo(vDest);
-			m_fStrafeTime = engine->Time() + 0.2f;
-			m_fSideSpeed  = (vDodge.y > 0 ? 1.0f : -1.0f) * m_fIdealMoveSpeed;
-		}
-	}
-	else
-		m_fStrafeTime = engine->Time() + 0.3f;
-		}
+		dodgeProjectile();
 
 		// Demoman: use sticky launcher offensively alongside grenade launcher
 		// Cycle in periodically, fire bursts, and use sticky-jumps for mobility
@@ -14526,6 +14527,7 @@ CBotTF2::CBotTF2()
 	m_pSpyLurkTarget          = MyEHandle(nullptr);
 	m_fInvisSpyCheckTime      = 0.0f;
 	m_fSpyAreaSuspicion       = 0.0f;
+	m_pNonPVSRocket           = MyEHandle(nullptr);
 }
 
 void CBotTF2::init(bool bVarInit)
