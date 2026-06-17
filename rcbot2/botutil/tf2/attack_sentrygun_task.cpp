@@ -7,6 +7,7 @@
 #include "bot_waypoint_locations.h"
 #include "bot_waypoint_visibility.h"
 #include "bot_weapons.h"
+#include "botutil/base_sched.h"
 
 CBotTF2AttackSentryGunTask::CBotTF2AttackSentryGunTask(edict_t *pSentryGun, CBotWeapon *pWeapon)
 {
@@ -22,7 +23,11 @@ CBotTF2AttackSentryGunTask::CBotTF2AttackSentryGunTask(edict_t *pSentryGun, CBot
 	m_iPeekShots        = 0;
 	m_iTotalPeekCycles  = 0;
 	m_fPeekRetreatTime  = 0.0f;
-	m_fStrafePauseTime  = 0.0f;
+	m_fStrafePauseTime     = 0.0f;
+	m_bWaitingForTeammates = false;
+	m_fWaitStartTime       = 0.0f;
+	m_bUseFlank            = false;
+	m_vFlankPos            = Vector(0, 0, 0);
 }
 
 void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
@@ -89,6 +94,123 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 		else
 			m_vPerpDir = Vector(1, 0, 0);
 		m_bStrafeRight = (randomInt(0, 1) == 1);
+
+		// True flanking: search for a waypoint on the far side of the sentry
+		// (perpendicular to the sentry's facing direction — "come from the side").
+		// Spy requires hidden flank; soldier/demo/scout can flank openly.
+		TF_Class iClass = ((CBotTF2 *)pBot)->getClass();
+		bool bCanFlank = (iClass == TF_CLASS_SPY || iClass == TF_CLASS_SOLDIER
+		               || iClass == TF_CLASS_DEMOMAN || iClass == TF_CLASS_SCOUT);
+
+		if (bCanFlank)
+		{
+			Vector vSentryPos = CBotGlobals::entityOrigin(m_pSentryGun);
+
+			// Compute sentry facing direction from its current target
+			Vector vSentryFacing;
+			edict_t *pSentryEnemy = CClassInterface::getSentryEnemy(m_pSentryGun.get());
+			if (pSentryEnemy && CBotGlobals::entityIsValid(pSentryEnemy))
+			{
+				vSentryFacing = CBotGlobals::entityOrigin(pSentryEnemy) - vSentryPos;
+				vSentryFacing.z = 0;
+				if (vSentryFacing.Length() > 0.01f)
+					vSentryFacing /= vSentryFacing.Length();
+				else
+					vSentryFacing = Vector(1, 0, 0);
+			}
+			else
+				vSentryFacing = Vector(1, 0, 0);
+
+			float fBestScore = -9999.0f;
+			int iBestFlankWpt = -1;
+
+			for (int i = 0; i < CWaypoints::numWaypoints(); i++)
+			{
+				CWaypoint *pWpt = CWaypoints::getWaypoint(i);
+				if (!pWpt || pWpt->hasFlag(CWaypointTypes::W_FL_UNREACHABLE))
+					continue;
+
+				Vector vWptToSentry = pWpt->getOrigin() - vSentryPos;
+				vWptToSentry.z = 0;
+				float fDist = vWptToSentry.Length();
+				if (fDist < 300.0f || fDist > 1500.0f)
+					continue;
+
+				float fAxisDot  = vSentryFacing.Dot(vWptToSentry / fDist);
+				float fPerpDist = sqrtf(1.0f - fAxisDot * fAxisDot) * fDist;
+
+				if (fPerpDist < 200.0f)
+					continue;
+
+			// Spy requires hidden flank; others can flank openly
+		if (iClass == TF_CLASS_SPY
+		    && table->GetVisibilityFromTo(m_iSentryWaypoint, i))
+					continue;
+
+				float fScore = fPerpDist - (fDist * 0.2f);
+				if (fScore > fBestScore)
+				{
+					fBestScore     = fScore;
+					iBestFlankWpt = i;
+				}
+			}
+
+			if (iBestFlankWpt >= 0)
+			{
+				CWaypoint *pFlankWpt = CWaypoints::getWaypoint(iBestFlankWpt);
+				m_bUseFlank = true;
+				m_vFlankPos = pFlankWpt->getOrigin();
+				m_vStart    = m_vFlankPos;
+				m_vHide     = m_vFlankPos;
+			}
+		}
+
+		// Suppress flank when corner-peek is available (shorter approach, also hidden)
+		if (m_bUseFlank && m_bUsePeek)
+			m_bUseFlank = false;
+
+		// Per-bot approach diversity: offset laterally so different bots
+		// take different angles around the sentry instead of clustering
+		{
+			Vector vSpreadAxis = m_bUseFlank
+			    ? (m_vFlankPos - CBotGlobals::entityOrigin(m_pSentryGun)).Cross(Vector(0, 0, 1))
+			    : m_vPerpDir;
+			vSpreadAxis.z = 0;
+			if (vSpreadAxis.Length() > 0.01f)
+				vSpreadAxis /= vSpreadAxis.Length();
+			int iSeed = ENTINDEX(pBot->getEdict());
+			Vector vSpreadOffset = vSpreadAxis
+			    * ((iSeed % 2 == 0) ? 1.0f : -1.0f)
+			    * randomFloat(100.0f, 250.0f);
+			m_vStart += vSpreadOffset;
+			m_vHide  += vSpreadOffset;
+		}
+
+		// Coordinated push: count other bots already committed to the same sentry.
+		// If someone else is on it AND I'm not yet in close range, wait for them.
+		{
+			int iNearbyAttackers = 0;
+			for (int i = 1; i <= gpGlobals->maxClients; i++)
+			{
+				edict_t *pT = INDEXENT(i);
+				if (!pT || pT == pBot->getEdict()
+				    || !CBotGlobals::entityIsValid(pT)
+				    || !CBotGlobals::entityIsAlive(pT)) continue;
+				if (CTeamFortress2Mod::getTeam(pT) != pBot->getTeam()) continue;
+				CBot *pOther = CBots::getBotPointer(pT);
+				if (!pOther) continue;
+				if (!pOther->getSchedule()
+				    || !pOther->getSchedule()->isCurrentSchedule(SCHED_ATTACK_SENTRY_GUN))
+					continue;
+				iNearbyAttackers++;
+			}
+
+			if (iNearbyAttackers >= 1 && pBot->distanceFrom(m_pSentryGun) > 600.0f)
+			{
+				m_bWaitingForTeammates = true;
+				m_fWaitStartTime  = engine->Time();
+			}
+		}
 
 		CWaypoint *pWpt = CWaypoints::getWaypoint(m_iStartingWaypoint);
 
@@ -164,6 +286,38 @@ void CBotTF2AttackSentryGunTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 	pBot->lookAtEdict(m_pSentryGun);
 	pBot->setLookAtTask(LOOK_EDICT);
+
+	// Coordinated push: wait at safety distance until a teammate is also ready
+	if (m_bWaitingForTeammates)
+	{
+		int iOtherCommitted = 0;
+		for (int i = 1; i <= gpGlobals->maxClients; i++)
+		{
+			edict_t *pT = INDEXENT(i);
+			if (!pT || pT == pBot->getEdict()
+			    || !CBotGlobals::entityIsValid(pT)
+			    || !CBotGlobals::entityIsAlive(pT)) continue;
+			if (CTeamFortress2Mod::getTeam(pT) != pBot->getTeam()) continue;
+			CBot *pOther = CBots::getBotPointer(pT);
+			if (!pOther) continue;
+			if (!pOther->getSchedule()
+			    || !pOther->getSchedule()->isCurrentSchedule(SCHED_ATTACK_SENTRY_GUN))
+				continue;
+			iOtherCommitted++;
+		}
+
+		if (iOtherCommitted >= 1
+		    || engine->Time() - m_fWaitStartTime > 8.0f)
+		{
+		m_bWaitingForTeammates = false;
+		pBot->addVoiceCommand(TF_VC_GOGOGO);
+		}
+		else
+		{
+			pBot->stopMoving();
+			return;
+		}
+	}
 
 	bool bTakingFire  = (CClassInterface::getSentryEnemy(m_pSentryGun) == pBot->getEdict());
 	bool bOutOfRange  = pBot->distanceFrom(m_pSentryGun) > TF2_MAX_SENTRYGUN_RANGE;

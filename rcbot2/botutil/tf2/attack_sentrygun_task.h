@@ -39,4 +39,10 @@ class CBotTF2AttackSentryGunTask : public CBotTask
 	int m_iTotalPeekCycles;
 	float m_fPeekRetreatTime;
 	float m_fStrafePauseTime; // pause between pendulum flips
+	// Coordinated sentry push: wait for teammates at safety distance
+	bool  m_bWaitingForTeammates;
+	float m_fWaitStartTime;
+	// True flanking: approach from the sentry's side, perpendicular to its facing
+	bool   m_bUseFlank;
+	Vector m_vFlankPos;
 };
