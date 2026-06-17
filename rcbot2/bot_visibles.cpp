@@ -254,17 +254,17 @@ void CBotVisibles::updateVisibles()
 
 	iTicks = 0;
 
-	if (rcbot_supermode.GetBool())
+	if (rcbot_supermode->GetBool())
 		iMaxTicks = 100;
 	else
-		iMaxTicks = m_pBot->getProfile()->m_iVisionTicks; // bot_visrevs.GetInt();
+		iMaxTicks = m_pBot->getProfile()->m_iVisionTicks; // bot_visrevs->GetInt();
 
 	iStartIndex = m_iCurrentIndex;
 
-	if (rcbot_supermode.GetBool())
+	if (rcbot_supermode->GetBool())
 		iMaxClientTicks = (gpGlobals->maxClients / 2) + 1;
 	else
-		iMaxClientTicks = m_pBot->getProfile()->m_iVisionTicksClients; // bot_visrevs_clients.GetInt();
+		iMaxClientTicks = m_pBot->getProfile()->m_iVisionTicksClients; // bot_visrevs_clients->GetInt();
 
 	if (iMaxTicks <= 2)
 		iMaxTicks = 2;

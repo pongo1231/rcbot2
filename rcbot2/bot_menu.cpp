@@ -337,7 +337,7 @@ void CBotMenu::render(CClient *pClient)
 	const char *pszCaption;
 	IPlayerInfo *pPlayerInfo = playerinfomanager->GetPlayerInfo(pClient->getPlayer());
 	CBotCmd lastCmd          = pPlayerInfo->GetLastUserCommand();
-	float fUpdateTime        = rcbot_menu_update_time1.GetFloat();
+	float fUpdateTime        = rcbot_menu_update_time1->GetFloat();
 
 	angles                   = lastCmd.viewangles;
 

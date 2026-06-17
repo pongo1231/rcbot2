@@ -312,7 +312,7 @@ bool CDODBot::setVisible(edict_t *pEntity, bool bVisible)
 	{
 		fSmokeTime = gpGlobals->curtime - CClassInterface::getSmokeSpawnTime(pEntity);
 
-		if (bNoDraw || ((fSmokeTime < 1.0f) || (fSmokeTime > rcbot_smoke_time.GetFloat())))
+		if (bNoDraw || ((fSmokeTime < 1.0f) || (fSmokeTime > rcbot_smoke_time->GetFloat())))
 			m_pNearestSmokeToEnemy = nullptr;
 	}
 
@@ -394,7 +394,7 @@ void CDODBot::killed(edict_t *pVictim, char *weapon)
 	CBot::killed(pVictim, weapon);
 
 	if (pVictim && CBotGlobals::entityIsValid(pVictim))
-		m_pNavigator->belief(CBotGlobals::entityOrigin(pVictim), getEyePosition(), bot_beliefmulti.GetFloat(),
+		m_pNavigator->belief(CBotGlobals::entityOrigin(pVictim), getEyePosition(), bot_beliefmulti->GetFloat(),
 		                     distanceFrom(pVictim), BELIEF_SAFETY);
 
 	if ((m_pEnemy == pVictim))
@@ -431,7 +431,7 @@ void CDODBot::died(edict_t *pKiller, const char *pszWeapon)
 	if (pKiller)
 	{
 		if (CBotGlobals::entityIsValid(pKiller))
-			m_pNavigator->belief(CBotGlobals::entityOrigin(pKiller), getEyePosition(), bot_beliefmulti.GetFloat(),
+			m_pNavigator->belief(CBotGlobals::entityOrigin(pKiller), getEyePosition(), bot_beliefmulti->GetFloat(),
 			                     distanceFrom(pKiller), BELIEF_DANGER);
 
 		if ((m_pEnemy == pKiller))
@@ -586,7 +586,7 @@ void CDODBot::seeFriendlyDie(edict_t *pDied, edict_t *pKiller, CWeapon *pWeapon)
 			CBotWeapon *pMachineGun = getMG();
 
 			// move up MG
-			if (!rcbot_melee_only.GetBool() && pMachineGun && (m_iClass == DOD_CLASS_MACHINEGUNNER)
+			if (!rcbot_melee_only->GetBool() && pMachineGun && (m_iClass == DOD_CLASS_MACHINEGUNNER)
 			    && !pMachineGun->outOfAmmo(this) && pMachineGun->isDeployable())
 			{
 				CWaypoint *pWaypoint;
@@ -849,14 +849,14 @@ bool CDODBot::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 			    return false;
 			}*/
 
-			if (rcbot_shoot_breakables.GetBool())
+			if (rcbot_shoot_breakables->GetBool())
 			{
 				if (bRegisteredBreakable) // this breakable is registered as explosive only
 					return (distanceFrom(pEdict) > BLAST_RADIUS) && m_pWeapons->hasExplosives();
 				// else if ( (m_fLastSeeEnemy + 5.0f) > engine->Time() )
-				else if (DotProductFromOrigin(CBotGlobals::entityOrigin(pEdict)) > rcbot_shoot_breakable_cos.GetFloat())
+				else if (DotProductFromOrigin(CBotGlobals::entityOrigin(pEdict)) > rcbot_shoot_breakable_cos->GetFloat())
 					return ((m_fLastSeeEnemyPlayer + 3.0f) < engine->Time())
-					    && (distanceFrom(pEdict) < rcbot_shoot_breakable_dist.GetFloat())
+					    && (distanceFrom(pEdict) < rcbot_shoot_breakable_dist->GetFloat())
 					    && (CClassInterface::getPlayerHealth(pEdict) > 0);
 			}
 		}
@@ -871,7 +871,7 @@ bool CDODBot::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 		return false; // left the server
 
 	// if no target on - listen sever player is a non target
-	if (rcbot_notarget.GetBool() && (entity_index == 1))
+	if (rcbot_notarget->GetBool() && (entity_index == 1))
 		return false;
 
 	if (pEdict == m_pEdict)
@@ -883,7 +883,7 @@ bool CDODBot::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 
 	if (CBotGlobals::getTeam(pEdict) == getTeam())
 	{
-		if (rcbot_ffa.GetBool() == false)
+		if (rcbot_ffa->GetBool() == false)
 			return false;
 
 		// if true continue down -- don't return
@@ -910,15 +910,15 @@ void CDODBot::handleWeapons()
 
 		pWeapon = getCurrentWeapon();
 
-		if (pWeapon && pWeapon->getWeaponEntity() && !rcbot_melee_only.GetBool() && pWeapon->isDeployable()
+		if (pWeapon && pWeapon->getWeaponEntity() && !rcbot_melee_only->GetBool() && pWeapon->isDeployable()
 		    && !pWeapon->outOfAmmo(this) && CClassInterface::isMachineGunDeployed(pWeapon->getWeaponEntity()))
 		{
 			; // keep current weapon on
 		}
 		else
 			pWeapon = getBestWeapon(
-			    m_pEnemy, true, true, rcbot_melee_only.GetBool(),
-			    !rcbot_melee_only.GetBool()
+			    m_pEnemy, true, true, rcbot_melee_only->GetBool(),
+			    !rcbot_melee_only->GetBool()
 			        && (((m_pEnemy == m_pNearestBreakable) || CDODMod::isBreakableRegistered(m_pEnemy, m_iTeam))));
 
 		if (m_bWantToChangeWeapon && (pWeapon != nullptr) && (pWeapon != getCurrentWeapon())
@@ -1108,7 +1108,7 @@ void CDODBot::changeClass()
 	// selectClass();
 	helpers->ClientCommand(m_pEdict, g_DODClassCmd[iTeam - 2][m_iDesiredClass]);
 
-	m_fChangeClassTime = engine->Time() + randomFloat(bot_min_cc_time.GetFloat(), bot_max_cc_time.GetFloat());
+	m_fChangeClassTime = engine->Time() + randomFloat(bot_min_cc_time->GetFloat(), bot_max_cc_time->GetFloat());
 }
 
 void CDODBot::chooseClass(bool bIsChangingClass)
@@ -1190,7 +1190,7 @@ void CDODBot::modThink()
 	{
 		m_bCheckClass = false;
 
-		if (bot_change_class.GetBool() && (m_fChangeClassTime < engine->Time()))
+		if (bot_change_class->GetBool() && (m_fChangeClassTime < engine->Time()))
 		{
 			// get score for this class
 			float scoreValue = CDODMod::getScore(m_pEdict);
@@ -1205,7 +1205,7 @@ void CDODBot::modThink()
 	}
 
 	m_fFov    = BOT_DEFAULT_FOV;
-	fMaxSpeed = CClassInterface::getMaxSpeed(m_pEdict); //*rcbot_speed_boost.GetFloat();
+	fMaxSpeed = CClassInterface::getMaxSpeed(m_pEdict); //*rcbot_speed_boost->GetFloat();
 
 	setMoveSpeed(fMaxSpeed);
 
@@ -1278,13 +1278,13 @@ void CDODBot::modThink()
 		}
 		// prone only if has enemy or last seen one a second ago
 		// if rcbot_prone_enemy_only is true
-		if ((hasSomeConditions(CONDITION_PRONE) || !rcbot_prone_enemy_only.GetBool()
+		if ((hasSomeConditions(CONDITION_PRONE) || !rcbot_prone_enemy_only->GetBool()
 		     || ((m_pEnemy.get() != nullptr) || (m_fLastSeeEnemy + 5.0f > engine->Time())))
 		    && (m_fCurrentDanger >= 80.0f) && !m_bProne && (m_fProneTime < engine->Time()))
 		{
 			bool bProne = true;
 
-			if (rcbot_prone_enemy_only.GetBool() && (m_pEnemy.get() != nullptr))
+			if (rcbot_prone_enemy_only->GetBool() && (m_pEnemy.get() != nullptr))
 			{
 				ga_nn_value inputs[3] = { distanceFrom(m_pEnemy) / 1000.0f, getHealthPercent(),
 					                      m_fCurrentDanger / MAX_BELIEF };
@@ -1831,9 +1831,9 @@ void CDODBot::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 			// always join a squad if the leader is human
 			if (p->IsPlayer() && !p->IsFakeClient())
 				fProb = 1.0f;
-			else if (rcbot_bots_form_squads.GetBool())
+			else if (rcbot_bots_form_squads->GetBool())
 			{
-				fProb = rcbot_bot_squads_percent.GetFloat() / 100;
+				fProb = rcbot_bot_squads_percent->GetFloat() / 100;
 
 				/*if ( iClass == DOD_CLASS_SNIPER )
 				    fProb = 0.2f;
@@ -1861,7 +1861,7 @@ void CDODBot::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 			}
 		}
 		else if ((p->IsPlayer() && !p->IsFakeClient())
-		         || ((randomFloat(0.0f, 1.0f) > 0.75f) && rcbot_bots_form_squads.GetBool())) // already in a squad
+		         || ((randomFloat(0.0f, 1.0f) > 0.75f) && rcbot_bots_form_squads->GetBool())) // already in a squad
 		{
 			// decide to change squad leader here
 			if (inSquad()
@@ -1913,7 +1913,7 @@ void CDODBot::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 		break;
 	case DOD_VC_NEED_BACKUP:
 		if ((!inSquad() || (m_pSquad->GetLeader() == m_pEdict)) && m_pNearestFlag && isVisible(pPlayer)
-		    && !rcbot_nocapturing.GetBool())
+		    && !rcbot_nocapturing->GetBool())
 		{
 			Vector vPoint  = CBotGlobals::entityOrigin(m_pNearestFlag);
 			Vector vPlayer = CBotGlobals::entityOrigin(pPlayer);
@@ -1934,7 +1934,7 @@ void CDODBot::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 					attack->addTask(new CBotDefendTask(pWpt->getOrigin(), randomFloat(6.0f, 12.0f), 0, true, vPoint,
 					                                   LOOK_SNIPE, pWpt->getFlags()));
 
-					if (!inSquad() && rcbot_bots_form_squads.GetBool())
+					if (!inSquad() && rcbot_bots_form_squads->GetBool())
 						attack->addTask(new CBotJoinSquad(pPlayer));
 
 					// add defend task
@@ -1947,7 +1947,7 @@ void CDODBot::hearVoiceCommand(edict_t *pPlayer, byte cmd)
 					attack->addTask(new CFindPathTask(vPoint));
 					attack->addTask(new CBotDODAttackPoint(CDODMod::m_Flags.getFlagID(m_pNearestFlag), vPoint, 150.0f));
 
-					if (!inSquad() && rcbot_bots_form_squads.GetBool())
+					if (!inSquad() && rcbot_bots_form_squads->GetBool())
 						attack->addTask(new CBotJoinSquad(pPlayer));
 
 					// add defend task
@@ -2083,10 +2083,10 @@ void CDODBot::listenForPlayers()
 
 		fDist = distanceFrom(pPlayer);
 
-		if (fDist > rcbot_listen_dist.GetFloat())
+		if (fDist > rcbot_listen_dist->GetFloat())
 			continue;
 
-		fFactor = (rcbot_listen_dist.GetFloat() - fDist);
+		fFactor = (rcbot_listen_dist->GetFloat() - fDist);
 
 		cmd     = p->GetLastUserCommand();
 
@@ -2094,7 +2094,7 @@ void CDODBot::listenForPlayers()
 
 		fVelocity = vVelocity.Length();
 
-		if (fVelocity > rcbot_footstep_speed.GetFloat())
+		if (fVelocity > rcbot_footstep_speed->GetFloat())
 			fFactor += vVelocity.Length();
 		else
 			continue; // not going fast enough to hear -- can't hear, move on
@@ -2934,7 +2934,7 @@ bool CDODBot::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 		clearFailedWeaponSelect();
 
 		if (pWeapon->isMelee()
-		    || (pWeapon->isMeleeSecondary() && (pWeapon->outOfAmmo(this) || rcbot_melee_only.GetBool())))
+		    || (pWeapon->isMeleeSecondary() && (pWeapon->outOfAmmo(this) || rcbot_melee_only->GetBool())))
 		{
 			setMoveTo(CBotGlobals::entityOrigin(pEnemy));
 			// setLookAt(m_vAimVector);
@@ -3050,7 +3050,7 @@ bool CDODBot::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 
 		if (bAttack && (m_fShootTime < engine->Time()))
 		{
-			if (pWeapon->isMeleeSecondary() && (pWeapon->outOfAmmo(this) || rcbot_melee_only.GetBool()))
+			if (pWeapon->isMeleeSecondary() && (pWeapon->outOfAmmo(this) || rcbot_melee_only->GetBool()))
 				secondaryAttack();
 			else
 				primaryAttack(); // shoot
@@ -3136,7 +3136,7 @@ void CDODBot::getTasks(unsigned int iIgnore)
 
 	bCheckCurrent    = true;
 	m_iTeam          = getTeam(); // update team
-	bCanMessAround   = bot_messaround.GetBool();
+	bCanMessAround   = bot_messaround->GetBool();
 
 	fAttackUtil      = 0.5f;
 	fDefendUtil      = 0.4f;
@@ -3158,7 +3158,7 @@ void CDODBot::getTasks(unsigned int iIgnore)
 	            getHealthPercent() * 0.89f);
 
 	// flag capture map
-	if (CDODMod::isFlagMap() && (CDODMod::m_Flags.getNumFlags() > 0) && !rcbot_nocapturing.GetBool())
+	if (CDODMod::isFlagMap() && (CDODMod::m_Flags.getNumFlags() > 0) && !rcbot_nocapturing->GetBool())
 	{
 		bool bAttackNearestFlag = false;
 
@@ -3239,7 +3239,7 @@ void CDODBot::getTasks(unsigned int iIgnore)
 	}
 	// bomb map
 
-	if (CDODMod::isBombMap() && (CDODMod::m_Flags.getNumFlags() > 0) && !rcbot_nocapturing.GetBool())
+	if (CDODMod::isBombMap() && (CDODMod::m_Flags.getNumFlags() > 0) && !rcbot_nocapturing->GetBool())
 	{
 		bCanMessAround             = false;
 		// same thing as above except with bombs
@@ -3271,7 +3271,7 @@ void CDODBot::getTasks(unsigned int iIgnore)
 
 		fPlantUtil += randomFloat(-0.25f, 0.25f); // add some fuzz
 		fAttackUtil = fPlantUtil;
-		fDefRate    = bot_defrate.GetFloat();
+		fDefRate    = bot_defrate->GetFloat();
 		fDefendUtil += randomFloat(-fDefRate, fDefRate);
 
 		// bot is ... go go go!
@@ -3338,7 +3338,7 @@ void CDODBot::getTasks(unsigned int iIgnore)
 	if (bCanMessAround)
 		ADD_UTILITY(BOT_UTIL_MESSAROUND, (getHealthPercent() > 0.75f), fAttackUtil);
 
-	if (!rcbot_melee_only.GetBool() && (m_pNearestWeapon.get() != nullptr) && hasSomeConditions(CONDITION_NEED_AMMO))
+	if (!rcbot_melee_only->GetBool() && (m_pNearestWeapon.get() != nullptr) && hasSomeConditions(CONDITION_NEED_AMMO))
 	{
 		CWeapon *pNearestWeapon = CWeapons::getWeapon(m_pNearestWeapon.get()->GetClassName());
 		CBotWeapon *pHaveWeapon = (pNearestWeapon == nullptr) ? nullptr : (m_pWeapons->getWeapon(pNearestWeapon));
@@ -3348,7 +3348,7 @@ void CDODBot::getTasks(unsigned int iIgnore)
 		// BOT_UTIL_DOD_PICKUP_OBJ
 	}
 	// sniping or machinegunning
-	if (!rcbot_melee_only.GetBool() && hasSniperRifle())
+	if (!rcbot_melee_only->GetBool() && hasSniperRifle())
 	{
 		// perturbation = (numberofclassonteam/numberofplayersonteam)
 
@@ -3360,7 +3360,7 @@ void CDODBot::getTasks(unsigned int iIgnore)
 			    hasSomeConditions(CONDITION_DEFENSIVE) ? 1.6f : (getHealthPercent() * randomFloat(0.75f, 1.0f)),
 			    pWeapon, hasSomeConditions(CONDITION_DEFENSIVE) ? false : (fAttackUtil > fDefendUtil));
 	}
-	else if (!rcbot_melee_only.GetBool() && hasMG())
+	else if (!rcbot_melee_only->GetBool() && hasMG())
 	{
 		pWeapon = getMG();
 
@@ -3371,7 +3371,7 @@ void CDODBot::getTasks(unsigned int iIgnore)
 	}
 
 	// grenades
-	if (!rcbot_melee_only.GetBool() && !hasSomeConditions(CONDITION_SEE_CUR_ENEMY)
+	if (!rcbot_melee_only->GetBool() && !hasSomeConditions(CONDITION_SEE_CUR_ENEMY)
 	    && hasSomeConditions(CONDITION_SEE_LAST_ENEMY_POS) && m_pLastEnemy && m_fLastSeeEnemy
 	    && ((m_fLastSeeEnemy + 10.0) > engine->Time())
 	    && (m_pWeapons->hasWeapon(DOD_WEAPON_FRAG_US) || m_pWeapons->hasWeapon(DOD_WEAPON_FRAG_GER)
@@ -3575,7 +3575,7 @@ void CDODBot::modAim(edict_t *pEntity, Vector &v_origin, Vector *v_desired_offse
 
 				v_desired_offset->z =
 				    (pow(2, fTime)
-				     * (sv_gravity.GetFloat() * rcbot_projectile_tweak.GetFloat())); // - (getOrigin().z - v_origin.z);
+				     * (sv_gravity.GetFloat() * rcbot_projectile_tweak->GetFloat())); // - (getOrigin().z - v_origin.z);
 			}
 			// v_desired_offset->z += (distanceFrom(pEntity) * (randomFloat(0.05,0.15)*m_pProfile->m_fAimSkill));
 		}

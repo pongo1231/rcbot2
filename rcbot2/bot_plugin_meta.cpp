@@ -532,6 +532,14 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 
 	installCrashHandler();
 
+#if SOURCE_ENGINE >= SE_ORANGEBOX
+	g_pCVar = icvar;
+	ConVar_Register(0, &s_BaseAccessor);
+	RCBOT2_Cvar_Register(icvar);
+#else
+	ConCommandBaseMgr::OneTimeInit(&s_BaseAccessor);
+#endif
+
 	/* Load the VSP listener.  This is usually needed for IServerPluginHelpers. */
 	ismm->AddListener(this, this);
 	if ((vsp_callbacks = ismm->GetVSPInfo(nullptr)) == nullptr)
@@ -556,6 +564,7 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 #if SOURCE_ENGINE >= SE_ORANGEBOX
 	g_pCVar = icvar;
 	ConVar_Register(0, &s_BaseAccessor);
+	RCBOT2_Cvar_Register(icvar);
 #else
 	ConCommandBaseMgr::OneTimeInit(&s_BaseAccessor);
 #endif
@@ -587,16 +596,16 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 
 #ifdef _WIN32
 	if (kvl.getInt("runplayermove_dods_win", &val))
-		rcbot_runplayercmd_dods.SetValue(val);
+		rcbot_runplayercmd_dods->SetValue(val);
 	if (kvl.getInt("gamerules_win", &val))
-		rcbot_gamerules_offset.SetValue(val);
+		rcbot_gamerules_offset->SetValue(val);
 	if (kvl.getInt("rcbot_process_usercmds_offset_win", &val))
-		rcbot_process_usercmds_offset.SetValue(val);
+		rcbot_process_usercmds_offset->SetValue(val);
 #else
 	if (kvl.getInt("runplayermove_dods_linux", &val))
-		rcbot_runplayercmd_dods.SetValue(val);
+		rcbot_runplayercmd_dods->SetValue(val);
 	if (kvl.getInt("rcbot_process_usercmds_offset_linux", &val))
-		rcbot_process_usercmds_offset.SetValue(val);
+		rcbot_process_usercmds_offset->SetValue(val);
 #endif
 
 	g_pGameRules_Obj        = new CGameRulesObject(kvl, gameServerFactory);
@@ -609,7 +618,7 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 
 	g_pReviveMarkerBotCheckPatch = new CReviveMarkerBotCheckPatch(kvl, gameServerFactory);
 	if (g_pReviveMarkerBotCheckPatch->found())
-		g_pReviveMarkerBotCheckPatch->setEnabled(rcbot_mvm_revive_markers.GetBool());
+		g_pReviveMarkerBotCheckPatch->setEnabled(rcbot_mvm_revive_markers->GetBool());
 	else
 		META_LOG(g_PLAPI, "WARNING: Revive marker bot-check signature not found. "
 		                   "Update revive_marker_bot_check_sig in hookinfo.ini.");
@@ -628,7 +637,7 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 		META_LOG(g_PLAPI, "WARNING: MvM robot sap bot-check signature not found. "
 		                   "Update mvm_robot_sap_bot_check_sig in hookinfo.ini.");
 
-	rcbot_mvm_revive_markers.InstallChangeCallback(onReviveMarkersChanged);
+	rcbot_mvm_revive_markers->InstallChangeCallback(onReviveMarkersChanged);
 #endif
 
 	if (fp)
@@ -641,7 +650,7 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 
 #ifdef OVERRIDE_RUNCMD
 	// TODO figure out a more robust gamedata fix instead of vtable
-	SH_MANUALHOOK_RECONFIGURE(MHook_PlayerRunCmd, rcbot_runplayercmd_dods.GetInt(), 0, 0);
+	SH_MANUALHOOK_RECONFIGURE(MHook_PlayerRunCmd, rcbot_runplayercmd_dods->GetInt(), 0, 0);
 #endif
 
 	ENGINE_CALL(LogPrint)("All hooks started!\n");
@@ -759,48 +768,31 @@ bool RCBotPluginMeta::Unload(char *error, size_t maxlen)
 
 	CBots::kickRandomBot(MAX_PLAYERS);
 
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelInit, server, this, &RCBotPluginMeta::Hook_LevelInit, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, server, this, &RCBotPluginMeta::Hook_ServerActivate, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GameFrame, server, this, &RCBotPluginMeta::Hook_GameFrame, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, server, this, &RCBotPluginMeta::Hook_LevelShutdown, false);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientActive, gameclients, this, &RCBotPluginMeta::Hook_ClientActive,
-	                       true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, gameclients, this,
-	                       &RCBotPluginMeta::Hook_ClientDisconnect, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, gameclients, this,
-	                       &RCBotPluginMeta::Hook_ClientPutInServer, true);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, gameclients, this, &RCBotPluginMeta::Hook_ClientConnect,
-	                       false);
-	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &RCBotPluginMeta::Hook_ClientCommand,
-	                       false);
+	// 1. Unlink ConVars from engine — don't delete, just unregister for hot-reload
+	RCBOT2_Cvar_Unlink(g_pCVar);
 
-	// SH_REMOVE_MANUALHOOK(MHook_PlayerRunCmd, player_vtable, SH_STATIC(Hook_Function2), false);
+	// 5. LAST — restore game memory patches so hot-reload doesn't double-patch
+#if SOURCE_ENGINE == SE_TF2
+	if (g_pReviveMarkerBotCheckPatch && g_pReviveMarkerBotCheckPatch->found())
+		g_pReviveMarkerBotCheckPatch->setEnabled(false);
+	if (g_pPartnerTauntBotCheckPatch && g_pPartnerTauntBotCheckPatch->found())
+		g_pPartnerTauntBotCheckPatch->restore();
+	if (g_pMvMRobotSapBotCheckPatch && g_pMvMRobotSapBotCheckPatch->found())
+		g_pMvMRobotSapBotCheckPatch->restore();
+	if (g_pDisableCurrencyPackBotCheckPatch && g_pDisableCurrencyPackBotCheckPatch->found())
+		g_pDisableCurrencyPackBotCheckPatch->restore();
+#endif
 
-	// if another instance is running dont run through this
-	// if ( !bInitialised )
-	//	return;
+	// 6. Delete patch objects
+	delete g_pReviveMarkerBotCheckPatch; g_pReviveMarkerBotCheckPatch = nullptr;
+	delete g_pPartnerTauntBotCheckPatch; g_pPartnerTauntBotCheckPatch = nullptr;
+	delete g_pMvMRobotSapBotCheckPatch; g_pMvMRobotSapBotCheckPatch = nullptr;
+	delete g_pDisableCurrencyPackBotCheckPatch; g_pDisableCurrencyPackBotCheckPatch = nullptr;
 
-	CBots::freeAllMemory();
-	CStrings::freeAllMemory();
-	CBotMods::freeMemory();
-	CAccessClients::freeMemory();
-	CBotEvents::freeMemory();
-	CWaypoints::freeMemory();
-	CWaypointTypes::freeMemory();
-	CBotProfiles::deleteProfiles();
-	CWeapons::freeMemory();
-	CBotMenuList::freeMemory();
-	// unloadSignatures();
-
-	// UnhookPlayerRunCommand();
-	// UnhookGiveNamedItem();
-
-	// ConVar_Unregister();
-
-	// if ( gameevents )
-	//	gameevents->RemoveListener(this);
-
-	ConVar_Unregister();
+	// LAST — remove custom signal handlers so the new .so can register fresh ones.
+	// Keep them alive through ALL cleanup — any crash should produce a stack trace.
+	signal(SIGSEGV, SIG_DFL);
+	signal(SIGABRT, SIG_DFL);
 
 	return true;
 }
@@ -931,7 +923,7 @@ bool RCBotPluginMeta::Hook_ClientConnect(edict_t *pEntity, const char *pszName, 
 	m_iConnectingPlayers++;
 
 	// Immediately re-evaluate bot quota when a player connects
-	if (rcbot_bot_quota_interval.GetInt() > 0)
+	if (rcbot_bot_quota_interval->GetInt() > 0)
 		BotQuotaCheck();
 
 	return true;
@@ -992,7 +984,7 @@ void RCBotPluginMeta::Hook_ClientDisconnect(edict_t *pEntity)
 	HijackPlayerDisconnected(engine->IndexOfEdict(pEntity));
 
 	// Immediately re-evaluate bot quota when a player disconnects
-	if (rcbot_bot_quota_interval.GetInt() > 0)
+	if (rcbot_bot_quota_interval->GetInt() > 0)
 		BotQuotaCheck();
 
 	META_LOG(g_PLAPI, "Hook_ClientDisconnect(%d)", IndexOfEdict(pEntity));
@@ -1014,7 +1006,7 @@ void RCBotPluginMeta::Hook_GameFrame(bool simulating)
 		CBots::botThink();
 		CClients::clientThink();
 
-		if (rcbot_hijack_afk_time.GetInt() > 0)
+		if (rcbot_hijack_afk_time->GetInt() > 0)
 			HijackAFKPlayers();
 
 		if (CWaypoints::getVisiblity()->needToWorkVisibility())
@@ -1033,14 +1025,14 @@ void RCBotPluginMeta::Hook_GameFrame(bool simulating)
 		currentmod->modFrame();
 
 		// Bot Quota
-		if (rcbot_bot_quota_interval.GetInt() > 0)
+		if (rcbot_bot_quota_interval->GetInt() > 0)
 			BotQuotaCheck();
 	}
 }
 
 void RCBotPluginMeta::HijackAFKPlayers()
 {
-	int iHijackTime = rcbot_hijack_afk_time.GetInt();
+	int iHijackTime = rcbot_hijack_afk_time->GetInt();
 	if (iHijackTime <= 0) return;
 
 	for (int i = 1; i <= gpGlobals->maxClients; i++)
@@ -1106,13 +1098,13 @@ void RCBotPluginMeta::HijackPlayerDisconnected(int iIndex)
 void RCBotPluginMeta::BotQuotaCheck()
 {
 	// this is configured with config/bot_quota.ini
-	if (rcbot_bot_quota_interval.GetInt() <= 0)
+	if (rcbot_bot_quota_interval->GetInt() <= 0)
 		return;
 
 	if (m_fBotQuotaTimer < 1.0f)
 		m_fBotQuotaTimer = engine->Time() + 10.0f; // Sleep 10 seconds
 
-	if (m_fBotQuotaTimer < engine->Time() - rcbot_bot_quota_interval.GetInt())
+	if (m_fBotQuotaTimer < engine->Time() - rcbot_bot_quota_interval->GetInt())
 	{
 		m_fBotQuotaTimer = engine->Time();
 

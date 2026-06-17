@@ -709,7 +709,7 @@ bool CBotGlobals::walkableFromTo(edict_t *pPlayer, Vector v_src, Vector v_dest)
 	CClient *pClient       = CClients::get(pPlayer);
 	Vector vcross          = v_dest - v_src;
 	Vector vleftsrc, vleftdest, vrightsrc, vrightdest;
-	float fWidth = rcbot_wptplace_width.GetFloat();
+	float fWidth = rcbot_wptplace_width->GetFloat();
 
 	if (v_dest == v_src)
 		return true;

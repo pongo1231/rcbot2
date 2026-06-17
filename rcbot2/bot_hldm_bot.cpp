@@ -74,7 +74,7 @@ void CHLDMBot::killed(edict_t *pVictim, char *weapon)
 
 	// update belief around this waypoint
 	if (pVictim && CBotGlobals::entityIsValid(pVictim))
-		m_pNavigator->belief(CBotGlobals::entityOrigin(pVictim), getEyePosition(), bot_beliefmulti.GetFloat(),
+		m_pNavigator->belief(CBotGlobals::entityOrigin(pVictim), getEyePosition(), bot_beliefmulti->GetFloat(),
 		                     distanceFrom(pVictim), BELIEF_SAFETY);
 }
 
@@ -91,7 +91,7 @@ void CHLDMBot::died(edict_t *pKiller, const char *pszWeapon)
 	{
 		if (CBotGlobals::entityIsValid(pKiller))
 		{
-			m_pNavigator->belief(CBotGlobals::entityOrigin(pKiller), getEyePosition(), bot_beliefmulti.GetFloat(),
+			m_pNavigator->belief(CBotGlobals::entityOrigin(pKiller), getEyePosition(), bot_beliefmulti->GetFloat(),
 			                     distanceFrom(pKiller), BELIEF_DANGER);
 		}
 	}
@@ -150,7 +150,7 @@ bool CHLDMBot::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 	entity_index = ENTINDEX(pEdict);
 
 	// if no target on - listen sever player is a non target
-	if (rcbot_notarget.GetBool() && (entity_index == 1))
+	if (rcbot_notarget->GetBool() && (entity_index == 1))
 		return false;
 
 	// not myself
@@ -163,7 +163,7 @@ bool CHLDMBot::isEnemy(edict_t *pEdict, bool bCheckWeapons)
 		if (!m_pCarryingObject && pEdict->GetUnknown() && (pEdict == m_NearestBreakable)
 		    && (CClassInterface::getPlayerHealth(pEdict) > 0))
 		{
-			if (distanceFrom(CBotGlobals::entityOrigin(pEdict)) < rcbot_jump_obst_dist.GetFloat())
+			if (distanceFrom(CBotGlobals::entityOrigin(pEdict)) < rcbot_jump_obst_dist->GetFloat())
 			{
 				if (BotFunc_BreakableIsEnemy(m_NearestBreakable, m_pEdict)
 				    || ((CBotGlobals::entityOrigin(pEdict) - m_vMoveTo).Length() + 48)
@@ -389,7 +389,7 @@ bool CHLDMBot::handleAttack(CBotWeapon *pWeapon, edict_t *pEnemy)
 			setMoveTo(CBotGlobals::entityOrigin(pEnemy));
 
 		if ((pWeapon->getID() == HL2DM_WEAPON_PHYSCANNON)
-		    && (DotProductFromOrigin(m_vAimVector) < rcbot_enemyshoot_gravgun_fov.GetFloat()))
+		    && (DotProductFromOrigin(m_vAimVector) < rcbot_enemyshoot_gravgun_fov->GetFloat()))
 			return true; // keep enemy / don't shoot : until angle between enemy is less than 20 degrees
 
 		if (pWeapon->canUseSecondary() && pWeapon->getAmmo(this, 2) && pWeapon->secondaryInRange(fDistance))
@@ -604,7 +604,7 @@ void CHLDMBot::modThink()
 			bCarry            = (CClassInterface::gravityGunObject(m_pCurrentWeapon) == m_NearestPhysObj.get());
 		}
 
-		if (!bCarry && (distanceFrom(pEntity) < rcbot_jump_obst_dist.GetFloat()))
+		if (!bCarry && (distanceFrom(pEntity) < rcbot_jump_obst_dist->GetFloat()))
 		{
 			bool bCanJump = false;
 			float fTime   = 0;
@@ -700,7 +700,7 @@ void CHLDMBot::handleWeapons()
 	{
 		CBotWeapon *pWeapon;
 
-		pWeapon = getBestWeapon(m_pEnemy, true, true, (m_pEnemy == m_NearestBreakable) && !rcbot_melee_only.GetBool());
+		pWeapon = getBestWeapon(m_pEnemy, true, true, (m_pEnemy == m_NearestBreakable) && !rcbot_melee_only->GetBool());
 
 		if (m_bWantToChangeWeapon && (pWeapon != nullptr) && (pWeapon != getCurrentWeapon())
 		    && pWeapon->getWeaponIndex())

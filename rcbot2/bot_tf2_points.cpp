@@ -601,7 +601,7 @@ bool CTFObjectiveResource::updateDefendPoints(int team)
 							else if (iNumOwned == (iNumAvailable - 2))
 							{
 								// other team can capture this as the next point
-								arr[i].fProb = bot_defrate.GetFloat();
+								arr[i].fProb = bot_defrate->GetFloat();
 							}
 							else // still valid but very low probability of ever defending here
 								arr[i].fProb = 0.001f;
@@ -646,7 +646,7 @@ bool CTFObjectiveResource::updateDefendPoints(int team)
 				// other team can capture this as the next point
 				// lower chance of defending the next point before round has started!!! Get everyone up!!
 				arr[i].fProb =
-				    CTeamFortress2Mod::hasRoundStarted() ? bot_defrate.GetFloat() : (bot_defrate.GetFloat() * 0.5f);
+				    CTeamFortress2Mod::hasRoundStarted() ? bot_defrate->GetFloat() : (bot_defrate->GetFloat() * 0.5f);
 			}
 		}
 	}
@@ -711,7 +711,7 @@ bool CTFObjectiveResource::updateDefendPoints(int team)
 
 						bFirst      = false;
 
-						if (fDist > rcbot_tf2_payload_dist_retreat.GetFloat())
+						if (fDist > rcbot_tf2_payload_dist_retreat->GetFloat())
 						{
 							arr[i].fProb = 1.0f;
 
@@ -722,7 +722,7 @@ bool CTFObjectiveResource::updateDefendPoints(int team)
 						}
 						else
 						{
-							arr[i].fProb = bot_defrate.GetFloat();
+							arr[i].fProb = bot_defrate->GetFloat();
 
 							int j        = i + 1;
 
@@ -803,7 +803,7 @@ void CTFObjectiveResource::think()
 			updatePoints();
 
 			m_fNextCheckMonitoredPoint = engine->Time() + 5.0f;
-			m_fUpdatePointTime         = engine->Time() + rcbot_tf2_autoupdate_point_time.GetFloat();
+			m_fUpdatePointTime         = engine->Time() + rcbot_tf2_autoupdate_point_time->GetFloat();
 		}
 		else
 			m_fNextCheckMonitoredPoint = engine->Time() + 1.0f;

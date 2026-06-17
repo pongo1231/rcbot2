@@ -76,6 +76,11 @@ class CDisableCurrencyPackBotCheckPatch : public CSignatureFunction
 	}
 
 	void patchMyTouch();
+	void restore();
+
+  private:
+	unsigned char m_original[4];
+	bool m_bPatched;
 };
 extern CDisableCurrencyPackBotCheckPatch *g_pDisableCurrencyPackBotCheckPatch;
 
@@ -114,6 +119,11 @@ class CPartnerTauntBotCheckPatch : public CSignatureFunction
 	}
 
 	void patchMyTouch();
+	void restore();
+
+  private:
+	unsigned char m_original[33];
+	bool m_bPatched;
 };
 extern CPartnerTauntBotCheckPatch *g_pPartnerTauntBotCheckPatch;
 
@@ -128,6 +138,11 @@ class CMvMRobotSapBotCheckPatch : public CSignatureFunction
 	}
 
 	void patchMyTouch();
+	void restore();
+
+  private:
+	unsigned char m_original[6];
+	bool m_bPatched;
 };
 extern CMvMRobotSapBotCheckPatch *g_pMvMRobotSapBotCheckPatch;
 

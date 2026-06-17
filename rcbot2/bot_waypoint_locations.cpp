@@ -249,7 +249,7 @@ void CWaypointLocations::AutoPathInBucket(edict_t *pPlayer, int i, int j, int k,
 		//	if ( fabs(vOtherWptOrigin.z-vWptOrigin.z) > 128 )
 		//	continue;
 
-		if ((vWptOrigin - vOtherWptOrigin).Length() <= bot_waypointpathdist.GetFloat())
+		if ((vWptOrigin - vOtherWptOrigin).Length() <= bot_waypointpathdist->GetFloat())
 		{
 			if (CBotGlobals::isVisible(vWptOrigin, vOtherWptOrigin))
 			{

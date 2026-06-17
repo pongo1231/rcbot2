@@ -31,7 +31,6 @@
 #ifndef __BOT_STRINGS_H__
 #define __BOT_STRINGS_H__
 
-#include <vector>
 
 #define MAX_STRINGS_HASH 26
 
@@ -56,10 +55,12 @@ class CStrings
 	static void freeAllMemory();
 	static char *getString(const char *szString);
 
-  private:
-	// dataStack is like a linked list, dont want
-	// to use an array for lots of stuff like this
-	static std::vector<char *> m_Strings[MAX_STRINGS_HASH];
+	struct StringNode
+	{
+		char *str;
+		StringNode *next;
+	};
+	static StringNode *s_Buckets[MAX_STRINGS_HASH];
 };
 
 #endif

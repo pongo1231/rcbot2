@@ -279,16 +279,22 @@ CCreateGameRulesObject::CCreateGameRulesObject(CRCBotKeyValueList &list, void *p
 void **CCreateGameRulesObject::getGameRules()
 {
 	char *addr = reinterpret_cast<char *>(m_func);
-	return *reinterpret_cast<void ***>(addr + rcbot_gamerules_offset.GetInt());
+	return *reinterpret_cast<void ***>(addr + rcbot_gamerules_offset->GetInt());
 }
 
 CDisableCurrencyPackBotCheckPatch::CDisableCurrencyPackBotCheckPatch(CRCBotKeyValueList &list, void *pAddrBase)
 {
+	m_bPatched = false;
 	findFunc(list, "disable_currency_pack_bot_check_sig", pAddrBase, "\\x84\\xC0\\x75\\xC3\\xA1");
+	if (m_func)
+		V_memcpy(m_original, m_func, 4);
 }
 
 void CDisableCurrencyPackBotCheckPatch::patchMyTouch()
 {
+	if (!m_func || m_bPatched)
+		return;
+
 #ifdef _WIN32
 	DWORD dOldProtect;
 	VirtualProtect(m_func, 4, PAGE_EXECUTE_READWRITE, &dOldProtect);
@@ -300,6 +306,23 @@ void CDisableCurrencyPackBotCheckPatch::patchMyTouch()
 #endif
 
 	V_memset(m_func, 0x90, 4);
+	m_bPatched = true;
+}
+
+void CDisableCurrencyPackBotCheckPatch::restore()
+{
+	if (!m_func || !m_bPatched)
+		return;
+
+#ifdef _WIN32
+	DWORD dOld;
+	VirtualProtect(m_func, 4, PAGE_EXECUTE_READWRITE, &dOld);
+#elif POSIX
+	mprotect(reinterpret_cast<void *>(PAGE_ALIGN_DOWN(reinterpret_cast<intptr_t>(m_func))), PAGE_SIZE,
+	         PROT_READ | PROT_WRITE | PROT_EXEC);
+#endif
+	V_memcpy(m_func, m_original, 4);
+	m_bPatched = false;
 }
 
 CReviveMarkerBotCheckPatch::CReviveMarkerBotCheckPatch(CRCBotKeyValueList &list, void *pAddrBase)
@@ -354,6 +377,7 @@ void CReviveMarkerBotCheckPatch::setEnabled(bool bEnable)
 
 CPartnerTauntBotCheckPatch::CPartnerTauntBotCheckPatch(CRCBotKeyValueList &list, void *pAddrBase)
 {
+	m_bPatched = false;
 	findFunc(list, "partner_taunt_bot_check_sig", pAddrBase,
 	         "\\x56"
 	         "\\xFF\\x90\\x20\\x07\\x00\\x00"
@@ -367,11 +391,13 @@ CPartnerTauntBotCheckPatch::CPartnerTauntBotCheckPatch(CRCBotKeyValueList &list,
 	         "\\x83\\xC4\\x10"
 	         "\\x84\\xC0"
 	         "\\x75");
+	if (m_func)
+		V_memcpy(m_original, m_func, 33);
 }
 
 void CPartnerTauntBotCheckPatch::patchMyTouch()
 {
-	if (!m_func)
+	if (!m_func || m_bPatched)
 		return;
 
 #ifdef _WIN32
@@ -392,10 +418,28 @@ void CPartnerTauntBotCheckPatch::patchMyTouch()
 	    0x90, 0x90, 0x90, 0x90, 0x90,
 	};
 	V_memcpy(m_func, teamGate, 33);
+	m_bPatched = true;
+}
+
+void CPartnerTauntBotCheckPatch::restore()
+{
+	if (!m_func || !m_bPatched)
+		return;
+
+#ifdef _WIN32
+	DWORD dOld;
+	VirtualProtect(m_func, 33, PAGE_EXECUTE_READWRITE, &dOld);
+#elif POSIX
+	mprotect(reinterpret_cast<void *>(PAGE_ALIGN_DOWN(reinterpret_cast<intptr_t>(m_func))), PAGE_SIZE,
+	         PROT_READ | PROT_WRITE | PROT_EXEC);
+#endif
+	V_memcpy(m_func, m_original, 33);
+	m_bPatched = false;
 }
 
 CMvMRobotSapBotCheckPatch::CMvMRobotSapBotCheckPatch(CRCBotKeyValueList &list, void *pAddrBase)
 {
+	m_bPatched = false;
 	findFunc(list, "mvm_robot_sap_bot_check_sig", pAddrBase,
 	         "\\x83\\x2A\\x03"
 	         "\\x2A\\x2A"
@@ -406,15 +450,19 @@ CMvMRobotSapBotCheckPatch::CMvMRobotSapBotCheckPatch(CRCBotKeyValueList &list, v
 	         "\\x83\\xC4\\x10"
 	         "\\x84\\xC0"
 	         "\\x0F\\x84");
+	if (m_func)
+	{
+		byte *patchAddr = (byte *)m_func + 17;
+		V_memcpy(m_original, patchAddr, 6);
+	}
 }
 
 void CMvMRobotSapBotCheckPatch::patchMyTouch()
 {
-	if (!m_func)
+	if (!m_func || m_bPatched)
 		return;
 
 	// JZ +0x161 → JMP +0x162 (unconditional: always enter robot-search section)
-	// 19-byte signature matches CMP EAX,3 (saver type) through JZ
 	byte *patchAddr = (byte *)m_func + 17;
 
 #ifdef _WIN32
@@ -428,4 +476,23 @@ void CMvMRobotSapBotCheckPatch::patchMyTouch()
 	patchAddr[0] = 0xE9; // JMP rel32 opcode
 	patchAddr[1] = 0x62; // offset low byte (0x162 vs old 0x161)
 	patchAddr[5] = 0x90; // NOP pad
+	m_bPatched = true;
+}
+
+void CMvMRobotSapBotCheckPatch::restore()
+{
+	if (!m_func || !m_bPatched)
+		return;
+
+	byte *patchAddr = (byte *)m_func + 17;
+
+#ifdef _WIN32
+	DWORD dOld;
+	VirtualProtect(patchAddr, 6, PAGE_EXECUTE_READWRITE, &dOld);
+#elif POSIX
+	mprotect(reinterpret_cast<void *>(PAGE_ALIGN_DOWN(reinterpret_cast<intptr_t>(patchAddr))), PAGE_SIZE,
+	         PROT_READ | PROT_WRITE | PROT_EXEC);
+#endif
+	V_memcpy(patchAddr, m_original, 6);
+	m_bPatched = false;
 }

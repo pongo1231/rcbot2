@@ -33,9 +33,8 @@
 
 #include "bot.h"
 #include "bot_strings.h"
-#include <vector> //bir3yk
 
-std::vector<char *> CStrings::m_Strings[MAX_STRINGS_HASH];
+CStrings::StringNode *CStrings::s_Buckets[MAX_STRINGS_HASH];
 
 CStrings::CStrings()
 {
@@ -44,22 +43,17 @@ CStrings::CStrings()
 
 void CStrings::freeAllMemory()
 {
-	char *pszFree;
-
-	// clear strings
 	for (int i = 0; i < MAX_STRINGS_HASH; i++)
 	{
-		for (unsigned int j = 0; j < m_Strings[i].size(); j++)
+		StringNode *node = s_Buckets[i];
+		while (node)
 		{
-			pszFree = m_Strings[i][j];
-
-			if (pszFree)
-				delete pszFree;
-
-			m_Strings[i][j] = nullptr;
+			StringNode *next = node->next;
+			delete[] node->str;
+			delete node;
+			node = next;
 		}
-
-		m_Strings[i].clear();
+		s_Buckets[i] = nullptr;
 	}
 }
 
@@ -71,28 +65,29 @@ char *CStrings::getString(const char *szString)
 
 	unsigned short int iHash = szString[0] % MAX_STRINGS_HASH;
 
-	for (register unsigned short int i = 0; i < m_Strings[iHash].size(); i++)
+	for (StringNode *node = s_Buckets[iHash]; node; node = node->next)
 	{
-		char *szCompString = m_Strings[iHash][i];
-
 		// check if pointers match first
-		if (szCompString == szString)
-			return szCompString;
+		if (node->str == szString)
+			return node->str;
 
 		// if not do a full string comparison
-		if (FStrEq(szString, szCompString))
-			return szCompString;
+		if (FStrEq(szString, node->str))
+			return node->str;
 	}
 
 	unsigned int len = strlen(szString);
 
-	char *szNew      = new char[len + 1];
+	char *szNew = new char[len + 1];
 
 	strcpy(szNew, szString);
 
 	szNew[len] = 0;
 
-	m_Strings[iHash].push_back(szNew);
+	StringNode *newNode = new StringNode;
+	newNode->str        = szNew;
+	newNode->next       = s_Buckets[iHash];
+	s_Buckets[iHash]    = newNode;
 
 	return szNew;
 }

@@ -117,7 +117,7 @@ void CBotTF2DemomanPipeJump::execute(CBot *pBot, CBotSchedule *pSchedule)
 		v_comp         = v_comp / v_comp.Length();
 
 		v_pipe         = CBotGlobals::entityOrigin(m_pPipeBomb);
-		v_startrunup   = v_pipe - (v_comp * rcbot_demo_runup_dist.GetFloat());
+		v_startrunup   = v_pipe - (v_comp * rcbot_demo_runup_dist->GetFloat());
 		v_startrunup.z = v_pipe.z;
 
 		pBot->lookAtEdict(m_pPipeBomb);
@@ -143,7 +143,7 @@ void CBotTF2DemomanPipeJump::execute(CBot *pBot, CBotSchedule *pSchedule)
 		v_comp       = v_comp / v_comp.Length();
 		v_pipe       = CBotGlobals::entityOrigin(m_pPipeBomb);
 
-		v_endrunup   = v_pipe + (v_comp * rcbot_demo_runup_dist.GetFloat());
+		v_endrunup   = v_pipe + (v_comp * rcbot_demo_runup_dist->GetFloat());
 		v_endrunup.z = v_pipe.z;
 
 		pBot->setLookVector(m_vEnd);

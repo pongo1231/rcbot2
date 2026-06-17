@@ -168,7 +168,7 @@ class MMSConfig(object):
         cxx.cflags += [
           '-fvisibility=hidden',
           '-fvisibility-inlines-hidden',
-          '-std=c++11',
+            '-std=c++14',
           '-w',
           '-D__linux',
         ]

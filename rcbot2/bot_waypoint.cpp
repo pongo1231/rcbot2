@@ -650,7 +650,7 @@ void CWaypointNavigator::beliefOne(int iWptIndex, BotBelief iBeliefType, float f
 	if (iBeliefType == BELIEF_SAFETY)
 	{
 		if (m_fBelief[iWptIndex] > 0)
-			m_fBelief[iWptIndex] *= bot_belief_fade.GetFloat();
+			m_fBelief[iWptIndex] *= bot_belief_fade->GetFloat();
 		if (m_fBelief[iWptIndex] < 0)
 			m_fBelief[iWptIndex] = 0;
 	}
@@ -704,7 +704,7 @@ void CWaypointNavigator::belief(Vector vOrigin, Vector vOther, float fBelief, fl
 		{
 			if (m_fBelief[iWptIndex] > 0)
 				m_fBelief[iWptIndex] *=
-				    bot_belief_fade.GetFloat(); //(fStrength / (vOrigin-pWpt->getOrigin()).Length())*fBelief;
+				    bot_belief_fade->GetFloat(); //(fStrength / (vOrigin-pWpt->getOrigin()).Length())*fBelief;
 			if (m_fBelief[iWptIndex] < 0)
 				m_fBelief[iWptIndex] = 0;
 
@@ -762,7 +762,7 @@ void CWaypointNavigator::belief(Vector vOrigin, Vector vOther, float fBelief, fl
 	            if ( iType == BELIEF_SAFETY )
 	            {
 	                if ( m_fBelief[iWptIndex] > 0)
-	                    m_fBelief[iWptIndex] *= bot_belief_fade.GetFloat()*factor;//(fStrength /
+	                    m_fBelief[iWptIndex] *= bot_belief_fade->GetFloat()*factor;//(fStrength /
 	   (vOrigin-pWpt->getOrigin()).Length())*fBelief; if ( m_fBelief[iWptIndex] < 0 ) m_fBelief[iWptIndex] = 0;
 	            }
 	            else if ( iType == BELIEF_DANGER )
@@ -996,7 +996,7 @@ bool CWaypointNavigator::workRoute(Vector vFrom, Vector vTo, bool *bFail, bool b
 
 	int iLoops = 0;
 	int iMaxLoops =
-	    bot_pathrevs.GetInt(); // this->m_pBot->getProfile()->getPathTicks();//IBotNavigator::MAX_PATH_TICKS;
+	    bot_pathrevs->GetInt(); // this->m_pBot->getProfile()->getPathTicks();//IBotNavigator::MAX_PATH_TICKS;
 
 	if (iMaxLoops <= 0)
 		iMaxLoops = 200;
@@ -1080,7 +1080,7 @@ bool CWaypointNavigator::workRoute(Vector vFrom, Vector vTo, bool *bFail, bool b
 			succ    = &paths[iSucc];
 			succWpt = CWaypoints::getWaypoint(iSucc);
 #ifndef __linux__
-			if (rcbot_debug_show_route.GetBool())
+			if (rcbot_debug_show_route->GetBool())
 			{
 				edict_t *pListenEdict;
 
@@ -1232,7 +1232,7 @@ bool CWaypointNavigator::workRoute(Vector vFrom, Vector vTo, bool *bFail, bool b
 			    (CWaypoints::getWaypoint(iCurrentNode)->getOrigin() - CWaypoints::getWaypoint(iParent)->getOrigin())
 			        .Length();
 #ifndef __linux__
-		if (rcbot_debug_show_route.GetBool())
+		if (rcbot_debug_show_route->GetBool())
 		{
 			edict_t *pListenEdict;
 
@@ -1585,7 +1585,7 @@ bool CWaypoint::touched(Vector vOrigin, Vector vOffset, float fTouchDist, bool o
 		if ((vOrigin - v_dynamic).Length2D() <= fTouchDist)
 		{
 			if (hasFlag(CWaypointTypes::W_FL_LADDER))
-				return ((vOrigin.z + rcbot_ladder_offs.GetFloat()) > v_dynamic.z);
+				return ((vOrigin.z + rcbot_ladder_offs->GetFloat()) > v_dynamic.z);
 
 			return fabs(vOrigin.z - v_dynamic.z) <= WAYPOINT_HEIGHT;
 		}
@@ -2398,7 +2398,7 @@ int CWaypoints::addWaypoint(CClient *pClient, const char *type1, const char *typ
 	if ( pPlayer->GetFlags() & FL_DUCKING )
 	    iFlags |= CWaypoint::W_FL_CROUCH;		*/
 
-	if (rcbot_wpt_autotype.GetInt() && (!bUseTemplate || (rcbot_wpt_autotype.GetInt() == 2)))
+	if (rcbot_wpt_autotype->GetInt() && (!bUseTemplate || (rcbot_wpt_autotype->GetInt() == 2)))
 	{
 		int i = 0;
 
@@ -2465,8 +2465,8 @@ int CWaypoints::addWaypoint(edict_t *pPlayer, Vector vOrigin, int iFlags, bool b
 		return -1;
 	}
 
-	if ((fRadius == 0) && (rcbot_wpt_autoradius.GetFloat() > 0))
-		fRadius = rcbot_wpt_autoradius.GetFloat();
+	if ((fRadius == 0) && (rcbot_wpt_autoradius->GetFloat() > 0))
+		fRadius = rcbot_wpt_autoradius->GetFloat();
 
 	///////////////////////////////////////////////////
 	m_theWaypoints[iIndex] = CWaypoint(vOrigin, iFlags);

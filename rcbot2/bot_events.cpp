@@ -212,7 +212,7 @@ class CBotHearPlayerAttack : public IBotFunction
 			float fDistance = pBot->distanceFrom(m_pAttacker);
 
 			// add some fuzz based on distance
-			if (randomFloat(0.0f, rcbot_listen_dist.GetFloat()) > fDistance)
+			if (randomFloat(0.0f, rcbot_listen_dist->GetFloat()) > fDistance)
 				pBot->hearPlayerAttack(m_pAttacker, m_iWeaponID);
 		}
 	}
@@ -617,7 +617,7 @@ bool 	isbuilder
 */
 void CTF2UpgradeObjectEvent::execute(IBotEventInterface *pEvent)
 {
-	if (bot_use_vc_commands.GetBool() && randomInt(0, 1))
+	if (bot_use_vc_commands->GetBool() && randomInt(0, 1))
 	{
 		eEngiBuild object = (eEngiBuild)pEvent->getInt("object", 0);
 		bool isbuilder    = (pEvent->getInt("isbuilder") > 0);

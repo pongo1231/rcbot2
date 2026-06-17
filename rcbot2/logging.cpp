@@ -36,8 +36,9 @@
 static CBotLogger s_Logger;
 CBotLogger *logger = &s_Logger;
 
-ConVar rcbot_loglevel("rcbot_loglevel", "2", 0,
-                      "Display logging messages with increasing verbosity (higher number = more messages)");
+#pragma GCC visibility push(default)
+ConVar *rcbot_loglevel = nullptr;
+#pragma GCC visibility pop
 
 const char *LOGLEVEL_STRINGS[]     = { "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE" };
 
@@ -94,7 +95,7 @@ MessageColorizationMode GetMessageColorizationMode()
 
 void CBotLogger::Log(LogLevel level, const char *fmt, ...)
 {
-	if (level > static_cast<LogLevel>(rcbot_loglevel.GetInt()))
+	if (level > static_cast<LogLevel>(rcbot_loglevel->GetInt()))
 		return;
 
 	char buf[1024];

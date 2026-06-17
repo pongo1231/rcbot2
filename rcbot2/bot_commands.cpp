@@ -97,7 +97,7 @@ CBotCommandInline
 	                  if (pClient)
 		                  pEntity = pClient->getPlayer();
 
-	                  if (rcbot_bot_quota_interval.GetFloat() > 0)
+	                  if (rcbot_bot_quota_interval->GetFloat() > 0)
 	                  {
 		                  CBotGlobals::botMessage(
 		                      pEntity, 0, "error: cannot manually add bot while rcbot_bot_quota_interval is active");

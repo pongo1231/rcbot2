@@ -46,8 +46,9 @@ sourceFiles = [
   "rcbot2/bot_wpt_dist.cpp",
   "rcbot2/bot_zombie.cpp",
   "rcbot2/bot_sigscan.cpp",
-  "rcbot2/bot_cvars.cpp",
-  "rcbot2/bot_plugin_meta.cpp",
+   "rcbot2/bot_cvars.cpp",
+   "rcbot2/bot_cvars_register.cpp",
+   "rcbot2/bot_plugin_meta.cpp",
   "rcbot2/logging.cpp",
 
   "rcbot2/botutil/base_sched.cpp",

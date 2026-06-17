@@ -107,7 +107,7 @@ bool CClient::needToRenderMenu()
 
 void CClient::updateRenderMenuTime()
 {
-	m_fNextUpdateMenuTime = engine->Time() + rcbot_menu_update_time2.GetFloat();
+	m_fNextUpdateMenuTime = engine->Time() + rcbot_menu_update_time2->GetFloat();
 }
 
 void CClient::setEdict(edict_t *pPlayer)
@@ -152,7 +152,7 @@ void CClient::playSound(const char *pszSound)
 {
 	if (isWaypointOn())
 	{
-		if (bot_cmd_enable_wpt_sounds.GetBool())
+		if (bot_cmd_enable_wpt_sounds->GetBool())
 			sprintf(m_szSoundToPlay, "play \"%s\"", pszSound);
 	}
 }
@@ -289,7 +289,7 @@ void CClient::think()
 
 	if (m_szSoundToPlay[0] != 0)
 	{
-		if (bot_cmd_enable_wpt_sounds.GetBool())
+		if (bot_cmd_enable_wpt_sounds->GetBool())
 			engine->ClientCommand(m_pPlayer, m_szSoundToPlay);
 
 		m_szSoundToPlay[0] = 0;
@@ -337,7 +337,7 @@ void CClient::think()
 
 		if ((m_fUpdatePos > 0) && (m_fSpeed > 0))
 		{
-			if (!m_bSentWelcomeMessage && rcbot_show_welcome_msg.GetBool())
+			if (!m_bSentWelcomeMessage && rcbot_show_welcome_msg->GetBool())
 			{
 				m_bSentWelcomeMessage = true;
 
@@ -798,7 +798,7 @@ void CClient::think()
 				    && ((vPlayerOrigin - m_vLastAutoWaypointPlacePos).Length() > 200))
 				{
 					int iNearestWpt = CWaypointLocations::NearestWaypoint(
-					    vPlayerOrigin, rcbot_autowaypoint_dist.GetFloat(), -1, true, false, false, nullptr);
+					    vPlayerOrigin, rcbot_autowaypoint_dist->GetFloat(), -1, true, false, false, nullptr);
 
 					if (iNearestWpt == -1)
 						CWaypoints::addWaypoint(this, "", "", "", "");
@@ -934,7 +934,7 @@ void CClient::think()
 
 void CClient::giveMessage(const char *msg, float fTime)
 {
-	if (rcbot_tooltips.GetBool())
+	if (rcbot_tooltips->GetBool())
 	{
 		m_NextTooltip.emplace(msg, nullptr);
 		m_fNextBotServerMessage = engine->Time() + fTime;

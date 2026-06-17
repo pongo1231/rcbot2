@@ -1384,7 +1384,7 @@ edict_t *CTeamFortress2Mod::nearestDispenser(Vector vOrigin, int team)
 	edict_t *pNearest = nullptr;
 	edict_t *pDisp;
 	float fDist;
-	float fNearest = bot_use_disp_dist.GetFloat();
+	float fNearest = bot_use_disp_dist->GetFloat();
 
 	for (unsigned int i = 0; i < MAX_PLAYERS; i++)
 	{
@@ -1614,7 +1614,7 @@ void CTeamFortress2Mod::roundReset()
 		// if all points are owned by RED at start up then its an attack defend map
 		setAttackDefendMap(i == numpoints);
 
-		m_ObjectiveResource.m_fUpdatePointTime         = engine->Time() + rcbot_tf2_autoupdate_point_time.GetFloat();
+		m_ObjectiveResource.m_fUpdatePointTime         = engine->Time() + rcbot_tf2_autoupdate_point_time->GetFloat();
 		m_ObjectiveResource.m_fNextCheckMonitoredPoint = engine->Time() + 0.2f;
 
 		m_ObjectiveResource.updatePoints();
