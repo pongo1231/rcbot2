@@ -5182,7 +5182,7 @@ void CBotTF2::modThink()
 				if (vAway.Length() > 0.1f)
 				{
 					vAway = vAway / vAway.Length();
-					setMoveTo(getOrigin() + (vAway * 512.0f));
+					setMoveTo(getOrigin() + (vAway * 768.0f));
 					break;
 				}
 			}
@@ -9450,6 +9450,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 
 		float fSentryUtil = 0.7f + iNearbyTeam * 0.1f;
 		if (iNearbyTeam == 0) fSentryUtil *= 0.5f;
+		if (iNearbyTeam >= 2) fSentryUtil *= 0.3f;  // heavy downgrade: 3rd+ bot should back off
 
 		// Critical override: if sentry is near our objective path, boost utility
 		if (fSentryUtil < 0.6f)
@@ -9552,13 +9553,17 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			}
 		}
 
-		ADD_UTILITY_DATA(BOT_UTIL_ATTACK_SENTRY, bCanAttack,
+		bool bAttackingSentry = (m_pSchedules->isCurrentSchedule(SCHED_ATTACK_SENTRY_GUN));
+		bool bTooManyAttackers = (iNearbyTeam >= 3 && !bAttackingSentry);
+
+		ADD_UTILITY_DATA(BOT_UTIL_ATTACK_SENTRY, bCanAttack && !bTooManyAttackers,
 		                 fSentryUtil * fRangeFactor * fPushBoost,
 		                 ENTINDEX(pSentryTarget));
 
 		// Attack enemy teleporters (non-spy: any teleporter, any distance)
 		if (pTeleTarget && !CTeamFortress2Mod::TF2_IsPlayerInvuln(m_pEdict)
-		    && m_iClass != TF_CLASS_SPY && pWeapon && !pWeapon->outOfAmmo(this))
+		    && m_iClass != TF_CLASS_SPY && pWeapon && !pWeapon->outOfAmmo(this)
+		    && !bTooManyAttackers)
 		{
 			float fTeleClassMult = 1.0f;
 			if (m_iClass == TF_CLASS_DEMOMAN || m_iClass == TF_CLASS_SOLDIER
@@ -9576,7 +9581,7 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		}
 
 		// Attack enemy dispensers (non-spy: only when safe or close)
-		if (pDispTarget && m_iClass != TF_CLASS_SPY && pWeapon && !pWeapon->outOfAmmo(this)
+		if (pDispTarget && !bTooManyAttackers && m_iClass != TF_CLASS_SPY && pWeapon && !pWeapon->outOfAmmo(this)
 		    && (!m_pEnemy || distanceFrom(pDispTarget) < 400.0f))
 		{
 			float fDispUtil = (400.0f / (distanceFrom(pDispTarget) + 1.0f)) * 0.5f;
