@@ -8,119 +8,119 @@ bool g_bCvarsReady = false;
 
 void RCBOT2_Cvar_Register(ICvar *cvar)
 {
-	rcbot_tf2_debug_spies_cloakdisguise = new ConVar("rcbot_tf2_debug_spies_cloakdisguise", "0", 0, "");
+	rcbot_tf2_debug_spies_cloakdisguise = new ConVar("rcbot_tf2_debug_spies_cloakdisguise", "1", 0, "");
 
-	rcbot_tf2_medic_letgotime = new ConVar("rcbot_tf2_medic_letgotime", "0", 0, "");
+	rcbot_tf2_medic_letgotime = new ConVar("rcbot_tf2_medic_letgotime", "0.4", 0, "");
 
-	rcbot_tf2_pyro_airblast = new ConVar("rcbot_tf2_pyro_airblast_ammo", "0", 0, "");
+	rcbot_tf2_pyro_airblast = new ConVar("rcbot_tf2_pyro_airblast_ammo", "50", 0, "");
 
-	rcbot_projectile_tweak = new ConVar("rcbot_projtweak", "0", 0, "");
+	rcbot_projectile_tweak = new ConVar("rcbot_projtweak", "0.05", 0, "");
 
-	bot_cmd_enable_wpt_sounds = new ConVar("rcbot_enable_wpt_sounds", "0", 0, "");
+	bot_cmd_enable_wpt_sounds = new ConVar("rcbot_enable_wpt_sounds", "1", 0, "");
 
-	bot_general_difficulty = new ConVar("rcbot_skill", "0", 0, "");
+	bot_general_difficulty = new ConVar("rcbot_skill", "0.6", 0, "");
 
-	bot_visrevs_clients = new ConVar("rcbot_visrevs_clients", "0", 0, "");
+	bot_visrevs_clients = new ConVar("rcbot_visrevs_clients", "4", 0, "");
 
-	bot_spyknifefov = new ConVar("rcbot_spyknifefov", "0", 0, "");
+	bot_spyknifefov = new ConVar("rcbot_spyknifefov", "80", 0, "");
 
-	bot_visrevs = new ConVar("rcbot_visrevs", "0", 0, "");
+	bot_visrevs = new ConVar("rcbot_visrevs", "9", 0, "");
 
-	bot_pathrevs = new ConVar("rcbot_pathrevs", "0", 0, "");
+	bot_pathrevs = new ConVar("rcbot_pathrevs", "40", 0, "");
 
-	bot_command = new ConVar("rcbot_cmd", "0", 0, "");
+	bot_command = new ConVar("rcbot_cmd", "", 0, "");
 
 	bot_attack = new ConVar("rcbot_flipout", "0", 0, "");
 
-	bot_scoutdj = new ConVar("rcbot_scoutdj", "0", 0, "");
+	bot_scoutdj = new ConVar("rcbot_scoutdj", "0.28", 0, "");
 
-	bot_anglespeed = new ConVar("rcbot_anglespeed", "0", 0, "");
+	bot_anglespeed = new ConVar("rcbot_anglespeed", "0.21", 0, "");
 
 	bot_stop = new ConVar("rcbot_stop", "0", 0, "");
 
-	bot_waypointpathdist = new ConVar("rcbot_wpt_pathdist", "0", 0, "");
+	bot_waypointpathdist = new ConVar("rcbot_wpt_pathdist", "400", 0, "");
 
-	bot_rj = new ConVar("rcbot_rj", "0", 0, "");
+	bot_rj = new ConVar("rcbot_rj", "0.01", 0, "");
 
-	bot_defrate = new ConVar("rcbot_defrate", "0", 0, "");
+	bot_defrate = new ConVar("rcbot_defrate", "0.24", 0, "");
 
-	bot_beliefmulti = new ConVar("rcbot_beliefmulti", "0", 0, "");
+	bot_beliefmulti = new ConVar("rcbot_beliefmulti", "20.0", 0, "");
 
-	bot_belief_fade = new ConVar("rcbot_belief_fade", "0", 0, "");
+	bot_belief_fade = new ConVar("rcbot_belief_fade", "0.75", 0, "");
 
 	bot_change_class = new ConVar("rcbot_change_classes", "0", 0, "");
 
-	bot_use_vc_commands = new ConVar("rcbot_voice_cmds", "0", 0, "");
+	bot_use_vc_commands = new ConVar("rcbot_voice_cmds", "1", 0, "");
 
-	bot_use_disp_dist = new ConVar("rcbot_disp_dist", "0", 0, "");
+	bot_use_disp_dist = new ConVar("rcbot_disp_dist", "800.0", 0, "");
 
-	bot_max_cc_time = new ConVar("rcbot_max_cc_time", "0", 0, "");
+	bot_max_cc_time = new ConVar("rcbot_max_cc_time", "240", 0, "");
 
-	bot_min_cc_time = new ConVar("rcbot_min_cc_time", "0", 0, "");
+	bot_min_cc_time = new ConVar("rcbot_min_cc_time", "60", 0, "");
 
-	bot_avoid_radius = new ConVar("rcbot_avoid_radius", "0", 0, "");
+	bot_avoid_radius = new ConVar("rcbot_avoid_radius", "80", 0, "");
 
-	bot_avoid_strength = new ConVar("rcbot_avoid_strength", "0", 0, "");
+	bot_avoid_strength = new ConVar("rcbot_avoid_strength", "100", 0, "");
 
-	bot_messaround = new ConVar("rcbot_messaround", "0", 0, "");
+	bot_messaround = new ConVar("rcbot_messaround", "1", 0, "");
 
-	bot_heavyaimoffset = new ConVar("rcbot_heavyaimoffset", "0", 0, "");
+	bot_heavyaimoffset = new ConVar("rcbot_heavyaimoffset", "0.1", 0, "");
 
-	bot_aimsmoothing = new ConVar("rcbot_aimsmoothing", "0", 0, "");
+	bot_aimsmoothing = new ConVar("rcbot_aimsmoothing", "1", 0, "");
 
-	bot_bossattackfactor = new ConVar("rcbot_bossattackfactor", "0", 0, "");
+	bot_bossattackfactor = new ConVar("rcbot_bossattackfactor", "1.0", 0, "");
 
-	rcbot_enemyshootfov = new ConVar("rcbot_enemyshootfov", "0", 0, "");
+	rcbot_enemyshootfov = new ConVar("rcbot_enemyshootfov", "0.97", 0, "");
 
-	rcbot_enemyshoot_gravgun_fov = new ConVar("rcbot_enemyshoot_gravgun_fov", "0", 0, "");
+	rcbot_enemyshoot_gravgun_fov = new ConVar("rcbot_enemyshoot_gravgun_fov", "0.98", 0, "");
 
 	rcbot_wpt_autoradius = new ConVar("rcbot_wpt_autoradius", "0", 0, "");
 
-	rcbot_move_sentry_time = new ConVar("rcbot_move_sentry_time", "0", 0, "");
+	rcbot_move_sentry_time = new ConVar("rcbot_move_sentry_time", "120", 0, "");
 
-	rcbot_move_sentry_kpm = new ConVar("rcbot_move_sentry_kpm", "0", 0, "");
+	rcbot_move_sentry_kpm = new ConVar("rcbot_move_sentry_kpm", "1", 0, "");
 
-	rcbot_smoke_time = new ConVar("rcbot_smoke_time", "0", 0, "");
+	rcbot_smoke_time = new ConVar("rcbot_smoke_time", "10", 0, "");
 
-	rcbot_move_disp_time = new ConVar("rcbot_move_disp_time", "0", 0, "");
+	rcbot_move_disp_time = new ConVar("rcbot_move_disp_time", "120", 0, "");
 
-	rcbot_move_disp_healamount = new ConVar("rcbot_move_disp_healamount", "0", 0, "");
+	rcbot_move_disp_healamount = new ConVar("rcbot_move_disp_healamount", "100", 0, "");
 
-	rcbot_demo_runup_dist = new ConVar("rcbot_demo_runup", "0", 0, "");
+	rcbot_demo_runup_dist = new ConVar("rcbot_demo_runup", "99.0", 0, "");
 
-	rcbot_demo_jump = new ConVar("rcbot_enable_pipejump", "0", 0, "");
+	rcbot_demo_jump = new ConVar("rcbot_enable_pipejump", "1", 0, "");
 
-	rcbot_move_tele_time = new ConVar("rcbot_move_tele_time", "0", 0, "");
+	rcbot_move_tele_time = new ConVar("rcbot_move_tele_time", "120", 0, "");
 
-	rcbot_move_tele_tpm = new ConVar("rcbot_move_tele_tpm", "0", 0, "");
+	rcbot_move_tele_tpm = new ConVar("rcbot_move_tele_tpm", "1", 0, "");
 
-	rcbot_tf2_protect_cap_time = new ConVar("rcbot_tf2_prot_cap_time", "0", 0, "");
+	rcbot_tf2_protect_cap_time = new ConVar("rcbot_tf2_prot_cap_time", "12.5", 0, "");
 
-	rcbot_tf2_protect_cap_percent = new ConVar("rcbot_tf2_protect_cap_percent", "0", 0, "");
+	rcbot_tf2_protect_cap_percent = new ConVar("rcbot_tf2_protect_cap_percent", "0.25", 0, "");
 
-	rcbot_tf2_spy_kill_on_cap_dist = new ConVar("rcbot_tf2_spy_kill_on_cap_dist", "0", 0, "");
+	rcbot_tf2_spy_kill_on_cap_dist = new ConVar("rcbot_tf2_spy_kill_on_cap_dist", "200.0", 0, "");
 
-	rcbot_move_dist = new ConVar("rcbot_move_dist", "0", 0, "");
+	rcbot_move_dist = new ConVar("rcbot_move_dist", "800", 0, "");
 
-	rcbot_shoot_breakables = new ConVar("rcbot_shoot_breakables", "0", 0, "");
+	rcbot_shoot_breakables = new ConVar("rcbot_shoot_breakables", "1", 0, "");
 
-	rcbot_shoot_breakable_dist = new ConVar("rcbot_shoot_breakable_dist", "0", 0, "");
+	rcbot_shoot_breakable_dist = new ConVar("rcbot_shoot_breakable_dist", "128.0", 0, "");
 
-	rcbot_move_obj = new ConVar("rcbot_move_obj", "0", 0, "");
+	rcbot_move_obj = new ConVar("rcbot_move_obj", "1", 0, "");
 
 	rcbot_taunt = new ConVar("rcbot_taunt", "0", 0, "");
 
-	bot_highfive = new ConVar("rcbot_highfive", "0", 0, "");
+	bot_highfive = new ConVar("rcbot_highfive", "1", 0, "");
 
 	rcbot_notarget = new ConVar("rcbot_notarget", "0", 0, "");
 
 	rcbot_nocapturing = new ConVar("rcbot_dontcapture", "0", 0, "");
 
-	rcbot_jump_obst_dist = new ConVar("rcbot_jump_obst_dist", "0", 0, "");
+	rcbot_jump_obst_dist = new ConVar("rcbot_jump_obst_dist", "80", 0, "");
 
-	rcbot_jump_obst_speed = new ConVar("rcbot_jump_obst_speed", "0", 0, "");
+	rcbot_jump_obst_speed = new ConVar("rcbot_jump_obst_speed", "100", 0, "");
 
-	rcbot_speed_boost = new ConVar("rcbot_speed_boost", "0", 0, "");
+	rcbot_speed_boost = new ConVar("rcbot_speed_boost", "1", 0, "");
 
 	rcbot_melee_only = new ConVar("rcbot_melee_only", "0", 0, "");
 
@@ -128,31 +128,31 @@ void RCBOT2_Cvar_Register(ICvar *cvar)
 
 	rcbot_dont_move = new ConVar("rcbot_dontmove", "0", 0, "");
 
-	rcbot_runplayercmd_dods = new ConVar("rcbot_runplayer_cmd_dods", "0", 0, "");
+	rcbot_runplayercmd_dods = new ConVar("rcbot_runplayer_cmd_dods", "417", 0, "");
 
-	rcbot_ladder_offs = new ConVar("rcbot_ladder_offs", "0", 0, "");
+	rcbot_ladder_offs = new ConVar("rcbot_ladder_offs", "42", 0, "");
 
 	rcbot_ffa = new ConVar("rcbot_ffa", "0", 0, "");
 
-	rcbot_prone_enemy_only = new ConVar("rcbot_prone_enemy_only", "0", 0, "");
+	rcbot_prone_enemy_only = new ConVar("rcbot_prone_enemy_only", "1", 0, "");
 
-	rcbot_menu_update_time1 = new ConVar("rcbot_menu_update_time1", "0", 0, "");
+	rcbot_menu_update_time1 = new ConVar("rcbot_menu_update_time1", "0.04", 0, "");
 
-	rcbot_menu_update_time2 = new ConVar("rcbot_menu_update_time2", "0", 0, "");
+	rcbot_menu_update_time2 = new ConVar("rcbot_menu_update_time2", "0.2", 0, "");
 
-	rcbot_autowaypoint_dist = new ConVar("rcbot_autowpt_dist", "0", 0, "");
+	rcbot_autowaypoint_dist = new ConVar("rcbot_autowpt_dist", "150.0", 0, "");
 
-	rcbot_squad_idle_time = new ConVar("rcbot_squad_idle_time", "0", 0, "");
+	rcbot_squad_idle_time = new ConVar("rcbot_squad_idle_time", "3.0", 0, "");
 
-	rcbot_bots_form_squads = new ConVar("rcbot_bots_form_squads", "0", 0, "");
+	rcbot_bots_form_squads = new ConVar("rcbot_bots_form_squads", "1", 0, "");
 
-	rcbot_listen_dist = new ConVar("rcbot_listen_dist", "0", 0, "");
+	rcbot_listen_dist = new ConVar("rcbot_listen_dist", "512", 0, "");
 
-	rcbot_footstep_speed = new ConVar("rcbot_footstep_speed", "0", 0, "");
+	rcbot_footstep_speed = new ConVar("rcbot_footstep_speed", "250", 0, "");
 
-	rcbot_bot_squads_percent = new ConVar("rcbot_bot_squads_percent", "0", 0, "");
+	rcbot_bot_squads_percent = new ConVar("rcbot_bot_squads_percent", "50", 0, "");
 
-	rcbot_tooltips = new ConVar("rcbot_tooltips", "0", 0, "");
+	rcbot_tooltips = new ConVar("rcbot_tooltips", "1", 0, "");
 
 	rcbot_debug_notasks = new ConVar("rcbot_debug_notasks", "0", 0, "");
 
@@ -160,9 +160,9 @@ void RCBOT2_Cvar_Register(ICvar *cvar)
 
 	rcbot_debug_show_route = new ConVar("rcbot_debug_show_route", "0", 0, "");
 
-	rcbot_tf2_autoupdate_point_time = new ConVar("rcbot_tf2_autoupdate_point_time", "0", 0, "");
+	rcbot_tf2_autoupdate_point_time = new ConVar("rcbot_tf2_autoupdate_point_time", "60", 0, "");
 
-	rcbot_spy_runaway_health = new ConVar("rcbot_spy_runaway_health", "0", 0, "");
+	rcbot_spy_runaway_health = new ConVar("rcbot_spy_runaway_health", "70", 0, "");
 
 	rcbot_supermode = new ConVar("rcbot_supermode", "0", 0, "");
 
@@ -170,17 +170,17 @@ void RCBOT2_Cvar_Register(ICvar *cvar)
 
 	rcbot_hijack_afk_time = new ConVar("rcbot_hijack_afk_time", "0", 0, "");
 
-	rcbot_gamerules_offset = new ConVar("rcbot_gamerules_offset", "0", 0, "");
+	rcbot_gamerules_offset = new ConVar("rcbot_gamerules_offset", "5", 0, "");
 
-	rcbot_bot_quota_interval = new ConVar("rcbot_bot_quota_interval", "0", 0, "");
+	rcbot_bot_quota_interval = new ConVar("rcbot_bot_quota_interval", "10", 0, "");
 
-	rcbot_show_welcome_msg = new ConVar("rcbot_show_welcome_msg", "0", 0, "");
+	rcbot_show_welcome_msg = new ConVar("rcbot_show_welcome_msg", "1", 0, "");
 
 	rcbot_force_class = new ConVar("rcbot_force_class", "0", 0, "");
 
-	rcbot_process_usercmds_offset = new ConVar("rcbot_process_usercmds_offset", "0", 0, "");
+	rcbot_process_usercmds_offset = new ConVar("rcbot_process_usercmds_offset", "429", 0, "");
 
-	rcbot_mvm_revive_markers = new ConVar("rcbot_mvm_revive_markers", "0", 0, "");
+	rcbot_mvm_revive_markers = new ConVar("rcbot_mvm_revive_markers", "1", 0, "");
 
 	rcbot_loglevel = new ConVar("rcbot_loglevel", "0", 0, "");
 
