@@ -759,6 +759,11 @@ bool RCBotPluginMeta::Unload(char *error, size_t maxlen)
 
 	CBots::kickRandomBot(MAX_PLAYERS);
 
+	// 1. Remove custom signal handlers so the new .so can register fresh ones
+	signal(SIGSEGV, SIG_DFL);
+	signal(SIGABRT, SIG_DFL);
+
+	// 2. Remove engine hooks (stops callbacks into this .so)
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelInit, server, this, &RCBotPluginMeta::Hook_LevelInit, true);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, server, this, &RCBotPluginMeta::Hook_ServerActivate, true);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GameFrame, server, this, &RCBotPluginMeta::Hook_GameFrame, true);
@@ -774,12 +779,7 @@ bool RCBotPluginMeta::Unload(char *error, size_t maxlen)
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &RCBotPluginMeta::Hook_ClientCommand,
 	                       false);
 
-	// SH_REMOVE_MANUALHOOK(MHook_PlayerRunCmd, player_vtable, SH_STATIC(Hook_Function2), false);
-
-	// if another instance is running dont run through this
-	// if ( !bInitialised )
-	//	return;
-
+	// 3. Free bot state (no callbacks reach us now, so safe to delete objects)
 	CBots::freeAllMemory();
 	CStrings::freeAllMemory();
 	CBotMods::freeMemory();
@@ -790,17 +790,27 @@ bool RCBotPluginMeta::Unload(char *error, size_t maxlen)
 	CBotProfiles::deleteProfiles();
 	CWeapons::freeMemory();
 	CBotMenuList::freeMemory();
-	// unloadSignatures();
 
-	// UnhookPlayerRunCommand();
-	// UnhookGiveNamedItem();
-
-	// ConVar_Unregister();
-
-	// if ( gameevents )
-	//	gameevents->RemoveListener(this);
-
+	// 4. Unregister ConVars so hot-reload doesn't collide on re-registration
 	ConVar_Unregister();
+
+	// 5. LAST — restore game memory patches so hot-reload doesn't double-patch
+#if SOURCE_ENGINE == SE_TF2
+	if (g_pReviveMarkerBotCheckPatch && g_pReviveMarkerBotCheckPatch->found())
+		g_pReviveMarkerBotCheckPatch->setEnabled(false);
+	if (g_pPartnerTauntBotCheckPatch && g_pPartnerTauntBotCheckPatch->found())
+		g_pPartnerTauntBotCheckPatch->restore();
+	if (g_pMvMRobotSapBotCheckPatch && g_pMvMRobotSapBotCheckPatch->found())
+		g_pMvMRobotSapBotCheckPatch->restore();
+	if (g_pDisableCurrencyPackBotCheckPatch && g_pDisableCurrencyPackBotCheckPatch->found())
+		g_pDisableCurrencyPackBotCheckPatch->restore();
+#endif
+
+	// 6. Delete patch objects
+	delete g_pReviveMarkerBotCheckPatch; g_pReviveMarkerBotCheckPatch = nullptr;
+	delete g_pPartnerTauntBotCheckPatch; g_pPartnerTauntBotCheckPatch = nullptr;
+	delete g_pMvMRobotSapBotCheckPatch; g_pMvMRobotSapBotCheckPatch = nullptr;
+	delete g_pDisableCurrencyPackBotCheckPatch; g_pDisableCurrencyPackBotCheckPatch = nullptr;
 
 	return true;
 }
