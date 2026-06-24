@@ -10844,6 +10844,25 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			removeCondition(CONDITION_PUSH);
 			return true;
 		}
+
+		// Navmesh fallback: when no waypoints exist, pathfind directly
+		// to the control point position using the navmesh navigator
+		if (m_pNavmeshNavigator && m_pNavigator == m_pNavmeshNavigator
+		    && CWaypoints::numWaypoints() == 0 && m_iCurrentAttackArea > 0)
+		{
+			int iCPIndex = m_iCurrentAttackArea;
+			if (iCPIndex > 0 && iCPIndex <= CTeamFortress2Mod::m_ObjectiveResource.GetNumControlPoints())
+			{
+				int iCapIdx = iCPIndex - 1;
+				Vector vCP = CTeamFortress2Mod::m_ObjectiveResource.GetCPPosition(iCapIdx);
+				if (vCP.Length() > 0.1f)
+				{
+					m_pSchedules->add(new CBotAttackPointSched(vCP, 128.0f, 0, false, Vector(0,0,0), false, nullptr));
+					removeCondition(CONDITION_PUSH);
+					return true;
+				}
+			}
+		}
 		break;
 	case BOT_UTIL_DEFEND_POINT:
 	{
@@ -10967,6 +10986,26 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			removeCondition(CONDITION_PUSH);
 			removeCondition(CONDITION_DEFENSIVE);
 			return true;
+		}
+	}
+
+	// Navmesh fallback: when no waypoints exist, pathfind directly to
+	// the defend control point via navmesh navigator
+	if (m_pNavmeshNavigator && m_pNavigator == m_pNavmeshNavigator
+	    && CWaypoints::numWaypoints() == 0 && m_iCurrentDefendArea > 0)
+	{
+		int iCPIndex = m_iCurrentDefendArea;
+		if (iCPIndex > 0 && iCPIndex <= CTeamFortress2Mod::m_ObjectiveResource.GetNumControlPoints())
+		{
+			int iCapIdx = iCPIndex - 1;
+			Vector vCP = CTeamFortress2Mod::m_ObjectiveResource.GetCPPosition(iCapIdx);
+			if (vCP.Length() > 0.1f)
+			{
+				m_pSchedules->add(new CBotDefendPointSched(vCP, 128.0f, 0));
+				removeCondition(CONDITION_PUSH);
+				removeCondition(CONDITION_DEFENSIVE);
+				return true;
+			}
 		}
 	}
 	break;

@@ -32,6 +32,10 @@
 #define NAV_ATTR_WALK    0x00000040 // NAV_MESH_WALK
 #define NAV_ATTR_STAIRS  0x00001000 // NAV_MESH_STAIRS
 
+// TF2-specific nav attributes (CTFNavArea subclass, offset 0x1C4)
+#define TF_NAV_ATTR_OFFSET  0x1C4  // CTFNavArea::m_attributeFlags
+#define TF_NAV_CONTROL_POINT 0x40  // area contains a control point
+
 // Teleporter link: src nav area → destination nav area.
 // Populated on scanGrid() by scanning trigger_teleport entities.
 struct TeleportLink
