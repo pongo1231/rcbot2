@@ -1016,20 +1016,6 @@ bool CNavMeshNavigator::validateRoute()
 				    tr->fraction, tr->plane.normal.z);
 			markConnectionBad(m_route[i+1].area, m_route[i].area);
 			markConnectionBad(m_route[i].area, m_route[i+1].area);
-			// If the Z delta between area centers exceeds 128u, this
-			// is a cross-floor false connection.  Also block all
-			// connections from the source area (wildcard dst=0) so
-			// parallel connections to other destinations on the same
-			// floor get blocked in one shot.
-			float srcZ = areaGetCenter(m_route[i].area).z;
-			float dstZ = areaGetCenter(m_route[i+1].area).z;
-			if (fabsf(srcZ - dstZ) > 128.0f) {
-				BadConnection bc;
-				bc.src = (uintptr_t)m_route[i].area;
-				bc.dst = 0;
-				bc.expireTime = engine->Time() + randomFloat(60.0f, 180.0f);
-				m_badConnections.push_back(bc);
-			}
 			bAllClear = false;
 		}
 	}
