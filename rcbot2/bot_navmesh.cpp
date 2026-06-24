@@ -1564,12 +1564,12 @@ void CNavMeshNavigator::updatePosition()
 		Vector vStuckRef = m_vCurrentTarget;
 
 		// --- Preemptive obstacle detection ---
-		// Trace 200u ahead toward the adjusted walk target.
-		// If the trace hits, try jumping short obstacles; if the
-		// surface is a slope, reset; if a wall, steer around it.
+		// Trace toward the ROUTE target, not the adjusted target.
+		// avoidObstacles() steers around obstacles, which makes
+		// the trace miss the very thing we need to detect.
 		{
-			float dxTrace = vAdjusted.x - vBotOrigin.x;
-			float dyTrace = vAdjusted.y - vBotOrigin.y;
+			float dxTrace = vRouteTarget.x - vBotOrigin.x;
+			float dyTrace = vRouteTarget.y - vBotOrigin.y;
 			float fDistTrace2D = sqrtf(dxTrace*dxTrace + dyTrace*dyTrace);
 			if (fDistTrace2D > 80.0f)
 			{
