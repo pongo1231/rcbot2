@@ -153,7 +153,10 @@ class CNavMeshNavigator : public IBotNavigator
 		m_fSteerExpiry(0), m_iConsecutiveHits(0), m_fLastHitTime(0),
 		m_fMinLookAheadRange(150.0f), m_fLastRepathTime(0),
 		m_fMinRepathInterval(0.5f), m_fFailBackoffTime(0),
-		m_iEscapeMode(0), m_vEscapeTarget(0,0,0), m_fEscapeStartTime(0) {}
+		m_iEscapeMode(0), m_vEscapeTarget(0,0,0), m_fEscapeStartTime(0),
+		m_tnLastScanTime(0), m_tnStuckCount(0), m_tnBestDir(-1),
+		m_tnPhase(0), m_tnPhaseStartTime(0),
+		m_vTnExploreStart(0,0,0), m_fTnExploreRadius(0) {}
 	void init();
 
 	void setBot(CBot *pBot);
@@ -285,6 +288,17 @@ class CNavMeshNavigator : public IBotNavigator
 	int    m_iEscapeMode;        // 0=off, 1=walking/to, 2=falling
 	Vector m_vEscapeTarget;      // world position we're walking toward
 	float  m_fEscapeStartTime;   // when escape mode began
+
+	// Trace navigator state (escape mode phase 1 detailed exploration)
+	float  m_tnLastScanTime;     // when the 16-direction fan scan last ran
+	float  m_tnClearance[16];    // 16-direction clearance frac (0-1, 1=400u open)
+	bool   m_tnHasFloor[16];     // is there ground at end of each direction?
+	int    m_tnStuckCount;       // consecutive zero-progress cycles in escape
+	int    m_tnBestDir;          // best direction from last fan scan
+	int    m_tnPhase;            // 0=initial scan, 1=following best, 2=wall-follow, 3=reroute
+	float  m_tnPhaseStartTime;   // when current phase began
+	Vector m_vTnExploreStart;    // position where explore phase started
+	float  m_fTnExploreRadius;   // how far we've covered from explore start
 };
 
 // ---------- CNavMeshAccessor ----------

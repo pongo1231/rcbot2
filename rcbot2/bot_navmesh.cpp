@@ -641,7 +641,7 @@ bool CNavMeshNavigator::workRoute(Vector vFrom, Vector vTo, bool *bFail,
 	if (connOff < 0)
 	{
 		if (bFail) *bFail = true;
-		if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
+		if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2)
 			fprintf(stderr, "[RCDiag] workRoute: connectOffset undetected, aborting route\n");
 		return true;
 	}
@@ -1136,7 +1136,7 @@ bool CNavMeshNavigator::tryDirectPath(Vector vFrom, Vector vTo)
 	m_pCurrentArea = startArea;
 	m_fLastRepathTime = engine->Time();
 
-	if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
+	if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2)
 		fprintf(stderr, "[RCDiag] directPath name=%s bot=%d dist=%.0fu\n",
 		    m_pBot ? m_pBot->getLogName() : "?",
 		    m_pBot ? ENTINDEX(m_pBot->getEdict()) : 0, dist);
@@ -1400,7 +1400,7 @@ void CNavMeshNavigator::updatePosition()
 				{
 					m_pAccessor->markGoalFailed(m_route.back().area);
 					freeMapMemory();
-					if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
+					if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2)
 						fprintf(stderr, "[RCDiag] fellOff name=%s bot=%d"
 						    " goalZ=%.0f botZ=%.0f delta=%.0f"
 						    " curArea=%p nxtArea=%p\n",
@@ -1422,7 +1422,7 @@ void CNavMeshNavigator::updatePosition()
 				{
 					m_pAccessor->markGoalFailed(m_route.back().area);
 					freeMapMemory();
-					if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
+					if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2)
 						fprintf(stderr, "[RCDiag] fellOff name=%s bot=%d"
 						    " goalZ=%.0f botZ=%.0f delta=%.0f"
 						    " curArea=%p nxtArea=%p\n",
@@ -1491,7 +1491,7 @@ void CNavMeshNavigator::updatePosition()
 									{
 										m_pBot->tapButton(IN_JUMP);
 										m_fJumpRelease = engine->Time() + 0.25f;
-										if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool()
+										if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2
 										    && m_fLastTraceLog <= engine->Time())
 										{
 											m_fLastTraceLog = engine->Time() + 3.0f;
@@ -1790,7 +1790,7 @@ void CNavMeshNavigator::updatePosition()
 		}
 
 		// --- Idle-position heartbeat ---
-		if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool()
+		if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2
 		    && m_fStuckBestTime > 0 && m_fLastIdleLog <= engine->Time())
 		{
 			if (m_fIdleCheckTime == 0)
@@ -1820,7 +1820,7 @@ void CNavMeshNavigator::updatePosition()
 	else
 		m_pCurrentArea = nullptr;
 
-	if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool()) {
+	if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2) {
 		static int nUpd = 0;
 		if ((++nUpd & 31) == 0) {
 			Vector vCenter(0, 0, 0);

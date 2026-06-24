@@ -1261,6 +1261,11 @@ class CBot
 	float m_fSpawnTime;
 	bool m_bWantToInvestigateSound;
 
+	// Tracks when the route went empty — used to distinguish
+	// "1-frame gap between route consumption and next wander"
+	// from "genuinely stuck for a while" when logging noRoute.
+	float m_fRouteEmptyTime;
+
 	float m_fEnemyAimLerp;
 	float m_fEnemyAimLerpTime;
 	Vector m_vEnemyAimLerpVelocity;

@@ -1060,11 +1060,17 @@ void CBot::think()
 			m_pNavigator->updatePosition();
 
 			extern ConVar *rcbot_debug_navmesh;
-			if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool()
-			    && m_pNavmeshNavigator && m_pNavigator == m_pNavmeshNavigator
-			    && !m_pNavigator->hasNextPoint())
-				fprintf(stderr, "[RCDiag] noRoute name=%s bot=%d\n",
-				    getLogName(), ENTINDEX(getEdict()));
+			if (!m_pNavigator->hasNextPoint()) {
+				if (m_fRouteEmptyTime == 0)
+					m_fRouteEmptyTime = engine->Time();
+				if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2
+				    && m_pNavmeshNavigator && m_pNavigator == m_pNavmeshNavigator
+				    && engine->Time() - m_fRouteEmptyTime > 1.0f)
+					fprintf(stderr, "[RCDiag] noRoute name=%s bot=%d\n",
+					    getLogName(), ENTINDEX(getEdict()));
+			} else {
+				m_fRouteEmptyTime = 0;
+			}
 			// Don't stop moving if navmesh navigator is in escape mode
 			if (!(m_pNavmeshNavigator && m_pNavigator == m_pNavmeshNavigator
 			      && ((CNavMeshNavigator *)m_pNavmeshNavigator)->isInEscapeMode()))
@@ -1268,6 +1274,7 @@ void CBot::init(bool bVarInit)
 	m_fFov             = BOT_DEFAULT_FOV;
 	m_bOpenFire        = true;
 	m_pSquad           = nullptr;
+	m_fRouteEmptyTime  = 0;
 
 	cmd.command_number = 0;
 
