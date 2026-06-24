@@ -60,6 +60,9 @@ class INavigatorNode
 class IBotNavigator
 {
   public:
+	virtual ~IBotNavigator() {}
+
+  public:
 	virtual void init()                                                               = 0;
 
 	// returns true when working out route finishes, not if successful
@@ -484,6 +487,13 @@ class CWaypointNavigator : public IBotNavigator
 		init();
 		m_pBot                  = pBot;
 		m_fNextClearFailedGoals = 0;
+
+	float m_fBelief[CWaypoints::MAX_WAYPOINTS];
+
+	AStarOpenList m_theOpenList;
+
+	Vector m_vOffset;
+	bool m_bOffsetApplied;
 		m_bDangerPoint          = false;
 		m_iBeliefTeam           = -1;
 		m_bLoadBelief           = true;
@@ -613,45 +623,12 @@ class CWaypointNavigator : public IBotNavigator
 	AStarNode *succ;
 
 	WaypointList m_iFailedGoals;
-	float m_fNextClearFailedGoals;
 
 	float m_fBelief[CWaypoints::MAX_WAYPOINTS];
-
 	AStarOpenList m_theOpenList;
-
 	Vector m_vOffset;
 	bool m_bOffsetApplied;
-};
-
-class CNavMeshNavigator : public IBotNavigator
-{
-  public:
-	virtual bool workRoute(Vector vFrom, Vector vTo, bool *bFail, bool bRestart = true, bool bNoInterruptions = false,
-	                       int iGoalId = -1, int iConditions = 0, int iDangerId = -1);
-
-	virtual Vector getNextPoint();
-
-	virtual void updatePosition();
-
-	void freeMapMemory();
-
-	void freeAllMemory();
-
-	bool routeFound();
-
-	bool hasNextPoint();
-
-	void rollBackPosition() {};
-
-	void init();
-
-	void belief(Vector origin, Vector facing, float fBelief, float fStrength, BotBelief iType) {}; // bir3yk
-
-	// void rememberEnemyPosition ( Vector vOrigin );
-
-	// Vector getEnemyPositionPinchPoint ( Vector vOrigin );
-  private:
-	CNavMesh *m_pNavMesh;
+	float m_fNextClearFailedGoals;
 };
 
 #endif

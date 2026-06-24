@@ -1734,7 +1734,6 @@ void CWaypoint::draw(edict_t *pEdict, bool bDrawPaths, unsigned short int iDrawT
 		// draw radius
 		if (m_fRadius)
 		{
-			debugoverlay->AddBoxOverlay(m_vOrigin, Vector(-m_fRadius, -m_fRadius, -fHeight),
 			                            Vector(m_fRadius, m_fRadius, fHeight), QAngle(0, 0, 0), r, g, b, 40, 1);
 		}
 #endif
@@ -2358,7 +2357,6 @@ int CWaypoints::addWaypoint(CClient *pClient, const char *type1, const char *typ
 
 		if (type2 && *type2)
 		{
-			t = CWaypointTypes::getType(type2);
 			if (t)
 				iFlags |= t->getBits();
 			else if (atoi(type2) > 0)
@@ -2825,6 +2823,7 @@ CWaypoint *CWaypoints::randomWaypointGoalNearestArea(int iFlags, int iTeam, int 
 
 			pNav = (CWaypointNavigator *)pBot->getNavigator();
 
+			if (!pNav) return 0;
 			pWpt = pNav->chooseBestFromBeliefBetweenAreas(goals, bHighDanger, bIgnoreBelief);
 		}
 		else
@@ -2909,6 +2908,7 @@ CWaypoint *CWaypoints::randomWaypointGoalBetweenArea(int iFlags, int iTeam, int 
 
 			pNav = (CWaypointNavigator *)pBot->getNavigator();
 
+			if (!pNav) return 0;
 			pWpt = pNav->chooseBestFromBeliefBetweenAreas(goals, bHighDanger, bIgnoreBelief);
 		}
 		else
@@ -2969,6 +2969,7 @@ CWaypoint *CWaypoints::randomWaypointGoal(int iFlags, int iTeam, int iArea, bool
 			CWaypointNavigator *pNav;
 
 			pNav = (CWaypointNavigator *)pBot->getNavigator();
+			if (!pNav) return 0;
 
 			pWpt = pNav->chooseBestFromBelief(goals, bHighDanger, iSearchFlags);
 		}

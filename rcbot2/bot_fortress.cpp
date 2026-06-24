@@ -54,6 +54,7 @@
 #include "botutil/shared/crouch_hide_task.h"
 #include "botutil/tf2/tasks.h"
 
+#include <bot_navmesh.h>
 #include <in_buttons.h>
 #include <ndebugoverlay.h>
 // #include "bot_hooks.h"
@@ -8250,6 +8251,57 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		return;
 	}
 
+	// Navmesh gate: when no waypoints exist or navmesh is active,
+	// use CFindPathTask with navmesh BFS routing. Skip waypoint utilities.
+	bool bNoWaypoints  = (CWaypoints::numWaypoints() == 0);
+	bool bNavmeshActive = (m_pNavmeshNavigator
+	                       && m_pNavigator == m_pNavmeshNavigator
+	                       && ((CNavMeshNavigator *)m_pNavmeshNavigator)->isReady());
+
+	// Lazy scan + auto-switch
+	if (!bNavmeshActive && m_pNavmeshNavigator)
+	{
+		CNavMeshAccessor *pAcc = ((CNavMeshNavigator *)m_pNavmeshNavigator)->getAccessor();
+		if (pAcc && !pAcc->ready()) pAcc->scanGrid();
+		if (((CNavMeshNavigator *)m_pNavmeshNavigator)->isReady())
+			m_pNavigator = m_pNavmeshNavigator;
+	}
+
+	if (m_pNavmeshNavigator
+	    && ((CNavMeshNavigator *)m_pNavmeshNavigator)->isReady())
+	{
+		if (m_pSchedules->isEmpty())
+		{
+			Vector vDest = ((CNavMeshNavigator *)m_pNavmeshNavigator)->getRandomAreaCenter(getOrigin());
+			if (vDest.Length() > 0.1f)
+			{
+				class CNavmeshWanderTask : public CBotTask
+				{
+					Vector m_vDest;
+					float m_fTimeout;
+				  public:
+					CNavmeshWanderTask(Vector v) : m_vDest(v), m_fTimeout(0.0f) {}
+					void execute(CBot *pBot, CBotSchedule *pSchedule) override
+					{
+						if (!m_fTimeout || engine->Time() > m_fTimeout)
+						{
+							m_vDest = ((CNavMeshNavigator *)pBot->getNavmeshNavigator())
+							              ->getRandomAreaCenter(pBot->getOrigin(), 300.0f, 1500.0f);
+							m_fTimeout = engine->Time() + randomFloat(4.0f, 8.0f);
+						}
+						if (m_vDest.Length() < 0.1f) return;
+						pBot->setMoveLookPriority(MOVELOOK_EVENT);
+						pBot->setMoveTo(m_vDest);
+						pBot->setLookVector(m_vDest);
+						pBot->setLookAtTask(LOOK_VECTOR);
+						if (pBot->distanceFrom(m_vDest) < 300.0f) complete();
+					}
+				};
+				m_pSchedules->add(new CBotSchedule(new CNavmeshWanderTask(vDest)));
+			}
+		}
+		return;
+	}
 	// Last alive: shift to survival mode
 	bool bIsLastAlive = false;
 	if (CTeamFortress2Mod::hasRoundStarted())

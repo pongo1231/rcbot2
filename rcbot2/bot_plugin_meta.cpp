@@ -27,6 +27,7 @@
 #include "bot_profile.h"
 #include "bot_profiling.h"
 #include "bot_sigscan.h"
+#include "bot_navmesh.h"
 #include "bot_squads.h"
 #include "bot_waypoint_visibility.h"
 #include "bot_weapons.h"
@@ -144,6 +145,7 @@ ICvar *icvar                          = nullptr;
 IVEngineServer *engine =
     nullptr; // helper functions (messaging clients, loading content, making entities, running commands, etc)
 IFileSystem *filesystem               = nullptr; // file I/O
+CNavMeshAccessor *g_pNavMeshAccessor = nullptr;
 IGameEventManager2 *gameeventmanager  = nullptr;
 IGameEventManager *gameeventmanager1  = nullptr; // game events interface
 IPlayerInfoManager *playerinfomanager = nullptr; // game dll interface to interact with players
@@ -613,6 +615,9 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, size_t maxle
 
 #if SOURCE_ENGINE == SE_TF2
 	g_pDisableCurrencyPackBotCheckPatch = new CDisableCurrencyPackBotCheckPatch(kvl, gameServerFactory);
+// Initialize sig-scanner; scanGrid() fires lazily on first getNearestArea() call
+	g_pNavMeshAccessor = new CNavMeshAccessor();
+	g_pNavMeshAccessor->init(kvl, gameServerFactory);
 	if (g_pDisableCurrencyPackBotCheckPatch->found())
 		g_pDisableCurrencyPackBotCheckPatch->patchMyTouch();
 
@@ -1235,6 +1240,9 @@ void RCBotPluginMeta::Hook_LevelShutdown()
 	CWaypoints::init();
 
 	CBotGlobals::setMapRunning(false);
+ 	// Invalidate navmesh cache — areas from old map are freed
+	if (g_pNavMeshAccessor)
+		g_pNavMeshAccessor->invalidate();
 	CBotEvents::freeMemory();
 }
 

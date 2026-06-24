@@ -597,6 +597,10 @@ class CBot
 		return m_pNavigator;
 	}
 
+	inline IBotNavigator *getWaypointNavigator() { return m_pWaypointNavigator; }
+	inline IBotNavigator *getNavmeshNavigator()  { return m_pNavmeshNavigator; }
+	inline void setNavigator(IBotNavigator *pNav) { m_pNavigator = pNav; }
+
 	inline void setMoveLookPriority(int iPriority)
 	{
 		m_iMoveLookPriority = iPriority;
@@ -1117,6 +1121,8 @@ class CBot
 	CBotButtons *m_pButtons;
 	// Navigation used for this bot -- environment sensor 1
 	IBotNavigator *m_pNavigator;
+	IBotNavigator *m_pWaypointNavigator;
+	IBotNavigator *m_pNavmeshNavigator;
 	// bot visible list -- environment sensor 2
 	CBotVisibles *m_pVisibles;
 	// visible functions -- sensory functions

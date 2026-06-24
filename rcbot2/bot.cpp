@@ -50,6 +50,7 @@
 #include "bot_hldm_bot.h"
 #include "bot_mtrand.h"
 #include "bot_navigator.h"
+#include "bot_navmesh.h"
 #include "bot_navmesh_util.h"
 #include "bot_profile.h"
 #include "bot_profiling.h"
@@ -1042,11 +1043,35 @@ void CBot::think()
 		if (m_pNavigator->hasNextPoint())
 		{
 			m_pNavigator->updatePosition();
+
+			extern ConVar *rcbot_debug_navmesh;
+			if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool() && m_pNavmeshNavigator
+			    && m_pNavigator == m_pNavmeshNavigator)
+			{
+				if (!m_pNavigator->hasNextPoint())
+					fprintf(stderr, "[RCDiag] routeEmpty name=%s bot=%d afterUpdate\n",
+					    getLogName(), ENTINDEX(getEdict()));
+			}
 		}
 		else
 		{
-			m_fWaypointStuckTime = 0.0f;
-			stopMoving();
+			// Always call updatePosition even when route is empty
+			// so escape mode (ledge/fall recovery) can execute.
+			m_pNavigator->updatePosition();
+
+			extern ConVar *rcbot_debug_navmesh;
+			if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool()
+			    && m_pNavmeshNavigator && m_pNavigator == m_pNavmeshNavigator
+			    && !m_pNavigator->hasNextPoint())
+				fprintf(stderr, "[RCDiag] noRoute name=%s bot=%d\n",
+				    getLogName(), ENTINDEX(getEdict()));
+			// Don't stop moving if navmesh navigator is in escape mode
+			if (!(m_pNavmeshNavigator && m_pNavigator == m_pNavmeshNavigator
+			      && ((CNavMeshNavigator *)m_pNavmeshNavigator)->isInEscapeMode()))
+			{
+				m_fWaypointStuckTime = 0.0f;
+				stopMoving();
+			}
 			setLookAtTask(LOOK_AROUND);
 		}
 #ifdef _DEBUG
@@ -1222,7 +1247,9 @@ void CBot::init(bool bVarInit)
 	m_fLastHurtTime    = 0.0f;
 	m_iAmmo            = nullptr;
 	m_pButtons         = nullptr;
-	m_pNavigator       = nullptr;
+	m_pNavigator        = nullptr;
+	m_pWaypointNavigator = nullptr;
+	m_pNavmeshNavigator  = nullptr;
 	m_pSchedules       = nullptr;
 	m_pVisibles        = nullptr;
 	m_pEdict           = nullptr;
@@ -1672,7 +1699,11 @@ void CBot::setup()
 	/////////////////////////////////
 	m_pSchedules     = new CBotSchedules();
 	/////////////////////////////////
-	m_pNavigator     = new CWaypointNavigator(this);
+	m_pNavigator          = new CWaypointNavigator(this);
+	m_pWaypointNavigator  = m_pNavigator;
+	m_pNavmeshNavigator   = new CNavMeshNavigator();
+	m_pNavmeshNavigator->init();
+	((CNavMeshNavigator *)m_pNavmeshNavigator)->setBot(this);
 	/////////////////////////////////
 	m_pVisibles      = new CBotVisibles(this);
 	/////////////////////////////////
@@ -1982,13 +2013,27 @@ void CBot::freeMapMemory()
 		m_pSchedules = nullptr;
 	}
 	/////////////////////////////////
-	if (m_pNavigator != nullptr)
+	if (m_pWaypointNavigator == m_pNavigator && m_pNavigator)
 	{
 		m_pNavigator->beliefSave(true);
 		m_pNavigator->freeMapMemory();
-		delete m_pNavigator;
-		m_pNavigator = nullptr;
 	}
+	if (m_pNavmeshNavigator == m_pNavigator && m_pNavigator)
+	{
+		m_pNavigator->beliefSave(true);
+		m_pNavigator->freeMapMemory();
+	}
+	if (m_pWaypointNavigator)
+	{
+		delete m_pWaypointNavigator;
+		m_pWaypointNavigator = nullptr;
+	}
+	if (m_pNavmeshNavigator)
+	{
+		delete m_pNavmeshNavigator;
+		m_pNavmeshNavigator = nullptr;
+	}
+	m_pNavigator = nullptr;
 	/////////////////////////////////
 	if (m_pVisibles != nullptr)
 	{
@@ -3148,6 +3193,12 @@ void CBot::duck(bool hold)
 {
 	if (hold || m_pButtons->canPressButton(IN_DUCK))
 		m_pButtons->holdButton(IN_DUCK, 0.0 /* time to press*/, 1.0 /* hold time*/, 0.5 /*let go time*/);
+}
+
+void CBot::setSideMove(float speed, float duration)
+{
+	m_fSideSpeed  = speed;
+	m_fStrafeTime = engine->Time() + duration;
 }
 
 // TO DO: perceptron method

@@ -86,7 +86,11 @@ void CFindPathTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 		if (pNav->workRoute(pBot->getOrigin(), m_vVector, &bFail, (m_iInt == 0), m_flags.bits.m_bNoInterruptions,
 		                    m_iWaypointId, pBot->getConditions(), m_iDangerPoint))
 		{
-			pBot->m_fWaypointStuckTime = engine->Time() + randomFloat(10.0f, 15.0f);
+			pBot->m_fWaypointStuckTime =
+			    engine->Time()
+			    + ((pBot->getNavigator() == pBot->getNavmeshNavigator())
+			        ? randomFloat(3.0f, 6.0f)
+			        : randomFloat(10.0f, 15.0f));
 			pBot->moveFailed(); // reset
 			m_iInt = 2;
 		}
@@ -160,6 +164,12 @@ void CFindPathTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 			//// running path
 			// if ( !pBot->hasEnemy() && !pBot->hasSomeConditions(CONDITION_SEE_CUR_ENEMY) )
+
+			// Set look vector ahead of time for LOOK_VECTOR mode.
+			// The waypoint navigator handles this internally via
+			// goToWaypoint; CNavMeshNavigator needs it explicitly.
+			if (pBot->getNavigator() == pBot->getNavmeshNavigator())
+				pBot->setLookVector(pBot->getNavigator()->getNextPoint());
 
 			pBot->setLookAtTask(m_LookTask);
 		}
