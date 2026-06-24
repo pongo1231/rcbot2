@@ -503,6 +503,8 @@ class CBot
 
 	edict_t *getEdict();
 
+	const char *getLogName() const { return m_szBotName; }
+
 	void setEdict(edict_t *pEdict);
 
 	bool FVisible(Vector &vOrigin, edict_t *pDest = nullptr);
@@ -752,6 +754,10 @@ class CBot
 	virtual bool canGotoWaypoint(Vector vPrevWaypoint, CWaypoint *pWaypoint, CWaypoint *pPrev = nullptr);
 
 	void tapButton(int iButton);
+
+	// Sidestep for strafing free of walls.  speed > 0 = right, < 0 = left.
+	// duration = how many seconds to hold the strafe.
+	void setSideMove(float speed, float duration);
 
 	inline int getAmmo(int iIndex)
 	{

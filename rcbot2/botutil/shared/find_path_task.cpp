@@ -93,6 +93,16 @@ void CFindPathTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 			        : randomFloat(10.0f, 15.0f));
 			pBot->moveFailed(); // reset
 			m_iInt = 2;
+
+			extern ConVar *rcbot_debug_navmesh;
+			if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
+				fprintf(stderr, "[RCDiag] findPath name=%s bot=%d dest=(%.0f,%.0f,%.0f)"
+				    " routeSz=%d bFail=%d hasNext=%d\n",
+				    pBot->getLogName(), ENTINDEX(pBot->getEdict()),
+				    m_vVector.x, m_vVector.y, m_vVector.z,
+				    pBot->getNavigator()->hasNextPoint() ? 1 : 0,
+				    bFail ? 1 : 0,
+				    pBot->getNavigator()->hasNextPoint() ? 1 : 0);
 		}
 		else
 			m_iInt = 1;
@@ -123,6 +133,10 @@ void CFindPathTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 		if (!pBot->getNavigator()->hasNextPoint())
 		{
+			extern ConVar *rcbot_debug_navmesh;
+			if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
+				fprintf(stderr, "[RCDiag] findPathComplete name=%s bot=%d\n",
+				    pBot->getLogName(), ENTINDEX(pBot->getEdict()));
 			pBot->debugMsg(BOT_DEBUG_NAV, "Nowhere to go");
 			complete(); // reached goal
 		}
@@ -130,6 +144,14 @@ void CFindPathTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 		{
 			if (pBot->moveFailed())
 			{
+				extern ConVar *rcbot_debug_navmesh;
+				if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
+					fprintf(stderr, "[RCDiag] findPathFail name=%s bot=%d"
+					    " stuck=%.1fs\n",
+					    pBot->getLogName(), ENTINDEX(pBot->getEdict()),
+					    pBot->m_fWaypointStuckTime > 0
+					        ? pBot->m_fWaypointStuckTime - engine->Time()
+					        : 0.0f);
 				pBot->debugMsg(BOT_DEBUG_NAV, "moveFailed() == true");
 				fail();
 				pBot->getNavigator()->failMove();
@@ -164,12 +186,6 @@ void CFindPathTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 
 			//// running path
 			// if ( !pBot->hasEnemy() && !pBot->hasSomeConditions(CONDITION_SEE_CUR_ENEMY) )
-
-			// Set look vector ahead of time for LOOK_VECTOR mode.
-			// The waypoint navigator handles this internally via
-			// goToWaypoint; CNavMeshNavigator needs it explicitly.
-			if (pBot->getNavigator() == pBot->getNavmeshNavigator())
-				pBot->setLookVector(pBot->getNavigator()->getNextPoint());
 
 			pBot->setLookAtTask(m_LookTask);
 		}

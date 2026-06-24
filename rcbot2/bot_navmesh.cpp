@@ -1117,14 +1117,21 @@ void CNavMeshNavigator::updatePosition()
 			int bestDir = -1;
 			Vector vBotEscape = m_pBot->getOrigin();
 			Vector dirs[4] = {Vector(1,0,0), Vector(-1,0,0), Vector(0,1,0), Vector(0,-1,0)};
+			int order[4] = {0, 1, 2, 3};
+			// Shuffle order so bots don't all pick the same direction
+			for (int i = 3; i > 0; i--) {
+				int j = randomInt(0, i);
+				int t = order[i]; order[i] = order[j]; order[j] = t;
+			}
 			for (int d = 0; d < 4; d++) {
-				Vector end = vBotEscape + dirs[d] * 400.0f;
+				int dirIdx = order[d];
+				Vector end = vBotEscape + dirs[dirIdx] * 400.0f;
 				end.z = vBotEscape.z + 24.0f;
 				CBotGlobals::traceLine(vBotEscape + Vector(0,0,24), end,
 				    MASK_PLAYERSOLID, &filter);
 				trace_t *tr = CBotGlobals::getTraceResult();
 				float clear = (tr && tr->fraction < 1.0f) ? tr->fraction : 1.0f;
-				if (clear > bestClear) { bestClear = clear; bestDir = d; }
+				if (clear > bestClear) { bestClear = clear; bestDir = dirIdx; }
 			}
 			if (bestDir >= 0 && bestClear > 0.2f)
 				m_vEscapeTarget = vBotEscape + dirs[bestDir] * 800.0f;
@@ -1147,13 +1154,26 @@ void CNavMeshNavigator::updatePosition()
 			if (m_iEscapeMode == 1)
 			{
 				m_pBot->setMoveTo(m_vEscapeTarget);
-				if (!NavMeshUtil::IsOnWalkableGround(vBotEscape))
+				// Short floor check: trace down 72u
+				Vector down = vBotEscape;
+				down.z -= 72.0f;
+				CTraceFilterWorldAndPropsOnly filter2;
+				CBotGlobals::traceLine(vBotEscape, down,
+				    MASK_PLAYERSOLID, &filter2);
+				trace_t *trFloor = CBotGlobals::getTraceResult();
+				bool bOnGround = (trFloor && trFloor->fraction < 1.0f
+				    && trFloor->plane.normal.z > 0.5f
+				    && !trFloor->startsolid);
+				if (!bOnGround)
 				{
 					m_iEscapeMode = 2;
 					m_fEscapeStartTime = engine->Time();
 				}
-				// Timeout: stop trying after 15s (keep failBackoff intact)
-				if (engine->Time() - m_fEscapeStartTime > 15.0f)
+				// Timeout: keep walking for 20s or until we cover 2000u
+				float fElapsed = engine->Time() - m_fEscapeStartTime;
+				Vector vDelta = vBotEscape - m_vEscapeTarget;
+				float fDistTravelled = vDelta.Length();  // dist from target?
+				if (fElapsed > 20.0f)
 					m_iEscapeMode = 0;
 			}
 
@@ -1409,23 +1429,6 @@ void CNavMeshNavigator::updatePosition()
 									if (stuckDst) {
 										if (m_pCurrentArea)
 											markConnectionBad(m_pCurrentArea, stuckDst);
-										// Wildcard: if large Z gap between bot and destination,
-										// block ALL connections from the current position's area.
-										// Use the bot's Z directly since m_pCurrentArea may be null
-										// (bot never reached a pop radius on this fresh route).
-										if (fabsf(botZ - dstZ) > 128.0f) {
-											void *srcArea = m_pAccessor->getNearestArea(vBotOrigin);
-											if (srcArea) {
-												m_badConnections.push_back({(uintptr_t)srcArea, 0,
-												    engine->Time() + randomFloat(60.0f, 180.0f)});
-												if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
-													fprintf(stderr, "[RCDiag] drainWildcard name=%s bot=%d"
-													    " src=%p botZ=%.0f dst=%p dstZ=%.0f\n",
-													    m_pBot ? m_pBot->getLogName() : "?",
-													    ENTINDEX(m_pBot->getEdict()),
-													    srcArea, botZ, stuckDst, dstZ);
-											}
-										}
 									}
 									if (stuckDst) {
 										for (auto &tl : m_pAccessor->getTeleportLinks()) {
@@ -1668,15 +1671,6 @@ void CNavMeshNavigator::updatePosition()
 				m_route.pop_back();
 				if (popped) {
 					markConnectionBad(prevArea, popped);
-					float poppedZ = areaGetCenter(popped).z;
-					float botStuckZ = vBotOrigin.z;
-					if (fabsf(botStuckZ - poppedZ) > 128.0f) {
-						void *srcStuck = m_pAccessor->getNearestArea(vBotOrigin);
-						if (srcStuck) {
-							m_badConnections.push_back({(uintptr_t)srcStuck, 0,
-							    engine->Time() + randomFloat(60.0f, 180.0f)});
-						}
-					}
 					for (auto &tl : m_pAccessor->getTeleportLinks()) {
 						if (tl.dstArea == popped && tl.srcArea)
 							markConnectionBad(tl.srcArea, tl.dstArea);

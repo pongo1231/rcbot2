@@ -160,6 +160,10 @@ void RCBOT2_Cvar_Register(ICvar *cvar)
 
 	rcbot_debug_show_route = new ConVar("rcbot_debug_show_route", "0", 0, "");
 
+	rcbot_debug_navmesh = new ConVar("rcbot_debug_navmesh", "0", 0, "");
+
+	rcbot_use_navmesh = new ConVar("rcbot_use_navmesh", "1", 0, "");
+
 	rcbot_tf2_autoupdate_point_time = new ConVar("rcbot_tf2_autoupdate_point_time", "60", 0, "");
 
 	rcbot_spy_runaway_health = new ConVar("rcbot_spy_runaway_health", "70", 0, "");
@@ -353,6 +357,10 @@ void RCBOT2_Cvar_Unlink(ICvar *cvar)
 		cvar->UnregisterConCommand(rcbot_debug_dont_shoot);
 	if (rcbot_debug_show_route)
 		cvar->UnregisterConCommand(rcbot_debug_show_route);
+	if (rcbot_debug_navmesh)
+		cvar->UnregisterConCommand(rcbot_debug_navmesh);
+	if (rcbot_use_navmesh)
+		cvar->UnregisterConCommand(rcbot_use_navmesh);
 	if (rcbot_tf2_autoupdate_point_time)
 		cvar->UnregisterConCommand(rcbot_tf2_autoupdate_point_time);
 	if (rcbot_spy_runaway_health)
@@ -547,6 +555,10 @@ void RCBOT2_Cvar_Unregister()
 	rcbot_debug_dont_shoot = nullptr;
 	delete rcbot_debug_show_route;
 	rcbot_debug_show_route = nullptr;
+	delete rcbot_debug_navmesh;
+	rcbot_debug_navmesh = nullptr;
+	delete rcbot_use_navmesh;
+	rcbot_use_navmesh = nullptr;
 	delete rcbot_tf2_autoupdate_point_time;
 	rcbot_tf2_autoupdate_point_time = nullptr;
 	delete rcbot_spy_runaway_health;

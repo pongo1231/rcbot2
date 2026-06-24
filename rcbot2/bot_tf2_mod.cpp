@@ -917,10 +917,15 @@ bool CTeamFortress2Mod::isHostileProjectile(edict_t *pEntity, int iTeam)
 	        || strcmp(pszClass, "tf_projectile_arrow") == 0
 	        || strcmp(pszClass, "tf_projectile_flare") == 0
 	        || strcmp(pszClass, "tf_projectile_energy_ball") == 0
+	        || strcmp(pszClass, "tf_projectile_energy_ring") == 0
 	        || strcmp(pszClass, "tf_projectile_ball_ornament") == 0
 	        || strcmp(pszClass, "tf_projectile_healing_bolt") == 0
 	        || strcmp(pszClass, "tf_projectile_jar") == 0
-	        || strcmp(pszClass, "tf_projectile_jar_milk") == 0);
+	        || strcmp(pszClass, "tf_projectile_jar_milk") == 0
+	        || strcmp(pszClass, "tf_projectile_jar_gas") == 0
+	        || strcmp(pszClass, "tf_projectile_cleaver") == 0
+	        || strcmp(pszClass, "tf_projectile_stun_ball") == 0
+	        || strcmp(pszClass, "tf_projectile_cannonball") == 0);
 }
 
 bool CTeamFortress2Mod::isRocket(edict_t *pEntity, int iTeam)

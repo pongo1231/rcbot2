@@ -56,6 +56,8 @@
 #include <signal.h>
 #include <unistd.h>
 #include <ucontext.h>
+#include <dlfcn.h>
+#include <stdint.h>
 
 static const char *siCodeStr(int si_code)
 {
@@ -64,6 +66,27 @@ static const char *siCodeStr(int si_code)
 	case SEGV_MAPERR: return "SEGV_MAPERR (bad address)";
 	case SEGV_ACCERR: return "SEGV_ACCERR (permissions)";
 	default: return "unknown";
+	}
+}
+
+static void *g_rcbotModBase = nullptr;
+
+// Resolve a code address to "basename(+0xoffset)" via dladdr and print it.
+static void printResolved(const char *label, void *addr)
+{
+	Dl_info di;
+	if (dladdr(addr, &di) && di.dli_fbase)
+	{
+		const char *name = di.dli_fname ? di.dli_fname : "?";
+		const char *base = name;
+		for (const char *p = name; *p; p++)
+			if (*p == '/') base = p + 1;
+		fprintf(stderr, "  %s 0x%08X  %s(+0x%lx)\n", label, (unsigned)(uintptr_t)addr, base,
+		        (unsigned long)((uintptr_t)addr - (uintptr_t)di.dli_fbase));
+	}
+	else
+	{
+		fprintf(stderr, "  %s 0x%08X  <unknown module>\n", label, (unsigned)(uintptr_t)addr);
 	}
 }
 
@@ -77,6 +100,8 @@ static void crashHandler(int sig, siginfo_t *info, void *secret)
 	fprintf(stderr, "Fault address: %p\n", info->si_addr);
 
 	ucontext_t *ctx = (ucontext_t *)secret;
+	uintptr_t eip = (uintptr_t)ctx->uc_mcontext.gregs[REG_EIP];
+	uintptr_t esp = (uintptr_t)ctx->uc_mcontext.gregs[REG_ESP];
 	fprintf(stderr, "Registers:\n");
 	fprintf(stderr, "  EIP=0x%08X  ESP=0x%08X  EBP=0x%08X\n",
 	        ctx->uc_mcontext.gregs[REG_EIP],
@@ -91,6 +116,35 @@ static void crashHandler(int sig, siginfo_t *info, void *secret)
 	fprintf(stderr, "  ESI=0x%08X  EDI=0x%08X\n",
 	        ctx->uc_mcontext.gregs[REG_ESI],
 	        ctx->uc_mcontext.gregs[REG_EDI]);
+
+	// Faulting instruction. For an indirect call through a bad pointer (EIP=0
+	// or junk), backtrace() can't unwind, so recover the call site manually.
+	fprintf(stderr, "Fault site:\n");
+	printResolved("faulting EIP =", (void *)eip);
+
+	// On x86 a CALL pushes the return address before jumping; if the jump
+	// target is bad, [ESP] holds the instruction right after the faulting
+	// call -- i.e. the exact call site.
+	if (esp)
+		printResolved("call-site [ESP]=", *(void **)esp);
+
+	// Frame pointers are omitted at -O3, so scan the stack for any words that
+	// resolve into the rcbot module: a heuristic caller chain.
+	if (esp && g_rcbotModBase)
+	{
+		fprintf(stderr, "Stack scan (rcbot return addresses):\n");
+		int shown = 0;
+		for (int i = 0; i < 512 && shown < 24; i++)
+		{
+			void *val = ((void **)esp)[i];
+			Dl_info di;
+			if (dladdr(val, &di) && di.dli_fbase == g_rcbotModBase)
+			{
+				printResolved("  ret?", val);
+				shown++;
+			}
+		}
+	}
 
 	fprintf(stderr, "Stack trace:\n");
 	for (int i = 0; i < frames; i++)
@@ -107,6 +161,12 @@ static void crashHandler(int sig, siginfo_t *info, void *secret)
 static void installCrashHandler()
 {
 #ifdef __linux__
+	// Record the rcbot module base so the crash handler can identify which
+	// stack words are return addresses into our own code.
+	Dl_info di;
+	if (dladdr((void *)&crashHandler, &di))
+		g_rcbotModBase = di.dli_fbase;
+
 	struct sigaction sa;
 	sa.sa_sigaction = crashHandler;
 	sa.sa_flags     = SA_SIGINFO;

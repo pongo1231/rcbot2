@@ -2546,7 +2546,9 @@ CWaypoint *CWaypoints::randomRouteWaypoint(CBot *pBot, Vector vOrigin, Vector vG
 	static short int size;
 	static CWaypointNavigator *pNav;
 
-	pNav = (CWaypointNavigator *)pBot->getNavigator();
+	pNav = (pBot->getNavigator() == pBot->getWaypointNavigator())
+	           ? (CWaypointNavigator *)pBot->getNavigator()
+	           : nullptr;
 
 	size = numWaypoints();
 
@@ -2590,7 +2592,11 @@ CWaypoint *CWaypoints::randomRouteWaypoint(CBot *pBot, Vector vOrigin, Vector vG
 	}
 
 	if (!goals.empty())
-		return pNav->chooseBestFromBelief(goals);
+	{
+		if (pNav)
+			return pNav->chooseBestFromBelief(goals);
+		return goals[randomInt(0, (int)goals.size() - 1)];
+	}
 	return nullptr;
 }
 
@@ -2817,13 +2823,12 @@ CWaypoint *CWaypoints::randomWaypointGoalNearestArea(int iFlags, int iTeam, int 
 
 	if (!goals.empty())
 	{
-		if (pBot)
+		if (pBot && pBot->getNavigator() == pBot->getWaypointNavigator())
 		{
 			CWaypointNavigator *pNav;
 
 			pNav = (CWaypointNavigator *)pBot->getNavigator();
 
-			if (!pNav) return 0;
 			pWpt = pNav->chooseBestFromBeliefBetweenAreas(goals, bHighDanger, bIgnoreBelief);
 		}
 		else
@@ -2902,13 +2907,12 @@ CWaypoint *CWaypoints::randomWaypointGoalBetweenArea(int iFlags, int iTeam, int 
 
 	if (!goals.empty())
 	{
-		if (pBot)
+		if (pBot && pBot->getNavigator() == pBot->getWaypointNavigator())
 		{
 			CWaypointNavigator *pNav;
 
 			pNav = (CWaypointNavigator *)pBot->getNavigator();
 
-			if (!pNav) return 0;
 			pWpt = pNav->chooseBestFromBeliefBetweenAreas(goals, bHighDanger, bIgnoreBelief);
 		}
 		else
@@ -2964,12 +2968,11 @@ CWaypoint *CWaypoints::randomWaypointGoal(int iFlags, int iTeam, int iArea, bool
 
 	if (!goals.empty())
 	{
-		if (pBot)
+		if (pBot && pBot->getNavigator() == pBot->getWaypointNavigator())
 		{
 			CWaypointNavigator *pNav;
 
 			pNav = (CWaypointNavigator *)pBot->getNavigator();
-			if (!pNav) return 0;
 
 			pWpt = pNav->chooseBestFromBelief(goals, bHighDanger, iSearchFlags);
 		}

@@ -7,6 +7,7 @@ class CBotTFEngiBuildTask : public CBotTask
 {
   public:
 	CBotTFEngiBuildTask(eEngiBuild iObject, CWaypoint *pWaypoint);
+	CBotTFEngiBuildTask(eEngiBuild iObject, Vector vOrigin, float fAimYaw, int iArea);
 
 	void execute(CBot *pBot, CBotSchedule *pSchedule);
 

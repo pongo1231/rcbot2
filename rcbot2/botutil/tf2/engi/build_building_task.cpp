@@ -22,6 +22,24 @@ CBotTFEngiBuildTask::CBotTFEngiBuildTask(eEngiBuild iObject, CWaypoint *pWaypoin
 	m_iWaypointIndex = CWaypoints::getWaypointIndex(pWaypoint);
 }
 
+CBotTFEngiBuildTask::CBotTFEngiBuildTask(eEngiBuild iObject, Vector vOrigin, float fAimYaw, int iArea)
+{
+	m_iObject          = iObject;
+	m_vOrigin          = vOrigin;
+	m_iState           = 0;
+	m_fTime            = 0;
+	m_iTries           = 0;
+	m_fNextUpdateAngle = 0.0f;
+	QAngle ang         = QAngle(0, fAimYaw, 0);
+	Vector vForward;
+	AngleVectors(ang, &vForward);
+	m_vAimingVector    = m_vOrigin + (vForward * 100.0f);
+	m_iArea            = iArea;
+	m_vBaseOrigin      = m_vOrigin;
+	m_fRadius          = 48.0f;
+	m_iWaypointIndex   = -1;
+}
+
 void CBotTFEngiBuildTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 {
 	CBotFortress *tfBot;

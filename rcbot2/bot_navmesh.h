@@ -89,6 +89,8 @@ class CNavMeshAccessor : public CSignatureFunction
 	unsigned char *getNearestArea(float x, float y, float z);
 	unsigned char *getNearestArea(Vector v) { return getNearestArea(v.x, v.y, v.z); }
 	unsigned char *getAreaByIndex(int i) const;
+	void dumpAreaGrid(float cx, float cy, float radius, int connOff);
+	void dumpAreaConnections(void *area, int connOff);
 
 	// Offset of the m_connect[4] CUtlVectorUltraConservative array within a
 	// CNavArea, detected at runtime (the layout differs between game builds).

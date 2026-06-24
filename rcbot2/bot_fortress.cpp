@@ -8251,57 +8251,53 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		return;
 	}
 
-	// Navmesh gate: when no waypoints exist or navmesh is active,
-	// use CFindPathTask with navmesh BFS routing. Skip waypoint utilities.
-	bool bNoWaypoints  = (CWaypoints::numWaypoints() == 0);
-	bool bNavmeshActive = (m_pNavmeshNavigator
-	                       && m_pNavigator == m_pNavmeshNavigator
-	                       && ((CNavMeshNavigator *)m_pNavmeshNavigator)->isReady());
+	// Navmesh navigation — three activation levels via rcbot_use_navmesh:
+	//   0 = waypoints only
+	//   1 = navmesh + waypoints complementary (default)
+	//   2 = navmesh only, waypoints ignored
+	// When no waypoints exist the mode is silently bumped to 1 so bots
+	// always have at least one navigation backend if the navmesh is ready.
+	//
+	// Navigator selection is recomputed every getTasks() call so it is
+	// fully reversible: turning the cvar off or a map-change invalidation
+	// instantly reverts to the waypoint navigator.
+	int iNavMode = rcbot_use_navmesh->GetInt();
 
-	// Lazy scan + auto-switch
-	if (!bNavmeshActive && m_pNavmeshNavigator)
+	if (iNavMode == 0 && CWaypoints::numWaypoints() == 0 && m_pNavmeshNavigator)
 	{
-		CNavMeshAccessor *pAcc = ((CNavMeshNavigator *)m_pNavmeshNavigator)->getAccessor();
-		if (pAcc && !pAcc->ready()) pAcc->scanGrid();
-		if (((CNavMeshNavigator *)m_pNavmeshNavigator)->isReady())
-			m_pNavigator = m_pNavmeshNavigator;
+		CNavMeshNavigator *pN = (CNavMeshNavigator *)m_pNavmeshNavigator;
+		if (pN->isReady() || (pN->getAccessor() && pN->getAccessor()->found()))
+			iNavMode = 1; // no waypoints on the map → force navmesh
 	}
 
-	if (m_pNavmeshNavigator
-	    && ((CNavMeshNavigator *)m_pNavmeshNavigator)->isReady())
+	bool bSkipWaypoints = (iNavMode == 2 && CWaypoints::numWaypoints() > 0);
+	bool bUseNavmesh = (iNavMode > 0) && (m_pNavmeshNavigator != nullptr);
+
+	if (bUseNavmesh)
 	{
-		if (m_pSchedules->isEmpty())
+		CNavMeshNavigator *pNavmesh = (CNavMeshNavigator *)m_pNavmeshNavigator;
+
+		if (!pNavmesh->isReady())
 		{
-			Vector vDest = ((CNavMeshNavigator *)m_pNavmeshNavigator)->getRandomAreaCenter(getOrigin());
-			if (vDest.Length() > 0.1f)
-			{
-				class CNavmeshWanderTask : public CBotTask
-				{
-					Vector m_vDest;
-					float m_fTimeout;
-				  public:
-					CNavmeshWanderTask(Vector v) : m_vDest(v), m_fTimeout(0.0f) {}
-					void execute(CBot *pBot, CBotSchedule *pSchedule) override
-					{
-						if (!m_fTimeout || engine->Time() > m_fTimeout)
-						{
-							m_vDest = ((CNavMeshNavigator *)pBot->getNavmeshNavigator())
-							              ->getRandomAreaCenter(pBot->getOrigin(), 300.0f, 1500.0f);
-							m_fTimeout = engine->Time() + randomFloat(4.0f, 8.0f);
-						}
-						if (m_vDest.Length() < 0.1f) return;
-						pBot->setMoveLookPriority(MOVELOOK_EVENT);
-						pBot->setMoveTo(m_vDest);
-						pBot->setLookVector(m_vDest);
-						pBot->setLookAtTask(LOOK_VECTOR);
-						if (pBot->distanceFrom(m_vDest) < 300.0f) complete();
-					}
-				};
-				m_pSchedules->add(new CBotSchedule(new CNavmeshWanderTask(vDest)));
-			}
+			CNavMeshAccessor *pAcc = pNavmesh->getAccessor();
+			if (pAcc && !pAcc->ready()) pAcc->scanGrid();
 		}
-		return;
+
+		if (pNavmesh->isReady())
+			m_pNavigator = m_pNavmeshNavigator; // activate
+		else
+			bUseNavmesh = false; // not ready yet -> fall back this frame
 	}
+
+	if (!bUseNavmesh && m_pWaypointNavigator && m_pNavigator != m_pWaypointNavigator)
+		m_pNavigator = m_pWaypointNavigator; // revert when off / not ready
+
+	// When navmesh is active the navigator has been swapped above;
+	// fall through so the utility system evaluates objective tasks
+	// (ammo, health, capture points, etc.) which all dispatch through
+	// CFindPathTask → m_pNavigator->workRoute() on whichever backend
+	// is active.  The navmesh roam/wander is handled inside the
+	// existing BOT_UTIL_ROAM handler below.
 	// Last alive: shift to survival mode
 	bool bIsLastAlive = false;
 	if (CTeamFortress2Mod::hasRoundStarted())
@@ -8414,6 +8410,11 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	}
 	if (bNeedAmmo || bNeedHealth)
 	{
+		// Mode 2 (only navmesh, waypoints ignored): skip waypoint-based
+		// ammo/health location finding.  Entity-based pickup paths
+		// (m_pAmmo / m_pHealthkit) handle resupply without waypoints.
+		if (bSkipWaypoints) goto skip_waypoint_find;
+
 		Vector vOrigin = getOrigin();
 
 		WaypointList *failed;
@@ -8436,7 +8437,24 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		if (bNeedHealth)
 			pWaypointHealth = CWaypoints::getWaypoint(
 			    CWaypoints::getClosestFlagged(CWaypointTypes::W_FL_HEALTH, vOrigin, iTeam, &fHealthDist, failedlist));
+
+		// When the navmesh navigator is active, discard waypoints that
+		// have no reachable nav area (e.g. on a disconnected floor).
+		// This short-circuits a doomed pathfinding attempt; if the area
+		// IS present but unreachable, the failed-goal tracker handles it
+		// after workRoute fails.
+		if (m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		{
+			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			if (pWaypointResupply && !pNav->canGetTo(pWaypointResupply->getOrigin()))
+				pWaypointResupply = nullptr;
+			if (pWaypointAmmo && !pNav->canGetTo(pWaypointAmmo->getOrigin()))
+				pWaypointAmmo = nullptr;
+			if (pWaypointHealth && !pNav->canGetTo(pWaypointHealth->getOrigin()))
+				pWaypointHealth = nullptr;
+		}
 	}
+skip_waypoint_find:
 
 	if (iClass == TF_CLASS_ENGINEER)
 	{
@@ -8660,9 +8678,11 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 				            (fSentryHealthPercent > 0.99f) && !m_bIsCarryingObj && !bHasFlag && !m_pTeleExit
 				                && (iMetal >= 125),
 				            randomFloat(0.7f, 0.9f));
-				ADD_UTILITY(BOT_UTIL_BUILDTELENT,
-				            !bSentryHasEnemy && (fSentryHealthPercent > 0.99f) && !m_bIsCarryingObj && !bHasFlag
-				                && m_bEntranceVectorValid && !m_pTeleEntrance && (iMetal >= 125),
+			ADD_UTILITY(BOT_UTIL_BUILDTELENT,
+			            !bSentryHasEnemy && (fSentryHealthPercent > 0.99f) && !m_bIsCarryingObj && !bHasFlag
+			                && (m_bEntranceVectorValid
+			                    || (m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator))
+			                && !m_pTeleEntrance && (iMetal >= 125),
 				            0.7f);
 			}
 			else
@@ -8671,7 +8691,9 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 			            (CTeamFortress2Mod::isMapType(TF_MAP_MVM) || fSentryHealthPercent > 0.99f)
 			                && !m_bIsCarryingObj && !bHasFlag
 			                && ((m_pSentryGun.get() && (iSentryLevel > 1)) || (m_pSentryGun.get() == nullptr))
-			                && m_bEntranceVectorValid && !m_pTeleEntrance && (iMetal >= 125),
+			                && (m_bEntranceVectorValid
+			                    || (m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator))
+			                && !m_pTeleEntrance && (iMetal >= 125),
 			            0.7f);
 			ADD_UTILITY(BOT_UTIL_BUILDTELEXT,
 			            (CTeamFortress2Mod::isMapType(TF_MAP_MVM)
@@ -10972,6 +10994,17 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			return true;
 		}
 
+		if (m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		{
+			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			Vector vSpot; float fYaw; int iArea;
+			if (pNav->computeBuildSpot(5, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea))
+			{
+				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_ENTRANCE, vSpot, fYaw, iArea));
+				return true;
+			}
+		}
+
 		break;
 	case BOT_UTIL_BUILDTELENT_SPAWN:
 	{
@@ -11086,6 +11119,17 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			}
 		}
 
+		if (!pWaypoint && m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		{
+			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			Vector vSpot; float fYaw; int iArea;
+			if (pNav->computeBuildSpot(4, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea))
+			{
+				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_EXIT, vSpot, fYaw, iArea));
+				return true;
+			}
+		}
+
 		if (pWaypoint)
 		{
 			// Evaluate all teleporter exit spots for obscurity; prefer hidden ones
@@ -11136,6 +11180,18 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 				return true;
 			}
 		}
+
+		if (m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		{
+			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			Vector vSpot; float fYaw; int iArea;
+			if (pNav->computeBuildSpot(2, 0, getTeam(), vSpot, fYaw, iArea, 128.0f))
+			{
+				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_SENTRY, vSpot, fYaw, iArea));
+				return true;
+			}
+		}
+
 		return false;
 	}
 	case BOT_UTIL_ENGI_DESTROY_SENTRY: // destroy and rebuild sentry elsewhere
@@ -11224,6 +11280,17 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 							pWaypoint = pBest;
 					}
 				}
+			}
+		}
+
+		if (!pWaypoint && m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		{
+			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			Vector vSpot; float fYaw; int iArea;
+			if (pNav->computeBuildSpot(2, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea))
+			{
+				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_SENTRY, vSpot, fYaw, iArea));
+				return true;
 			}
 		}
 
@@ -11592,6 +11659,20 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 				}
 				if (iBest >= 0)
 					pWaypoint = CWaypoints::getWaypoint(iBest);
+			}
+		}
+
+		if (!pWaypoint && m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		{
+			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			Vector vSpot; float fYaw; int iArea;
+			Vector vSentryPos(0,0,0);
+			if (m_pSentryGun.get() != nullptr)
+				vSentryPos = CBotGlobals::entityOrigin(m_pSentryGun.get());
+			if (pNav->computeBuildSpot(0, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea, -1.0f, vSentryPos))
+			{
+				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_DISP, vSpot, fYaw, iArea));
+				return true;
 			}
 		}
 
@@ -12503,15 +12584,33 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 	}
 	break;
 	case BOT_UTIL_ROAM:
-		// roam
-		pWaypoint = CWaypoints::randomWaypointGoal(-1, getTeam(), 0, false, this);
-
-		if (pWaypoint)
+		if (m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
 		{
-			m_pSchedules->add(new CBotGotoOriginSched(pWaypoint->getOrigin()));
-			return true;
+			// Navmesh roam: pick a random far-away area centre and
+			// pathfind there via CFindPathTask (which calls the
+			// navmesh navigator's workRoute()).
+			CNavMeshNavigator *pNavmesh = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			Vector vDest = pNavmesh->getRandomAreaCenter(getOrigin(), 3000.0f, 50000.0f);
+			if (vDest.Length() < 0.1f)
+				vDest = pNavmesh->getRandomAreaCenter(getOrigin(), 0.0f, 50000.0f);
+			if (vDest.Length() > 0.1f)
+			{
+				m_pSchedules->add(new CBotSchedule(new CFindPathTask(vDest, LOOK_WAYPOINT)));
+				if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
+					fprintf(stderr, "[RCDiag] navmesh wander name=%s bot=%d"
+					    " dest=(%.0f,%.0f,%.0f)\n",
+					    getLogName(), ENTINDEX(getEdict()),
+					    vDest.x, vDest.y, vDest.z);
+			}
 		}
-		break;
+		else
+		{
+			// Waypoint roam
+			pWaypoint = CWaypoints::randomWaypointGoal(-1, getTeam(), 0, false, this);
+			if (pWaypoint)
+				m_pSchedules->add(new CBotGotoOriginSched(pWaypoint->getOrigin()));
+		}
+		return true;
 	case BOT_UTIL_ATTACK_TANK:
 	{
 		edict_t *pTank = CTeamFortress2Mod::getNearestTank();

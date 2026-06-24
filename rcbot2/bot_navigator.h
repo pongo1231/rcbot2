@@ -487,13 +487,6 @@ class CWaypointNavigator : public IBotNavigator
 		init();
 		m_pBot                  = pBot;
 		m_fNextClearFailedGoals = 0;
-
-	float m_fBelief[CWaypoints::MAX_WAYPOINTS];
-
-	AStarOpenList m_theOpenList;
-
-	Vector m_vOffset;
-	bool m_bOffsetApplied;
 		m_bDangerPoint          = false;
 		m_iBeliefTeam           = -1;
 		m_bLoadBelief           = true;
