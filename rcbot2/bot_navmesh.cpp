@@ -128,6 +128,106 @@ void CNavMeshAccessor::init(CRCBotKeyValueList &kv, void *pBase)
 }
 
 
+// Dump all connections for a specific nav area pointer to stderr.
+void CNavMeshAccessor::dumpAreaConnections(void *area, int connOff)
+{
+	if (!area || connOff < 0) return;
+	float *c = (float *)((unsigned char *)area + NAV_M_CENTER);
+	int attr = *(int *)((unsigned char *)area + NAV_M_ATTR);
+	fprintf(stderr, "[RCDiag] areaConn area=%p pos=(%.0f,%.0f,%.0f) attr=0x%x\n",
+	    area, c[0], c[1], c[2], attr);
+	for (int dir = 0; dir < 4; dir++) {
+		char *pData = *(char **)((char *)area + connOff + dir * 4);
+		if (!pData || !ptrInArena(pData)) continue;
+		int cnt = *(int *)pData;
+		if (cnt <= 0) continue;
+		fprintf(stderr, "[RCDiag]   dir=%d(N=%d E=%d S=%d W=%d) count=%d:",
+		    dir, dir==0?cnt:0, dir==1?cnt:0, dir==2?cnt:0, dir==3?cnt:0, cnt);
+		for (int i = 0; i < cnt && i < 8; i++) {
+			void *nb = *(void **)(pData + 4 + i * 8);
+			if (nb && areaKnown(nb)) {
+				float *nc = (float *)((unsigned char *)nb + NAV_M_CENTER);
+				fprintf(stderr, " %p(%.0f,%.0f,%.0f)", nb, nc[0], nc[1], nc[2]);
+			}
+		}
+		fprintf(stderr, "\n");
+	}
+}
+
+// Dump an ASCII grid of nav areas around (cx, cy) with given radius.
+// Writes to stderr for capture in the server log.
+void CNavMeshAccessor::dumpAreaGrid(float cx, float cy, float radius, int connOff)
+{
+	if (!m_bReady || m_Areas.empty()) {
+		fprintf(stderr, "[RCDiag] navmeshDump: navmesh not ready\n");
+		return;
+	}
+	// Collect areas within radius
+	struct DumpArea {
+		void *area;
+		float x, y, z;
+		int nConn;
+	};
+	std::vector<DumpArea> local;
+	for (size_t i = 0; i < m_Areas.size(); i++) {
+		unsigned char *a = m_Areas[i];
+		float *c = (float *)(a + NAV_M_CENTER);
+		float dx = c[0] - cx;
+		float dy = c[1] - cy;
+		if (dx*dx + dy*dy > radius*radius) continue;
+		int nConn = 0;
+		if (connOff >= 0) {
+			for (int d = 0; d < 4; d++) {
+				char *pData = *(char **)(a + connOff + d * 4);
+				if (pData && ptrInArena(pData) && *(int*)pData > 0)
+					nConn += *(int*)pData;
+			}
+		}
+		DumpArea da;
+		da.area = a;
+		da.x = c[0]; da.y = c[1]; da.z = c[2];
+		da.nConn = nConn;
+		local.push_back(da);
+	}
+	fprintf(stderr, "[RCDiag] navmeshDump: %d areas near (%.0f,%.0f) radius=%.0f\n",
+	    (int)local.size(), cx, cy, radius);
+	if (local.empty()) return;
+	// Find bounding box
+	float minX = cx - radius, maxX = cx + radius;
+	float minY = cy - radius, maxY = cy + radius;
+	float cellSize = 50.0f;  // 50u per char cell
+	int gridW = (int)((maxX - minX) / cellSize) + 1;
+	int gridH = (int)((maxY - minY) / cellSize) + 1;
+	if (gridW > 120) gridW = 120;
+	if (gridH > 60) gridH = 60;
+	// Build character grid
+	std::vector<std::string> grid(gridH, std::string(gridW, '.'));
+	for (auto &da : local) {
+		int gx = (int)((da.x - minX) / cellSize);
+		int gy = (int)((da.y - minY) / cellSize);
+		if (gx < 0 || gx >= gridW || gy < 0 || gy >= gridH) continue;
+		char ch = '#';
+		if (da.nConn > 4) ch = '@';
+		else if (da.nConn > 0) ch = 'O';
+		else ch = 'x';
+		grid[gridH - 1 - gy][gx] = ch;
+	}
+	// Print grid with coordinate labels
+	for (int y = 0; y < gridH; y++) {
+		float worldY = maxY - y * cellSize;
+		if ((int)(y) % 5 == 0)
+			fprintf(stderr, "[RCDiag] %6.0f | %s\n", worldY, grid[y].c_str());
+		else
+			fprintf(stderr, "[RCDiag]         | %s\n", grid[y].c_str());
+	}
+	// Print X axis labels
+	fprintf(stderr, "[RCDiag]         ");
+	for (int x = 0; x < gridW; x += 5)
+		fprintf(stderr, "%.0f    ", minX + x * cellSize);
+	fprintf(stderr, "\n");
+	fprintf(stderr, "[RCDiag] Legend: @=hub(>4conn) O=area(1-4conn) x=isolated\n");
+}
+
 void CNavMeshAccessor::scanGrid()
 {
 	if (!m_func) return;
