@@ -458,6 +458,11 @@ bool CNavMeshAccessor::detectConnectOffset()
 			{
 				unsigned char *pData = *(unsigned char **)(area + off + dir * 4);
 				if (!pData || !ptrInArena(pData)) { bad++; continue; }
+				// Reject self-pointers (connection data is heap-allocated separately)
+				if (pData >= area && pData < area + 0x200) { bad++; continue; }
+				// Reject pointers outside the observed area address range
+				// to avoid dereferencing stale/unmapped memory from wrong offsets
+				if ((uintptr_t)pData < m_areaMin || (uintptr_t)pData > m_areaMax) { bad++; continue; }
 				int cnt = *(int *)pData;
 				if (cnt < 0 || cnt > 16) { bad++; continue; }
 				for (int i = 0; i < cnt; i++)
