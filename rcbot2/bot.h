@@ -1265,6 +1265,7 @@ class CBot
 	// "1-frame gap between route consumption and next wander"
 	// from "genuinely stuck for a while" when logging noRoute.
 	float m_fRouteEmptyTime;
+	float m_fLastNoRouteTime;
 
 	float m_fEnemyAimLerp;
 	float m_fEnemyAimLerpTime;

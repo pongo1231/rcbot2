@@ -1065,9 +1065,12 @@ void CBot::think()
 					m_fRouteEmptyTime = engine->Time();
 				if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2
 				    && m_pNavmeshNavigator && m_pNavigator == m_pNavmeshNavigator
-				    && engine->Time() - m_fRouteEmptyTime > 1.0f)
+				    && engine->Time() - m_fRouteEmptyTime > 1.0f
+				    && m_fRouteEmptyTime - m_fLastNoRouteTime > 5.0f) {
 					fprintf(stderr, "[RCDiag] noRoute name=%s bot=%d\n",
 					    getLogName(), ENTINDEX(getEdict()));
+					m_fLastNoRouteTime = engine->Time();
+				}
 			} else {
 				m_fRouteEmptyTime = 0;
 			}
@@ -1275,6 +1278,7 @@ void CBot::init(bool bVarInit)
 	m_bOpenFire        = true;
 	m_pSquad           = nullptr;
 	m_fRouteEmptyTime  = 0;
+	m_fLastNoRouteTime = 0;
 
 	cmd.command_number = 0;
 

@@ -1604,28 +1604,47 @@ void CNavMeshNavigator::updatePosition()
 								// StepHeight = 18.0f (standard Source step height)
 								if (obstacleHeight > 18.0f && obstacleHeight < 48.0f)
 								{
-									Vector vJumpCheck = vBotOrigin + Vector(0, 0, 72);
-									CBotGlobals::traceLine(vBotOrigin,
-									    vJumpCheck, MASK_PLAYERSOLID, &trFilter);
-									trace_t *trJ = CBotGlobals::getTraceResult();
-									if (trJ && trJ->fraction >= 1.0f)
+									// Wide-wall check: trace laterally from the hit
+									// point.  A wall extends beyond 48u in both
+									// directions; a narrow obstacle (crate, pillar)
+									// has clear space on at least one side.
+									Vector rightSide(-vFwd.y, vFwd.x, 0);
+									Vector fwd5 = tr->endpos + vFwd * 5.0f;
+									CBotGlobals::traceLine(tr->endpos + rightSide * 48.0f,
+									    fwd5 + rightSide * 48.0f,
+									    MASK_PLAYERSOLID, &trFilter);
+									bool leftBlocked = (CBotGlobals::getTraceResult()
+									    && CBotGlobals::getTraceResult()->fraction < 1.0f);
+									CBotGlobals::traceLine(tr->endpos - rightSide * 48.0f,
+									    fwd5 - rightSide * 48.0f,
+									    MASK_PLAYERSOLID, &trFilter);
+									bool rightBlocked = (CBotGlobals::getTraceResult()
+									    && CBotGlobals::getTraceResult()->fraction < 1.0f);
+									if (!leftBlocked || !rightBlocked)
 									{
-										m_pBot->tapButton(IN_JUMP);
-										m_fJumpRelease = engine->Time() + 0.25f;
-										if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2
-										    && m_fLastTraceLog <= engine->Time())
+										Vector vJumpCheck = vBotOrigin + Vector(0, 0, 72);
+										CBotGlobals::traceLine(vBotOrigin,
+										    vJumpCheck, MASK_PLAYERSOLID, &trFilter);
+										trace_t *trJ = CBotGlobals::getTraceResult();
+										if (trJ && trJ->fraction >= 1.0f)
 										{
-											m_fLastTraceLog = engine->Time() + 3.0f;
-											fprintf(stderr, "[RCDiag] traceHit name=%s bot=%d"
-											    " pos=(%.0f,%.0f,%.0f)"
-											    " target=(%.0f,%.0f,%.0f)"
-											    " hit=%.0fu jumpH=%.0f resp=jump\n",
-											    m_pBot->getLogName(),
-											    ENTINDEX(m_pBot->getEdict()),
-											    vBotOrigin.x,vBotOrigin.y,vBotOrigin.z,
-											    m_vCurrentTarget.x,m_vCurrentTarget.y,
-											    m_vCurrentTarget.z,
-											    fHitDist, obstacleHeight);
+											m_pBot->tapButton(IN_JUMP);
+											m_fJumpRelease = engine->Time() + 0.25f;
+											if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2
+											    && m_fLastTraceLog <= engine->Time())
+											{
+												m_fLastTraceLog = engine->Time() + 3.0f;
+												fprintf(stderr, "[RCDiag] traceHit name=%s bot=%d"
+												    " pos=(%.0f,%.0f,%.0f)"
+												    " target=(%.0f,%.0f,%.0f)"
+												    " hit=%.0fu jumpH=%.0f resp=jump\n",
+												    m_pBot->getLogName(),
+												    ENTINDEX(m_pBot->getEdict()),
+												    vBotOrigin.x,vBotOrigin.y,vBotOrigin.z,
+												    m_vCurrentTarget.x,m_vCurrentTarget.y,
+												    m_vCurrentTarget.z,
+												    fHitDist, obstacleHeight);
+											}
 										}
 									}
 								}
