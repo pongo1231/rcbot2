@@ -157,7 +157,7 @@ class CNavMeshNavigator : public IBotNavigator
 		m_fSteerExpiry(0), m_iConsecutiveHits(0), m_fLastHitTime(0),
 		m_fMinLookAheadRange(150.0f), m_fLastRepathTime(0),
 		m_fMinRepathInterval(0.5f), m_fFailBackoffTime(0),
-		m_iEscapeMode(0), m_vEscapeTarget(0,0,0), m_fEscapeStartTime(0),
+		m_iDrainStreak(0), m_iEscapeMode(0), m_vEscapeTarget(0,0,0), m_fEscapeStartTime(0),
 		m_tnLastScanTime(0), m_tnStuckCount(0), m_tnBestDir(-1),
 		m_tnPhase(0), m_tnPhaseStartTime(0),
 		m_vTnExploreStart(0,0,0), m_fTnExploreRadius(0) {}
@@ -294,6 +294,7 @@ class CNavMeshNavigator : public IBotNavigator
 	float  m_fEscapeStartTime;   // when escape mode began
 
 	// Trace navigator state (escape mode phase 1 detailed exploration)
+	int    m_iDrainStreak;       // consecutive 60-hit drain fires (reset on route change)
 	float  m_tnLastScanTime;     // when the 16-direction fan scan last ran
 	float  m_tnClearance[16];    // 16-direction clearance frac (0-1, 1=400u open)
 	bool   m_tnHasFloor[16];     // is there ground at end of each direction?

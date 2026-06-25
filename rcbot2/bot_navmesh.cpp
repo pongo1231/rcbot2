@@ -1672,6 +1672,28 @@ void CNavMeshNavigator::updatePosition()
 									m_fFailBackoffTime = 0;
 									if (m_pGoalArea)
 										m_pAccessor->markGoalFailed(m_pGoalArea);
+									// Count consecutive drain fires.  After 3
+									// in a row, force escape mode to take over
+									// (the steering sweep is stuck in a corner
+									// and the wander → A* cycle keeps repeating).
+									m_iDrainStreak++;
+									if (m_iDrainStreak >= 3)
+									{
+										m_iDrainStreak = 0;
+										// Blacklist the current nearest area so
+										// workRoute() can't route from here again.
+										// Forces the bot to physically move to a
+										// different area before A* can resume.
+										void *curArea = m_pAccessor->getNearestArea(vBotOrigin);
+										if (curArea)
+											m_pAccessor->markGoalFailed(curArea);
+										if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
+											fprintf(stderr, "[RCDiag] drainStreak name=%s bot=%d"
+											    " forcing escape curArea=%p\n",
+											    m_pBot ? m_pBot->getLogName() : "?",
+											    ENTINDEX(m_pBot->getEdict()), curArea);
+										m_fFailBackoffTime = engine->Time() + 60.0f;
+									}
 									return;
 								}
 								if (m_route.empty()) return;
@@ -2024,6 +2046,7 @@ void CNavMeshNavigator::freeMapMemory()
 	m_iStuckRecovery   = 0;
 	m_fSteerExpiry      = 0;
 	m_iConsecutiveHits  = 0;
+	m_iDrainStreak     = 0;
 	m_fLastTraceLog    = 0;
 	m_fLastStuckLog    = 0;
 	m_fLastIdleLog     = 0;
