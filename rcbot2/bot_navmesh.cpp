@@ -1336,7 +1336,7 @@ void CNavMeshNavigator::updatePosition()
 
 					float score = clear;
 					if (hasFloor) score += 2.0f;
-					if (score > bestScore) { bestScore = score; bestDir = i; }
+					if (score > bestScore || (score == bestScore && randomInt(0, 1) == 0)) { bestScore = score; bestDir = i; }
 					m_tnClearance[i] = clear;
 					m_tnHasFloor[i] = hasFloor;
 				}
