@@ -12,3 +12,5 @@ build/
 .vs/
 .vscode/
 .cache/
+
+.spx/
