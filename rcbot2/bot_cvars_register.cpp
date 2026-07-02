@@ -162,6 +162,10 @@ void RCBOT2_Cvar_Register(ICvar *cvar)
 
 	rcbot_debug_navmesh = new ConVar("rcbot_debug_navmesh", "0", 0, "");
 
+	rcbot_navmesh_jump_obstacle_min = new ConVar("rcbot_navmesh_jump_obstacle_min", "18", 0, "Min obstacle height to trigger a preemptive jump");
+	rcbot_navmesh_jump_obstacle_max = new ConVar("rcbot_navmesh_jump_obstacle_max", "72", 0, "Max obstacle height to trigger a preemptive jump");
+	rcbot_navmesh_jump_obstacle_range = new ConVar("rcbot_navmesh_jump_obstacle_range", "160", 0, "Max distance at which to preemptively jump obstacles");
+
 	rcbot_use_navmesh = new ConVar("rcbot_use_navmesh", "1", 0, "");
 
 	rcbot_tf2_autoupdate_point_time = new ConVar("rcbot_tf2_autoupdate_point_time", "60", 0, "");
@@ -359,6 +363,12 @@ void RCBOT2_Cvar_Unlink(ICvar *cvar)
 		cvar->UnregisterConCommand(rcbot_debug_show_route);
 	if (rcbot_debug_navmesh)
 		cvar->UnregisterConCommand(rcbot_debug_navmesh);
+	if (rcbot_navmesh_jump_obstacle_min)
+		cvar->UnregisterConCommand(rcbot_navmesh_jump_obstacle_min);
+	if (rcbot_navmesh_jump_obstacle_max)
+		cvar->UnregisterConCommand(rcbot_navmesh_jump_obstacle_max);
+	if (rcbot_navmesh_jump_obstacle_range)
+		cvar->UnregisterConCommand(rcbot_navmesh_jump_obstacle_range);
 	if (rcbot_use_navmesh)
 		cvar->UnregisterConCommand(rcbot_use_navmesh);
 	if (rcbot_tf2_autoupdate_point_time)
@@ -557,6 +567,12 @@ void RCBOT2_Cvar_Unregister()
 	rcbot_debug_show_route = nullptr;
 	delete rcbot_debug_navmesh;
 	rcbot_debug_navmesh = nullptr;
+	delete rcbot_navmesh_jump_obstacle_min;
+	rcbot_navmesh_jump_obstacle_min = nullptr;
+	delete rcbot_navmesh_jump_obstacle_max;
+	rcbot_navmesh_jump_obstacle_max = nullptr;
+	delete rcbot_navmesh_jump_obstacle_range;
+	rcbot_navmesh_jump_obstacle_range = nullptr;
 	delete rcbot_use_navmesh;
 	rcbot_use_navmesh = nullptr;
 	delete rcbot_tf2_autoupdate_point_time;

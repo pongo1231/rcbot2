@@ -157,7 +157,7 @@ class CNavMeshNavigator : public IBotNavigator
 		m_fSteerExpiry(0), m_iConsecutiveHits(0), m_fLastHitTime(0),
 		m_fMinLookAheadRange(150.0f), m_fLastRepathTime(0),
 		m_fMinRepathInterval(0.5f), m_fFailBackoffTime(0),
-		m_iEscapeMode(0), m_vEscapeTarget(0,0,0), m_fEscapeStartTime(0),
+		m_iDrainStreak(0), m_iEscapeMode(0), m_vEscapeTarget(0,0,0), m_fEscapeStartTime(0),
 		m_tnLastScanTime(0), m_tnStuckCount(0), m_tnBestDir(-1),
 		m_tnPhase(0), m_tnPhaseStartTime(0),
 		m_vTnExploreStart(0,0,0), m_fTnExploreRadius(0) {}
@@ -189,9 +189,9 @@ class CNavMeshNavigator : public IBotNavigator
 	void   failMove();
 	void   clear();
 	float  distanceTo(Vector);
-	void   rollBackPosition() {}
+	void   rollBackPosition() {} // Navmesh navigator uses adaptive pop-loop reaching in updatePosition(); rollback is not applicable.
 
-	void   belief(Vector, Vector, float, float, BotBelief) {}
+	void   belief(Vector, Vector, float, float, BotBelief) {} // Belief/learning is not implemented for navmesh navigation; waypoint belief is used instead.
 	// Must write a valid pointer: the caller (CBotTF2::getTasks) passes the
 	// result straight to resetFailedWaypoints() without a null guard against
 	// an uninitialised pointer. Return an always-empty list.
@@ -218,7 +218,7 @@ class CNavMeshNavigator : public IBotNavigator
 	// mesh has a false connection and the route is invalid.
 	bool validateRoute();
 
-	// Remove redundant collinear nodes (gated by rcbot_navmesh_optimize).
+	// Remove redundant collinear nodes from the path deque.
 	void optimizePath();
 
 	// Proactive side-feeler obstacle avoidance. Returns an adjusted
@@ -233,6 +233,19 @@ class CNavMeshNavigator : public IBotNavigator
 
 	// Lazy pathfinding: if the target is directly reachable, skip A*.
 	bool tryDirectPath(Vector vFrom, Vector vTo);
+
+	// Refactored updatePosition phases (extracted for readability)
+	void doEscapeMode(const Vector &vBotOrigin);
+	void doLookAheadSkip(const Vector &vBotOrigin);
+	void popReachedSegments(const Vector &vBotOrigin);
+	void checkFallOff(const Vector &vBotOrigin);
+	void handleObstacleHit(const Vector &vBotOrigin, const Vector &vFwd, const Vector &vRouteTarget);
+	void applyNavAttributes(const Vector &vBotOrigin);
+	void detectStuck(const Vector &vBotOrigin, const Vector &vStuckRef);
+	void heartbeatIdleLog(const Vector &vBotOrigin);
+
+	// Unified preemptive obstacle-jump evaluation (shared by updatePosition + doEscapeMode)
+	bool doObstacleJump(const Vector &vBotOrigin, const Vector &vFwdDirection, bool bAllowEnhancedJumps);
 
   private:
 	CNavMeshAccessor *m_pAccessor;
@@ -294,6 +307,7 @@ class CNavMeshNavigator : public IBotNavigator
 	float  m_fEscapeStartTime;   // when escape mode began
 
 	// Trace navigator state (escape mode phase 1 detailed exploration)
+	int    m_iDrainStreak;       // consecutive 60-hit drain fires (reset on route change)
 	float  m_tnLastScanTime;     // when the 16-direction fan scan last ran
 	float  m_tnClearance[16];    // 16-direction clearance frac (0-1, 1=400u open)
 	bool   m_tnHasFloor[16];     // is there ground at end of each direction?

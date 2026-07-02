@@ -601,7 +601,6 @@ class CBot
 
 	inline IBotNavigator *getWaypointNavigator() { return m_pWaypointNavigator; }
 	inline IBotNavigator *getNavmeshNavigator()  { return m_pNavmeshNavigator; }
-	inline void setNavigator(IBotNavigator *pNav) { m_pNavigator = pNav; }
 
 	inline void setMoveLookPriority(int iPriority)
 	{

@@ -584,6 +584,7 @@ void CNavMeshNavigator::init()
 	m_fGoalDistance = 0.0f;
 }
 
+// Forward declaration: used in A* ladder connection loop below
 static inline bool navAreaPtrLooksValid(const void *a);
 
 bool CNavMeshNavigator::workRoute(Vector vFrom, Vector vTo, bool *bFail,
@@ -865,6 +866,8 @@ bool CNavMeshNavigator::workRoute(Vector vFrom, Vector vTo, bool *bFail,
 
 		postProcessPath();
 
+		optimizePath();
+
 		// Populate the per-bot bad-connection cache from validateRoute()
 		// so future A* runs avoid known-false edges.  But keep the route
 		// — the bot still walks it and the runtime mechanisms (stuck-pop,
@@ -1027,6 +1030,71 @@ bool CNavMeshNavigator::validateRoute()
 	return bAllClear;
 }
 
+// ---------- Path collinear-node optimization ----------
+
+void CNavMeshNavigator::optimizePath()
+{
+	size_t sz = m_route.size();
+	if (sz < 3)
+		return;
+
+	// Iterative backward pass: scan triples from goal toward start.
+	// If A→B→C is collinear (angle < 5°) and a direct A→C trace is clear,
+	// remove B. Repeat until no more removals.
+	const float kCosThreshold = cosf(5.0f * (M_PI / 180.0f)); // cos(5°)
+	bool removed = true;
+	while (removed && m_route.size() >= 3)
+	{
+		removed = false;
+		sz = m_route.size();
+		for (size_t i = sz - 1; i >= 2; i--)
+		{
+			if (i >= m_route.size()) continue; // index shifted by earlier removal
+
+			NavPathSegment &segA = m_route[i];
+			NavPathSegment &segB = m_route[i - 1];
+			NavPathSegment &segC = m_route[i - 2];
+
+			// Skip non-ground segments (ladders, elevators, etc.)
+			if (segA.type != NAV_SEG_ON_GROUND ||
+			    segB.type != NAV_SEG_ON_GROUND ||
+			    segC.type != NAV_SEG_ON_GROUND)
+				continue;
+
+			// Compute the angle at B (between BA and BC vectors)
+			Vector2D ba(segA.pos.x - segB.pos.x, segA.pos.y - segB.pos.y);
+			Vector2D bc(segC.pos.x - segB.pos.x, segC.pos.y - segB.pos.y);
+			float lenBA = ba.NormalizeInPlace();
+			float lenBC = bc.NormalizeInPlace();
+			if (lenBA < 0.01f || lenBC < 0.01f)
+				continue;
+
+			float dot = ba.Dot(bc);
+			// dot > kCosThreshold means angle < 5° (collinear)
+			if (dot <= kCosThreshold)
+				continue;
+
+			// Verify the A→C shortcut is walkable
+			Vector posA = segA.pos;
+			Vector posC = segC.pos;
+			if (hasPotentialGap(posA, posC))
+				continue;
+			if (!isPotentiallyTraversable(posA, posC))
+				continue;
+
+			// Remove node B at index i-1
+			m_route.erase(m_route.begin() + (i - 1));
+			removed = true;
+			// Don't continue walking indices backward — they shifted.
+			// The outer while loop will re-scan from the end.
+			break;
+		}
+	}
+
+	// Recompute portal centers, forward vectors, curvature for modified path
+	postProcessPath();
+}
+
 // -- Traversability checks ----------
 
 bool CNavMeshNavigator::isPotentiallyTraversable(Vector from, Vector to)
@@ -1050,7 +1118,7 @@ bool CNavMeshNavigator::isPotentiallyTraversable(Vector from, Vector to)
 	Vector fwd = to - from;
 	float dist = fwd.NormalizeInPlace();
 	Vector right(-fwd.y, fwd.x, 0);
-	float halfWidth = 12.0f;
+	float halfWidth = 16.0f; // half of player standing hull width (32u)
 
 	CBotGlobals::traceLine(from + right * halfWidth, to + right * halfWidth,
 	                       MASK_PLAYERSOLID, &filter);
@@ -1193,283 +1261,27 @@ void CNavMeshNavigator::updatePosition()
 	if (!m_pBot) return;
 	if (!m_pAccessor || !m_pAccessor->ready()) { freeMapMemory(); return; }
 
-	// Escape mode: when the A* can't find any valid path (route empty
-	// + failBackoff active), use trace-based exploration to navigate
-	// without nav mesh coverage.  16-direction fan scans with 3-trace
-	// hull checks find open passages, wall edges are followed, and
-	// the bot navigates toward nav mesh proximity to resume A*.
-	if (m_route.empty() && m_fFailBackoffTime > engine->Time())
-	{
-		Vector vBotNow = m_pBot->getOrigin();
+	// Phase 1: Escape mode (handles its own early-return if active)
+	doEscapeMode(Vector(0,0,0)); // escape mode reads vBotOrigin internally via m_pBot->getOrigin()
 
-		if (m_iEscapeMode == 0)
-		{
-			m_iEscapeMode = 1;
-			m_fEscapeStartTime = engine->Time();
-			m_tnLastScanTime = 0;
-			m_tnStuckCount = 0;
-			m_vTnExploreStart = vBotNow;
-			m_fTnExploreRadius = 0;
-			if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
-				fprintf(stderr, "[RCDiag] escapeStart name=%s bot=%d"
-				    " pos=(%.0f,%.0f,%.0f)\n",
-				    m_pBot->getLogName(), ENTINDEX(m_pBot->getEdict()),
-				    vBotNow.x, vBotNow.y, vBotNow.z);
-		}
-
-		if (m_iEscapeMode >= 1)
-		{
-			// --- Falling check ---
-			if (m_iEscapeMode == 2)
-			{
-				m_pBot->setMoveTo(m_vEscapeTarget);
-				if (NavMeshUtil::IsOnWalkableGround(vBotNow))
-				{
-					m_iEscapeMode = 0;
-					m_fFailBackoffTime = 0;
-				}
-				if (engine->Time() - m_fEscapeStartTime > 10.0f)
-					m_iEscapeMode = 0;
-				return;
-			}
-
-			float fNow = engine->Time();
-
-			// --- Jump detection (also runs in escape mode) ---
-			// Check for jumppable obstacle in current direction
-			Vector vFwdDir = m_vEscapeTarget - vBotNow;
-			vFwdDir.z = 0;
-			float fDistToTarget = vFwdDir.NormalizeInPlace();
-			if (fDistToTarget > 80.0f && fDistToTarget < 400.0f) {
-				CTraceFilterWorldAndPropsOnly trFilt;
-				Vector vTraceEnd = vBotNow + vFwdDir * fminf(fDistToTarget, 200.0f);
-				vTraceEnd.z = vBotNow.z + 24.0f;
-				CBotGlobals::traceLine(vBotNow, vTraceEnd,
-				    MASK_PLAYERSOLID, &trFilt);
-				trace_t *trJ = CBotGlobals::getTraceResult();
-				if (trJ && trJ->fraction < 1.0f) {
-					float hitDist = trJ->fraction * 200.0f;
-					if (hitDist < 80.0f && trJ->plane.normal.z < 0.5f
-					    && m_fJumpRelease <= engine->Time()) {
-						Vector downJ = trJ->endpos;
-						downJ.z -= 72.0f;
-						CBotGlobals::traceLine(trJ->endpos, downJ,
-						    MASK_PLAYERSOLID, &trFilt);
-						trace_t *trG = CBotGlobals::getTraceResult();
-						if (trG && trG->fraction < 1.0f) {
-							float obstH = trJ->endpos.z - trG->endpos.z;
-							if (obstH > 18.0f && obstH < 48.0f) {
-								Vector upJ = vBotNow + Vector(0,0,72);
-								CBotGlobals::traceLine(vBotNow, upJ,
-								    MASK_PLAYERSOLID, &trFilt);
-								trace_t *trH = CBotGlobals::getTraceResult();
-								if (trH && trH->fraction >= 1.0f) {
-									m_pBot->tapButton(IN_JUMP);
-									m_fJumpRelease = fNow + 0.25f;
-									if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
-										fprintf(stderr, "[RCDiag] escapeJump name=%s bot=%d"
-										    " h=%.0f\n",
-										    m_pBot->getLogName(),
-										    ENTINDEX(m_pBot->getEdict()), obstH);
-								}
-							}
-						}
-					}
-				}
-			}
-
-			// --- Nav mesh recovery check (every 2s) ---
-			if (fNow - m_tnLastScanTime >= 2.0f)
-			{
-				void *nearArea = m_pAccessor->getNearestArea(vBotNow);
-				float nearDist = 99999.0f;
-				if (nearArea) {
-					float *nc = (float *)((unsigned char *)nearArea + NAV_M_CENTER);
-					nearDist = (Vector(nc[0],nc[1],nc[2]) - vBotNow).Length();
-				}
-				if (nearDist < 800.0f) {
-					m_iEscapeMode = 0;
-					m_fFailBackoffTime = 0;
-					m_pBot->setMoveTo(m_vEscapeTarget);
-					return;
-				}
-
-				// --- 16-direction fan scan with 3-trace hull check ---
-				int bestDir = -1;
-				float bestScore = 0.0f;
-				CTraceFilterWorldAndPropsOnly tnFilter;
-				for (int i = 0; i < 16; i++)
-				{
-					float ang = i * 0.392699f;
-					Vector dir(cosf(ang), sinf(ang), 0);
-					Vector right(-dir.y, dir.x, 0);
-					Vector end = vBotNow + dir * 400.0f;
-					end.z = vBotNow.z + 24.0f;
-					Vector startPos = vBotNow + Vector(0,0,24);
-					const float hullHalf = 16.0f;
-
-					CBotGlobals::traceLine(startPos, end, MASK_PLAYERSOLID, &tnFilter);
-					trace_t *tr = CBotGlobals::getTraceResult();
-					float clear = (tr && tr->fraction < 1.0f) ? tr->fraction : 1.0f;
-
-					CBotGlobals::traceLine(startPos + right * hullHalf,
-					    end + right * hullHalf, MASK_PLAYERSOLID, &tnFilter);
-					tr = CBotGlobals::getTraceResult();
-					float cl = (tr && tr->fraction < 1.0f) ? tr->fraction : 1.0f;
-					if (cl < clear) clear = cl;
-
-					CBotGlobals::traceLine(startPos - right * hullHalf,
-					    end - right * hullHalf, MASK_PLAYERSOLID, &tnFilter);
-					tr = CBotGlobals::getTraceResult();
-					cl = (tr && tr->fraction < 1.0f) ? tr->fraction : 1.0f;
-					if (cl < clear) clear = cl;
-
-					// Floor check at end
-					Vector floorCheck = vBotNow + dir * clear * 400.0f;
-					floorCheck.z += 18.0f;
-					Vector floorDown = floorCheck - Vector(0,0,200.0f);
-					CBotGlobals::traceLine(floorCheck, floorDown,
-					    MASK_PLAYERSOLID, &tnFilter);
-					tr = CBotGlobals::getTraceResult();
-					bool hasFloor = (tr && tr->fraction < 1.0f
-					    && tr->plane.normal.z > 0.5f);
-
-					float score = clear;
-					if (hasFloor) score += 2.0f;
-					if (score > bestScore) { bestScore = score; bestDir = i; }
-					m_tnClearance[i] = clear;
-					m_tnHasFloor[i] = hasFloor;
-				}
-
-				if (bestDir >= 0)
-				{
-					// Wall-follow: if blocked forward, try 90° left/right
-					if (m_tnClearance[bestDir] < 0.2f) {
-						int leftDir = (bestDir + 4) & 15;
-						int rightDir = (bestDir - 4 + 16) & 15;
-						if (m_tnClearance[leftDir] > 0.5f)
-							bestDir = leftDir;
-						else if (m_tnClearance[rightDir] > 0.5f)
-							bestDir = rightDir;
-					}
-
-					float targetAng = bestDir * 0.392699f;
-					m_vEscapeTarget = vBotNow
-					    + Vector(cosf(targetAng), sinf(targetAng), 0) * 800.0f;
-				}
-				m_tnLastScanTime = fNow;
-
-				if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
-					fprintf(stderr, "[RCDiag] escapeTrace name=%s bot=%d"
-					    " bestDir=%d score=%.2f target=(%.0f,%.0f)\n",
-					    m_pBot->getLogName(), ENTINDEX(m_pBot->getEdict()),
-					    bestDir, bestScore,
-					    m_vEscapeTarget.x, m_vEscapeTarget.y);
-			}
-
-			// --- Progress check ---
-			float fPhaseTime = fNow - m_fEscapeStartTime;
-			float distFromPhaseStart = (vBotNow - m_vTnExploreStart).Length();
-			if (distFromPhaseStart > m_fTnExploreRadius)
-				m_fTnExploreRadius = distFromPhaseStart;
-			if (fPhaseTime > 8.0f && distFromPhaseStart < 100.0f)
-			{
-				m_tnStuckCount++;
-				m_tnLastScanTime = 0; // force new scan
-				if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
-					fprintf(stderr, "[RCDiag] escapeStuck name=%s bot=%d"
-					    " stuck=%d\n",
-					    m_pBot->getLogName(), ENTINDEX(m_pBot->getEdict()),
-					    m_tnStuckCount);
-			}
-
-			m_pBot->setMoveTo(m_vEscapeTarget);
-
-			if (fNow - m_fEscapeStartTime > 60.0f)
-			{
-				m_iEscapeMode = 0;
-				if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
-					fprintf(stderr, "[RCDiag] escapeTimeout name=%s bot=%d"
-					    " dur=%.0fs\n",
-					    m_pBot->getLogName(), ENTINDEX(m_pBot->getEdict()),
-					    fNow - m_fEscapeStartTime);
-			}
-			return;
-		}
-	}
-	else if (m_iEscapeMode > 0)
-	{
-		m_iEscapeMode = 0;
-	}
-
+	// Escape mode may have cleared its state but left us with no route
 	if (m_route.empty()) return;
 
 	Vector vBotOrigin = m_pBot->getOrigin();
 
-	// --- Look-ahead goal skipping ---
-	if (m_fMinLookAheadRange > 0 && m_route.size() >= 2)
-	{
-		NavPathSegment &goal = m_route.back();
-		NavPathSegment &next = m_route[m_route.size() - 2];
+	// Phase 2: Look-ahead goal skipping
+	doLookAheadSkip(vBotOrigin);
 
-		if (goal.type == NAV_SEG_ON_GROUND &&
-		    next.type == NAV_SEG_ON_GROUND &&
-		    fabsf(next.curvature) < 0.5f)
-		{
-			float distToGoal = (goal.pos - vBotOrigin).Length();
-			if (distToGoal < m_fMinLookAheadRange)
-			{
-				if (isPotentiallyTraversable(vBotOrigin, next.pos) &&
-				    !hasPotentialGap(vBotOrigin, next.pos) &&
-				    (next.pos.z - vBotOrigin.z) < 18.0f)
-				{
-				m_route.pop_back();
-				m_vCurrentTarget = m_route.back().portalHalfWidth > 0.0f
-				    ? m_route.back().portalCenter : m_route.back().pos;
-				m_pCurrentArea   = m_route.back().area;
-				m_fStuckBestDist = (m_route.back().pos - vBotOrigin).Length2D();
-				m_fStuckBestTime = engine->Time();
-				m_iStuckRecovery = 0;
-				}
-			}
-		}
-	}
+	if (m_route.empty()) return;
 
-	// Pop while the bot is within the adaptive reach-radius
-	int safety = 0;
-	while (!m_route.empty() && safety < 50)
-	{
-		NavPathSegment &segBack = m_route.back();
-		Vector cTarget = segBack.pos;
+	// Phase 3: Pop reached segments
+	popReachedSegments(vBotOrigin);
 
-		if (m_route.size() >= 2)
-		{
-			Vector ctrBack = areaGetCenter(segBack.area);
-			Vector ctrNext = areaGetCenter(m_route[m_route.size() - 2].area);
-			float  fDistAB = (ctrBack - ctrNext).Length2D();
-			float  fPopRad = fDistAB > 100.0f ? fDistAB * 0.5f : 100.0f;
-			float  fDist2D = (cTarget - vBotOrigin).Length2D();
-			if (fDist2D >= fPopRad)
-				break;
-		}
+	// Clear stale area pointer if route is now empty
+	if (m_route.empty())
+		m_pCurrentArea = nullptr;
 
-		m_vPreviousPoint = m_vCurrentTarget;
-		m_pCurrentArea   = m_route.back().area;
-		m_route.pop_back();
-
-		m_vLookJitter = Vector(randomFloat(-128, 128), randomFloat(-128, 128), 0);
-		m_fLookJitterTime = engine->Time() + 0.5f;
-
-		m_fStuckBestDist  = 0;
-		m_fStuckBestTime  = engine->Time();
-		m_fJumpRelease    = 0;
-		m_fScoutDJRelease = 0;
-		m_iConsecutiveHits = 0;
-		m_fSteerExpiry     = 0;
-		safety++;
-	}
-
-	// Target: portal midpoint if computed, else area center.
+	// Phase 4: Target selection + fall-off check + obstacle avoidance + trace-hit
 	if (!m_route.empty())
 	{
 		const NavPathSegment &seg = m_route.back();
@@ -1478,33 +1290,17 @@ void CNavMeshNavigator::updatePosition()
 		m_vCurrentTarget = vRouteTarget;
 
 		// --- Fall-off detection ---
-		// Check both upward (jump needed) and downward (false drop
-		// or ledge).  Use area center Z, not portal Z — portal Z
-		// is clamped to the source area's height, which masks
-		// cross-floor drops.
 		if (m_route.back().type == NAV_SEG_ON_GROUND)
 		{
 			float tooHigh = 72.0f;
 			float tooLow  = 128.0f;
 			float targetAreaZ = areaGetCenter(m_route.back().area).z;
-			// Portal Z reflects what the bot actually walks on
-			// (the shared edge between areas).  Area center Z
-			// can differ for sloped areas.  Upward check uses
-			// portal Z (the jump target height).  Downward check
-			// also uses portal Z — area center Z is wrong on
-			// slopes (center may be 160u above the walkable edge).
-			// We only use area center Z for the downward check
-			// when the portal Z equals the bot's Z (both at source
-			// height), which masks cross-floor drops.
 			float fUpDelta   = m_vCurrentTarget.z - vBotOrigin.z;
 			float fDownDelta = m_vCurrentTarget.z - vBotOrigin.z;
-			// Check if portal Z equals bot Z — if so, use area center
-			// Z instead to detect cross-floor false connections.
 			if (fabsf(fDownDelta) < 16.0f)
 				fDownDelta = targetAreaZ - vBotOrigin.z;
 			if (fUpDelta > tooHigh)
 			{
-				// Upward target: bail if close to the portal or stuck.
 				Vector2D to(m_vCurrentTarget.x - vBotOrigin.x,
 				             m_vCurrentTarget.y - vBotOrigin.y);
 				if (to.Length() < 100.0f ||
@@ -1526,10 +1322,6 @@ void CNavMeshNavigator::updatePosition()
 			}
 			else if (fDownDelta < -tooLow)
 			{
-				// Downward target: only bail if stuck for 3+ seconds.
-				// Use portal Z for the check (walk surface).  The area
-				// center Z is wrong on sloped areas (center may be 160u
-				// above the walkable edge).
 				if (m_fStuckBestTime > 0 && engine->Time() - m_fStuckBestTime > 3.0f)
 				{
 					m_pAccessor->markGoalFailed(m_route.back().area);
@@ -1555,106 +1347,46 @@ void CNavMeshNavigator::updatePosition()
 		Vector vStuckRef = m_vCurrentTarget;
 
 		// --- Preemptive obstacle detection ---
-		// Trace toward the ROUTE target, not the adjusted target.
-		// avoidObstacles() steers around obstacles, which makes
-		// the trace miss the very thing we need to detect.
 		{
+			extern ConVar *rcbot_navmesh_jump_obstacle_range;
+			float fJumpRange = rcbot_navmesh_jump_obstacle_range ? rcbot_navmesh_jump_obstacle_range->GetFloat() : 160.0f;
+
 			float dxTrace = vRouteTarget.x - vBotOrigin.x;
 			float dyTrace = vRouteTarget.y - vBotOrigin.y;
 			float fDistTrace2D = sqrtf(dxTrace*dxTrace + dyTrace*dyTrace);
-			if (fDistTrace2D > 80.0f)
+			if (fDistTrace2D > 20.0f)  // don't bother when target is right at our feet
 			{
 				float inv = 1.0f / fDistTrace2D;
 				Vector vFwd(dxTrace * inv, dyTrace * inv, 0);
 
+				// Trace from waist height (z+18) — above step height
 				CTraceFilterWorldAndPropsOnly trFilter;
-				Vector vTraceEnd = vBotOrigin + vFwd * 200.0f;
+				Vector vTraceStart = vBotOrigin + Vector(0,0,18);
+				Vector vTraceEnd   = vBotOrigin + vFwd * 200.0f;
 				vTraceEnd.z = vBotOrigin.z + 24.0f;
-				CBotGlobals::traceLine(vBotOrigin, vTraceEnd,
+				CBotGlobals::traceLine(vTraceStart, vTraceEnd,
 				    MASK_PLAYERSOLID, &trFilter);
 				trace_t *tr = CBotGlobals::getTraceResult();
 				if (tr && tr->fraction < 1.0f)
 				{
 					float fHitDist = tr->fraction * 200.0f;
-					if (fHitDist < 80.0f)
+					if (fHitDist < fJumpRange)
 					{
-						// Check for a jumppable obstacle.
-						// Trace down from the hit point — if we hit
-						// floor 18-48u below, it's a jumpable object.
-						if (tr->plane.normal.z < 0.5f && fHitDist < 80.0f
-						    && m_fJumpRelease <= engine->Time())
+						// Try unified preemptive obstacle jump
+						if (doObstacleJump(vBotOrigin, vFwd, true))
 						{
-							Vector vDown = tr->endpos;
-							vDown.z -= 72.0f;
-							CBotGlobals::traceLine(tr->endpos, vDown,
-							    MASK_PLAYERSOLID, &trFilter);
-							trace_t *trG = CBotGlobals::getTraceResult();
-							if (trG && trG->fraction < 1.0f)
-							{
-								float obstacleHeight = tr->endpos.z - trG->endpos.z;
-								// StepHeight = 18.0f (standard Source step height)
-								if (obstacleHeight > 18.0f && obstacleHeight < 48.0f)
-								{
-									// Wide-wall check: trace laterally from the hit
-									// point.  A wall extends beyond 48u in both
-									// directions; a narrow obstacle (crate, pillar)
-									// has clear space on at least one side.
-									Vector rightSide(-vFwd.y, vFwd.x, 0);
-									Vector fwd5 = tr->endpos + vFwd * 5.0f;
-									CBotGlobals::traceLine(tr->endpos + rightSide * 48.0f,
-									    fwd5 + rightSide * 48.0f,
-									    MASK_PLAYERSOLID, &trFilter);
-									bool leftBlocked = (CBotGlobals::getTraceResult()
-									    && CBotGlobals::getTraceResult()->fraction < 1.0f);
-									CBotGlobals::traceLine(tr->endpos - rightSide * 48.0f,
-									    fwd5 - rightSide * 48.0f,
-									    MASK_PLAYERSOLID, &trFilter);
-									bool rightBlocked = (CBotGlobals::getTraceResult()
-									    && CBotGlobals::getTraceResult()->fraction < 1.0f);
-									if (!leftBlocked || !rightBlocked)
-									{
-										Vector vJumpCheck = vBotOrigin + Vector(0, 0, 72);
-										CBotGlobals::traceLine(vBotOrigin,
-										    vJumpCheck, MASK_PLAYERSOLID, &trFilter);
-										trace_t *trJ = CBotGlobals::getTraceResult();
-										if (trJ && trJ->fraction >= 1.0f)
-										{
-											m_pBot->tapButton(IN_JUMP);
-											m_fJumpRelease = engine->Time() + 0.25f;
-											if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2
-											    && m_fLastTraceLog <= engine->Time())
-											{
-												m_fLastTraceLog = engine->Time() + 3.0f;
-												fprintf(stderr, "[RCDiag] traceHit name=%s bot=%d"
-												    " pos=(%.0f,%.0f,%.0f)"
-												    " target=(%.0f,%.0f,%.0f)"
-												    " hit=%.0fu jumpH=%.0f resp=jump\n",
-												    m_pBot->getLogName(),
-												    ENTINDEX(m_pBot->getEdict()),
-												    vBotOrigin.x,vBotOrigin.y,vBotOrigin.z,
-												    m_vCurrentTarget.x,m_vCurrentTarget.y,
-												    m_vCurrentTarget.z,
-												    fHitDist, obstacleHeight);
-											}
-										}
-									}
-								}
-							}
+							// Jump performed successfully
 						}
 						else
 						{
-							// Ground/slope: reset wall-hit counter.
 							if (tr->plane.normal.z > 0.5f)
 								m_iConsecutiveHits = 0;
 							else
 							{
-								// Wall hit: increment counter.
 								m_iConsecutiveHits++;
 								if (m_iConsecutiveHits >= 60)
 								{
-									// Wall-hugging: drain route + cache the bad edge.
 									void *stuckDst = (!m_route.empty()) ? m_route.back().area : nullptr;
-									// Use bot's Z vs destination Z to detect cross-floor gaps
 									float botZ = vBotOrigin.z;
 									float dstZ = stuckDst ? areaGetCenter(stuckDst).z : botZ;
 									if (stuckDst) {
@@ -1672,6 +1404,20 @@ void CNavMeshNavigator::updatePosition()
 									m_fFailBackoffTime = 0;
 									if (m_pGoalArea)
 										m_pAccessor->markGoalFailed(m_pGoalArea);
+									m_iDrainStreak++;
+									if (m_iDrainStreak >= 3)
+									{
+										m_iDrainStreak = 0;
+										void *curArea = m_pAccessor->getNearestArea(vBotOrigin);
+										if (curArea)
+											m_pAccessor->markGoalFailed(curArea);
+										if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
+											fprintf(stderr, "[RCDiag] drainStreak name=%s bot=%d"
+											    " forcing escape curArea=%p\n",
+											    m_pBot ? m_pBot->getLogName() : "?",
+											    ENTINDEX(m_pBot->getEdict()), curArea);
+										m_fFailBackoffTime = engine->Time() + 60.0f;
+									}
 									return;
 								}
 								if (m_route.empty()) return;
@@ -1751,9 +1497,20 @@ void CNavMeshNavigator::updatePosition()
 											    1.0f);
 											m_fSteerExpiry = engine->Time() + 2.0f;
 										}
-										else
+									else
+									{
+										// All angles blocked.
+										// Check stair/no-jump flags on current area before attempting jump.
+										bool bNoJump = false;
+										int traceAttr = *(int *)((unsigned char *)m_route.back().area + NAV_M_ATTR);
+										bNoJump = (traceAttr & (NAV_ATTR_STAIRS | NAV_ATTR_NO_JUMP)) != 0;
+										if (!bNoJump && m_pCurrentArea)
 										{
-											// All angles blocked.
+											int curAttr = *(int *)((unsigned char *)m_pCurrentArea + NAV_M_ATTR);
+											bNoJump = (curAttr & (NAV_ATTR_STAIRS | NAV_ATTR_NO_JUMP)) != 0;
+										}
+										if (!bNoJump)
+										{
 											Vector vJumpCheck = vBotOrigin + Vector(0, 0, 72);
 											CBotGlobals::traceLine(vBotOrigin, vJumpCheck,
 											    MASK_PLAYERSOLID, &trFilter);
@@ -1795,6 +1552,19 @@ void CNavMeshNavigator::updatePosition()
 													m_pAccessor->markGoalFailed(m_pGoalArea);
 											}
 										}
+										else
+										{
+											// Stairs/no-jump area: pop + blacklist, don't jump.
+											void *popped = m_route.back().area;
+											if (popped && m_pCurrentArea)
+												markConnectionBad(m_pCurrentArea, popped);
+											m_route.pop_back();
+											if (popped)
+												m_pAccessor->markGoalFailed(popped);
+											if (m_route.empty() && m_pGoalArea)
+												m_pAccessor->markGoalFailed(m_pGoalArea);
+										}
+									}
 									}
 								}
 							}
@@ -1804,114 +1574,11 @@ void CNavMeshNavigator::updatePosition()
 			}
 		}
 
-		// --- Nav-area attribute handling ---
-		int attr = *(int *)((unsigned char *)m_route.back().area + NAV_M_ATTR);
+		// Phase 5: Nav-area attribute handling
+		applyNavAttributes(vBotOrigin);
 
-		if (attr & NAV_ATTR_CROUCH)
-			m_pBot->duck(true);
-
-		if (attr & NAV_ATTR_RUN)
-			m_pBot->updateCondition(CONDITION_RUN);
-
-		if (attr & NAV_ATTR_NO_JUMP)
-		{
-			m_fJumpRelease = 0;
-			m_fScoutDJRelease = 0;
-		}
-
-		if (attr & NAV_ATTR_STAIRS)
-		{
-			m_fJumpRelease = 0;
-			m_fScoutDJRelease = 0;
-		}
-
-		if (attr & NAV_ATTR_JUMP && m_fJumpRelease <= engine->Time())
-		{
-			float dxJ = m_vCurrentTarget.x - vBotOrigin.x;
-			float dyJ = m_vCurrentTarget.y - vBotOrigin.y;
-			float fDistJ = sqrtf(dxJ*dxJ + dyJ*dyJ);
-			if (fDistJ < 200.0f)
-			{
-				float zDelta = m_vCurrentTarget.z - m_pBot->getOrigin().z;
-
-				if (m_pBot->isTF2())
-				{
-					CBotTF2 *pTF2 = (CBotTF2 *)m_pBot;
-					int tfClass = pTF2->getClass();
-
-					if (tfClass == TF_CLASS_SOLDIER && zDelta > 48.0f
-					    && pTF2->getHealthPercent() > 0.5f)
-					{
-						pTF2->jump();
-						m_fJumpRelease = engine->Time() + 1.2f;
-					}
-					else if (tfClass == TF_CLASS_DEMOMAN && zDelta > 48.0f
-					         && rcbot_demo_jump && rcbot_demo_jump->GetInt())
-					{
-						pTF2->jump();
-						m_fJumpRelease = engine->Time() + 1.2f;
-					}
-					else if (tfClass == TF_CLASS_SCOUT)
-					{
-						pTF2->jump();
-						m_fJumpRelease = engine->Time() + 0.35f;
-						if (m_fScoutDJRelease <= engine->Time())
-							m_fScoutDJRelease = engine->Time() + 0.28f;
-					}
-					else
-					{
-						pTF2->tapButton(IN_JUMP);
-						m_fJumpRelease = engine->Time() + 0.25f;
-					}
-				}
-				else
-				{
-					m_pBot->tapButton(IN_JUMP);
-					m_fJumpRelease = engine->Time() + 0.25f;
-				}
-			}
-		}
-
-		if (m_fScoutDJRelease && m_fScoutDJRelease <= engine->Time()
-		    && m_fScoutDJRelease + 0.5f > engine->Time())
-		{
-			m_pBot->jump();
-			m_fScoutDJRelease = engine->Time() + 3600.0f;
-		}
-
-		// Stuck detection
-		float dx2 = vStuckRef.x - vBotOrigin.x;
-		float dy2 = vStuckRef.y - vBotOrigin.y;
-		float fDist2D = sqrtf(dx2 * dx2 + dy2 * dy2);
-		float fNow     = engine->Time();
-
-		if (m_fStuckBestDist == 0 || fDist2D < m_fStuckBestDist - 25.0f)
-		{
-			m_fStuckBestDist = fDist2D;
-			m_fStuckBestTime = fNow;
-		}
-		else if (fNow - m_fStuckBestTime > 3.0f)
-		{
-			m_fStuckBestDist = 0;
-			m_fStuckBestTime = fNow;
-
-			if (!m_route.empty())
-			{
-				void *popped = m_route.back().area;
-				void *prevArea = (m_pCurrentArea ? m_pCurrentArea : popped);
-				m_route.pop_back();
-				if (popped) {
-					markConnectionBad(prevArea, popped);
-					for (auto &tl : m_pAccessor->getTeleportLinks()) {
-						if (tl.dstArea == popped && tl.srcArea)
-							markConnectionBad(tl.srcArea, tl.dstArea);
-					}
-					m_pAccessor->markGoalFailed(popped);
-				}
-				if (m_route.empty() && m_pGoalArea)
-					m_pAccessor->markGoalFailed(m_pGoalArea);
-			}
-		}
+		// Phase 6: Stuck detection
+		detectStuck(vBotOrigin, vStuckRef);
 
 		// --- Occasional LOOK_AROUND glances ---
 		if (m_fLookAroundTime <= engine->Time())
@@ -1920,37 +1587,13 @@ void CNavMeshNavigator::updatePosition()
 			m_fLookAroundTime = engine->Time() + randomFloat(3.0f, 5.0f);
 		}
 
-		// --- Idle-position heartbeat ---
-		if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2
-		    && m_fStuckBestTime > 0 && m_fLastIdleLog <= engine->Time())
-		{
-			if (m_fIdleCheckTime == 0)
-			{
-				m_vIdleCheckPos  = vBotOrigin;
-				m_fIdleCheckTime = fNow;
-			}
-			else if (fNow - m_fIdleCheckTime > 4.0f)
-			{
-				float dxI = vBotOrigin.x - m_vIdleCheckPos.x;
-				float dyI = vBotOrigin.y - m_vIdleCheckPos.y;
-				if (sqrtf(dxI*dxI + dyI*dyI) < 80.0f)
-				{
-					m_fLastIdleLog = engine->Time() + 4.0f;
-					fprintf(stderr, "[RCDiag] idle name=%s bot=%d pos=(%.0f,%.0f,%.0f)"
-					    " target=(%.0f,%.0f,%.0f) dist=%.0fu sz=%d\n",
-					    m_pBot->getLogName(), ENTINDEX(m_pBot->getEdict()),
-					    vBotOrigin.x,vBotOrigin.y,vBotOrigin.z,
-					    m_vCurrentTarget.x,m_vCurrentTarget.y,m_vCurrentTarget.z,
-					    sqrtf(dxI*dxI + dyI*dyI), (int)m_route.size());
-				}
-				m_vIdleCheckPos  = vBotOrigin;
-				m_fIdleCheckTime = fNow;
-			}
-		}
+		// Phase 7: Idle-position heartbeat
+		heartbeatIdleLog(vBotOrigin);
 	}
 	else
 		m_pCurrentArea = nullptr;
 
+	// Debug update log
 	if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2) {
 		static int nUpd = 0;
 		if ((++nUpd & 31) == 0) {
@@ -1967,6 +1610,537 @@ void CNavMeshNavigator::updatePosition()
 		}
 	}
 }
+
+// ---------- Preemptive obstacle-jump helper ----------
+
+bool CNavMeshNavigator::doObstacleJump(const Vector &vBotOrigin, const Vector &vFwdDirection, bool bAllowEnhancedJumps)
+{
+	extern ConVar *rcbot_navmesh_jump_obstacle_min;
+	extern ConVar *rcbot_navmesh_jump_obstacle_max;
+
+	if (!m_pBot) return false;
+	if (m_fJumpRelease > engine->Time()) return false;
+
+	// Trace forward from waist height (z+18) — above step height
+	CTraceFilterWorldAndPropsOnly trFilter;
+	Vector vTraceStart = vBotOrigin + Vector(0, 0, 18.0f);
+	Vector vTraceEnd   = vBotOrigin + vFwdDirection * 200.0f;
+	vTraceEnd.z = vBotOrigin.z + 24.0f;
+
+	CBotGlobals::traceLine(vTraceStart, vTraceEnd, MASK_PLAYERSOLID, &trFilter);
+	trace_t *tr = CBotGlobals::getTraceResult();
+	if (!tr || tr->fraction >= 1.0f) return false;
+
+	// Snapshot the hit BEFORE any further traces (traceLine overwrites the static result)
+	Vector vHitPos  = tr->endpos;
+	float  fHitFrac = tr->fraction;
+	float  fHitNormZ = tr->plane.normal.z;
+
+	// Only react to vertical faces, not slopes
+	if (fHitNormZ >= 0.5f) return false;
+
+	// Down-trace from hit point to measure obstacle height
+	Vector vDown = vHitPos;
+	vDown.z -= 72.0f;
+	CBotGlobals::traceLine(vHitPos, vDown, MASK_PLAYERSOLID, &trFilter);
+	trace_t *trG = CBotGlobals::getTraceResult();
+	if (!trG || trG->fraction >= 1.0f) return false;
+
+	float obstacleHeight = vHitPos.z - trG->endpos.z;
+	float fMin = rcbot_navmesh_jump_obstacle_min ? rcbot_navmesh_jump_obstacle_min->GetFloat() : 18.0f;
+	float fMax = rcbot_navmesh_jump_obstacle_max ? rcbot_navmesh_jump_obstacle_max->GetFloat() : 72.0f;
+	if (obstacleHeight < fMin || obstacleHeight > fMax) return false;
+
+	// Top-surface check: trace forward from just above the obstacle top.
+	// If there's walkable ground behind the obstacle, it's a jumpable ledge/crate.
+	// If not (e.g. a full-height wall), skip.
+	{
+		Vector vTopStart = vHitPos;
+		vTopStart.z = trG->endpos.z + obstacleHeight + 4.0f; // just above the obstacle
+		Vector vTopEnd = vTopStart + vFwdDirection * 40.0f;  // reach a bit past it
+		vTopEnd.z -= 40.0f; // angle down to find the top surface
+		CBotGlobals::traceLine(vTopStart, vTopEnd, MASK_PLAYERSOLID, &trFilter);
+		trace_t *trTop = CBotGlobals::getTraceResult();
+		if (!trTop || trTop->fraction >= 1.0f || trTop->plane.normal.z < 0.7f)
+			return false; // no walkable top surface behind the obstacle
+	}
+
+	// Wide-wall check (±48u lateral traces)
+	Vector rightSide(-vFwdDirection.y, vFwdDirection.x, 0);
+	Vector fwd5 = vHitPos + vFwdDirection * 5.0f;
+	CBotGlobals::traceLine(vHitPos + rightSide * 48.0f,
+	    fwd5 + rightSide * 48.0f, MASK_PLAYERSOLID, &trFilter);
+	bool leftBlocked = (CBotGlobals::getTraceResult()
+	    && CBotGlobals::getTraceResult()->fraction < 1.0f);
+	CBotGlobals::traceLine(vHitPos - rightSide * 48.0f,
+	    fwd5 - rightSide * 48.0f, MASK_PLAYERSOLID, &trFilter);
+	bool rightBlocked = (CBotGlobals::getTraceResult()
+	    && CBotGlobals::getTraceResult()->fraction < 1.0f);
+	if (leftBlocked && rightBlocked) return false;
+
+	// Vertical clearance check
+	Vector vJumpCheck = vBotOrigin + Vector(0, 0, 72);
+	CBotGlobals::traceLine(vBotOrigin, vJumpCheck, MASK_PLAYERSOLID, &trFilter);
+	trace_t *trJ = CBotGlobals::getTraceResult();
+	if (!trJ || trJ->fraction < 1.0f) return false;
+
+	// Perform the jump with class-specific logic
+	if (m_pBot->isTF2())
+	{
+		CBotTF2 *pTF2 = (CBotTF2 *)m_pBot;
+		int tfClass = pTF2->getClass();
+
+		if (tfClass == TF_CLASS_SCOUT)
+		{
+			pTF2->tapButton(IN_JUMP);
+			m_fJumpRelease = engine->Time() + 0.8f;
+			if (m_fScoutDJRelease <= engine->Time())
+				m_fScoutDJRelease = engine->Time() + 0.28f;
+		}
+		else if (bAllowEnhancedJumps && obstacleHeight > 48.0f)
+		{
+			if (tfClass == TF_CLASS_SOLDIER && pTF2->getHealthPercent() > 0.5f)
+			{
+				pTF2->jump();
+				m_fJumpRelease = engine->Time() + 1.2f;
+			}
+			else if (tfClass == TF_CLASS_DEMOMAN && rcbot_demo_jump && rcbot_demo_jump->GetInt())
+			{
+				pTF2->jump();
+				m_fJumpRelease = engine->Time() + 1.2f;
+			}
+			else
+			{
+				pTF2->tapButton(IN_JUMP);
+				m_fJumpRelease = engine->Time() + 1.0f;
+			}
+		}
+		else
+		{
+			pTF2->tapButton(IN_JUMP);
+			m_fJumpRelease = engine->Time() + 1.0f;
+		}
+	}
+	else
+	{
+		m_pBot->tapButton(IN_JUMP);
+		m_fJumpRelease = engine->Time() + 1.0f;
+	}
+
+	if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2)
+	{
+		fprintf(stderr, "[RCDiag] obstJump name=%s bot=%d"
+		    " pos=(%.0f,%.0f,%.0f) h=%.0f resp=jump\n",
+		    m_pBot->getLogName(),
+		    ENTINDEX(m_pBot->getEdict()),
+		    vBotOrigin.x, vBotOrigin.y, vBotOrigin.z,
+		    obstacleHeight);
+	}
+
+	return true;
+}
+
+// ---------- Extracted updatePosition phases ----------
+
+// Returns true if the caller (updatePosition) should return immediately.
+void CNavMeshNavigator::doEscapeMode(const Vector &vBotOrigin)
+{
+	(void)vBotOrigin; // unused parameter — escape mode reads vBotOrigin from m_pBot->getOrigin() internally
+
+	// Escape mode: when the A* can't find any valid path (route empty
+	// + failBackoff active), use trace-based exploration to navigate
+	// without nav mesh coverage.
+	if (!m_route.empty() || m_fFailBackoffTime <= engine->Time())
+	{
+		if (m_iEscapeMode > 0)
+			m_iEscapeMode = 0;
+		return;
+	}
+
+	Vector vBotNow = m_pBot->getOrigin();
+
+	if (m_iEscapeMode == 0)
+	{
+		m_iEscapeMode = 1;
+		m_fEscapeStartTime = engine->Time();
+		m_tnLastScanTime = 0;
+		m_tnStuckCount = 0;
+		m_vTnExploreStart = vBotNow;
+		m_fTnExploreRadius = 0;
+		if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
+			fprintf(stderr, "[RCDiag] escapeStart name=%s bot=%d"
+			    " pos=(%.0f,%.0f,%.0f)\n",
+			    m_pBot->getLogName(), ENTINDEX(m_pBot->getEdict()),
+			    vBotNow.x, vBotNow.y, vBotNow.z);
+	}
+
+	if (m_iEscapeMode >= 1)
+	{
+		// --- Falling check ---
+		if (m_iEscapeMode == 2)
+		{
+			m_pBot->setMoveTo(m_vEscapeTarget);
+			if (NavMeshUtil::IsOnWalkableGround(vBotNow))
+			{
+				m_iEscapeMode = 0;
+				m_fFailBackoffTime = 0;
+			}
+			if (engine->Time() - m_fEscapeStartTime > 10.0f)
+				m_iEscapeMode = 0;
+			return;
+		}
+
+		float fNow = engine->Time();
+
+		// --- Jump detection (also runs in escape mode) ---
+		// Check for jumppable obstacle in current direction
+		Vector vFwdDir = m_vEscapeTarget - vBotNow;
+		vFwdDir.z = 0;
+		float fDistToTarget = vFwdDir.NormalizeInPlace();
+		if (fDistToTarget > 80.0f && fDistToTarget < 400.0f) {
+			doObstacleJump(vBotNow, vFwdDir, false);
+		}
+
+		// --- Nav mesh recovery check (every 2s) ---
+		if (fNow - m_tnLastScanTime >= 2.0f)
+		{
+			void *nearArea = m_pAccessor->getNearestArea(vBotNow);
+			float nearDist = 99999.0f;
+			if (nearArea) {
+				float *nc = (float *)((unsigned char *)nearArea + NAV_M_CENTER);
+				nearDist = (Vector(nc[0],nc[1],nc[2]) - vBotNow).Length();
+			}
+			if (nearDist < 800.0f) {
+				m_iEscapeMode = 0;
+				m_fFailBackoffTime = 0;
+				m_pBot->setMoveTo(m_vEscapeTarget);
+				return;
+			}
+
+			// --- 16-direction fan scan with 3-trace hull check ---
+			int bestDir = -1;
+			float bestScore = 0.0f;
+			CTraceFilterWorldAndPropsOnly tnFilter;
+			for (int i = 0; i < 16; i++)
+			{
+				float ang = i * 0.392699f;
+				Vector dir(cosf(ang), sinf(ang), 0);
+				Vector right(-dir.y, dir.x, 0);
+				Vector end = vBotNow + dir * 400.0f;
+				end.z = vBotNow.z + 24.0f;
+				Vector startPos = vBotNow + Vector(0,0,24);
+				const float hullHalf = 16.0f;
+
+				CBotGlobals::traceLine(startPos, end, MASK_PLAYERSOLID, &tnFilter);
+				trace_t *tr = CBotGlobals::getTraceResult();
+				float clear = (tr && tr->fraction < 1.0f) ? tr->fraction : 1.0f;
+
+				CBotGlobals::traceLine(startPos + right * hullHalf,
+				    end + right * hullHalf, MASK_PLAYERSOLID, &tnFilter);
+				tr = CBotGlobals::getTraceResult();
+				float cl = (tr && tr->fraction < 1.0f) ? tr->fraction : 1.0f;
+				if (cl < clear) clear = cl;
+
+				CBotGlobals::traceLine(startPos - right * hullHalf,
+				    end - right * hullHalf, MASK_PLAYERSOLID, &tnFilter);
+				tr = CBotGlobals::getTraceResult();
+				cl = (tr && tr->fraction < 1.0f) ? tr->fraction : 1.0f;
+				if (cl < clear) clear = cl;
+
+				// Floor check at end
+				Vector floorCheck = vBotNow + dir * clear * 400.0f;
+				floorCheck.z += 18.0f;
+				Vector floorDown = floorCheck - Vector(0,0,200.0f);
+				CBotGlobals::traceLine(floorCheck, floorDown,
+				    MASK_PLAYERSOLID, &tnFilter);
+				tr = CBotGlobals::getTraceResult();
+				bool hasFloor = (tr && tr->fraction < 1.0f
+				    && tr->plane.normal.z > 0.5f);
+
+				float score = clear;
+				if (hasFloor) score += 2.0f;
+				if (score > bestScore || (score == bestScore && randomInt(0, 1) == 0)) { bestScore = score; bestDir = i; }
+				m_tnClearance[i] = clear;
+				m_tnHasFloor[i] = hasFloor;
+			}
+
+			if (bestDir >= 0)
+			{
+				// Wall-follow: if blocked forward, try 90deg left/right
+				if (m_tnClearance[bestDir] < 0.2f) {
+					int leftDir = (bestDir + 4) & 15;
+					int rightDir = (bestDir - 4 + 16) & 15;
+					if (m_tnClearance[leftDir] > 0.5f)
+						bestDir = leftDir;
+					else if (m_tnClearance[rightDir] > 0.5f)
+						bestDir = rightDir;
+				}
+
+				float targetAng = bestDir * 0.392699f;
+				m_vEscapeTarget = vBotNow
+				    + Vector(cosf(targetAng), sinf(targetAng), 0) * 800.0f;
+			}
+			m_tnLastScanTime = fNow;
+
+			if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
+				fprintf(stderr, "[RCDiag] escapeTrace name=%s bot=%d"
+				    " bestDir=%d score=%.2f target=(%.0f,%.0f)\n",
+				    m_pBot->getLogName(), ENTINDEX(m_pBot->getEdict()),
+				    bestDir, bestScore,
+				    m_vEscapeTarget.x, m_vEscapeTarget.y);
+		}
+
+		// --- Progress check ---
+		float fPhaseTime = fNow - m_fEscapeStartTime;
+		float distFromPhaseStart = (vBotNow - m_vTnExploreStart).Length();
+		if (distFromPhaseStart > m_fTnExploreRadius)
+			m_fTnExploreRadius = distFromPhaseStart;
+		if (fPhaseTime > 8.0f && distFromPhaseStart < 100.0f)
+		{
+			m_tnStuckCount++;
+			m_tnLastScanTime = 0; // force new scan
+			if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
+				fprintf(stderr, "[RCDiag] escapeStuck name=%s bot=%d"
+				    " stuck=%d\n",
+				    m_pBot->getLogName(), ENTINDEX(m_pBot->getEdict()),
+				    m_tnStuckCount);
+		}
+
+		m_pBot->setMoveTo(m_vEscapeTarget);
+
+		if (fNow - m_fEscapeStartTime > 60.0f)
+		{
+			m_iEscapeMode = 0;
+			if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetBool())
+				fprintf(stderr, "[RCDiag] escapeTimeout name=%s bot=%d"
+				    " dur=%.0fs\n",
+				    m_pBot->getLogName(), ENTINDEX(m_pBot->getEdict()),
+				    fNow - m_fEscapeStartTime);
+		}
+	}
+}
+
+void CNavMeshNavigator::doLookAheadSkip(const Vector &vBotOrigin)
+{
+	if (m_fMinLookAheadRange <= 0 || m_route.size() < 2)
+		return;
+
+	NavPathSegment &goal = m_route.back();
+	NavPathSegment &next = m_route[m_route.size() - 2];
+
+	if (goal.type == NAV_SEG_ON_GROUND &&
+	    next.type == NAV_SEG_ON_GROUND &&
+	    fabsf(next.curvature) < 0.5f)
+	{
+		float distToGoal = (goal.pos - vBotOrigin).Length();
+		if (distToGoal < m_fMinLookAheadRange)
+		{
+			if (isPotentiallyTraversable(vBotOrigin, next.pos) &&
+			    !hasPotentialGap(vBotOrigin, next.pos) &&
+			    (next.pos.z - vBotOrigin.z) < 18.0f)
+			{
+				m_route.pop_back();
+				m_vCurrentTarget = m_route.back().portalHalfWidth > 0.0f
+				    ? m_route.back().portalCenter : m_route.back().pos;
+				m_pCurrentArea   = m_route.back().area;
+				m_fStuckBestDist = (m_route.back().pos - vBotOrigin).Length2D();
+				m_fStuckBestTime = engine->Time();
+				m_iStuckRecovery = 0;
+			}
+		}
+	}
+}
+
+void CNavMeshNavigator::popReachedSegments(const Vector &vBotOrigin)
+{
+	int safety = 0;
+	while (!m_route.empty() && safety < 50)
+	{
+		NavPathSegment &segBack = m_route.back();
+		Vector cTarget = segBack.pos;
+
+		if (m_route.size() >= 2)
+		{
+			Vector ctrBack = areaGetCenter(segBack.area);
+			Vector ctrNext = areaGetCenter(m_route[m_route.size() - 2].area);
+			float  fDistAB = (ctrBack - ctrNext).Length2D();
+			float  fPopRad = fDistAB > 100.0f ? fDistAB * 0.5f : 100.0f;
+			float  fDist2D = (cTarget - vBotOrigin).Length2D();
+			if (fDist2D >= fPopRad)
+				break;
+		}
+
+		m_vPreviousPoint = m_vCurrentTarget;
+		m_pCurrentArea   = m_route.back().area;
+		m_route.pop_back();
+
+		m_vLookJitter = Vector(randomFloat(-128, 128), randomFloat(-128, 128), 0);
+		m_fLookJitterTime = engine->Time() + 0.5f;
+
+		m_fStuckBestDist  = 0;
+		m_fStuckBestTime  = engine->Time();
+		m_fJumpRelease    = 0;
+		m_fScoutDJRelease = 0;
+		m_iConsecutiveHits = 0;
+		m_fSteerExpiry     = 0;
+		safety++;
+	}
+}
+
+void CNavMeshNavigator::applyNavAttributes(const Vector &vBotOrigin)
+{
+	int attr = *(int *)((unsigned char *)m_route.back().area + NAV_M_ATTR);
+
+	if (attr & NAV_ATTR_CROUCH)
+		m_pBot->duck(true);
+
+	if (attr & NAV_ATTR_RUN)
+		m_pBot->updateCondition(CONDITION_RUN);
+
+	if (attr & NAV_ATTR_NO_JUMP)
+	{
+		m_fJumpRelease = 0;
+		m_fScoutDJRelease = 0;
+	}
+
+	if (attr & NAV_ATTR_STAIRS)
+	{
+		m_fJumpRelease = 0;
+		m_fScoutDJRelease = 0;
+	}
+
+	if (attr & NAV_ATTR_JUMP && m_fJumpRelease <= engine->Time())
+	{
+		float dxJ = m_vCurrentTarget.x - vBotOrigin.x;
+		float dyJ = m_vCurrentTarget.y - vBotOrigin.y;
+		float fDistJ = sqrtf(dxJ*dxJ + dyJ*dyJ);
+		if (fDistJ < 200.0f)
+		{
+			float zDelta = m_vCurrentTarget.z - m_pBot->getOrigin().z;
+
+			if (m_pBot->isTF2())
+			{
+				CBotTF2 *pTF2 = (CBotTF2 *)m_pBot;
+				int tfClass = pTF2->getClass();
+
+				if (tfClass == TF_CLASS_SOLDIER && zDelta > 48.0f
+				    && pTF2->getHealthPercent() > 0.5f)
+				{
+					pTF2->jump();
+					m_fJumpRelease = engine->Time() + 1.2f;
+				}
+				else if (tfClass == TF_CLASS_DEMOMAN && zDelta > 48.0f
+				         && rcbot_demo_jump && rcbot_demo_jump->GetInt())
+				{
+					pTF2->jump();
+					m_fJumpRelease = engine->Time() + 1.2f;
+				}
+				else if (tfClass == TF_CLASS_SCOUT)
+				{
+					pTF2->jump();
+					m_fJumpRelease = engine->Time() + 0.35f;
+					if (m_fScoutDJRelease <= engine->Time())
+						m_fScoutDJRelease = engine->Time() + 0.28f;
+				}
+				else
+				{
+					pTF2->tapButton(IN_JUMP);
+					m_fJumpRelease = engine->Time() + 0.25f;
+				}
+			}
+			else
+			{
+				m_pBot->tapButton(IN_JUMP);
+				m_fJumpRelease = engine->Time() + 0.25f;
+			}
+		}
+	}
+
+	if (m_fScoutDJRelease && m_fScoutDJRelease <= engine->Time()
+	    && m_fScoutDJRelease + 0.5f > engine->Time())
+	{
+		m_pBot->jump();
+		m_fScoutDJRelease = engine->Time() + 3600.0f;
+	}
+}
+
+void CNavMeshNavigator::detectStuck(const Vector &vBotOrigin, const Vector &vStuckRef)
+{
+	float dx2 = vStuckRef.x - vBotOrigin.x;
+	float dy2 = vStuckRef.y - vBotOrigin.y;
+	float fDist2D = sqrtf(dx2 * dx2 + dy2 * dy2);
+	float fNow     = engine->Time();
+
+	if (m_fStuckBestDist == 0 || fDist2D < m_fStuckBestDist - 25.0f)
+	{
+		m_fStuckBestDist = fDist2D;
+		m_fStuckBestTime = fNow;
+	}
+	else if (fNow - m_fStuckBestTime > 3.0f)
+	{
+		m_fStuckBestDist = 0;
+		m_fStuckBestTime = fNow;
+
+		if (!m_route.empty())
+		{
+			void *popped = m_route.back().area;
+			void *prevArea = (m_pCurrentArea ? m_pCurrentArea : popped);
+			m_route.pop_back();
+			if (popped) {
+				markConnectionBad(prevArea, popped);
+				for (auto &tl : m_pAccessor->getTeleportLinks()) {
+					if (tl.dstArea == popped && tl.srcArea)
+						markConnectionBad(tl.srcArea, tl.dstArea);
+				}
+				m_pAccessor->markGoalFailed(popped);
+			}
+			if (m_route.empty() && m_pGoalArea)
+				m_pAccessor->markGoalFailed(m_pGoalArea);
+		}
+	}
+}
+
+void CNavMeshNavigator::heartbeatIdleLog(const Vector &vBotOrigin)
+{
+	if (!rcbot_debug_navmesh || rcbot_debug_navmesh->GetInt() < 2)
+		return;
+	if (m_fStuckBestTime <= 0 || m_fLastIdleLog > engine->Time())
+		return;
+
+	float fNow = engine->Time();
+
+	if (m_fIdleCheckTime == 0)
+	{
+		m_vIdleCheckPos  = vBotOrigin;
+		m_fIdleCheckTime = fNow;
+	}
+	else if (fNow - m_fIdleCheckTime > 4.0f)
+	{
+		float dxI = vBotOrigin.x - m_vIdleCheckPos.x;
+		float dyI = vBotOrigin.y - m_vIdleCheckPos.y;
+		if (sqrtf(dxI*dxI + dyI*dyI) < 80.0f)
+		{
+			m_fLastIdleLog = engine->Time() + 4.0f;
+			fprintf(stderr, "[RCDiag] idle name=%s bot=%d pos=(%.0f,%.0f,%.0f)"
+			    " target=(%.0f,%.0f,%.0f) dist=%.0fu sz=%d\n",
+			    m_pBot->getLogName(), ENTINDEX(m_pBot->getEdict()),
+			    vBotOrigin.x,vBotOrigin.y,vBotOrigin.z,
+			    m_vCurrentTarget.x,m_vCurrentTarget.y,m_vCurrentTarget.z,
+			    sqrtf(dxI*dxI + dyI*dyI), (int)m_route.size());
+		}
+		m_vIdleCheckPos  = vBotOrigin;
+		m_fIdleCheckTime = fNow;
+	}
+}
+
+void CNavMeshNavigator::checkFallOff(const Vector &vBotOrigin) {}
+void CNavMeshNavigator::handleObstacleHit(const Vector &vBotOrigin, const Vector &vFwd, const Vector &vRouteTarget)
+{
+	(void)vBotOrigin; (void)vFwd; (void)vRouteTarget;
+}
+
+// ---------- End extracted updatePosition phases ----------
+
 
 Vector CNavMeshNavigator::getRandomAreaCenter(Vector vFrom, float minDist, float maxDist, bool bTrace)
 {
@@ -2024,6 +2198,7 @@ void CNavMeshNavigator::freeMapMemory()
 	m_iStuckRecovery   = 0;
 	m_fSteerExpiry      = 0;
 	m_iConsecutiveHits  = 0;
+	m_iDrainStreak     = 0;
 	m_fLastTraceLog    = 0;
 	m_fLastStuckLog    = 0;
 	m_fLastIdleLog     = 0;
@@ -2138,6 +2313,7 @@ float CNavMeshNavigator::getNextYaw()
 	baseYaw += sinf(engine->Time() * 0.7f) * 6.0f;
 	return baseYaw;
 }
+// Navmesh navigator relies on stuck-detection in updatePosition() rather than external rollback; failMove is intentionally a no-op.
 void  CNavMeshNavigator::failMove() {}
 void  CNavMeshNavigator::clear() {}
 float CNavMeshNavigator::distanceTo(Vector)      { return 0.0f; }
