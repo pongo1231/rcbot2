@@ -5,7 +5,12 @@
 
 CBotTF2SnipeSched::CBotTF2SnipeSched(Vector vOrigin, int iWpt)
 {
-	CBotTask *pFindPath  = new CFindPathTask(iWpt);
+	CBotTask *pFindPath;
+	if (iWpt >= 0)
+		pFindPath = new CFindPathTask(iWpt);
+	else
+		pFindPath = new CFindPathTask(vOrigin);
+
 	CBotTask *pSnipeTask = new CBotTF2Snipe(vOrigin, iWpt);
 
 	addTask(pFindPath);  // first

@@ -383,8 +383,9 @@ void CTFObjectiveResource::setup()
 			}
 			else
 			{
-				m_IndexToWaypointAreaTranslation[j]     = 0;
-				m_WaypointAreaToIndexTranslation[j + 1] = -1;
+				// No waypoint found — use 1-based CP index as area for navmesh-only maps
+				m_IndexToWaypointAreaTranslation[j]     = j + 1;
+				m_WaypointAreaToIndexTranslation[j + 1] = j;
 			}
 		}
 	}

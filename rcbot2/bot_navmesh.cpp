@@ -2291,6 +2291,105 @@ Vector CNavMeshNavigator::getRandomAreaCenter(Vector vFrom, float minDist, float
 	return vFallback;
 }
 
+Vector CNavMeshNavigator::getNavAreaNearPoint(Vector vPoint, float fMaxDist)
+{
+	if (!m_pAccessor || !m_pAccessor->ready()) return Vector(0,0,0);
+
+	int n = m_pAccessor->getAreaCount();
+	float bestDist2 = fMaxDist * fMaxDist;
+	Vector bestCenter(0,0,0);
+
+	for (int i = 0; i < n; i++)
+	{
+		unsigned char *a = m_pAccessor->getAreaByIndex(i);
+		if (!a || m_pAccessor->isGoalFailed(a)) continue;
+		float *c = (float *)(a + NAV_M_CENTER);
+		Vector vC(c[0], c[1], c[2]);
+		float d2 = (vC - vPoint).Length2D();
+		d2 *= d2;
+		if (d2 < bestDist2) { bestDist2 = d2; bestCenter = vC; }
+	}
+	return bestCenter;
+}
+
+Vector CNavMeshNavigator::computeMVMNavPosition()
+{
+	if (!m_pAccessor || !m_pAccessor->ready() || !m_pBot) return Vector(0,0,0);
+
+	Vector vBotOrigin = m_pBot->getOrigin();
+
+	// Get flag (bomb spawn) and capture point (hatch) world positions
+	Vector vFlagLocation(0,0,0), vCapturePoint(0,0,0);
+	bool bFlagLocValid = CTeamFortress2Mod::getFlagLocation(TF2_TEAM_BLUE, &vFlagLocation);
+	bool bCapLocValid  = CTeamFortress2Mod::getMVMCapturePoint(&vCapturePoint);
+
+	// Decision tree mirroring getBestWaypointMVM():
+	// 1. Alarm: nearest to hatch
+	// 2. Tank closer than bomb: between tank and hatch
+	// 3. Bomb near start: near bomb spawn
+	// 4. Default: between flag and capture point
+
+	if (bFlagLocValid && bCapLocValid)
+	{
+		float fDistToHatch = (vFlagLocation - vCapturePoint).Length();
+
+		// Alarm proxy: bomb within 1024u of hatch
+		if (fDistToHatch < 1024.0f)
+		{
+			Vector vNav = getNavAreaNearPoint(vCapturePoint, 2048.0f);
+			if (vNav.Length() > 0.1f) return vNav;
+		}
+
+		edict_t *pTank = CTeamFortress2Mod::getNearestTank();
+		edict_t *pCarrier = CTeamFortress2Mod::getFlagCarrier(TF2_TEAM_BLUE);
+		Vector vBombPos = vFlagLocation;
+		if (pCarrier && CBotGlobals::entityIsAlive(pCarrier))
+			vBombPos = CBotGlobals::entityOrigin(pCarrier);
+
+		float fTankDist = 999999.0f, fBombDist = 999999.0f;
+		if (pTank) fTankDist = (CBotGlobals::entityOrigin(pTank) - vCapturePoint).Length();
+		fBombDist = (vBombPos - vCapturePoint).Length();
+
+		if (pTank && fTankDist < fBombDist)
+		{
+			// Tank is closer — position between tank and hatch
+			Vector vMid = (CBotGlobals::entityOrigin(pTank) + vCapturePoint) * 0.5f;
+			Vector vNav = getNavAreaNearPoint(vMid, 2048.0f);
+			if (vNav.Length() > 0.1f) return vNav;
+		}
+
+		if (fDistToHatch > 1024.0f)
+		{
+			// Bomb far from hatch: position near bomb spawn
+			Vector vNav = getNavAreaNearPoint(vFlagLocation, 2048.0f);
+			if (vNav.Length() > 0.1f) return vNav;
+		}
+	}
+
+	if (bFlagLocValid && bCapLocValid)
+	{
+		float fDistToHatch = (vFlagLocation - vCapturePoint).Length();
+		if (fDistToHatch > 1024.0f)
+		{
+			// Bomb far from hatch: position near bomb spawn
+			Vector vNav = getNavAreaNearPoint(vFlagLocation, 2048.0f);
+			if (vNav.Length() > 0.1f) return vNav;
+		}
+	}
+
+	// Default: position between flag and capture point
+	if (bFlagLocValid && bCapLocValid)
+	{
+		Vector vMid = (vFlagLocation + vCapturePoint) * 0.5f;
+		Vector vNav = getNavAreaNearPoint(vMid, 8000.0f);
+		if (vNav.Length() > 0.1f) return vNav;
+	}
+
+	// Last resort: nearest nav area to bot
+	Vector vNav = getNavAreaNearPoint(vBotOrigin, 4096.0f);
+	return vNav;
+}
+
 void CNavMeshNavigator::freeMapMemory()
 {
 	m_route.clear();

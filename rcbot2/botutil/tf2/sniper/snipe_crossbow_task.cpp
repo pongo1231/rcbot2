@@ -8,18 +8,31 @@
 
 CBotTF2SnipeCrossBow::CBotTF2SnipeCrossBow(Vector vOrigin, int iWpt)
 {
-	CWaypoint *pWaypoint = CWaypoints::getWaypoint(iWpt);
-	m_iSnipeWaypoint     = iWpt;
+	m_iSnipeWaypoint = iWpt;
 	QAngle angle;
 	m_fAimTime = 0.f;
 	m_fTime    = 0.f;
-	angle      = QAngle(0, pWaypoint->getAimYaw(), 0);
-	AngleVectors(angle, &m_vAim);
-	m_vAim       = vOrigin + (m_vAim * 4096);
+
+	if (iWpt >= 0)
+	{
+		CWaypoint *pWaypoint = CWaypoints::getWaypoint(iWpt);
+		angle = QAngle(0, pWaypoint->getAimYaw(), 0);
+		AngleVectors(angle, &m_vAim);
+		m_vAim  = vOrigin + (m_vAim * 4096);
+		m_iArea = pWaypoint->getArea();
+	}
+	else
+	{
+		// Navmesh fallback: aim toward the origin's general direction
+		angle = QAngle(0, vOrigin.z, 0);
+		AngleVectors(angle, &m_vAim);
+		m_vAim  = vOrigin + (m_vAim * 4096);
+		m_iArea = 0;
+	}
+
 	m_vOrigin    = vOrigin;
 	m_fEnemyTime = 0.f;
 	m_vEnemy     = m_vAim;
-	m_iArea      = pWaypoint->getArea();
 }
 
 void CBotTF2SnipeCrossBow::execute(CBot *pBot, CBotSchedule *pSchedule)

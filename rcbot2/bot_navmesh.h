@@ -213,6 +213,12 @@ class CNavMeshNavigator : public IBotNavigator
 	                      Vector vRefPos = Vector(0,0,0),
 	                      Vector vObjCentroid = Vector(0,0,0));
 
+	// Return the center of the nearest nav area to vPoint within fMaxDist, or zero vector
+	Vector getNavAreaNearPoint(Vector vPoint, float fMaxDist);
+
+	// Navmesh-aware MVM positioning: replaces getBestWaypointMVM() when waypoints absent
+	Vector computeMVMNavPosition();
+
 	// Portal-based path post-processing: populate portalCenter,
 	// portalHalfWidth, forward, length, curvature for every segment.
 	void postProcessPath();
