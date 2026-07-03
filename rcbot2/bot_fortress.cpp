@@ -11037,7 +11037,9 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		{
 			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
 			Vector vSpot; float fYaw; int iArea;
-			if (pNav->computeBuildSpot(5, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea))
+			Vector vCentroid(0,0,0);
+			getObjectiveCentroid(&vCentroid);
+			if (pNav->computeBuildSpot(5, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea, -1.0f, Vector(0,0,0), vCentroid))
 			{
 				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_ENTRANCE, vSpot, fYaw, iArea));
 				return true;
@@ -11066,6 +11068,20 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			m_pSchedules->add(newSched);
 			m_iTeleEntranceArea = pWaypoint->getArea();
 			return true;
+		}
+
+		// Navmesh fallback for spawn teleporter entrance
+		if (!pWaypoint && m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		{
+			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			Vector vSpot; float fYaw; int iArea;
+			Vector vCentroid(0,0,0);
+			getObjectiveCentroid(&vCentroid);
+			if (pNav->computeBuildSpot(5, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea, -1.0f, Vector(0,0,0), vCentroid))
+			{
+				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_ENTRANCE, vSpot, fYaw, iArea));
+				return true;
+			}
 		}
 	}
 
@@ -11162,7 +11178,9 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		{
 			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
 			Vector vSpot; float fYaw; int iArea;
-			if (pNav->computeBuildSpot(4, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea))
+			Vector vCentroid(0,0,0);
+			getObjectiveCentroid(&vCentroid);
+			if (pNav->computeBuildSpot(4, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea, -1.0f, Vector(0,0,0), vCentroid))
 			{
 				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_EXIT, vSpot, fYaw, iArea));
 				return true;
@@ -11237,6 +11255,20 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		engineerBuild(ENGI_SENTRY, ENGI_DESTROY);
 		updateCondition(CONDITION_CHANGED);
 	case BOT_UTIL_BUILDSENTRY:
+
+		// Navmesh-first: try computeBuildSpot before waypoint search
+		if (m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		{
+			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			Vector vSpot; float fYaw; int iArea;
+			Vector vCentroid(0,0,0);
+			getObjectiveCentroid(&vCentroid);
+			if (pNav->computeBuildSpot(2, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea, -1.0f, Vector(0,0,0), vCentroid))
+			{
+				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_SENTRY, vSpot, fYaw, iArea));
+				return true;
+			}
+		}
 
 		pWaypoint = nullptr;
 
@@ -11326,7 +11358,9 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		{
 			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
 			Vector vSpot; float fYaw; int iArea;
-			if (pNav->computeBuildSpot(2, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea))
+			Vector vCentroid(0,0,0);
+			getObjectiveCentroid(&vCentroid);
+			if (pNav->computeBuildSpot(2, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea, -1.0f, Vector(0,0,0), vCentroid))
 			{
 				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_SENTRY, vSpot, fYaw, iArea));
 				return true;
@@ -11708,7 +11742,9 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			Vector vSentryPos(0,0,0);
 			if (m_pSentryGun.get() != nullptr)
 				vSentryPos = CBotGlobals::entityOrigin(m_pSentryGun.get());
-			if (pNav->computeBuildSpot(0, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea, -1.0f, vSentryPos))
+			Vector vCentroid(0,0,0);
+			getObjectiveCentroid(&vCentroid);
+			if (pNav->computeBuildSpot(0, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea, -1.0f, vSentryPos, vCentroid))
 			{
 				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_DISP, vSpot, fYaw, iArea));
 				return true;

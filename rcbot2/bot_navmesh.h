@@ -35,6 +35,9 @@
 // TF2-specific nav attributes (CTFNavArea subclass, offset 0x1C4)
 #define TF_NAV_ATTR_OFFSET  0x1C4  // CTFNavArea::m_attributeFlags
 #define TF_NAV_CONTROL_POINT 0x40  // area contains a control point
+#define TF_NAV_SPAWN_ROOM_RED  0x00000002
+#define TF_NAV_SPAWN_ROOM_BLUE 0x00000004
+#define TF_NAV_SENTRY_SPOT     0x00400000  // mapper-authored ideal sentry position
 
 // Teleporter link: src nav area → destination nav area.
 // Populated on scanGrid() by scanning trigger_teleport entities.
@@ -207,7 +210,8 @@ class CNavMeshNavigator : public IBotNavigator
 	bool computeBuildSpot(int iBuildType, int iArea, int iTeam,
 	                      Vector &vSpot, float &fYaw, int &iOutArea,
 	                      float fMaxDist = -1.0f,
-	                      Vector vRefPos = Vector(0,0,0));
+	                      Vector vRefPos = Vector(0,0,0),
+	                      Vector vObjCentroid = Vector(0,0,0));
 
 	// Portal-based path post-processing: populate portalCenter,
 	// portalHalfWidth, forward, length, curvature for every segment.
