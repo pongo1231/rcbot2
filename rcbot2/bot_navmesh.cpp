@@ -1217,7 +1217,7 @@ Vector CNavMeshNavigator::avoidObstacles(const Vector &goalPos)
 	if (distToGoal < 30.0f) return goalPos;
 
 	Vector left(-fwd.y, fwd.x, 0);
-	float range = 50.0f;
+	float range = 80.0f;
 	float offset = 20.0f;
 
 	CTraceFilterWorldAndPropsOnly filter;
@@ -1237,7 +1237,16 @@ Vector CNavMeshNavigator::avoidObstacles(const Vector &goalPos)
 	float rightClear = (trR && trR->fraction < 1.0f) ? trR->fraction : 1.0f;
 
 	if (leftClear >= 1.0f && rightClear >= 1.0f) return goalPos;
-	if (leftClear < 1.0f && rightClear < 1.0f) return goalPos;
+	if (leftClear < 1.0f && rightClear < 1.0f)
+	{
+		// Both sides blocked: bias toward the clearer side instead of no-op
+		float avoidAmount = (leftClear > rightClear) ? (1.0f - leftClear) : -(1.0f - rightClear);
+		if (leftClear == rightClear)
+			avoidAmount = (m_sStrafeDir > 0) ? (1.0f - leftClear) : -(1.0f - rightClear);
+		Vector avoidDir = fwd + left * avoidAmount;
+		avoidDir.NormalizeInPlace();
+		return vOrigin + avoidDir * 100.0f;
+	}
 
 	float avoidAmount = (leftClear < 1.0f) ? (1.0f - leftClear) : -(1.0f - rightClear);
 	Vector avoidDir = fwd + left * avoidAmount;
@@ -1341,6 +1350,32 @@ void CNavMeshNavigator::updatePosition()
 		}
 
 		// --- Proactive obstacle avoidance (side feelers) ---
+		// Capture both-feelers-blocked state for later corner-pivot decision
+		bool bBothFeelersBlocked = false;
+		{
+			Vector fwdAdj = vRouteTarget - vBotOrigin;
+			float distAdj = fwdAdj.NormalizeInPlace();
+			if (distAdj > 30.0f)
+			{
+				Vector leftAdj(-fwdAdj.y, fwdAdj.x, 0);
+				Vector lFrom = vBotOrigin + leftAdj * 20.0f;
+				lFrom.z += 18.0f;
+				Vector lTo = lFrom + fwdAdj * 80.0f;
+				CTraceFilterWorldAndPropsOnly filtAdj;
+				CBotGlobals::traceLine(lFrom, lTo, MASK_PLAYERSOLID, &filtAdj);
+				trace_t *trAdjL = CBotGlobals::getTraceResult();
+				bool leftBlocked = (trAdjL && trAdjL->fraction < 1.0f);
+
+				Vector rFrom = vBotOrigin - leftAdj * 20.0f;
+				rFrom.z += 18.0f;
+				Vector rTo = rFrom + fwdAdj * 80.0f;
+				CBotGlobals::traceLine(rFrom, rTo, MASK_PLAYERSOLID, &filtAdj);
+				trace_t *trAdjR = CBotGlobals::getTraceResult();
+				bool rightBlocked = (trAdjR && trAdjR->fraction < 1.0f);
+
+				bBothFeelersBlocked = leftBlocked && rightBlocked;
+			}
+		}
 		Vector vAdjusted = avoidObstacles(vRouteTarget);
 
 		m_pBot->setMoveTo(vAdjusted);
@@ -1470,7 +1505,7 @@ void CNavMeshNavigator::updatePosition()
 										{
 											for (int s = 0; s < 7; s++)
 											{
-												float angS2 = (s - 3) * 0.436332f;
+												float angS2 = (s - 3) * 0.872664f;
 												Vector vSt2(vFwd.x*cosf(angS2)-vFwd.y*sinf(angS2),
 												           vFwd.x*sinf(angS2)+vFwd.y*cosf(angS2),0);
 												Vector vS2End = vBotOrigin + vSt2 * 200.0f;
@@ -1497,10 +1532,79 @@ void CNavMeshNavigator::updatePosition()
 											    1.0f);
 											m_fSteerExpiry = engine->Time() + 2.0f;
 										}
-									else
+								else
+								{
+									// All angles blocked.
+									// Before jump/pop, try backward trace and corner pivot.
+
+									// --- Backward trace: back out of tight corners ---
 									{
-										// All angles blocked.
-										// Check stair/no-jump flags on current area before attempting jump.
+										Vector vBackEnd = vBotOrigin - vFwd * 150.0f;
+										vBackEnd.z = vBotOrigin.z + 24.0f;
+										CBotGlobals::traceLine(vBotOrigin, vBackEnd, MASK_PLAYERSOLID, &trFilter);
+										trace_t *trBack = CBotGlobals::getTraceResult();
+										if (trBack && trBack->fraction >= 1.0f)
+										{
+											m_pBot->setMoveTo(vBotOrigin - vFwd * 150.0f);
+											if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2)
+												fprintf(stderr, "[RCDiag] cornerBack name=%s bot=%d pos=(%.0f,%.0f,%.0f)\n",
+												    m_pBot->getLogName(), ENTINDEX(m_pBot->getEdict()),
+												    vBotOrigin.x, vBotOrigin.y, vBotOrigin.z);
+											return;
+										}
+									}
+
+									// --- Corner pivot: one-shot 16-direction scan ---
+									if (bBothFeelersBlocked && m_fSteerExpiry <= engine->Time())
+									{
+										int bestDir = -1;
+										float bestClear = 0.0f;
+										for (int i = 0; i < 16; i++)
+										{
+											float ang = i * 0.392699f;
+											Vector dir(cosf(ang), sinf(ang), 0);
+											Vector right(-dir.y, dir.x, 0);
+											Vector end = vBotOrigin + dir * 400.0f;
+											end.z = vBotOrigin.z + 24.0f;
+											Vector startPos = vBotOrigin + Vector(0,0,24);
+											const float hullHalf = 16.0f;
+
+											CBotGlobals::traceLine(startPos, end, MASK_PLAYERSOLID, &trFilter);
+											trace_t *trF = CBotGlobals::getTraceResult();
+											float cl = (trF && trF->fraction < 1.0f) ? trF->fraction : 1.0f;
+
+											CBotGlobals::traceLine(startPos + right * hullHalf,
+											    end + right * hullHalf, MASK_PLAYERSOLID, &trFilter);
+											trF = CBotGlobals::getTraceResult();
+											float cl2 = (trF && trF->fraction < 1.0f) ? trF->fraction : 1.0f;
+											if (cl2 < cl) cl = cl2;
+
+											CBotGlobals::traceLine(startPos - right * hullHalf,
+											    end - right * hullHalf, MASK_PLAYERSOLID, &trFilter);
+											trF = CBotGlobals::getTraceResult();
+											cl2 = (trF && trF->fraction < 1.0f) ? trF->fraction : 1.0f;
+											if (cl2 < cl) cl = cl2;
+
+											if (cl > bestClear) { bestClear = cl; bestDir = i; }
+										}
+
+										if (bestDir >= 0 && bestClear > 0.5f)
+										{
+											float pivotAng = bestDir * 0.392699f;
+											Vector pivotDir(cosf(pivotAng), sinf(pivotAng), 0);
+											m_pBot->setMoveTo(vBotOrigin + pivotDir * 400.0f);
+											m_pBot->setSideMove((pivotDir.y >= 0 ? 250.0f : -250.0f), 1.0f);
+											m_fSteerExpiry = engine->Time() + 2.0f;
+											if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2)
+												fprintf(stderr, "[RCDiag] cornerPivot name=%s bot=%d dir=%d clear=%.2f\n",
+												    m_pBot->getLogName(), ENTINDEX(m_pBot->getEdict()),
+												    bestDir, bestClear);
+											return;
+										}
+									}
+
+									// Fall through to existing jump/pop logic
+									// Check stair/no-jump flags on current area before attempting jump.
 										bool bNoJump = false;
 										int traceAttr = *(int *)((unsigned char *)m_route.back().area + NAV_M_ATTR);
 										bNoJump = (traceAttr & (NAV_ATTR_STAIRS | NAV_ATTR_NO_JUMP)) != 0;
