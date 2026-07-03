@@ -8292,6 +8292,8 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 	if (!bUseNavmesh && m_pWaypointNavigator && m_pNavigator != m_pWaypointNavigator)
 		m_pNavigator = m_pWaypointNavigator; // revert when off / not ready
 
+	m_iNavMode = iNavMode; // store for executeAction() to distinguish mode 1 from mode 2
+
 	// When navmesh is active the navigator has been swapped above;
 	// fall through so the utility system evaluates objective tasks
 	// (ammo, health, capture points, etc.) which all dispatch through
@@ -8455,6 +8457,17 @@ void CBotTF2::getTasks(unsigned int iIgnore)
 		}
 	}
 skip_waypoint_find:
+
+	// In mode 2, null out stale static waypoint pointers from previous frames
+	if (m_iNavMode >= 2)
+	{
+		pWaypointResupply = nullptr;
+		pWaypointAmmo = nullptr;
+		pWaypointHealth = nullptr;
+		fResupplyDist = 0.0f;
+		fAmmoDist = 0.0f;
+		fHealthDist = 0.0f;
+	}
 
 	if (iClass == TF_CLASS_ENGINEER)
 	{
@@ -11023,6 +11036,21 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		engineerBuild(ENGI_ENTRANCE, ENGI_DESTROY);
 		updateCondition(CONDITION_CHANGED);
 	case BOT_UTIL_BUILDTELENT:
+
+		// Mode 2 fast-path: skip waypoint search
+		if (m_iNavMode == 2 && m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		{
+			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			Vector vSpot; float fYaw; int iArea;
+			Vector vCentroid(0,0,0);
+			getObjectiveCentroid(&vCentroid);
+			if (pNav->computeBuildSpot(5, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea, -1.0f, Vector(0,0,0), vCentroid))
+			{
+				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_ENTRANCE, vSpot, fYaw, iArea));
+				return true;
+			}
+		}
+
 		pWaypoint = CWaypoints::getWaypoint(CWaypointLocations::NearestWaypoint(
 		    m_vTeleportEntrance, 300, -1, true, false, true, nullptr, false, getTeam(), true));
 
@@ -11049,6 +11077,20 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		break;
 	case BOT_UTIL_BUILDTELENT_SPAWN:
 	{
+		// Mode 2 fast-path: skip waypoint search
+		if (m_iNavMode == 2 && m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		{
+			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			Vector vSpot; float fYaw; int iArea;
+			Vector vCentroid(0,0,0);
+			getObjectiveCentroid(&vCentroid);
+			if (pNav->computeBuildSpot(5, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea, -1.0f, Vector(0,0,0), vCentroid))
+			{
+				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_ENTRANCE, vSpot, fYaw, iArea));
+				return true;
+			}
+		}
+
 		Vector vOrigin = getOrigin();
 
 		pWaypoint      = CWaypoints::getWaypoint(
@@ -11121,6 +11163,20 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		engineerBuild(ENGI_EXIT, ENGI_DESTROY);
 		updateCondition(CONDITION_CHANGED);
 	case BOT_UTIL_BUILDTELEXT:
+
+		// Mode 2 fast-path: skip waypoint search
+		if (m_iNavMode == 2 && m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		{
+			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			Vector vSpot; float fYaw; int iArea;
+			Vector vCentroid(0,0,0);
+			getObjectiveCentroid(&vCentroid);
+			if (pNav->computeBuildSpot(4, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea, -1.0f, Vector(0,0,0), vCentroid))
+			{
+				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_EXIT, vSpot, fYaw, iArea));
+				return true;
+			}
+		}
 
 		if (m_bTeleportExitVectorValid)
 		{
@@ -11256,8 +11312,8 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		updateCondition(CONDITION_CHANGED);
 	case BOT_UTIL_BUILDSENTRY:
 
-		// Navmesh-first: try computeBuildSpot before waypoint search
-		if (m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		// Navmesh-first: try computeBuildSpot before waypoint search (mode 2 only)
+		if (m_iNavMode == 2 && m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
 		{
 			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
 			Vector vSpot; float fYaw; int iArea;
@@ -11690,6 +11746,24 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 		engineerBuild(ENGI_DISP, ENGI_DESTROY);
 		updateCondition(CONDITION_CHANGED);
 	case BOT_UTIL_BUILDDISP:
+
+		// Mode 2 fast-path: skip waypoint search
+		if (m_iNavMode == 2 && m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		{
+			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			Vector vSpot; float fYaw; int iArea;
+			Vector vCentroid(0,0,0);
+			getObjectiveCentroid(&vCentroid);
+			Vector vSentryPos(0,0,0);
+			if (m_pSentryGun.get() != nullptr)
+				vSentryPos = CBotGlobals::entityOrigin(m_pSentryGun.get());
+			if (pNav->computeBuildSpot(0, m_iCurrentAttackArea, getTeam(), vSpot, fYaw, iArea, -1.0f, vSentryPos, vCentroid))
+			{
+				m_pSchedules->add(new CBotTFEngiBuild(this, ENGI_DISP, vSpot, fYaw, iArea));
+				return true;
+			}
+		}
+
 		pWaypoint = nullptr;
 		if (m_bDispenserVectorValid)
 		{
@@ -15164,6 +15238,7 @@ CBotTF2::CBotTF2()
 	m_fSpySapTime              = 0;
 	m_iCurrentDefendArea       = 0;
 	m_iCurrentAttackArea       = 0;
+	m_iNavMode                 = 0;
 	// m_bBlockPushing = false;
 	// m_fBlockPushTime = 0;
 	m_pDefendPayloadBomb       = nullptr;
