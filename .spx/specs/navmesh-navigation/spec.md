@@ -249,3 +249,137 @@ The preemptive obstacle-detection logic in `updatePosition()` and the escape-mod
 
 ### Requirement: Preemptive Obstacle Detection Outer Gate
 The outer gate in the preemptive obstacle-detection block SHALL use a minimal distance threshold (`> 20.0f`) to determine whether the bot is close enough to its route target to bother tracing for obstacles. Previously the outer gate used the same distance as the obstacle range, which caused the entire detection block to be skipped whenever the bot was within range of its route target (which is nearly always).
+
+### Requirement: Objective-Area Filtering in computeBuildSpot
+The `computeBuildSpot()` function SHALL use its `iTeam` parameter for spawn-room exclusion and building-nearby checks. The `iObjArea` parameter is accepted for API compatibility but SHALL NOT filter by waypoint area ID, as navmesh area indices and waypoint area IDs are different numbering schemes.
+
+#### Scenario: iTeam used for spawn room filtering
+- **WHEN** `computeBuildSpot(..., iTeam=TF2_TEAM_BLUE, ...)` iterates a RED spawn room nav area
+- **THEN** the area is skipped regardless of its other attributes
+
+#### Scenario: iObjArea=0 still does global search
+- **WHEN** `computeBuildSpot(2, 0, ...)` is called with area=0
+- **THEN** all nav areas are scored (existing behavior preserved for combat sentry placement)
+
+### Requirement: Objective-Proximity Scoring
+For sentry placement (build type 2), `computeBuildSpot()` SHALL score candidate areas by their 2D distance to the objective centroid (flag location, capture point, or payload cart), using the formula `1500.0 / (1500.0 + dist)`. Closer areas score higher. The centroid SHALL be obtained via `CTeamFortress2Mod::getObjectiveCentroid()`.
+
+#### Scenario: Sentry placed closer to objective scores higher
+- **WHEN** area A is 500 units from the objective centroid and area B is 2000 units from it
+- **THEN** area A receives a higher proximity score than area B, all other factors being equal
+
+#### Scenario: Objective centroid is unavailable
+- **WHEN** `getObjectiveCentroid()` returns a zero vector (no objective found)
+- **THEN** the proximity score component is 0.0 for all areas (graceful degradation)
+
+### Requirement: Height Advantage Scoring
+For sentry placement, `computeBuildSpot()` SHALL score elevated positions higher by comparing the nav area center Z against the objective centroid Z. The bonus SHALL be `1.0 + clamp((areaZ - centroidZ) / 150.0, 0.0, 1.0) * 0.15`.
+
+#### Scenario: Elevated position scores higher
+- **WHEN** area A is 80 units above the objective and area B is at the same Z as the objective
+- **THEN** area A receives a height bonus of ~1.08× while area B receives 1.0×
+
+#### Scenario: Position below objective gets no bonus
+- **WHEN** area A is 20 units below the objective centroid
+- **THEN** the height bonus is clamped to 0, producing a 1.0× multiplier
+
+### Requirement: Building-Nearby Penalty
+`computeBuildSpot()` SHALL call `CTeamFortress2Mod::buildingNearby(iTeam, areaCenter)` for each candidate area. If a friendly building already exists within proximity of the area center, the area's score SHALL be multiplied by 0.3.
+
+#### Scenario: Friendly building blocks a candidate spot
+- **WHEN** a friendly dispenser is within 150 units of nav area center A
+- **THEN** area A's score is multiplied by 0.3, making it unlikely to be chosen
+
+#### Scenario: No friendly buildings nearby
+- **WHEN** no friendly buildings are within proximity of any candidate area
+- **THEN** no penalty is applied
+
+### Requirement: Control-Point Avoidance
+`computeBuildSpot()` SHALL read the `TF_NAV_CONTROL_POINT` attribute (bit `0x40` at offset `TF_NAV_ATTR_OFFSET = 0x1C4`) from each candidate nav area. Areas with this attribute set SHALL be skipped entirely for sentry and dispenser placement.
+
+#### Scenario: Nav area on a control point is rejected
+- **WHEN** a candidate area has the `TF_NAV_CONTROL_POINT` bit set AND the build type is sentry (2) or dispenser (0)
+- **THEN** the area is skipped without scoring
+
+#### Scenario: Control-point area is still valid for teleporter
+- **WHEN** a candidate area has the control-point bit set AND the build type is tele-entrance (5) or tele-exit (4)
+- **THEN** the area is scored normally (teleporters are not blocked by control points)
+
+### Requirement: Line-of-Fire Trace to Objective
+For sentry placement, `computeBuildSpot()` SHALL perform a trace from each candidate area center + sentry eye height (Z+60) to the objective centroid + flag height (Z+70) using `MASK_SOLID_BRUSHONLY`. Candidates whose trace hits world geometry (fraction < 1.0) SHALL be rejected.
+
+#### Scenario: Area with clear LOS to objective is accepted
+- **WHEN** a trace from area center Z+60 to objective centroid Z+70 hits nothing
+- **THEN** the area is included in scoring
+
+#### Scenario: Area behind a wall is rejected
+- **WHEN** a trace from area center Z+60 to objective centroid Z+70 hits world geometry at fraction 0.4
+- **THEN** the area is rejected (not scored)
+
+#### Scenario: LOS trace only for sentry placement
+- **WHEN** the build type is dispenser (0), tele-entrance (5), or tele-exit (4)
+- **THEN** the LOS trace is not performed (only sentries need direct line-of-fire)
+
+### Requirement: Yaw Direction Toward Objective
+`computeBuildSpot()` SHALL compute the building yaw as `atan2(objectiveY - areaY, objectiveX - areaX)` so the sentry faces toward the objective or enemy team direction, rather than toward the bot's current position.
+
+#### Scenario: Sentry faces the objective on Attack/Defend
+- **WHEN** a RED sentry is placed with the BLU objective to the north of the build spot
+- **THEN** the sentry yaw faces north (toward the enemy objective), not toward the engineer bot
+
+### Requirement: Score Randomization
+`computeBuildSpot()` SHALL add `randomFloat(-0.05, 0.05)` to each candidate area's score to break ties and prevent all engineers from selecting the identical best area.
+
+#### Scenario: Two equally-scored areas produce different winners across bots
+- **WHEN** area A and area B have identical base scores
+- **THEN** different engineer bots may choose different areas due to the random jitter
+
+### Requirement: Debug Logging for Build Spot Evaluation
+When `rcbot_debug_navmesh >= 2`, `computeBuildSpot()` SHALL log the chosen area index, center position, build type, and score.
+
+#### Scenario: Debug output at level 2
+- **WHEN** `rcbot_debug_navmesh >= 2` and `computeBuildSpot()` completes a search
+- **THEN** a `[RCDiag] buildSpot` log line is emitted with the chosen position
+
+### Requirement: Spawn-Room Filtering
+`computeBuildSpot()` SHALL read the `TF_NAV_SPAWN_ROOM_RED` (0x02) and `TF_NAV_SPAWN_ROOM_BLUE` (0x04) attributes from each nav area and SHALL skip areas in both friendly and enemy spawn rooms for all build types.
+
+#### Scenario: BLU team skips RED spawn room
+- **WHEN** a candidate area has `TF_NAV_SPAWN_ROOM_RED` set and the bot is BLU
+- **THEN** the area is skipped regardless of score
+
+#### Scenario: Team skips own spawn room
+- **WHEN** a candidate area has `TF_NAV_SPAWN_ROOM_RED` set and the bot is RED
+- **THEN** the area is skipped — buildings near spawn are not useful
+
+### Requirement: Surface Flatness Validation
+`computeBuildSpot()` SHALL call `NavMeshUtil::IsOnWalkableGround(areaCenter)` for each candidate and SHALL skip areas where the surface normal is too steep (normal.z < 0.7, corresponding to ~45° slope). Buildings cannot be placed on steep inclines.
+
+#### Scenario: Flat nav area is accepted
+- **WHEN** a trace downward from the area center hits ground with `plane.normal.z >= 0.7`
+- **THEN** the area passes the flatness check
+
+#### Scenario: Sloped nav area is rejected
+- **WHEN** a trace downward from the area center hits ground with `plane.normal.z < 0.7`
+- **THEN** the area is skipped
+
+### Requirement: Mapper-Authored Sentry Spot Preference
+When a candidate nav area has the `TF_NAV_SENTRY_SPOT` attribute (0x400000, set by map authors), `computeBuildSpot()` SHALL apply a 1.5× score multiplier, preferring mapper-designated sentry positions over purely heuristic ones.
+
+#### Scenario: Mapper-authored sentry spot scores higher
+- **WHEN** area A has `TF_NAV_SENTRY_SPOT` set and area B has identical wall/connection scores but no sentry-spot flag
+- **THEN** area A scores 1.5× higher than area B
+
+### Requirement: Navmesh-First Dispatch for BOT_UTIL_BUILDSENTRY
+When the navmesh navigator is active, the `BOT_UTIL_BUILDSENTRY` execution case SHALL call `computeBuildSpot()` before performing any waypoint search, so the navmesh path always executes regardless of whether waypoints exist.
+
+#### Scenario: Navmesh-only map, sentry build
+- **WHEN** `m_pNavigator == m_pNavmeshNavigator` and BOT_UTIL_BUILDSENTRY fires
+- **THEN** `computeBuildSpot()` is called first, and if successful, the bot builds immediately without attempting waypoint lookup
+
+### Requirement: Navmesh Fallback for BOT_UTIL_BUILDTELENT_SPAWN
+The spawn-time teleporter entrance case SHALL have a navmesh fallback path when `W_FL_TELE_ENTRANCE` waypoints are unavailable (navmesh-only maps). The fallback SHALL call `computeBuildSpot(5, ...)`.
+
+#### Scenario: Navmesh-only map, spawn teleporter entrance
+- **WHEN** `BOT_UTIL_BUILDTELENT_SPAWN` fires and `nearestWaypointGoal(W_FL_TELE_ENTRANCE)` returns -1
+- **THEN** `computeBuildSpot(5, ...)` is called as a fallback

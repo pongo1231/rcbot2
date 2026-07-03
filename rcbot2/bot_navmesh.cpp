@@ -22,6 +22,7 @@
 #include "engine_wrappers.h"
 #include "in_buttons.h"
 #include "bot_fortress.h"
+#include "bot_mods.h"
 #include "bot_getprop.h"
 
 // For teleporter keyvalue matching
@@ -2325,7 +2326,7 @@ bool CNavMeshNavigator::canGetTo(Vector v) { return m_pAccessor && m_pAccessor->
 
 bool CNavMeshNavigator::computeBuildSpot(int iBuildType, int iObjArea, int iTeam,
                                           Vector &vSpot, float &fYaw, int &iOutArea,
-                                          float fMaxDist, Vector vRefPos)
+                                          float fMaxDist, Vector vRefPos, Vector vObjCentroid)
 {
 	if (!m_pAccessor || !m_pAccessor->ready() || !m_pBot) return false;
 	int n = m_pAccessor->getAreaCount();
@@ -2334,15 +2335,43 @@ bool CNavMeshNavigator::computeBuildSpot(int iBuildType, int iObjArea, int iTeam
 	float  bestScore  = -9999.0f;
 	Vector bestCenter(0,0,0);
 	int    bestIdx    = -1;
+
+	// Get objective centroid for proximity / height / LOS scoring
+	Vector vCentroid = vObjCentroid;
+	bool bHaveCentroid = (vCentroid.Length() > 0.1f);
+
 	for (int i = 0; i < n; i++)
 	{
 		unsigned char *a = m_pAccessor->getAreaByIndex(i);
 		if (!a || m_pAccessor->isGoalFailed(a)) continue;
+
 		float *c = (float *)(a + NAV_M_CENTER);
 		Vector vC(c[0], c[1], c[2]);
 		if (fMaxDist > 0 && (vC - vBotOrigin).Length2D() > fMaxDist) continue;
 		int attr = *(int *)(a + NAV_M_ATTR);
 		if (attr & (NAV_ATTR_JUMP | NAV_ATTR_CROUCH)) continue;
+
+		// Control-point avoidance for sentry/dispenser
+		if (iBuildType == 2 || iBuildType == 0)
+		{
+			int tfAttr = *(int *)((unsigned char *)a + TF_NAV_ATTR_OFFSET);
+			if (tfAttr & TF_NAV_CONTROL_POINT) continue;
+		}
+
+		// Spawn-room filtering: never build in enemy or friendly spawn rooms
+		{
+			int tfAttr = *(int *)((unsigned char *)a + TF_NAV_ATTR_OFFSET);
+			// Skip enemy spawn room unconditionally
+			if (iTeam == TF2_TEAM_BLUE && (tfAttr & TF_NAV_SPAWN_ROOM_RED)) continue;
+			if (iTeam == TF2_TEAM_RED && (tfAttr & TF_NAV_SPAWN_ROOM_BLUE)) continue;
+			// Skip own spawn room for all building types (buildings near spawn aren't useful)
+			if (iTeam == TF2_TEAM_BLUE && (tfAttr & TF_NAV_SPAWN_ROOM_BLUE)) continue;
+			if (iTeam == TF2_TEAM_RED && (tfAttr & TF_NAV_SPAWN_ROOM_RED)) continue;
+		}
+
+		// Surface flatness: reject areas on steep surfaces (walkable slope threshold)
+		if (!NavMeshUtil::IsOnWalkableGround(vC)) continue;
+
 		int walls = 0;
 		CTraceFilterWorldAndPropsOnly trF;
 		for (int d = 0; d < 4; d++)
@@ -2363,23 +2392,78 @@ bool CNavMeshNavigator::computeBuildSpot(int iBuildType, int iObjArea, int iTeam
 			if (pData && m_pAccessor->ptrInArena(pData) && *(int*)pData > 0) connCnt++;
 		}
 		float score = 0.0f;
-		if (iBuildType == 2)       { score = walls * 0.3f + connCnt * 0.05f; score += 1.0f / (1.0f + (vC - vBotOrigin).Length2D() / 1000.0f); }
+
+		// Objective proximity scoring
+		float fObjDist = bHaveCentroid ? (vC - vCentroid).Length2D() : 0.0f;
+		float fProxScore = bHaveCentroid ? (1500.0f / (1500.0f + fObjDist)) : 0.0f;
+
+		if (iBuildType == 2)
+		{
+			score = walls * 0.3f + connCnt * 0.05f;
+			score += 1.0f / (1.0f + (vC - vBotOrigin).Length2D() / 1000.0f);
+			score += fProxScore * 0.6f;
+			// Mapper-authored sentry spots get a bonus
+			int tfAttr2 = *(int *)((unsigned char *)a + TF_NAV_ATTR_OFFSET);
+			if (tfAttr2 & TF_NAV_SENTRY_SPOT)
+				score *= 1.5f;
+		}
 		else if (iBuildType == 0)  {
 			score = walls * 0.4f - connCnt * 0.1f;
+			score += fProxScore * 0.4f;
 			if (vRefPos.Length() > 0.1f) {
 				float d = (vC - vRefPos).Length2D();
 				if (d > 500.0f) score -= (d - 500.0f) / 500.0f;
 			}
 		}
 		else if (iBuildType == 5)  { score = connCnt * 0.3f - walls * 0.1f; }
-		else if (iBuildType == 4)  { score = walls * 0.35f - connCnt * 0.15f + (vC - vBotOrigin).Length2D() / 10000.0f; }
+		else if (iBuildType == 4)  { score = walls * 0.35f - connCnt * 0.15f + (vC - vBotOrigin).Length2D() / 10000.0f; score += fProxScore * 0.3f; }
 		else                       { score = walls * 0.3f; }
+
+		// Height advantage (sentry only)
+		if (iBuildType == 2 && bHaveCentroid)
+		{
+			float fZDiff = vC.z - vCentroid.z;
+			float fHeightBonus = 1.0f + fmaxf(0.0f, fminf(fZDiff / 150.0f, 1.0f)) * 0.15f;
+			score *= fHeightBonus;
+		}
+
+		// LOS trace to objective (sentry only)
+		if (iBuildType == 2 && bHaveCentroid)
+		{
+			CTraceFilterWorldAndPropsOnly trLOS;
+			Vector vLOSStart = vC + Vector(0,0,60);
+			Vector vLOSEnd   = vCentroid + Vector(0,0,70);
+			CBotGlobals::traceLine(vLOSStart, vLOSEnd, MASK_SOLID_BRUSHONLY | CONTENTS_OPAQUE, &trLOS);
+			trace_t *trLOSResult = CBotGlobals::getTraceResult();
+			if (trLOSResult && trLOSResult->fraction < 1.0f) continue; // no line-of-fire
+		}
+
+		// Building-nearby penalty
+		if (CTeamFortress2Mod::buildingNearby(iTeam, vC))
+			score *= 0.3f;
+
+		// Random jitter to break ties
+		score += randomFloat(-0.05f, 0.05f);
+
 		if (score > bestScore) { bestScore = score; bestIdx = i; bestCenter = vC; }
 	}
 	if (bestIdx < 0) return false;
-	float dxF = bestCenter.x - vBotOrigin.x, dyF = bestCenter.y - vBotOrigin.y;
-	fYaw = atan2(dyF, dxF) * (180.0f / M_PI);
+
+	if (bHaveCentroid)
+		fYaw = atan2(vCentroid.y - bestCenter.y, vCentroid.x - bestCenter.x) * (180.0f / M_PI);
+	else
+	{
+		float dxF = bestCenter.x - vBotOrigin.x, dyF = bestCenter.y - vBotOrigin.y;
+		fYaw = atan2(dyF, dxF) * (180.0f / M_PI);
+	}
 	vSpot = bestCenter; iOutArea = bestIdx;
+
+	if (rcbot_debug_navmesh && rcbot_debug_navmesh->GetInt() >= 2)
+	{
+		fprintf(stderr, "[RCDiag] buildSpot type=%d area=%d pos=(%.0f,%.0f,%.0f) score=%.2f\n",
+		    iBuildType, bestIdx, bestCenter.x, bestCenter.y, bestCenter.z, bestScore);
+	}
+
 	return true;
 }
 

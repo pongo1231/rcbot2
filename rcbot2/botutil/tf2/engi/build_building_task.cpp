@@ -51,7 +51,8 @@ void CBotTFEngiBuildTask::execute(CBot *pBot, CBotSchedule *pSchedule)
 	// if ( !pBot->isTF() ) // shouldn't happen ever
 	//	fail();
 
-	if (!CTeamFortress2Mod::m_ObjectiveResource.isWaypointAreaValid(m_iArea))
+	// Skip waypoint-area validation for navmesh-computed build spots (m_iWaypointIndex == -1)
+	if (m_iWaypointIndex != -1 && !CTeamFortress2Mod::m_ObjectiveResource.isWaypointAreaValid(m_iArea))
 		fail();
 
 	pBot->wantToShoot(false);        // don't shoot enemies , want to build the damn thing
