@@ -93,6 +93,7 @@ ConVar *rcbot_debug_navmesh = nullptr;
 ConVar *rcbot_navmesh_jump_obstacle_min = nullptr;
 ConVar *rcbot_navmesh_jump_obstacle_max = nullptr;
 ConVar *rcbot_navmesh_jump_obstacle_range = nullptr;
+ConVar *rcbot_navmesh_max_jump_height = nullptr;
 ConVar *rcbot_use_navmesh = nullptr;
 ConVar *rcbot_tf2_autoupdate_point_time = nullptr;
 ConVar *rcbot_tf2_payload_dist_retreat = nullptr;

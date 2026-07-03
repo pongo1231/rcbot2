@@ -282,6 +282,8 @@ void CNavMeshAccessor::scanGrid()
 	}
 
 	detectConnectOffset();
+	detectBlockedOffset();
+	detectAvoidanceObstacleOffset();
 
 	m_teleportLinks.clear();
 
@@ -483,6 +485,67 @@ bool CNavMeshAccessor::detectConnectOffset()
 	if (bestOff >= 0 && bestScore > kSample)
 	{
 		m_connectOffset = bestOff;
+		return true;
+	}
+	return false;
+}
+
+// m_isBlocked[2] is at offset 0x36 (54) in the SDK CNavAreaCriticalData struct.
+// The accessor adds +4 for the vtable, so the arena-space offset is 0x3A (58).
+// per the SDK comment [7/24/2008 tom], so it should be stable across engine builds.
+bool CNavMeshAccessor::detectBlockedOffset()
+{
+	m_iBlockedOffset = -1;
+	if (m_Areas.size() < 4) return false;
+	int good = 0;
+	for (int s = 0; s < 8 && (size_t)s < m_Areas.size(); s++)
+	{
+		unsigned char *area = m_Areas[s];
+		if (!area) continue;
+		unsigned char b0 = *(unsigned char*)(area + 0x3A);
+		unsigned char b1 = *(unsigned char*)(area + 0x3B);
+		if ((b0 <= 1) && (b1 <= 1))
+			good++;
+	}
+	if (good >= 4)
+	{
+		m_iBlockedOffset = 0x3A;
+		return true;
+	}
+	return false;
+}
+
+// m_avoidanceObstacleHeight is a float at the end of CNavArea's non-critical
+// data. The exact offset varies between builds, so we probe a range.
+bool CNavMeshAccessor::detectAvoidanceObstacleOffset()
+{
+	m_iAvoidanceObstacleOffset = -1;
+	if (m_Areas.size() < 4) return false;
+
+	const int kMinOff = 0xA8, kMaxOff = 0x2FC;
+	int bestOff = -1;
+	float bestScore = 0.0f;
+
+	for (int off = kMinOff; off <= kMaxOff; off += 4)
+	{
+		int zeroCnt = 0, posCnt = 0;
+		for (int s = 0; s < 16 && (size_t)s < m_Areas.size(); s++)
+		{
+			unsigned char *area = m_Areas[s];
+			if (!area) continue;
+			float v = *(float*)(area + off);
+			if (!(v >= 0.0f && v <= 4096.0f)) { zeroCnt = posCnt = -99; break; }
+			if (v == 0.0f) zeroCnt++;
+			else if (v > 0.0f) posCnt++;
+		}
+		if (zeroCnt < 0) continue;
+		float score = (float)zeroCnt * 0.5f + (float)posCnt * 1.5f;
+		if (score > bestScore) { bestScore = score; bestOff = off; }
+	}
+
+	if (bestOff >= 0 && bestScore >= 10.0f)
+	{
+		m_iAvoidanceObstacleOffset = bestOff;
 		return true;
 	}
 	return false;
@@ -726,6 +789,75 @@ bool CNavMeshNavigator::workRoute(Vector vFrom, Vector vTo, bool *bFail,
 				float stepCost = dx * dx + dy * dy + dz * dz;
 				if (nCenter[2] < vCurCenter.z - 128.0f)
 					stepCost += (vCurCenter.z - nCenter[2]) * (vCurCenter.z - nCenter[2]) * 3.0f;
+
+				// --- Blocked-area check (team-specific) ---
+				{
+					int blkOff = m_pAccessor->getBlockedOffset();
+					if (blkOff >= 0)
+					{
+						int team = m_pBot ? m_pBot->getTeam() : 0;
+						if (team >= 0 && team < 2)
+						{
+							unsigned char blocked = *(unsigned char*)((unsigned char*)neighbor + blkOff + team);
+							if (blocked) continue;
+						}
+					}
+				}
+
+				// --- Avoidance-obstacle penalty ---
+				{
+					int obsOff = m_pAccessor->getAvoidanceObstacleOffset();
+					if (obsOff >= 0)
+					{
+						float obsH = *(float*)((unsigned char*)neighbor + obsOff);
+						if (obsH > 0.0f && obsH <= 512.0f)
+							stepCost += obsH * 10.0f;
+					}
+				}
+
+				// --- Class-aware JUMP connection cost ---
+				int curAttr = *(int *)((unsigned char *)current + NAV_M_ATTR);
+				if (curAttr & NAV_ATTR_JUMP)
+				{
+					float zDelta = fabsf(nCenter[2] - vCurCenter.z);
+					float maxJump = 72.0f; // default baseline
+					float enhCostMul = 2.0f;
+					if (m_pBot && m_pBot->isTF2())
+					{
+						CBotTF2 *pTF2 = (CBotTF2 *)m_pBot;
+						int tfClass = pTF2->getClass();
+						if (tfClass == TF_CLASS_SCOUT)
+							maxJump = 108.0f;
+						else if (tfClass == TF_CLASS_SOLDIER && pTF2->getHealthPercent() > 0.5f)
+							maxJump = 128.0f;
+						else if (tfClass == TF_CLASS_DEMOMAN && rcbot_demo_jump && rcbot_demo_jump->GetInt())
+						maxJump = 128.0f;
+					else
+					{
+						if (rcbot_navmesh_max_jump_height)
+							maxJump = rcbot_navmesh_max_jump_height->GetFloat();
+							extern ConVar *rcbot_navmesh_max_jump_height;
+							if (rcbot_navmesh_max_jump_height)
+								maxJump = rcbot_navmesh_max_jump_height->GetFloat();
+						}
+					}
+					if (zDelta > maxJump)
+						continue; // too high for this class
+					if (zDelta > 72.0f)
+						stepCost *= (zDelta / 72.0f) * enhCostMul;
+				}
+
+				// --- NAV_MESH_AVOID penalty ---
+				if (curAttr & NAV_MESH_AVOID)
+					stepCost *= 2.0f;
+
+				// --- Frustration penalty ---
+				{
+					auto fit = m_mapAreaFrustration.find(neighbor);
+					if (fit != m_mapAreaFrustration.end() && fit->second > 0.01f)
+						stepCost *= (1.0f + fit->second);
+				}
+
 				float tentativeG = gScore[current] + stepCost;
 
 				auto gIt = gScore.find(neighbor);
@@ -1083,6 +1215,19 @@ void CNavMeshNavigator::optimizePath()
 			if (!isPotentiallyTraversable(posA, posC))
 				continue;
 
+			// Obstacle check: trace from waist height A→C.
+			// If a vertical obstacle sits between them, this shortcut would
+			// pass through a crate or low wall — reject.
+			{
+				CTraceFilterWorldAndPropsOnly trF;
+				Vector vTraceA = posA + Vector(0,0,18);
+				Vector vTraceC = posC + Vector(0,0,18);
+				CBotGlobals::traceLine(vTraceA, vTraceC, MASK_PLAYERSOLID, &trF);
+				trace_t *tr = CBotGlobals::getTraceResult();
+				if (tr && tr->fraction < 0.75f && tr->plane.normal.z < 0.5f)
+					continue;
+			}
+
 			// Remove node B at index i-1
 			m_route.erase(m_route.begin() + (i - 1));
 			removed = true;
@@ -1269,6 +1414,22 @@ bool CNavMeshNavigator::hasNextPoint() { return !m_route.empty(); }
 void CNavMeshNavigator::updatePosition()
 {
 	if (!m_pBot) return;
+
+	// Frustration decay: reduce all area frustration scores by 10% per frame.
+	// Prune entries that have decayed below 0.01.
+	{
+		auto it = m_mapAreaFrustration.begin();
+		while (it != m_mapAreaFrustration.end())
+		{
+			it->second *= 0.9f;
+			if (it->second < 0.01f)
+				it = m_mapAreaFrustration.erase(it);
+			else
+				++it;
+		}
+	}
+
+	if (!m_pAccessor || !m_pAccessor->ready()) { freeMapMemory(); return; }
 	if (!m_pAccessor || !m_pAccessor->ready()) { freeMapMemory(); return; }
 
 	// Phase 1: Escape mode (handles its own early-return if active)
@@ -1420,6 +1581,14 @@ void CNavMeshNavigator::updatePosition()
 							else
 							{
 								m_iConsecutiveHits++;
+								// Frustration memory: when stuck hitting walls in this area,
+								// increment its cost for future A* searches.
+								if (m_iConsecutiveHits >= 8 && m_pCurrentArea)
+								{
+									float &scr = m_mapAreaFrustration[m_pCurrentArea];
+									scr += 1.0f;
+									if (scr > 5.0f) scr = 5.0f;
+								}
 								if (m_iConsecutiveHits >= 60)
 								{
 									void *stuckDst = (!m_route.empty()) ? m_route.back().area : nullptr;

@@ -31,6 +31,7 @@
 #define NAV_ATTR_RUN     0x00000020 // NAV_MESH_RUN
 #define NAV_ATTR_WALK    0x00000040 // NAV_MESH_WALK
 #define NAV_ATTR_STAIRS  0x00001000 // NAV_MESH_STAIRS
+#define NAV_MESH_AVOID  0x00000080 // NAV_MESH_AVOID — avoid unless no alternative
 
 // TF2-specific nav attributes (CTFNavArea subclass, offset 0x1C4)
 #define TF_NAV_ATTR_OFFSET  0x1C4  // CTFNavArea::m_attributeFlags
@@ -81,7 +82,7 @@ class CNavMeshAccessor : public CSignatureFunction
 {
   public:
 	CNavMeshAccessor() : m_pNavMesh(nullptr), m_nAreaCount(0), m_bReady(false), m_pBase(nullptr),
-		m_connectOffset(-1), m_areaMin(0), m_areaMax(0) {}
+		m_connectOffset(-1), m_iBlockedOffset(-1), m_iAvoidanceObstacleOffset(-1), m_areaMin(0), m_areaMax(0) {}
 	~CNavMeshAccessor() {}
 
 	void init(class CRCBotKeyValueList &kv, void *pBase);
@@ -92,6 +93,7 @@ class CNavMeshAccessor : public CSignatureFunction
 	inline void *getBase() { return m_pBase; }
 	int  getAreaCount() const { return m_nAreaCount; }
 	void invalidate() { m_Areas.clear(); m_nAreaCount = 0; m_bReady = false; m_connectOffset = -1;
+		m_iBlockedOffset = -1; m_iAvoidanceObstacleOffset = -1;
 		m_areaMin = 0; m_areaMax = 0; m_failedGoals.clear(); m_teleportLinks.clear(); }
 	unsigned char *getNearestArea(float x, float y, float z);
 	unsigned char *getNearestArea(Vector v) { return getNearestArea(v.x, v.y, v.z); }
@@ -103,6 +105,8 @@ class CNavMeshAccessor : public CSignatureFunction
 	// CNavArea, detected at runtime (the layout differs between game builds).
 	// Returns -1 if detection failed (navmesh should then stay inert).
 	int  getConnectOffset() const { return m_connectOffset; }
+	int  getBlockedOffset() const { return m_iBlockedOffset; }
+	int  getAvoidanceObstacleOffset() const { return m_iAvoidanceObstacleOffset; }
 	// True if p is one of the cached nav area pointers (O(log n)).
 	bool areaKnown(const void *p) const;
 
@@ -129,6 +133,8 @@ class CNavMeshAccessor : public CSignatureFunction
 
   private:
 	bool detectConnectOffset();
+	bool detectBlockedOffset();
+	bool detectAvoidanceObstacleOffset();
 
 	void *m_pNavMesh;
 	void *m_pBase;
@@ -136,6 +142,8 @@ class CNavMeshAccessor : public CSignatureFunction
 	int  m_nAreaCount;
 	bool m_bReady;
 	int  m_connectOffset;
+	int  m_iBlockedOffset;
+	int  m_iAvoidanceObstacleOffset;
 	uintptr_t m_areaMin; // min/max cached area pointer = heap arena span
 	uintptr_t m_areaMax;
 	std::map<const void *, float> m_failedGoals; // goal area → clear time (180–600 s)
@@ -327,6 +335,10 @@ class CNavMeshNavigator : public IBotNavigator
 	float  m_tnPhaseStartTime;   // when current phase began
 	Vector m_vTnExploreStart;    // position where explore phase started
 	float  m_fTnExploreRadius;   // how far we've covered from explore start
+
+	// Per-area frustration scores: increment when bot repeatedly hits walls
+	// in an area, decay per frame. Used as A* cost multiplier.
+	std::map<void*, float> m_mapAreaFrustration;
 };
 
 // ---------- CNavMeshAccessor ----------
