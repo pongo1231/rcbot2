@@ -89,6 +89,7 @@ extern ConVar *rcbot_debug_navmesh;
 extern ConVar *rcbot_navmesh_jump_obstacle_min;
 extern ConVar *rcbot_navmesh_jump_obstacle_max;
 extern ConVar *rcbot_navmesh_jump_obstacle_range;
+extern ConVar *rcbot_navmesh_max_jump_height;
 extern ConVar *rcbot_use_navmesh;
 extern ConVar *rcbot_tf2_autoupdate_point_time;
 extern ConVar *rcbot_tf2_payload_dist_retreat;
