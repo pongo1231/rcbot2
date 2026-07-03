@@ -383,3 +383,55 @@ The spawn-time teleporter entrance case SHALL have a navmesh fallback path when 
 #### Scenario: Navmesh-only map, spawn teleporter entrance
 - **WHEN** `BOT_UTIL_BUILDTELENT_SPAWN` fires and `nearestWaypointGoal(W_FL_TELE_ENTRANCE)` returns -1
 - **THEN** `computeBuildSpot(5, ...)` is called as a fallback
+
+### Requirement: Mode-Aware Build Dispatch
+The engine execution dispatch SHALL have access to the current `rcbot_use_navmesh` mode via a new member `m_iNavMode` (0=waypoints, 1=complementary, 2=navmesh-only), set during `getTasks()` and read during `executeAction()`. Build utility cases SHALL use this to distinguish mode 1 (waypoints preferred, navmesh fallback) from mode 2 (navmesh only, waypoints skipped).
+
+#### Scenario: Mode stored and accessible in build cases
+- **WHEN** `getTasks()` sets `m_iNavMode = 2`
+- **THEN** `executeAction()` reads `m_iNavMode == 2` when dispatching build utilities
+
+#### Scenario: Mode defaults to 0 at construction
+- **WHEN** a `CBotTF2` object is constructed
+- **THEN** `m_iNavMode` is initialized to 0 (safe default)
+
+### Requirement: Sentry Build Respects Mode Preference
+The `BOT_UTIL_BUILDSENTRY` case SHALL use `computeBuildSpot()` as the primary path only in mode 2 (navmesh-only). In mode 1 (complementary), it SHALL prefer waypoint-guided build spots with `evaluateBuildSpot()` scoring, falling back to `computeBuildSpot()` only when no waypoint is found. In mode 0, only waypoints are used.
+
+#### Scenario: Mode 1 sentry build prefers waypoints
+- **WHEN** `m_iNavMode == 1` and a `W_FL_SENTRY` waypoint exists in the bot's area
+- **THEN** the waypoint is scored with `evaluateBuildSpot()` and used for building; navmesh is the fallback
+
+#### Scenario: Mode 2 sentry build skips waypoints
+- **WHEN** `m_iNavMode == 2`
+- **THEN** `computeBuildSpot()` is called before any waypoint search, and if successful, no waypoint search runs
+
+#### Scenario: Mode 0 sentry build is unchanged
+- **WHEN** `m_iNavMode == 0`
+- **THEN** the navmesh block is entirely skipped (guarded by `m_pNavigator == m_pNavmeshNavigator`)
+
+### Requirement: Mode-2 Fast-Path for Non-Sentry Build Cases
+The teleporter entrance (both spawn and non-spawn), teleporter exit, and dispenser build cases SHALL skip waypoint search entirely when `m_iNavMode == 2`, going directly to `computeBuildSpot()`. This makes mode 2 consistent across all build types.
+
+#### Scenario: Mode 2 teleporter entrance skips waypoints
+- **WHEN** `m_iNavMode == 2` and `BOT_UTIL_BUILDTELENT` fires
+- **THEN** `computeBuildSpot(5, ...)` is called directly; no `NearestWaypoint` search for `W_FL_TELE_ENTRANCE` runs
+
+#### Scenario: Mode 2 teleporter exit skips waypoints
+- **WHEN** `m_iNavMode == 2` and `BOT_UTIL_BUILDTELEXT` fires
+- **THEN** `computeBuildSpot(4, ...)` is called directly; no `randomWaypointGoal(W_FL_TELE_EXIT)` runs
+
+#### Scenario: Mode 2 dispenser skips waypoints
+- **WHEN** `m_iNavMode == 2` and `BOT_UTIL_BUILDDISP` fires
+- **THEN** `computeBuildSpot(0, ...)` is called directly; no `W_FL_SENTRY` waypoint search runs
+
+### Requirement: Stale Waypoint Pointer Null-Reset in Mode 2
+After the `skip_waypoint_find:` label in `getTasks()`, when `m_iNavMode >= 2`, the static waypoint pointers `pWaypointResupply`, `pWaypointAmmo`, and `pWaypointHealth` SHALL be set to `nullptr` to prevent stale values from previous frames leaking into utility registrations.
+
+#### Scenario: Mode 2 nulls stale pointers
+- **WHEN** `m_iNavMode == 2` and the previous frame (mode 1) set `pWaypointResupply` to a valid pointer
+- **THEN** `pWaypointResupply` is nulled after `skip_waypoint_find:`, preventing stale resupply utilities from registering
+
+#### Scenario: Mode 1 preserves waypoint pointers
+- **WHEN** `m_iNavMode == 1`
+- **THEN** the waypoint pointers retain their assigned values from the search block

@@ -1287,6 +1287,7 @@ class CBotTF2 : public CBotFortress
 	//
 	int m_iCurrentDefendArea;
 	int m_iCurrentAttackArea;
+	int m_iNavMode; // 0=waypoints, 1=complementary, 2=navmesh-only
 	//
 	// bool m_bBlockPushing;
 	// float m_fBlockPushTime;
