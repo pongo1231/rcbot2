@@ -10681,6 +10681,52 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			return true;
 		}
 
+		// Navmesh fallback: scan nearby nav areas for wall-covered positions
+		if (m_pDefendPayloadBomb.get() != nullptr && m_pNavmeshNavigator && m_pNavigator == m_pNavmeshNavigator)
+		{
+			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			Vector vBomb = CBotGlobals::entityOrigin(m_pDefendPayloadBomb);
+			Vector vBestPos(0,0,0);
+			int iBestCover = -1;
+
+			// Try positions with increasing distance from bomb
+			for (int r = 0; r < 8 && iBestCover < 2; r++)
+			{
+				float fAngle = r * (M_PI_F / 4.0f);
+				for (float d = 128.0f; d <= 400.0f && iBestCover < 2; d += 90.0f)
+				{
+					Vector vTest = vBomb + Vector(cosf(fAngle) * d, sinf(fAngle) * d, 0);
+					Vector vNav = pNav->getNavAreaNearPoint(vTest, 128.0f);
+					if (vNav.Length() < 0.1f) continue;
+
+					// Check for wall cover: count blocked horizontal traces
+					int cover = 0;
+					for (int c = 0; c < 4; c++)
+					{
+						float ca = c * (M_PI_F / 2.0f);
+						Vector vFrom = vNav + Vector(0, 0, 36.0f);
+						Vector vTo = vFrom + Vector(cosf(ca) * 256.0f, sinf(ca) * 256.0f, 0);
+						CBotGlobals::traceLine(vFrom, vTo, 0, 0);
+						if (CBotGlobals::getTraceResult()->fraction < 1.0f)
+							cover++;
+					}
+
+					if (cover > iBestCover)
+					{
+						iBestCover = cover;
+						vBestPos = vNav;
+					}
+				}
+			}
+
+			if (vBestPos.Length() > 0.1f)
+			{
+				m_pSchedules->add(new CBotDefendSched(vBestPos));
+				removeCondition(CONDITION_PUSH);
+				return true;
+			}
+		}
+
 		if (m_pDefendPayloadBomb.get() != nullptr)
 		{
 			m_pSchedules->add(new CBotTF2DefendPayloadBombSched(m_pDefendPayloadBomb));
@@ -10719,6 +10765,26 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			if (CTeamFortress2Mod::isMapType(TF_MAP_MVM))
 			{
 				pWaypoint = CTeamFortress2Mod::getBestWaypointMVM(this, CWaypointTypes::W_FL_DEFEND);
+
+				// Navmesh fallback: use computeMVMNavPosition when no waypoints
+				bool bUsedNavmeshFallback = false;
+				Vector vNavDefendPos(0,0,0);
+				if (!pWaypoint && m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+				{
+					CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+					vNavDefendPos = pNav->computeMVMNavPosition();
+					if (vNavDefendPos.Length() > 0.1f)
+						bUsedNavmeshFallback = true;
+				}
+
+				if (bUsedNavmeshFallback)
+				{
+					setLookAt(vNavDefendPos);
+					m_pSchedules->add(new CBotDefendSched(vNavDefendPos, fGuardTime));
+					removeCondition(CONDITION_DEFENSIVE);
+					removeCondition(CONDITION_PUSH);
+					return true;
+				}
 
 				// MvM: guard the bomb area longer, especially if carrier is near
 				Vector vFlagLocation;
@@ -10792,6 +10858,20 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 				removeCondition(CONDITION_DEFENSIVE);
 				removeCondition(CONDITION_PUSH);
 				return true;
+			}
+
+			// Navmesh fallback: defend near own-team flag location
+			if (!pWaypoint && m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+			{
+				Vector vDefendAnchor(0,0,0);
+				if (CTeamFortress2Mod::getFlagLocation(getTeam(), &vDefendAnchor))
+				{
+					setLookAt(vDefendAnchor);
+					m_pSchedules->add(new CBotDefendSched(vDefendAnchor, fGuardTime));
+					removeCondition(CONDITION_DEFENSIVE);
+					removeCondition(CONDITION_PUSH);
+					return true;
+				}
 			}
 		}
 		break;
@@ -10948,7 +11028,7 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			pWaypoint =
 			    CWaypoints::randomWaypointGoal(CWaypointTypes::W_FL_CAPPOINT, 0, m_iCurrentDefendArea, true, this);
 
-		if (!pWaypoint->checkReachable() || (randomFloat(0.0, 1.0f) > fprob))
+		if (!pWaypoint || !pWaypoint->checkReachable() || (randomFloat(0.0, 1.0f) > fprob))
 		{
 			pWaypoint = CWaypoints::randomWaypointGoal(CWaypointTypes::W_FL_DEFEND, getTeam(), m_iCurrentDefendArea,
 			                                           true, this, false);
@@ -11031,6 +11111,19 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			removeCondition(CONDITION_PUSH);
 			return true;
 		}
+
+		// Navmesh fallback: use own-team flag location as capture zone
+		if (!pWaypoint && m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		{
+			Vector vCaptureZone(0,0,0);
+			if (CTeamFortress2Mod::getFlagLocation(getTeam(), &vCaptureZone))
+			{
+				m_pSchedules->add(new CBotGotoOriginSched(vCaptureZone));
+				removeCondition(CONDITION_PUSH);
+				return true;
+			}
+		}
+
 		break;
 	case BOT_UTIL_ENGI_DESTROY_ENTRANCE: // destroy and rebuild sentry elsewhere
 		engineerBuild(ENGI_ENTRANCE, ENGI_DESTROY);
@@ -12707,6 +12800,17 @@ bool CBotTF2::executeAction(CBotUtility *util) // eBotAction id, CWaypoint *pWay
 			m_pSchedules->add(new CBotTF2GetFlagSched(pWaypoint->getOrigin(), bUseRoute, vRoute));
 
 			return true;
+		}
+
+		// Navmesh fallback: use entity-based enemy flag location
+		if (!pWaypoint && m_pNavigator == m_pNavmeshNavigator && m_pNavmeshNavigator)
+		{
+			Vector vFlagLocation(0,0,0);
+			if (CTeamFortress2Mod::getFlagLocation(CTeamFortress2Mod::getEnemyTeam(getTeam()), &vFlagLocation))
+			{
+				m_pSchedules->add(new CBotTF2GetFlagSched(vFlagLocation, false, Vector(0,0,0)));
+				return true;
+			}
 		}
 
 		break;
@@ -14988,8 +15092,19 @@ void CBotTF2::MannVsMachineWaveComplete()
 	if (m_pSentryGun.get() != nullptr)
 	{
 		CWaypoint *pBest = CTeamFortress2Mod::getBestWaypointMVM(this, CWaypointTypes::W_FL_SENTRY);
+		bool bTooFar = true;
 
-		if (!pBest || (pBest->distanceFrom(CBotGlobals::entityOrigin(m_pSentryGun)) > 768))
+		if (pBest)
+			bTooFar = pBest->distanceFrom(CBotGlobals::entityOrigin(m_pSentryGun)) > 768;
+		else if (m_pNavmeshNavigator && m_pNavigator == m_pNavmeshNavigator)
+		{
+			CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+			Vector vNav = pNav->computeMVMNavPosition();
+			if (vNav.Length() > 0.1f)
+				bTooFar = (vNav - CBotGlobals::entityOrigin(m_pSentryGun)).Length() > 768;
+		}
+
+		if (bTooFar)
 		{
 			// move
 			m_fSentryPlaceTime     = 1.0f;
@@ -15019,7 +15134,19 @@ void CBotTF2::MannVsMachineAlarmTriggered(Vector vLoc)
 
 				Vector vSentry       = CBotGlobals::entityOrigin(pSentry);
 
-				float fDist          = pWaypoint->distanceFrom(vSentry);
+				float fDist;
+				if (pWaypoint)
+					fDist = pWaypoint->distanceFrom(vSentry);
+				else if (m_pNavmeshNavigator && m_pNavigator == m_pNavmeshNavigator)
+				{
+					CNavMeshNavigator *pNav = (CNavMeshNavigator *)m_pNavmeshNavigator;
+					Vector vNav = pNav->computeMVMNavPosition();
+					fDist = (vNav.Length() > 0.1f) ? (vNav - vSentry).Length() : 0.0f;
+				}
+				else
+				{
+					return;
+				}
 
 				if (fDist > 1024.0f)
 				{

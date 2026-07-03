@@ -5,7 +5,12 @@
 
 CBotTF2SnipeCrossBowSched::CBotTF2SnipeCrossBowSched(Vector vOrigin, int iWpt)
 {
-	CBotTask *pFindPath  = new CFindPathTask(iWpt);
+	CBotTask *pFindPath;
+	if (iWpt >= 0)
+		pFindPath = new CFindPathTask(iWpt);
+	else
+		pFindPath = new CFindPathTask(vOrigin);
+
 	CBotTask *pSnipeTask = new CBotTF2SnipeCrossBow(vOrigin, iWpt);
 
 	addTask(pFindPath);  // first
